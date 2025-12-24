@@ -78,24 +78,24 @@ The last Starcel release was written, at the time, in the newest Python, Python 
 
 
 ## What new features are planned
-Tables and spreadsheet. 
-Hotkey editor.
-Multi-language IDE.
-Symbols with varying sizes replacement, highlighting, and reduction: code translation. Rotating symbol replacement so you don't get used to random letters and symbols. https://github.com/codereport/jello.
-File explorer and desktop environment.
-CLI, SSH, and SCP. 
-API for the Reals.
-Units and text editing.
-Math, algebra, calculus, LaTeX.
-Geometric algebra rendering: PGA, VGA, CGA, STA.
-Full Excel, Google Sheets, HDF5, and FOAM3 importer.
-Multidimensional graphing.
-Plotting, charts, digraphs, nodes. Most of what is available in OriginLab Pro. 
-VRChat/Helios features.
-Dynamic graphing and variables. With reverse order calculation engine support. 
-Advanced search and multiple histories with transactions and rollbacks. 
-Google sheets/docs edit functionality. 
-Academic hall and learning center: history, math, physics, particles, physical matter.
+- Tables and spreadsheet. 
+- Hotkey editor.
+- Multi-language IDE.
+- Symbols with varying sizes replacement, highlighting, and reduction: code translation. Rotating symbol replacement so you don't get used to random letters and symbols. https://github.com/codereport/jello.
+- File explorer and desktop environment.
+- CLI, SSH, and SCP. 
+- API for the Reals.
+- Units and text editing.
+- Math, algebra, calculus, LaTeX.
+- Geometric algebra rendering: PGA, VGA, CGA, STA.
+- Full Excel, Google Sheets, HDF5, and FOAM3 importer.
+- Multidimensional graphing.
+- Plotting, charts, digraphs, nodes. Most of what is available in OriginLab Pro. 
+- VRChat/Helios features.
+- Dynamic graphing and variables. With reverse order calculation engine support. 
+- Advanced search and multiple histories with transactions and rollbacks. 
+- Google sheets/docs edit functionality. 
+- Academic hall and learning center: history, math, physics, particles, physical matter.
 
 
 ## Why Unreal? 
