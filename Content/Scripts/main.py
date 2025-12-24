@@ -156,6 +156,8 @@ class Main:
         # elif (self.uobject.get_world().IsClient()):
         #     ue.log("hello from client")
 
+        # self.uobject.get_player_controller().ClientTravel()
+
         if KismetSystemLibrary.IsDedicatedServer():
             ue.log("hello from server")
         else:

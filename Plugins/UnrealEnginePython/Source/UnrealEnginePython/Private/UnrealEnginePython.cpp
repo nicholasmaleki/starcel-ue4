@@ -5,6 +5,7 @@
 #include "PythonBlueprintFunctionLibrary.h"
 #include "HAL/IConsoleManager.h"
 #include "HAL/PlatformFilemanager.h"
+#include <clocale>
 #if ENGINE_MINOR_VERSION < 13
 #include "ClassIconFinder.h"
 #endif
@@ -515,6 +516,8 @@ void FUnrealEnginePythonModule::StartupModule()
 		UE_LOG(LogTemp, Warning, TEXT("python39.dll loaded successfully."));
 	}
 
+	setlocale(LC_ALL, "C"); // force to use "C" locale instead of "English_United States.1252"
+
 	Py_Initialize();
 
 	if (!Py_IsInitialized()) {
@@ -523,6 +526,8 @@ void FUnrealEnginePythonModule::StartupModule()
 	else {
 		UE_LOG(LogPython, Log, TEXT("Python initialized"));
 	}
+
+	setlocale(LC_ALL, "C");
 
 	// PyRun_SimpleString("import sys; print(sys.executable); print(sys.path)");
 	//PyErr_Print();
