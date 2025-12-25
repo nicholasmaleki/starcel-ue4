@@ -502,9 +502,10 @@ void FUnrealEnginePythonModule::StartupModule()
 	Py_SetPath(Py_DecodeLocale(TCHAR_TO_UTF8(*BasePythonPath), NULL));
 #endif
 #endif
-	// force python because the capture currently doesn't work. 
-	Py_SetPythonHome(L"C:\\Users\\nicho\\AppData\\Local\\Programs\\Python\\Python39");
-	Py_SetProgramName(L"C:\\Users\\nicho\\AppData\\Local\\Programs\\Python\\Python39\\python.exe");
+	// force python because the capture currently doesn't work for dedicated server. 
+	//Py_SetPythonHome(L"C:\\Users\\nicho\\AppData\\Local\\Programs\\Python\\Python39");
+	//Py_SetProgramName(L"C:\\Users\\nicho\\AppData\\Local\\Programs\\Python\\Python39\\python.exe");
+	//UE_LOG(LogTemp, Warning, TEXT("CODE CHANGED!"));
 
 	void* Dll = FPlatformProcess::GetDllHandle(TEXT("python39.dll"));
 	if (!Dll)
@@ -533,17 +534,17 @@ void FUnrealEnginePythonModule::StartupModule()
 	//PyErr_Print();
 
 	// After Py_Initialize()
-	PyRun_SimpleString(
-		"import sys, os\n"
-		"sys.path.append(r'C:\\Users\\nicho\\AppData\\Local\\Programs\\Python\\Python39\\Lib')\n"
-		"sys.path.append(r'C:\\Users\\nicho\\AppData\\Local\\Programs\\Python\\Python39\\DLLs')\n"
-		"print('PYTHON PREFIX:', sys.prefix)\n"
-		"print('PYTHON EXECUTABLE:', sys.executable)\n"
-		"print('SYS.PATH:')\n"
-		"for p in sys.path:\n"
-		"    print('  ', repr(p))\n"
-		"print('cwd:', os.getcwd())\n"
-	);
+	//PyRun_SimpleString(
+	//	"import sys, os\n"
+	//	"sys.path.append(r'C:\\Users\\nicho\\AppData\\Local\\Programs\\Python\\Python39\\Lib')\n"
+	//	"sys.path.append(r'C:\\Users\\nicho\\AppData\\Local\\Programs\\Python\\Python39\\DLLs')\n"
+	//	"print('PYTHON PREFIX:', sys.prefix)\n"
+	//	"print('PYTHON EXECUTABLE:', sys.executable)\n"
+	//	"print('SYS.PATH:')\n"
+	//	"for p in sys.path:\n"
+	//	"    print('  ', repr(p))\n"
+	//	"print('cwd:', os.getcwd())\n"
+	//);
 
 	UE_LOG(LogPython, Log, TEXT("Py_IsInitialized %d"), Py_IsInitialized());
 	UE_LOG(LogPython, Log, TEXT("PyEval_ThreadsInitialized %d"), PyEval_ThreadsInitialized());

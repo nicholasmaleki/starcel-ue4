@@ -1,0 +1,2 @@
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LWCExtreme\Intermediate\Build\Win64\UE4Editor\Development\LWCExtreme\Definitions.LWCExtreme.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LWCExtreme\Source\LWCExtreme\Public\LWCExtreme.h

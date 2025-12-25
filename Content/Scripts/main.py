@@ -136,9 +136,14 @@ class Main:
     # this event will be run on the server and in reliable mode
     def server_event(self):
         ue.log('server event called')
+        ue.log("hello from server")
+        print("hello from server" + self.uobject.get_uproperty('StringHelloWorldProperty'))
+        print("hello from server" + self.uobject.get_uproperty(
+            'StringHelloWorldProperty2'))  # .set_metadata('Category', 'CategoryTest001')
     server_event.event = True # expose event
     server_event.server = True
     server_event.reliable = True
+    # server_event.multicast = True # TODO: add to the plugin
     #server_event.static = True # static methods will be available to blueprints
     # server_event.pure = True # pure methods will be available to blueprints
 
@@ -160,20 +165,24 @@ class Main:
 
         if KismetSystemLibrary.IsDedicatedServer():
             ue.log("hello from server")
+            print("hello from server" + self.uobject.get_uproperty('StringHelloWorldProperty'))
+            print("hello from server" + self.uobject.get_uproperty('StringHelloWorldProperty2'))  # .set_metadata('Category', 'CategoryTest001')
         else:
             ue.log("hello from client")
+            self.uobject.StringHelloWorldProperty = StrProperty()
+            self.uobject.StringHelloWorldProperty2 = StrProperty()
+            KismetSystemLibrary.SetStringPropertyByName(self.uobject, 'StringHelloWorldProperty', 'Hello World 001')
+            KismetSystemLibrary.SetStringPropertyByName(self.uobject, 'StringHelloWorldProperty2', 'Hello World 002')
 
-        self.StringHelloWorldProperty = StrProperty
-        self.StringHelloWorldProperty2 = StrProperty
+            # CPF_REP_NOTIFY # requires CPF_Net to also be set
+            self.uobject.add_property_flags('StringHelloWorldProperty', CPF_NET)
+            #self.uobject.StringHelloWorldProperty = 'Hello World 001'
+            self.uobject.add_property_flags('StringHelloWorldProperty2', CPF_NET)
+            #self.uobject.set_property('StringHelloWorldProperty2', 'Hello World 002')
+            print("hello from client" + self.uobject.get_uproperty('StringHelloWorldProperty'))
+            print("hello from client" + self.uobject.get_uproperty('StringHelloWorldProperty2'))  # .set_metadata('Category', 'CategoryTest001')
 
-        # CPF_REP_NOTIFY # requires CPF_Net to also be set
-        self.add_property_flags('StringHelloWorldProperty', CPF_NET)
-        self.StringHelloWorldProperty = 'Hello World 001'
-        print(self.get_uproperty('StringHelloWorldProperty'))
 
-        self.add_property_flags('StringHelloWorldProperty2', CPF_NET)
-        self.set_property('StringHelloWorldProperty2', 'Hello World 002')
-        print(self.get_uproperty('StringHelloWorldProperty2')) # .set_metadata('Category', 'CategoryTest001')
 
         is_hitting_something, hit_result = KismetSystemLibrary.LineTraceSingle_NEW(self.actor, self.actor.get_actor_location(),FVector(300, 300, 300), ETraceTypeQuery.TraceTypeQuery1,DrawDebugType=EDrawDebugTrace.ForOneFrame)
         if is_hitting_something:
@@ -277,6 +286,13 @@ class Main:
 
     def you_pressed_K(self):
         ue.log_warning('you pressed K')
+        self.uobject.get_player_controller().ClientTravel("10.10.1.123:7777", ue.ETravelType.TRAVEL_Absolute)
+        ue.log_warning('travel completed')
+        ue.log("hello from client")
+        self.server_event()
+        print("hello from client" + self.uobject.get_uproperty('StringHelloWorldProperty'))
+        print("hello from client" + self.uobject.get_uproperty('StringHelloWorldProperty2'))  # .set_metadata('Category', 'CategoryTest001')
+
 
     def move_forward(self, amount):
         ue.print_string('axis value: ' + str(amount))
