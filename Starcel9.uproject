@@ -11,14 +11,14 @@
 		}
 	],
 	"Plugins": [
-    		{
-        		"Name": "PythonScriptPlugin",
-        		"Enabled": false
-    		},
 		{
-        		"Name": "UnrealEnginePython",
-        		"Enabled": true
-    		},
+			"Name": "PythonScriptPlugin",
+			"Enabled": false
+		},
+		{
+			"Name": "UnrealEnginePython",
+			"Enabled": true
+		},
 		{
 			"Name": "Text3D",
 			"Enabled": true
@@ -73,6 +73,10 @@
 				"Win64",
 				"Linux"
 			]
+		},
+		{
+			"Name": "LWCExtreme",
+			"Enabled": false
 		}
 	]
 }
