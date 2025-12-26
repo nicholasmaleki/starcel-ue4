@@ -7,6 +7,15 @@
 /IGNORE:4221
 /NODEFAULTLIB
 "C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Development\Engine\SharedPCH.Engine.ShadowErrors.h.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LWCExtreme\Intermediate\Build\Win64\UE4Editor\Development\LWCExtreme\FHybridNumber.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LWCExtreme\Intermediate\Build\Win64\UE4Editor\Development\LWCExtreme\FHybridQuaternion.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LWCExtreme\Intermediate\Build\Win64\UE4Editor\Development\LWCExtreme\FHybridTransform.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LWCExtreme\Intermediate\Build\Win64\UE4Editor\Development\LWCExtreme\FHybridVector.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LWCExtreme\Intermediate\Build\Win64\UE4Editor\Development\LWCExtreme\FLargeString.cpp.obj"
 "C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LWCExtreme\Intermediate\Build\Win64\UE4Editor\Development\LWCExtreme\LWCExtreme.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LWCExtreme\Intermediate\Build\Win64\UE4Editor\Development\LWCExtreme\LWCExtremeSettings.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LWCExtreme\Intermediate\Build\Win64\UE4Editor\Development\LWCExtreme\LWCExtremeSettingsLibrary.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LWCExtreme\Intermediate\Build\Win64\UE4Editor\Development\LWCExtreme\Module.LWCExtreme.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LWCExtreme\Intermediate\Build\Win64\UE4Editor\Development\LWCExtreme\Module.LWCExtreme.gen.cpp.obj"
 "C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Development\Default.rc2.res"
 /OUT:"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LWCExtreme\Intermediate\Build\Win64\UE4Editor\Development\LWCExtreme\UE4Editor-LWCExtreme.lib"

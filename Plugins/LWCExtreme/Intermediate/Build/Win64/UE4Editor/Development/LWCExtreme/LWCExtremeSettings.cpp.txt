@@ -1,0 +1,9 @@
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LWCExtreme\Intermediate\Build\Win64\UE4Editor\Development\LWCExtreme\Definitions.LWCExtreme.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LWCExtreme\Source\LWCExtreme\Public\LWCExtremeSettings.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/NoExportTypes.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/PropertyAccessUtil.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/UnitConversion.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/UnitConversion.inl
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Internationalization/PolyglotTextData.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\AssetRegistry/ARFilter.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LWCExtreme\Intermediate\Build\Win64\UE4Editor\Inc\LWCExtreme\LWCExtremeSettings.generated.h
