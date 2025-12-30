@@ -1,8 +1,8 @@
 import unreal_engine as ue
 import numpy as np
-import os, sys, subprocess, math, sympy, cmdix, fast_autocomplete, numba, kingdon #numba_cuda
+import os, sys, subprocess, urllib.request, socket, math, sympy, cmdix, fast_autocomplete, numba, kingdon #numba_cuda
 from unreal_engine import FVector, FRotator, FTransform, FHitResult, CLASS_CONFIG, CLASS_DEFAULT_CONFIG, CPF_CONFIG, CPF_GLOBAL_CONFIG, CPF_EXPOSE_ON_SPAWN, CPF_NET, CPF_REP_NOTIFY
-from unreal_engine.classes import Actor, Character, KismetMathLibrary, KismetSystemLibrary, Object, StrProperty, IntProperty
+from unreal_engine.classes import Actor, Character, PlayerController, KismetMathLibrary, KismetSystemLibrary, Object, StrProperty, IntProperty
 from unreal_engine.enums import EInputEvent, ETraceTypeQuery, EDrawDebugTrace
 from symbols import Symbols
 # import builtins
@@ -133,26 +133,105 @@ class Main:
 
         print(KismetMathLibrary.FindLookAtRotation(point1, point2))  # returns FRotator
 
-    # this event will be run on the server and in reliable mode
-    def server_event(self):
-        ue.log('server event called')
-        ue.log("hello from server")
-        print("hello from server" + self.uobject.get_uproperty('StringHelloWorldProperty'))
-        print("hello from server" + self.uobject.get_uproperty(
-            'StringHelloWorldProperty2'))  # .set_metadata('Category', 'CategoryTest001')
-    server_event.event = True # expose event
-    server_event.server = True
-    server_event.reliable = True
-    # server_event.multicast = True # TODO: add to the plugin
-    #server_event.static = True # static methods will be available to blueprints
+    # # this event will be run on the server and in reliable mode
+    # def server_event(self):
+    #     ue.log('server event called')
+    #     ue.log("hello from server")
+    #     print("hello from server" + self.uobject.get_uproperty('StringHelloWorldProperty'))
+    #     print("hello from server" + self.uobject.get_uproperty(
+    #         'StringHelloWorldProperty2'))  # .set_metadata('Category', 'CategoryTest001')
+    # server_event.event = True # expose event
+    # server_event.server = True
+    # server_event.reliable = True
+    # server_event.multicast = True # you can also simulate multicast like below:
+    # server_event.static = True # static methods will be available to blueprints
     # server_event.pure = True # pure methods will be available to blueprints
 
     # FooWorld = [IntProperty]
     # FooWorld = [17, 22, 30]
 
+    # ------------------------------------------------------------
+    # MULTICAST FLAG TEST
+    # ------------------------------------------------------------
+    def test_multicast_flag(self, msg):
+        """
+        If .multicast works, this should run on:
+        - Dedicated Server
+        - All connected Clients
+
+        In practice (UE4Python), this usually runs server-only.
+        """
+        if KismetSystemLibrary.IsDedicatedServer():
+            ue.log(f"[multicast flag] SERVER executed: {msg}")
+        else:
+            ue.log(f"[multicast flag] CLIENT executed: {msg}")
+
+    # Register as RPC
+    test_multicast_flag.event = True
+    test_multicast_flag.multicast = True
+    test_multicast_flag.reliable = True
+
+    # ------------------------------------------------------------
+    # SERVER RPC – MANUAL MULTICAST
+    # ------------------------------------------------------------
+    def server_manual_multicast(self, msg):
+        """
+        Authoritative server RPC.
+        Explicitly calls a client RPC on every PlayerController.
+        """
+        ue.log("[manual multicast] SERVER executing")
+
+        for pc in self.uobject.get_world().all_actors():
+            if pc:
+                pc.client_receive_manual(msg)
+
+    # Register as Server RPC
+    server_manual_multicast.event = True
+    server_manual_multicast.server = True
+    server_manual_multicast.reliable = True
+
+    # ------------------------------------------------------------
+    # CLIENT RPC – MANUAL MULTICAST TARGET
+    # ------------------------------------------------------------
+    def client_receive_manual(self, msg):
+        """
+        Should only ever run on clients.
+        """
+        if KismetSystemLibrary.IsDedicatedServer():
+            ue.log("[manual multicast] ERROR: executed on server")
+        else:
+            ue.log(f"[manual multicast] CLIENT executed: {msg}")
+
+    # Register as Client RPC
+    client_receive_manual.event = True
+    client_receive_manual.client = True
+    client_receive_manual.reliable = True
+
     # this is called on game start
     def begin_play(self):
         ue.log('Begin Play on Main class')
+
+        if KismetSystemLibrary.IsDedicatedServer():
+            ue.log("=== BeginPlay on DEDICATED SERVER ===")
+            hostname = socket.gethostname()
+            local_ip = socket.gethostbyname(hostname)
+            ue.log(f"Server LAN IP: {local_ip}")
+            try:
+                public_ip = urllib.request.urlopen('https://api.ipify.org').read().decode('utf-8')
+                ue.log(f"Public IP: {public_ip}")
+            except Exception as e:
+                ue.log(f"Could not fetch public IP: {e}")
+            ue.log("If you correctly port forwarded the LAN IP, the server is on the public IP: " + public_ip)
+
+            # Server-originated multicast test
+            ue.log("Calling test_multicast_flag() from server")
+            self.test_multicast_flag("hello via multicast flag")
+
+        else:
+            ue.log("=== BeginPlay on CLIENT ===")
+            # Client → Server → Clients
+            ue.log("Calling server_manual_multicast() from client")
+            self.server_manual_multicast("hello via manual multicast")
 
         # ue.exec('Script.py') # run a Python script file by passing its name
         # ue.log(self.uobject.get_world().call_function('IsDedicatedServer')) # ('GetNetMode'))
