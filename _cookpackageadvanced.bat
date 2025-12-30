@@ -14,10 +14,9 @@ set UE4_EDITOR="C:\UE_4.27Chaos_Source\Engine\Binaries\Win64\UE4Editor-Cmd.exe"
 set PROJECT="C:\Users\nicho\Documents\Unreal Projects\Starcel9\Starcel9.uproject"
 
 REM --- Clean intermediate data for a fresh cook ---
-echo Cleaning Saved, Intermediate, and DerivedDataCache folders...
-if exist "%~dp0Saved" rmdir /s /q "%~dp0Saved"
-if exist "%~dp0Intermediate" rmdir /s /q "%~dp0Intermediate"
-if exist "%~dp0DerivedDataCache" rmdir /s /q "%~dp0DerivedDataCache"
+echo Cleaning Saved, and DerivedDataCache folders...
+:: if exist "%~dp0Saved" rmdir /s /q "%~dp0Saved"
+:: if exist "%~dp0DerivedDataCache" rmdir /s /q "%~dp0DerivedDataCache"
 
 REM --- Cook each Windows platform ---
 for %%P in (WindowsNoEditor WindowsClient WindowsServer) do (

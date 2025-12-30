@@ -5,16 +5,16 @@ from unreal_engine import FVector, FRotator, FTransform, FHitResult, CLASS_CONFI
 from unreal_engine.classes import Actor, Character, KismetMathLibrary, KismetSystemLibrary, Object, StrProperty, IntProperty
 from unreal_engine.enums import EInputEvent, ETraceTypeQuery, EDrawDebugTrace
 from symbols import Symbols
-import builtins
-import functools
+# import builtins
+# import functools
 
-original_print = builtins.print
-
-def custom_print(*args, **kwargs):
-    ue.log(*args, **kwargs)
-
-builtins.print = custom_print
-print("Python print to ue.log working.")
+# original_print = builtins.print
+#
+# def custom_print(*args, **kwargs):
+#     ue.log(*args, **kwargs)
+#
+# builtins.print = custom_print
+# print("Python print to ue.log working.")
 
 ue.log('Hello i am a Python module')
 
@@ -165,28 +165,28 @@ class Main:
 
         if KismetSystemLibrary.IsDedicatedServer():
             ue.log("hello from server")
-            print("hello from server" + self.uobject.get_uproperty('StringHelloWorldProperty'))
-            print("hello from server" + self.uobject.get_uproperty('StringHelloWorldProperty2'))  # .set_metadata('Category', 'CategoryTest001')
+            # print("hello from server" + self.uobject.get_uproperty('StringHelloWorldProperty'))
+            # print("hello from server" + self.uobject.get_uproperty('StringHelloWorldProperty2'))  # .set_metadata('Category', 'CategoryTest001')
         else:
             ue.log("hello from client")
-            self.uobject.StringHelloWorldProperty = StrProperty()
-            self.uobject.StringHelloWorldProperty2 = StrProperty()
-            KismetSystemLibrary.SetStringPropertyByName(self.uobject, 'StringHelloWorldProperty', 'Hello World 001')
-            KismetSystemLibrary.SetStringPropertyByName(self.uobject, 'StringHelloWorldProperty2', 'Hello World 002')
+            # self.uobject.StringHelloWorldProperty = StrProperty()
+            # self.uobject.StringHelloWorldProperty2 = StrProperty()
+            # KismetSystemLibrary.SetStringPropertyByName(self.uobject, 'StringHelloWorldProperty', 'Hello World 001')
+            # KismetSystemLibrary.SetStringPropertyByName(self.uobject, 'StringHelloWorldProperty2', 'Hello World 002')
+            #
+            # # CPF_REP_NOTIFY # requires CPF_Net to also be set
+            # self.uobject.add_property_flags('StringHelloWorldProperty', CPF_NET)
+            # #self.uobject.StringHelloWorldProperty = 'Hello World 001'
+            # self.uobject.add_property_flags('StringHelloWorldProperty2', CPF_NET)
+            # #self.uobject.set_property('StringHelloWorldProperty2', 'Hello World 002')
+            # print("hello from client" + self.uobject.get_uproperty('StringHelloWorldProperty'))
+            # print("hello from client" + self.uobject.get_uproperty('StringHelloWorldProperty2'))  # .set_metadata('Category', 'CategoryTest001')
 
-            # CPF_REP_NOTIFY # requires CPF_Net to also be set
-            self.uobject.add_property_flags('StringHelloWorldProperty', CPF_NET)
-            #self.uobject.StringHelloWorldProperty = 'Hello World 001'
-            self.uobject.add_property_flags('StringHelloWorldProperty2', CPF_NET)
-            #self.uobject.set_property('StringHelloWorldProperty2', 'Hello World 002')
-            print("hello from client" + self.uobject.get_uproperty('StringHelloWorldProperty'))
-            print("hello from client" + self.uobject.get_uproperty('StringHelloWorldProperty2'))  # .set_metadata('Category', 'CategoryTest001')
 
 
-
-        is_hitting_something, hit_result = KismetSystemLibrary.LineTraceSingle_NEW(self.actor, self.actor.get_actor_location(),FVector(300, 300, 300), ETraceTypeQuery.TraceTypeQuery1,DrawDebugType=EDrawDebugTrace.ForOneFrame)
-        if is_hitting_something:
-            ue.log(hit_result)
+        # is_hitting_something, hit_result = KismetSystemLibrary.LineTraceSingle_NEW(self.actor, self.actor.get_actor_location(),FVector(300, 300, 300), ETraceTypeQuery.TraceTypeQuery1,DrawDebugType=EDrawDebugTrace.ForOneFrame)
+        # if is_hitting_something:
+        #     ue.log(hit_result)x
 
         # def get_world_from_uobject(obj):
         #     # Walk up the outer chain to find a World

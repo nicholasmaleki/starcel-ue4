@@ -190,6 +190,7 @@ static void setup_stdout_stderr()
 {
 	// Redirecting stdout
 	char const* code = "import sys\n"
+		"import builtins\n"
 		"import unreal_engine\n" // "import locale\n" 		"locale.setlocale(locale.LC_ALL, 'C')\n" //set locale to C to fix cooking errors. Otherwise it would be English_United States.1252
 		"class UnrealEngineOutput:\n"
 		"    def __init__(self, logger):\n"
@@ -217,7 +218,15 @@ static void setup_stdout_stderr()
 		"        f.ue_event = self.event_signature\n"
 		"        return f\n"
 		"\n"
-		"unreal_engine.event = event";
+		"unreal_engine.event = event\n"
+		"original_python_print = builtins.print\n" // somewhere inbetween upgrade from python37 and ue4.23 print stops working, so we override it
+		"\n"
+		"def custom_print(*args, **kwargs) :\n"
+		"	unreal_engine.log(*args, **kwargs)\n"
+		"\n"
+		"builtins.print = custom_print\n"
+		"print(\"Python print to ue.log working.\")\n";
+
 	//UE_LOG(LogPython, Log, TEXT("Python setup_stdout_stderr() const created"));
 	PyRun_SimpleString(code);
 	//UE_LOG(LogPython, Log, TEXT("Python setup_stdout_stderr() code string ran"));
@@ -502,7 +511,7 @@ void FUnrealEnginePythonModule::StartupModule()
 	Py_SetPath(Py_DecodeLocale(TCHAR_TO_UTF8(*BasePythonPath), NULL));
 #endif
 #endif
-	// force python because the capture currently doesn't work for dedicated server. 
+	// force python because sometimes it doesn't work.  
 	//Py_SetPythonHome(L"C:\\Users\\nicho\\AppData\\Local\\Programs\\Python\\Python39");
 	//Py_SetProgramName(L"C:\\Users\\nicho\\AppData\\Local\\Programs\\Python\\Python39\\python.exe");
 	//UE_LOG(LogTemp, Warning, TEXT("CODE CHANGED!"));
@@ -514,7 +523,7 @@ void FUnrealEnginePythonModule::StartupModule()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("python39.dll loaded successfully."));
+		UE_LOG(LogTemp, Log, TEXT("python39.dll loaded successfully."));
 	}
 
 	setlocale(LC_ALL, "C"); // force to use "C" locale instead of "English_United States.1252"
@@ -584,28 +593,25 @@ void FUnrealEnginePythonModule::StartupModule()
 
 	UESetupPythonInterpreter(true);
 
-	UE_LOG(LogPython, Log, TEXT("Scripts folder may be empty if it crashes here"));
-
-
 	PyGILState_STATE g = PyGILState_Ensure();
 
 	PyObject* importlib = PyImport_ImportModule("importlib");
 	if (!importlib) {
-		UE_LOG(LogPython, Warning, TEXT("Import importlib FAILED:\n"));
+		UE_LOG(LogPython, Error, TEXT("Import importlib FAILED:\n"));
 		PyErr_Print();
 	}
 	else {
-		UE_LOG(LogPython, Warning, TEXT("importlib OK\n"));
+		UE_LOG(LogPython, Log, TEXT("importlib OK\n"));
 		Py_DECREF(importlib);
 	}
 
 	PyObject* site = PyImport_ImportModule("site");
 	if (!site) {
-		UE_LOG(LogPython, Warning, TEXT("Import site FAILED:\n"));
+		UE_LOG(LogPython, Error, TEXT("Import site FAILED:\n"));
 		PyErr_Print();
 	}
 	else {
-		UE_LOG(LogPython, Warning, TEXT("site OK\n"));
+		UE_LOG(LogPython, Log, TEXT("site OK\n"));
 		Py_DECREF(site);
 	}
 	PyGILState_Release(g);
