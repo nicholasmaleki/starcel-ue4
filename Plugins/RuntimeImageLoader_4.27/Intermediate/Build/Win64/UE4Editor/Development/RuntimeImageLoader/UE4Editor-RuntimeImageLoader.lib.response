@@ -1,0 +1,34 @@
+/NOLOGO
+/errorReport:prompt
+/MACHINE:x64
+/SUBSYSTEM:WINDOWS
+/DEF
+/NAME:"UE4Editor-RuntimeImageLoader.dll"
+/IGNORE:4221
+/NODEFAULTLIB
+"C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Development\Engine\SharedPCH.Engine.ShadowErrors.h.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Intermediate\Build\Win64\UE4Editor\Development\RuntimeImageLoader\CubemapUtils.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Intermediate\Build\Win64\UE4Editor\Development\RuntimeImageLoader\PNGHelpers.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Intermediate\Build\Win64\UE4Editor\Development\RuntimeImageLoader\QOIHelpers.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Intermediate\Build\Win64\UE4Editor\Development\RuntimeImageLoader\TGAHelpers.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Intermediate\Build\Win64\UE4Editor\Development\RuntimeImageLoader\TIFFLoader.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Intermediate\Build\Win64\UE4Editor\Development\RuntimeImageLoader\ImageReaderFactory.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Intermediate\Build\Win64\UE4Editor\Development\RuntimeImageLoader\ImageReaderHttp.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Intermediate\Build\Win64\UE4Editor\Development\RuntimeImageLoader\ImageReaderLocal.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Intermediate\Build\Win64\UE4Editor\Development\RuntimeImageLoader\RuntimeRHITexture2DFactory.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Intermediate\Build\Win64\UE4Editor\Development\RuntimeImageLoader\RuntimeRHITextureCubeFactory.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Intermediate\Build\Win64\UE4Editor\Development\RuntimeImageLoader\RuntimeTexture2DResource.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Intermediate\Build\Win64\UE4Editor\Development\RuntimeImageLoader\RuntimeTextureCubeResource.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Intermediate\Build\Win64\UE4Editor\Development\RuntimeImageLoader\RuntimeTextureFactory.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Intermediate\Build\Win64\UE4Editor\Development\RuntimeImageLoader\RuntimeTextureResource.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Intermediate\Build\Win64\UE4Editor\Development\RuntimeImageLoader\RuntimeImageData.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Intermediate\Build\Win64\UE4Editor\Development\RuntimeImageLoader\RuntimeImageLoader.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Intermediate\Build\Win64\UE4Editor\Development\RuntimeImageLoader\RuntimeImageLoaderModule.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Intermediate\Build\Win64\UE4Editor\Development\RuntimeImageLoader\RuntimeImageReader.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Intermediate\Build\Win64\UE4Editor\Development\RuntimeImageLoader\RuntimeImageUtils.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Intermediate\Build\Win64\UE4Editor\Development\RuntimeImageLoader\RuntimeImageLoader.gen.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Intermediate\Build\Win64\UE4Editor\Development\RuntimeImageLoader\RuntimeImageLoader.init.gen.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Intermediate\Build\Win64\UE4Editor\Development\RuntimeImageLoader\RuntimeImageReader.gen.cpp.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Intermediate\Build\Win64\UE4Editor\Development\RuntimeImageLoader\RuntimeTextureFactory.gen.cpp.obj"
+"C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Development\Default.rc2.res"
+/OUT:"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Intermediate\Build\Win64\UE4Editor\Development\RuntimeImageLoader\UE4Editor-RuntimeImageLoader.lib"

@@ -1,0 +1,27 @@
+{
+	"OutputFiles": [
+		"CubemapUtils.cpp.obj",
+		"PNGHelpers.cpp.obj",
+		"QOIHelpers.cpp.obj",
+		"TGAHelpers.cpp.obj",
+		"TIFFLoader.cpp.obj",
+		"ImageReaderFactory.cpp.obj",
+		"ImageReaderHttp.cpp.obj",
+		"ImageReaderLocal.cpp.obj",
+		"RuntimeRHITexture2DFactory.cpp.obj",
+		"RuntimeRHITextureCubeFactory.cpp.obj",
+		"RuntimeTexture2DResource.cpp.obj",
+		"RuntimeTextureCubeResource.cpp.obj",
+		"RuntimeTextureFactory.cpp.obj",
+		"RuntimeTextureResource.cpp.obj",
+		"RuntimeImageData.cpp.obj",
+		"RuntimeImageLoader.cpp.obj",
+		"RuntimeImageLoaderModule.cpp.obj",
+		"RuntimeImageReader.cpp.obj",
+		"RuntimeImageUtils.cpp.obj",
+		"RuntimeImageLoader.gen.cpp.obj",
+		"RuntimeImageLoader.init.gen.cpp.obj",
+		"RuntimeImageReader.gen.cpp.obj",
+		"RuntimeTextureFactory.gen.cpp.obj"
+	]
+}

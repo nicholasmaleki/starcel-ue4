@@ -1,0 +1,14 @@
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Intermediate\Build\Win64\UE4Editor\Development\RuntimeImageLoader\Definitions.RuntimeImageLoader.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Source\RuntimeImageLoader\Public\RuntimeImageUtils.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Source\RuntimeImageLoader\Public\RuntimeImageData.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\ImageCore\Public\ImageCore.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Classes\Engine/TextureCube.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\TextureCube.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\ImageWrapper\Public\IImageWrapperModule.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\ImageWrapper\Public\IImageWrapper.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Public\HDRLoader.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Public\DDSLoader.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Source\RuntimeImageLoader\Private\Helpers/TGAHelpers.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Source\RuntimeImageLoader\Private\Helpers/PNGHelpers.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Source\RuntimeImageLoader\Private\Helpers/TIFFLoader.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\RuntimeImageLoader_4.27\Source\RuntimeImageLoader\Private\Helpers/QOIHelpers.h

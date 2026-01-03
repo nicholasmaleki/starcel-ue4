@@ -1,0 +1,22 @@
+{
+	"RemapUnityFiles": 
+	{
+		"Module.LargeData.cpp.obj": [
+			"LargeDataObject.cpp.obj",
+			"LargeFloat.cpp.obj",
+			"LargeInt.cpp.obj",
+			"LargeString.cpp.obj",
+			"LargeTensor.cpp.obj",
+			"LargeTensorRegion.cpp.obj"
+		],
+		"Module.LargeData.gen.cpp.obj": [
+			"LargeData.init.gen.cpp.obj",
+			"LargeDataObject.gen.cpp.obj",
+			"LargeFloat.gen.cpp.obj",
+			"LargeInt.gen.cpp.obj",
+			"LargeString.gen.cpp.obj",
+			"LargeTensor.gen.cpp.obj",
+			"LargeTensorRegion.gen.cpp.obj"
+		]
+	}
+}

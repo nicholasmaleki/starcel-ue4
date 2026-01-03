@@ -1,0 +1,14 @@
+// Copyright 2022 Peter Leontev. All Rights Reserved.
+
+#pragma once
+
+#include "CoreMinimal.h"
+
+class IImageReader
+{
+public:
+    virtual TArray<uint8> ReadImage(const FString& ImageURI) = 0;
+    virtual FString GetLastError() const { return TEXT(""); };
+    virtual void Flush() = 0;
+    virtual void Cancel() = 0;
+};

@@ -1,0 +1,170 @@
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Development\SaveExtensionEditor\Definitions.SaveExtensionEditor.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/SaveExtension/Source/Editor/Private/Asset/AssetTypeAction_SavePreset.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\Editor\Private\Asset\AssetTypeAction_SavePreset.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\Editor\Private\SaveExtensionEditor.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Slate\Public\Framework/Docking/LayoutExtender.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\Kismet\Public\WorkflowOrientedApp/WorkflowTabManager.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\Kismet\Public\WorkflowOrientedApp/WorkflowTabFactory.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\Kismet\Public\BlueprintEditorModes.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\Kismet\Public\BlueprintEditor.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\Kismet\Public\BlueprintEditorModule.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\Kismet\Public\WorkflowOrientedApp/WorkflowCentricApplication.h
+C:\UE_4.27Chaos_Source\Engine\Source\Developer/Merge/Public/Merge.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\Kismet\Public\WorkflowOrientedApp/ApplicationMode.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\Kismet\Public\BlueprintEditorTabs.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\UnrealEd\Public\EdGraphUtilities.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\Editor\Private\SaveActorEditorTabSummoner.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\Kismet\Public\WorkflowOrientedApp/WorkflowUObjectDocuments.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\Editor\Private\SSaveActorSettingsItem.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\Editor\Public\ISaveExtensionEditor.h
+C:\UE_4.27Chaos_Source\Engine\Source\Developer\AssetTools\Public\AssetTypeCategories.h
+C:\UE_4.27Chaos_Source\Engine\Source\Developer\AssetTools\Public\AssetTypeActions_Base.h
+C:\UE_4.27Chaos_Source\Engine\Source\Developer\AssetTools\Public\IAssetTools.h
+C:\UE_4.27Chaos_Source\Engine\Source\Developer\AssetTools\Public\IAssetTypeActions.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\UnrealEd\Classes\ThumbnailRendering/ThumbnailManager.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\UnrealEd\Classes\ThumbnailRendering/ThumbnailRenderer.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\UnrealEd\ThumbnailRenderer.generated.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\UnrealEd\ThumbnailManager.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\UnrealEd\Public\AutomatedAssetImportData.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\UnrealEd\AutomatedAssetImportData.generated.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\AssetTools\IAssetTools.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Developer\AssetTools\Public\AssetToolsModule.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\UnrealEd\Public\Toolkits/AssetEditorManager.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\UnrealEd\Public\Toolkits/SimpleAssetEditor.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\SavePreset.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/NoExportTypes.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/PropertyAccessUtil.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/UnitConversion.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/UnitConversion.inl
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Internationalization/PolyglotTextData.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\Misc/ClassFilter.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtension\ClassFilter.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtension\SavePreset.generated.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/SaveExtension/Source/Editor/Private/Asset/AssetTypeAction_SlotData.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\Editor\Private\Asset\AssetTypeAction_SlotData.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\SlotData.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\ISaveExtension.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Classes\Engine/LevelScriptActor.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\LevelScriptActor.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Classes\GameFramework/SaveGame.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\SaveGame.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\Serialization/ObjectAndNameAsStringProxyArchive.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Serialization/NameAsStringProxyArchive.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\Serialization/Records.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtension\Records.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\Serialization/LevelRecords.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\LevelFilter.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtension\LevelFilter.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtension\LevelRecords.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtension\SlotData.generated.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/SaveExtension/Source/Editor/Private/Asset/AssetTypeAction_SlotInfo.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\Editor\Private\Asset\AssetTypeAction_SlotInfo.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\SlotInfo.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtension\SlotInfo.generated.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/SaveExtension/Source/Editor/Private/Asset/SavePresetFactory.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\Editor\Private\Asset\SavePresetFactory.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtensionEditor\SavePresetFactory.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\UnrealEd\Public\Kismet2/KismetEditorUtilities.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/SaveExtension/Source/Editor/Private/Asset/SlotDataFactory.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\Editor\Private\Asset\SlotDataFactory.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtensionEditor\SlotDataFactory.generated.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/SaveExtension/Source/Editor/Private/Asset/SlotInfoFactory.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\Editor\Private\Asset\SlotInfoFactory.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtensionEditor\SlotInfoFactory.generated.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/SaveExtension/Source/Editor/Private/Customizations/ClassFilter/ClassFilterHelpers.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\Editor\Private\Customizations\ClassFilter\ClassFilterHelpers.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\Editor\Private\Customizations\ClassFilter\ClassFilterNode.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\ClassViewer\Public\ClassViewerModule.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\UnrealEd\Public\PackageTools.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\UnrealEd\PackageTools.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\AssetRegistry\Public\AssetRegistryModule.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\AssetRegistry\Public\AssetRegistry/AssetRegistryModule.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\AssetRegistry\Public\AssetRegistry/IAssetRegistry.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\Misc/AssetRegistryInterface.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\AssetRegistry\IAssetRegistry.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\UnrealEd\Public\EditorDirectories.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\UnrealEd\Public\Dialogs/Dialogs.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\ContentBrowser\Public\IContentBrowserSingleton.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\ContentBrowserData\Public\ContentBrowserItem.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\ContentBrowserData\Public\ContentBrowserItemData.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\ContentBrowserData\ContentBrowserItem.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\ContentBrowser\Public\ContentBrowserDelegates.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\ContentBrowserData\Public\ContentBrowserDataLegacyBridge.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\ContentBrowserData\Public\ContentBrowserDataMenuContexts.h
+C:\UE_4.27Chaos_Source\Engine\Source\Developer\CollectionManager\Public\CollectionManagerTypes.h
+C:\UE_4.27Chaos_Source\Engine\Source\Developer\SourceControl\Public\ISourceControlState.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\ContentBrowserData\ContentBrowserDataMenuContexts.generated.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\ContentBrowserData\ContentBrowserDataLegacyBridge.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\ContentBrowser\Public\ContentBrowserModule.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\GameProjectGeneration/Public/GameProjectGenerationModule.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Projects\Public\ModuleDescriptor.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Json\Public\Serialization/JsonWriter.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Json\Public\Serialization/JsonTypes.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\GameProjectGeneration\Public\AddToProjectConfig.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\UnrealEd\Public\SourceCodeNavigation.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/FeedbackContext.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/SlowTaskStack.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\Misc/HotReloadInterface.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/CoreRedirects.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Classes\Animation/AnimBlueprint.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\AnimBlueprint.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\Editor\Private\Customizations\ClassFilter\UnloadedBlueprintData.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor/ClassViewer/Private/ClassViewerNode.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\ClassViewer\Public\ClassViewerFilter.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\UnrealEd\Classes\Settings/ClassViewerSettings.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\UnrealEd\ClassViewerSettings.generated.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/SaveExtension/Source/Editor/Private/Customizations/ClassFilter/ClassFilterNode.cpp
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/SaveExtension/Source/Editor/Private/Customizations/ClassFilter/SClassFilter.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\Editor\Private\Customizations\ClassFilter\SClassFilter.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\GameplayTags\Public\GameplayTagsModule.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\GameplayTags\Classes\GameplayTagContainer.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\GameplayTags\GameplayTagContainer.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\GameplayTags\Classes\GameplayTagsManager.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\GameplayTags\GameplayTagsManager.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Slate\Public\Widgets/Input/SHyperlink.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Slate\Public\Widgets/Accessibility/SlateAccessibleWidgets.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Slate\Public\Widgets/Input/SSearchBox.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Slate\Public\Widgets/Layout/SScaleBox.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Slate\SScaleBox.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Slate\Public\Widgets/Notifications/SNotificationList.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Slate\Public\Framework/Notifications/NotificationManager.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\GameplayTags\Classes\GameplayTagsSettings.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\GameplayTags\Public\GameplayTagRedirectors.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\GameplayTags\GameplayTagRedirectors.generated.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\GameplayTags\GameplayTagsSettings.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\ClassViewer\Public\ClassViewerProjectSettings.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\ClassViewer\ClassViewerProjectSettings.generated.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/SaveExtension/Source/Editor/Private/Customizations/ClassFilter/UnloadedBlueprintData.cpp
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/SaveExtension/Source/Editor/Private/Customizations/SavePresetDetails.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\Editor\Private\Customizations\SavePresetDetails.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\PropertyEditor\Public\IDetailCustomization.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\PropertyEditor\Public\DetailLayoutBuilder.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\PropertyEditor\Public\IDetailPropertyRow.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\PropertyEditor\Public\DetailCategoryBuilder.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\PropertyEditor\Public\IDetailCustomNodeBuilder.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\PropertyEditor\Public\DetailBuilderTypes.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\PropertyEditor\Public\DetailWidgetRow.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/SaveExtension/Source/Editor/Private/Customizations/SClassFilterGraphPin.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\Editor\Private\Customizations\SClassFilterGraphPin.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\GraphEditor\Public\SGraphPin.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\GraphEditor\Public\SGraphNode.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\GraphEditor\Public\SNodePanel.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\GraphEditor\Public\MarqueeOperation.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\Editor\Private\Customizations\SEClassFilterCustomization.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/SaveExtension/Source/Editor/Private/Customizations/SEActorClassFilterCustomization.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\Editor\Private\Customizations/SEActorClassFilterCustomization.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/SaveExtension/Source/Editor/Private/Customizations/SEClassFilterCustomization.cpp
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/SaveExtension/Source/Editor/Private/Customizations/SEComponentClassFilterCustomization.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\Editor\Private\Customizations/SEComponentClassFilterCustomization.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/SaveExtension/Source/Editor/Private/SaveActorEditorTabSummoner.cpp
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\Kismet\Public\SSCSEditor.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Classes\Engine/SCS_Node.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Classes\Engine/SimpleConstructionScript.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\SimpleConstructionScript.generated.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\SCS_Node.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\UnrealEd\Public\SComponentClassCombo.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\SlateCore\Public\Styling/SlateIconFinder.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\UnrealEd\Public\Kismet2/BlueprintEditorUtils.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/SaveExtension/Source/Editor/Private/SaveExtensionEditor.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\Editor\Private\Customizations/SEClassFilterGraphPanelPinFactory.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/SaveExtension/Source/Editor/Private/SSaveActorSettingsItem.cpp

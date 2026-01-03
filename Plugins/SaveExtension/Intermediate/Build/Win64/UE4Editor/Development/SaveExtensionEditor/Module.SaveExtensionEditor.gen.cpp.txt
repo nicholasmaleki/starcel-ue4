@@ -1,0 +1,54 @@
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Development\SaveExtensionEditor\Definitions.SaveExtensionEditor.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/SaveExtension/Intermediate/Build/Win64/UE4Editor/Inc/SaveExtensionEditor/SaveExtensionEditor.init.gen.cpp
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/GeneratedCppIncludes.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/MetaData.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/SaveExtension/Intermediate/Build/Win64/UE4Editor/Inc/SaveExtensionEditor/SavePresetFactory.gen.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\Editor/Private/Asset/SavePresetFactory.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\SavePreset.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/NoExportTypes.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/PropertyAccessUtil.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/UnitConversion.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/UnitConversion.inl
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Internationalization/PolyglotTextData.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\Misc/ClassFilter.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtension\ClassFilter.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtension\SavePreset.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Developer\AssetTools\Public\AssetTypeActions_Base.h
+C:\UE_4.27Chaos_Source\Engine\Source\Developer\AssetTools\Public\IAssetTools.h
+C:\UE_4.27Chaos_Source\Engine\Source\Developer\AssetTools\Public\AssetTypeCategories.h
+C:\UE_4.27Chaos_Source\Engine\Source\Developer\AssetTools\Public\IAssetTypeActions.h
+C:\UE_4.27Chaos_Source\Engine\Source\Developer/Merge/Public/Merge.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\UnrealEd\Classes\ThumbnailRendering/ThumbnailManager.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\UnrealEd\Classes\ThumbnailRendering/ThumbnailRenderer.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\UnrealEd\ThumbnailRenderer.generated.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\UnrealEd\ThumbnailManager.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\UnrealEd\Public\AutomatedAssetImportData.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\UnrealEd\AutomatedAssetImportData.generated.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\AssetTools\IAssetTools.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Developer\AssetTools\Public\AssetToolsModule.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\UnrealEd\Public\Toolkits/AssetEditorManager.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\UnrealEd\Public\Toolkits/SimpleAssetEditor.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtensionEditor\SavePresetFactory.generated.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/SaveExtension/Intermediate/Build/Win64/UE4Editor/Inc/SaveExtensionEditor/SlotDataFactory.gen.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\Editor/Private/Asset/SlotDataFactory.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\SlotData.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\ISaveExtension.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Classes\Engine/LevelScriptActor.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\LevelScriptActor.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Classes\GameFramework/SaveGame.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\SaveGame.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\Serialization/ObjectAndNameAsStringProxyArchive.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Serialization/NameAsStringProxyArchive.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\Serialization/Records.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtension\Records.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\Serialization/LevelRecords.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\LevelFilter.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtension\LevelFilter.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtension\LevelRecords.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtension\SlotData.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtensionEditor\SlotDataFactory.generated.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/SaveExtension/Intermediate/Build/Win64/UE4Editor/Inc/SaveExtensionEditor/SlotInfoFactory.gen.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\Editor/Private/Asset/SlotInfoFactory.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\SlotInfo.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtension\SlotInfo.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtensionEditor\SlotInfoFactory.generated.h
