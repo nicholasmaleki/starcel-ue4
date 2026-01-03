@@ -170,7 +170,7 @@ void EmptyLinkFunctionForGeneratedCodeLargeString() {}
 		}
 		return OuterClass;
 	}
-	IMPLEMENT_CLASS(ULargeString, 2492020160);
+	IMPLEMENT_CLASS(ULargeString, 2011264899);
 	template<> LARGEDATA_API UClass* StaticClass<ULargeString>()
 	{
 		return ULargeString::StaticClass();

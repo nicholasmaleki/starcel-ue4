@@ -1,0 +1,93 @@
+// Copyright Epic Games, Inc. All Rights Reserved.
+/*===========================================================================
+	Generated code exported from UnrealHeaderTool.
+	DO NOT modify this manually! Edit the corresponding .h files instead!
+===========================================================================*/
+
+#include "UObject/ObjectMacros.h"
+#include "UObject/ScriptMacros.h"
+
+PRAGMA_DISABLE_DEPRECATION_WARNINGS
+#ifdef LARGEDATA_LargeTensorMPFRDataObject_generated_h
+#error "LargeTensorMPFRDataObject.generated.h already included, missing '#pragma once' in LargeTensorMPFRDataObject.h"
+#endif
+#define LARGEDATA_LargeTensorMPFRDataObject_generated_h
+
+#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeTensorMPFRDataObject_h_25_SPARSE_DATA
+#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeTensorMPFRDataObject_h_25_RPC_WRAPPERS
+#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeTensorMPFRDataObject_h_25_RPC_WRAPPERS_NO_PURE_DECLS
+#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeTensorMPFRDataObject_h_25_INCLASS_NO_PURE_DECLS \
+private: \
+	static void StaticRegisterNativesULargeTensorMPFRDataObject(); \
+	friend struct Z_Construct_UClass_ULargeTensorMPFRDataObject_Statics; \
+public: \
+	DECLARE_CLASS(ULargeTensorMPFRDataObject, ULargeDataObject, COMPILED_IN_FLAGS(0), CASTCLASS_None, TEXT("/Script/LargeData"), NO_API) \
+	DECLARE_SERIALIZER(ULargeTensorMPFRDataObject)
+
+
+#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeTensorMPFRDataObject_h_25_INCLASS \
+private: \
+	static void StaticRegisterNativesULargeTensorMPFRDataObject(); \
+	friend struct Z_Construct_UClass_ULargeTensorMPFRDataObject_Statics; \
+public: \
+	DECLARE_CLASS(ULargeTensorMPFRDataObject, ULargeDataObject, COMPILED_IN_FLAGS(0), CASTCLASS_None, TEXT("/Script/LargeData"), NO_API) \
+	DECLARE_SERIALIZER(ULargeTensorMPFRDataObject)
+
+
+#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeTensorMPFRDataObject_h_25_STANDARD_CONSTRUCTORS \
+	/** Standard constructor, called after all reflected properties have been initialized */ \
+	NO_API ULargeTensorMPFRDataObject(const FObjectInitializer& ObjectInitializer); \
+	DEFINE_DEFAULT_OBJECT_INITIALIZER_CONSTRUCTOR_CALL(ULargeTensorMPFRDataObject) \
+	DECLARE_VTABLE_PTR_HELPER_CTOR(NO_API, ULargeTensorMPFRDataObject); \
+	DEFINE_VTABLE_PTR_HELPER_CTOR_CALLER(ULargeTensorMPFRDataObject); \
+private: \
+	/** Private move- and copy-constructors, should never be used */ \
+	NO_API ULargeTensorMPFRDataObject(ULargeTensorMPFRDataObject&&); \
+	NO_API ULargeTensorMPFRDataObject(const ULargeTensorMPFRDataObject&); \
+public:
+
+
+#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeTensorMPFRDataObject_h_25_ENHANCED_CONSTRUCTORS \
+private: \
+	/** Private move- and copy-constructors, should never be used */ \
+	NO_API ULargeTensorMPFRDataObject(ULargeTensorMPFRDataObject&&); \
+	NO_API ULargeTensorMPFRDataObject(const ULargeTensorMPFRDataObject&); \
+public: \
+	DECLARE_VTABLE_PTR_HELPER_CTOR(NO_API, ULargeTensorMPFRDataObject); \
+	DEFINE_VTABLE_PTR_HELPER_CTOR_CALLER(ULargeTensorMPFRDataObject); \
+	DEFINE_DEFAULT_CONSTRUCTOR_CALL(ULargeTensorMPFRDataObject)
+
+
+#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeTensorMPFRDataObject_h_25_PRIVATE_PROPERTY_OFFSET
+#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeTensorMPFRDataObject_h_22_PROLOG
+#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeTensorMPFRDataObject_h_25_GENERATED_BODY_LEGACY \
+PRAGMA_DISABLE_DEPRECATION_WARNINGS \
+public: \
+	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeTensorMPFRDataObject_h_25_PRIVATE_PROPERTY_OFFSET \
+	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeTensorMPFRDataObject_h_25_SPARSE_DATA \
+	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeTensorMPFRDataObject_h_25_RPC_WRAPPERS \
+	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeTensorMPFRDataObject_h_25_INCLASS \
+	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeTensorMPFRDataObject_h_25_STANDARD_CONSTRUCTORS \
+public: \
+PRAGMA_ENABLE_DEPRECATION_WARNINGS
+
+
+#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeTensorMPFRDataObject_h_25_GENERATED_BODY \
+PRAGMA_DISABLE_DEPRECATION_WARNINGS \
+public: \
+	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeTensorMPFRDataObject_h_25_PRIVATE_PROPERTY_OFFSET \
+	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeTensorMPFRDataObject_h_25_SPARSE_DATA \
+	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeTensorMPFRDataObject_h_25_RPC_WRAPPERS_NO_PURE_DECLS \
+	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeTensorMPFRDataObject_h_25_INCLASS_NO_PURE_DECLS \
+	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeTensorMPFRDataObject_h_25_ENHANCED_CONSTRUCTORS \
+private: \
+PRAGMA_ENABLE_DEPRECATION_WARNINGS
+
+
+template<> LARGEDATA_API UClass* StaticClass<class ULargeTensorMPFRDataObject>();
+
+#undef CURRENT_FILE_ID
+#define CURRENT_FILE_ID Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeTensorMPFRDataObject_h
+
+
+PRAGMA_ENABLE_DEPRECATION_WARNINGS

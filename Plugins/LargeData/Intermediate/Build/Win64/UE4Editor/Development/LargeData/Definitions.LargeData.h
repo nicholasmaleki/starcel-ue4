@@ -51,7 +51,12 @@
 #define UE_IS_ENGINE_MODULE 0
 #define UE_PROJECT_NAME Starcel9
 #define UE_TARGET_NAME Starcel9Editor
-#define UE_ENABLE_INCLUDE_ORDER_DEPRECATED_IN_5_2 1
+#define NOMINMAX 1
+#define _MSC_VER 14.29.30159
+#define __GNUC__ 0
+#define __clang__ 0
+#define __GNUC_PATCHLEVEL__ 0
+#define __GNUC_MINOR__ 0
 #define H5_BUILT_AS_DYNAMIC_LIB 1
 #define H5_USE_18_API 1
 #define UE_MODULE_NAME "LargeData"
@@ -70,7 +75,12 @@
 #define CORE_API DLLIMPORT
 #define TRACELOG_API DLLIMPORT
 #define JSON_API DLLIMPORT
-#define UE_ENABLE_INCLUDE_ORDER_DEPRECATED_IN_5_2 1
+#define NOMINMAX 1
+#define _MSC_VER 14.29.30159
+#define __GNUC__ 0
+#define __clang__ 0
+#define __GNUC_PATCHLEVEL__ 0
+#define __GNUC_MINOR__ 0
 #define H5_BUILT_AS_DYNAMIC_LIB 1
 #define H5_USE_18_API 1
 #define LARGEDATA_API DLLEXPORT
