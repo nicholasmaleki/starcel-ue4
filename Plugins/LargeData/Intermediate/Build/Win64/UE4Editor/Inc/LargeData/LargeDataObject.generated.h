@@ -14,7 +14,7 @@ PRAGMA_DISABLE_DEPRECATION_WARNINGS
 #endif
 #define LARGEDATA_LargeDataObject_generated_h
 
-#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_26_GENERATED_BODY \
+#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_29_GENERATED_BODY \
 	friend struct Z_Construct_UScriptStruct_FLargeChunkArray_Statics; \
 	LARGEDATA_API static class UScriptStruct* StaticStruct(); \
 	typedef FFastArraySerializer Super;
@@ -22,7 +22,7 @@ PRAGMA_DISABLE_DEPRECATION_WARNINGS
 
 template<> LARGEDATA_API UScriptStruct* StaticStruct<struct FLargeChunkArray>();
 
-#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_11_GENERATED_BODY \
+#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_13_GENERATED_BODY \
 	friend struct Z_Construct_UScriptStruct_FLargeDataChunk_Statics; \
 	LARGEDATA_API static class UScriptStruct* StaticStruct(); \
 	typedef FFastArraySerializerItem Super;
@@ -30,10 +30,22 @@ template<> LARGEDATA_API UScriptStruct* StaticStruct<struct FLargeChunkArray>();
 
 template<> LARGEDATA_API UScriptStruct* StaticStruct<struct FLargeDataChunk>();
 
-#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_48_SPARSE_DATA
-#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_48_RPC_WRAPPERS
-#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_48_RPC_WRAPPERS_NO_PURE_DECLS
-#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_48_INCLASS_NO_PURE_DECLS \
+#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_51_SPARSE_DATA
+#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_51_RPC_WRAPPERS \
+ \
+	DECLARE_FUNCTION(execOnRep_ReplicatedChunks); \
+	DECLARE_FUNCTION(execApplyChunks); \
+	DECLARE_FUNCTION(execBuildChunks);
+
+
+#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_51_RPC_WRAPPERS_NO_PURE_DECLS \
+ \
+	DECLARE_FUNCTION(execOnRep_ReplicatedChunks); \
+	DECLARE_FUNCTION(execApplyChunks); \
+	DECLARE_FUNCTION(execBuildChunks);
+
+
+#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_51_INCLASS_NO_PURE_DECLS \
 private: \
 	static void StaticRegisterNativesULargeDataObject(); \
 	friend struct Z_Construct_UClass_ULargeDataObject_Statics; \
@@ -51,7 +63,7 @@ private: \
 public:
 
 
-#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_48_INCLASS \
+#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_51_INCLASS \
 private: \
 	static void StaticRegisterNativesULargeDataObject(); \
 	friend struct Z_Construct_UClass_ULargeDataObject_Statics; \
@@ -69,9 +81,9 @@ private: \
 public:
 
 
-#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_48_STANDARD_CONSTRUCTORS \
+#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_51_STANDARD_CONSTRUCTORS \
 	/** Standard constructor, called after all reflected properties have been initialized */ \
-	NO_API ULargeDataObject(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get()); \
+	NO_API ULargeDataObject(const FObjectInitializer& ObjectInitializer); \
 	DEFINE_DEFAULT_OBJECT_INITIALIZER_CONSTRUCTOR_CALL(ULargeDataObject) \
 	DECLARE_VTABLE_PTR_HELPER_CTOR(NO_API, ULargeDataObject); \
 	DEFINE_VTABLE_PTR_HELPER_CTOR_CALLER(ULargeDataObject); \
@@ -82,9 +94,7 @@ private: \
 public:
 
 
-#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_48_ENHANCED_CONSTRUCTORS \
-	/** Standard constructor, called after all reflected properties have been initialized */ \
-	NO_API ULargeDataObject(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get()) : Super(ObjectInitializer) { }; \
+#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_51_ENHANCED_CONSTRUCTORS \
 private: \
 	/** Private move- and copy-constructors, should never be used */ \
 	NO_API ULargeDataObject(ULargeDataObject&&); \
@@ -92,31 +102,31 @@ private: \
 public: \
 	DECLARE_VTABLE_PTR_HELPER_CTOR(NO_API, ULargeDataObject); \
 	DEFINE_VTABLE_PTR_HELPER_CTOR_CALLER(ULargeDataObject); \
-	DEFINE_DEFAULT_OBJECT_INITIALIZER_CONSTRUCTOR_CALL(ULargeDataObject)
+	DEFINE_DEFAULT_CONSTRUCTOR_CALL(ULargeDataObject)
 
 
-#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_48_PRIVATE_PROPERTY_OFFSET
-#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_45_PROLOG
-#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_48_GENERATED_BODY_LEGACY \
+#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_51_PRIVATE_PROPERTY_OFFSET
+#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_48_PROLOG
+#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_51_GENERATED_BODY_LEGACY \
 PRAGMA_DISABLE_DEPRECATION_WARNINGS \
 public: \
-	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_48_PRIVATE_PROPERTY_OFFSET \
-	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_48_SPARSE_DATA \
-	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_48_RPC_WRAPPERS \
-	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_48_INCLASS \
-	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_48_STANDARD_CONSTRUCTORS \
+	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_51_PRIVATE_PROPERTY_OFFSET \
+	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_51_SPARSE_DATA \
+	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_51_RPC_WRAPPERS \
+	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_51_INCLASS \
+	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_51_STANDARD_CONSTRUCTORS \
 public: \
 PRAGMA_ENABLE_DEPRECATION_WARNINGS
 
 
-#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_48_GENERATED_BODY \
+#define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_51_GENERATED_BODY \
 PRAGMA_DISABLE_DEPRECATION_WARNINGS \
 public: \
-	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_48_PRIVATE_PROPERTY_OFFSET \
-	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_48_SPARSE_DATA \
-	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_48_RPC_WRAPPERS_NO_PURE_DECLS \
-	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_48_INCLASS_NO_PURE_DECLS \
-	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_48_ENHANCED_CONSTRUCTORS \
+	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_51_PRIVATE_PROPERTY_OFFSET \
+	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_51_SPARSE_DATA \
+	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_51_RPC_WRAPPERS_NO_PURE_DECLS \
+	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_51_INCLASS_NO_PURE_DECLS \
+	Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeDataObject_h_51_ENHANCED_CONSTRUCTORS \
 private: \
 PRAGMA_ENABLE_DEPRECATION_WARNINGS
 

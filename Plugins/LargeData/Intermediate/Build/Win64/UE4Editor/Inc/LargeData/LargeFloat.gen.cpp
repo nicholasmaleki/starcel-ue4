@@ -175,7 +175,7 @@ void EmptyLinkFunctionForGeneratedCodeLargeFloat() {}
 		}
 		return OuterClass;
 	}
-	IMPLEMENT_CLASS(ULargeFloat, 4015275455);
+	IMPLEMENT_CLASS(ULargeFloat, 2646759810);
 	template<> LARGEDATA_API UClass* StaticClass<ULargeFloat>()
 	{
 		return ULargeFloat::StaticClass();

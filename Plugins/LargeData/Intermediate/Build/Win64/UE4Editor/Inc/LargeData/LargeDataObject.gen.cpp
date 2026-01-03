@@ -63,7 +63,9 @@ static struct FScriptStruct_LargeData_StaticRegisterNativesFLargeChunkArray
 	};
 #if WITH_METADATA
 	const UE4CodeGen_Private::FMetaDataPairParam Z_Construct_UScriptStruct_FLargeChunkArray_Statics::Struct_MetaDataParams[] = {
+		{ "Comment", "/** Array of chunks using FastArraySerializer for efficient replication */" },
 		{ "ModuleRelativePath", "Public/LargeDataObject.h" },
+		{ "ToolTip", "Array of chunks using FastArraySerializer for efficient replication" },
 	};
 #endif
 	void* Z_Construct_UScriptStruct_FLargeChunkArray_Statics::NewStructOps()
@@ -109,7 +111,7 @@ static struct FScriptStruct_LargeData_StaticRegisterNativesFLargeChunkArray
 		}
 		return ReturnStruct;
 	}
-	uint32 Get_Z_Construct_UScriptStruct_FLargeChunkArray_Hash() { return 1369021052U; }
+	uint32 Get_Z_Construct_UScriptStruct_FLargeChunkArray_Hash() { return 2633011270U; }
 
 static_assert(std::is_polymorphic<FLargeDataChunk>() == std::is_polymorphic<FFastArraySerializerItem>(), "USTRUCT FLargeDataChunk cannot be polymorphic unless super FFastArraySerializerItem is polymorphic");
 
@@ -159,7 +161,9 @@ static struct FScriptStruct_LargeData_StaticRegisterNativesFLargeDataChunk
 	};
 #if WITH_METADATA
 	const UE4CodeGen_Private::FMetaDataPairParam Z_Construct_UScriptStruct_FLargeDataChunk_Statics::Struct_MetaDataParams[] = {
+		{ "Comment", "/** Single chunk of large data, replicated efficiently */" },
 		{ "ModuleRelativePath", "Public/LargeDataObject.h" },
+		{ "ToolTip", "Single chunk of large data, replicated efficiently" },
 	};
 #endif
 	void* Z_Construct_UScriptStruct_FLargeDataChunk_Statics::NewStructOps()
@@ -219,9 +223,111 @@ static struct FScriptStruct_LargeData_StaticRegisterNativesFLargeDataChunk
 		}
 		return ReturnStruct;
 	}
-	uint32 Get_Z_Construct_UScriptStruct_FLargeDataChunk_Hash() { return 1366242710U; }
+	uint32 Get_Z_Construct_UScriptStruct_FLargeDataChunk_Hash() { return 1498156929U; }
+	DEFINE_FUNCTION(ULargeDataObject::execOnRep_ReplicatedChunks)
+	{
+		P_FINISH;
+		P_NATIVE_BEGIN;
+		P_THIS->OnRep_ReplicatedChunks();
+		P_NATIVE_END;
+	}
+	DEFINE_FUNCTION(ULargeDataObject::execApplyChunks)
+	{
+		P_FINISH;
+		P_NATIVE_BEGIN;
+		P_THIS->ApplyChunks();
+		P_NATIVE_END;
+	}
+	DEFINE_FUNCTION(ULargeDataObject::execBuildChunks)
+	{
+		P_FINISH;
+		P_NATIVE_BEGIN;
+		P_THIS->BuildChunks();
+		P_NATIVE_END;
+	}
 	void ULargeDataObject::StaticRegisterNativesULargeDataObject()
 	{
+		UClass* Class = ULargeDataObject::StaticClass();
+		static const FNameNativePtrPair Funcs[] = {
+			{ "ApplyChunks", &ULargeDataObject::execApplyChunks },
+			{ "BuildChunks", &ULargeDataObject::execBuildChunks },
+			{ "OnRep_ReplicatedChunks", &ULargeDataObject::execOnRep_ReplicatedChunks },
+		};
+		FNativeFunctionRegistrar::RegisterFunctions(Class, Funcs, UE_ARRAY_COUNT(Funcs));
+	}
+	struct Z_Construct_UFunction_ULargeDataObject_ApplyChunks_Statics
+	{
+#if WITH_METADATA
+		static const UE4CodeGen_Private::FMetaDataPairParam Function_MetaDataParams[];
+#endif
+		static const UE4CodeGen_Private::FFunctionParams FuncParams;
+	};
+#if WITH_METADATA
+	const UE4CodeGen_Private::FMetaDataPairParam Z_Construct_UFunction_ULargeDataObject_ApplyChunks_Statics::Function_MetaDataParams[] = {
+		{ "Category", "Large Data" },
+		{ "Comment", "/** Apply replicated chunks back to object data */" },
+		{ "ModuleRelativePath", "Public/LargeDataObject.h" },
+		{ "ToolTip", "Apply replicated chunks back to object data" },
+	};
+#endif
+	const UE4CodeGen_Private::FFunctionParams Z_Construct_UFunction_ULargeDataObject_ApplyChunks_Statics::FuncParams = { (UObject*(*)())Z_Construct_UClass_ULargeDataObject, nullptr, "ApplyChunks", nullptr, nullptr, 0, nullptr, 0, RF_Public|RF_Transient|RF_MarkAsNative, (EFunctionFlags)0x04020401, 0, 0, METADATA_PARAMS(Z_Construct_UFunction_ULargeDataObject_ApplyChunks_Statics::Function_MetaDataParams, UE_ARRAY_COUNT(Z_Construct_UFunction_ULargeDataObject_ApplyChunks_Statics::Function_MetaDataParams)) };
+	UFunction* Z_Construct_UFunction_ULargeDataObject_ApplyChunks()
+	{
+		static UFunction* ReturnFunction = nullptr;
+		if (!ReturnFunction)
+		{
+			UE4CodeGen_Private::ConstructUFunction(ReturnFunction, Z_Construct_UFunction_ULargeDataObject_ApplyChunks_Statics::FuncParams);
+		}
+		return ReturnFunction;
+	}
+	struct Z_Construct_UFunction_ULargeDataObject_BuildChunks_Statics
+	{
+#if WITH_METADATA
+		static const UE4CodeGen_Private::FMetaDataPairParam Function_MetaDataParams[];
+#endif
+		static const UE4CodeGen_Private::FFunctionParams FuncParams;
+	};
+#if WITH_METADATA
+	const UE4CodeGen_Private::FMetaDataPairParam Z_Construct_UFunction_ULargeDataObject_BuildChunks_Statics::Function_MetaDataParams[] = {
+		{ "Category", "Large Data" },
+		{ "Comment", "/** Build chunks from current object data */" },
+		{ "ModuleRelativePath", "Public/LargeDataObject.h" },
+		{ "ToolTip", "Build chunks from current object data" },
+	};
+#endif
+	const UE4CodeGen_Private::FFunctionParams Z_Construct_UFunction_ULargeDataObject_BuildChunks_Statics::FuncParams = { (UObject*(*)())Z_Construct_UClass_ULargeDataObject, nullptr, "BuildChunks", nullptr, nullptr, 0, nullptr, 0, RF_Public|RF_Transient|RF_MarkAsNative, (EFunctionFlags)0x04020401, 0, 0, METADATA_PARAMS(Z_Construct_UFunction_ULargeDataObject_BuildChunks_Statics::Function_MetaDataParams, UE_ARRAY_COUNT(Z_Construct_UFunction_ULargeDataObject_BuildChunks_Statics::Function_MetaDataParams)) };
+	UFunction* Z_Construct_UFunction_ULargeDataObject_BuildChunks()
+	{
+		static UFunction* ReturnFunction = nullptr;
+		if (!ReturnFunction)
+		{
+			UE4CodeGen_Private::ConstructUFunction(ReturnFunction, Z_Construct_UFunction_ULargeDataObject_BuildChunks_Statics::FuncParams);
+		}
+		return ReturnFunction;
+	}
+	struct Z_Construct_UFunction_ULargeDataObject_OnRep_ReplicatedChunks_Statics
+	{
+#if WITH_METADATA
+		static const UE4CodeGen_Private::FMetaDataPairParam Function_MetaDataParams[];
+#endif
+		static const UE4CodeGen_Private::FFunctionParams FuncParams;
+	};
+#if WITH_METADATA
+	const UE4CodeGen_Private::FMetaDataPairParam Z_Construct_UFunction_ULargeDataObject_OnRep_ReplicatedChunks_Statics::Function_MetaDataParams[] = {
+		{ "Comment", "/** Called when replicated chunks change on clients */" },
+		{ "ModuleRelativePath", "Public/LargeDataObject.h" },
+		{ "ToolTip", "Called when replicated chunks change on clients" },
+	};
+#endif
+	const UE4CodeGen_Private::FFunctionParams Z_Construct_UFunction_ULargeDataObject_OnRep_ReplicatedChunks_Statics::FuncParams = { (UObject*(*)())Z_Construct_UClass_ULargeDataObject, nullptr, "OnRep_ReplicatedChunks", nullptr, nullptr, 0, nullptr, 0, RF_Public|RF_Transient|RF_MarkAsNative, (EFunctionFlags)0x00080401, 0, 0, METADATA_PARAMS(Z_Construct_UFunction_ULargeDataObject_OnRep_ReplicatedChunks_Statics::Function_MetaDataParams, UE_ARRAY_COUNT(Z_Construct_UFunction_ULargeDataObject_OnRep_ReplicatedChunks_Statics::Function_MetaDataParams)) };
+	UFunction* Z_Construct_UFunction_ULargeDataObject_OnRep_ReplicatedChunks()
+	{
+		static UFunction* ReturnFunction = nullptr;
+		if (!ReturnFunction)
+		{
+			UE4CodeGen_Private::ConstructUFunction(ReturnFunction, Z_Construct_UFunction_ULargeDataObject_OnRep_ReplicatedChunks_Statics::FuncParams);
+		}
+		return ReturnFunction;
 	}
 	UClass* Z_Construct_UClass_ULargeDataObject_NoRegister()
 	{
@@ -230,6 +336,7 @@ static struct FScriptStruct_LargeData_StaticRegisterNativesFLargeDataChunk
 	struct Z_Construct_UClass_ULargeDataObject_Statics
 	{
 		static UObject* (*const DependentSingletons[])();
+		static const FClassFunctionLinkInfo FuncInfo[];
 #if WITH_METADATA
 		static const UE4CodeGen_Private::FMetaDataPairParam Class_MetaDataParams[];
 #endif
@@ -237,6 +344,10 @@ static struct FScriptStruct_LargeData_StaticRegisterNativesFLargeDataChunk
 		static const UE4CodeGen_Private::FMetaDataPairParam NewProp_ReplicatedChunks_MetaData[];
 #endif
 		static const UE4CodeGen_Private::FStructPropertyParams NewProp_ReplicatedChunks;
+#if WITH_METADATA
+		static const UE4CodeGen_Private::FMetaDataPairParam NewProp_DynamicChunkSize_MetaData[];
+#endif
+		static const UE4CodeGen_Private::FIntPropertyParams NewProp_DynamicChunkSize;
 		static const UE4CodeGen_Private::FPropertyParamsBase* const PropPointers[];
 		static const FCppClassTypeInfoStatic StaticCppClassTypeInfo;
 		static const UE4CodeGen_Private::FClassParams ClassParams;
@@ -245,22 +356,41 @@ static struct FScriptStruct_LargeData_StaticRegisterNativesFLargeDataChunk
 		(UObject* (*)())Z_Construct_UClass_UObject,
 		(UObject* (*)())Z_Construct_UPackage__Script_LargeData,
 	};
+	const FClassFunctionLinkInfo Z_Construct_UClass_ULargeDataObject_Statics::FuncInfo[] = {
+		{ &Z_Construct_UFunction_ULargeDataObject_ApplyChunks, "ApplyChunks" }, // 1826158085
+		{ &Z_Construct_UFunction_ULargeDataObject_BuildChunks, "BuildChunks" }, // 598076690
+		{ &Z_Construct_UFunction_ULargeDataObject_OnRep_ReplicatedChunks, "OnRep_ReplicatedChunks" }, // 3377233876
+	};
 #if WITH_METADATA
 	const UE4CodeGen_Private::FMetaDataPairParam Z_Construct_UClass_ULargeDataObject_Statics::Class_MetaDataParams[] = {
 		{ "BlueprintType", "true" },
+		{ "Comment", "/** Base class for objects that replicate large data in chunks */" },
 		{ "IncludePath", "LargeDataObject.h" },
 		{ "IsBlueprintBase", "true" },
 		{ "ModuleRelativePath", "Public/LargeDataObject.h" },
+		{ "ToolTip", "Base class for objects that replicate large data in chunks" },
 	};
 #endif
 #if WITH_METADATA
 	const UE4CodeGen_Private::FMetaDataPairParam Z_Construct_UClass_ULargeDataObject_Statics::NewProp_ReplicatedChunks_MetaData[] = {
+		{ "Comment", "/** Replicated chunks */" },
 		{ "ModuleRelativePath", "Public/LargeDataObject.h" },
+		{ "ToolTip", "Replicated chunks" },
 	};
 #endif
-	const UE4CodeGen_Private::FStructPropertyParams Z_Construct_UClass_ULargeDataObject_Statics::NewProp_ReplicatedChunks = { "ReplicatedChunks", nullptr, (EPropertyFlags)0x0010000000000020, UE4CodeGen_Private::EPropertyGenFlags::Struct, RF_Public|RF_Transient|RF_MarkAsNative, 1, STRUCT_OFFSET(ULargeDataObject, ReplicatedChunks), Z_Construct_UScriptStruct_FLargeChunkArray, METADATA_PARAMS(Z_Construct_UClass_ULargeDataObject_Statics::NewProp_ReplicatedChunks_MetaData, UE_ARRAY_COUNT(Z_Construct_UClass_ULargeDataObject_Statics::NewProp_ReplicatedChunks_MetaData)) };
+	const UE4CodeGen_Private::FStructPropertyParams Z_Construct_UClass_ULargeDataObject_Statics::NewProp_ReplicatedChunks = { "ReplicatedChunks", "OnRep_ReplicatedChunks", (EPropertyFlags)0x0010000100000020, UE4CodeGen_Private::EPropertyGenFlags::Struct, RF_Public|RF_Transient|RF_MarkAsNative, 1, STRUCT_OFFSET(ULargeDataObject, ReplicatedChunks), Z_Construct_UScriptStruct_FLargeChunkArray, METADATA_PARAMS(Z_Construct_UClass_ULargeDataObject_Statics::NewProp_ReplicatedChunks_MetaData, UE_ARRAY_COUNT(Z_Construct_UClass_ULargeDataObject_Statics::NewProp_ReplicatedChunks_MetaData)) };
+#if WITH_METADATA
+	const UE4CodeGen_Private::FMetaDataPairParam Z_Construct_UClass_ULargeDataObject_Statics::NewProp_DynamicChunkSize_MetaData[] = {
+		{ "Category", "Large Data" },
+		{ "Comment", "/** Optional: dynamically set chunk size (in bytes) */" },
+		{ "ModuleRelativePath", "Public/LargeDataObject.h" },
+		{ "ToolTip", "Optional: dynamically set chunk size (in bytes)" },
+	};
+#endif
+	const UE4CodeGen_Private::FIntPropertyParams Z_Construct_UClass_ULargeDataObject_Statics::NewProp_DynamicChunkSize = { "DynamicChunkSize", nullptr, (EPropertyFlags)0x0010000000000005, UE4CodeGen_Private::EPropertyGenFlags::Int, RF_Public|RF_Transient|RF_MarkAsNative, 1, STRUCT_OFFSET(ULargeDataObject, DynamicChunkSize), METADATA_PARAMS(Z_Construct_UClass_ULargeDataObject_Statics::NewProp_DynamicChunkSize_MetaData, UE_ARRAY_COUNT(Z_Construct_UClass_ULargeDataObject_Statics::NewProp_DynamicChunkSize_MetaData)) };
 	const UE4CodeGen_Private::FPropertyParamsBase* const Z_Construct_UClass_ULargeDataObject_Statics::PropPointers[] = {
 		(const UE4CodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_ULargeDataObject_Statics::NewProp_ReplicatedChunks,
+		(const UE4CodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_ULargeDataObject_Statics::NewProp_DynamicChunkSize,
 	};
 	const FCppClassTypeInfoStatic Z_Construct_UClass_ULargeDataObject_Statics::StaticCppClassTypeInfo = {
 		TCppClassTypeTraits<ULargeDataObject>::IsAbstract,
@@ -270,11 +400,11 @@ static struct FScriptStruct_LargeData_StaticRegisterNativesFLargeDataChunk
 		nullptr,
 		&StaticCppClassTypeInfo,
 		DependentSingletons,
-		nullptr,
+		FuncInfo,
 		Z_Construct_UClass_ULargeDataObject_Statics::PropPointers,
 		nullptr,
 		UE_ARRAY_COUNT(DependentSingletons),
-		0,
+		UE_ARRAY_COUNT(FuncInfo),
 		UE_ARRAY_COUNT(Z_Construct_UClass_ULargeDataObject_Statics::PropPointers),
 		0,
 		0x001000A0u,
@@ -289,7 +419,7 @@ static struct FScriptStruct_LargeData_StaticRegisterNativesFLargeDataChunk
 		}
 		return OuterClass;
 	}
-	IMPLEMENT_CLASS(ULargeDataObject, 3409659468);
+	IMPLEMENT_CLASS(ULargeDataObject, 447980169);
 	template<> LARGEDATA_API UClass* StaticClass<ULargeDataObject>()
 	{
 		return ULargeDataObject::StaticClass();

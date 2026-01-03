@@ -10,8 +10,14 @@ public class LargeData : ModuleRules
 	public LargeData(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
-		PublicDefinitions.Add("UE_ENABLE_INCLUDE_ORDER_DEPRECATED_IN_5_2=1");
 		CppStandard = CppStandardVersion.Cpp17;
+
+		PublicDefinitions.Add("NOMINMAX");
+		PublicDefinitions.Add("_MSC_VER=" + Target.WindowsPlatform.CompilerVersion);
+		PublicDefinitions.Add("__GNUC__=0");
+		PublicDefinitions.Add("__clang__=0");
+		PublicDefinitions.Add("__GNUC_PATCHLEVEL__=0");
+		PublicDefinitions.Add("__GNUC_MINOR__=0");
 
 		PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "../../ThirdParty/MPFR/include"));
 		PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "../../ThirdParty/GMP/include"));

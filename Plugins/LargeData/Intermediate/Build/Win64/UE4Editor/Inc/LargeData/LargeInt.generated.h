@@ -59,7 +59,7 @@ public:
 
 #define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeInt_h_17_ENHANCED_CONSTRUCTORS \
 	/** Standard constructor, called after all reflected properties have been initialized */ \
-	NO_API ULargeInt(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get()) : Super(ObjectInitializer) { }; \
+	NO_API ULargeInt() { }; \
 private: \
 	/** Private move- and copy-constructors, should never be used */ \
 	NO_API ULargeInt(ULargeInt&&); \
@@ -67,7 +67,7 @@ private: \
 public: \
 	DECLARE_VTABLE_PTR_HELPER_CTOR(NO_API, ULargeInt); \
 	DEFINE_VTABLE_PTR_HELPER_CTOR_CALLER(ULargeInt); \
-	DEFINE_DEFAULT_OBJECT_INITIALIZER_CONSTRUCTOR_CALL(ULargeInt)
+	DEFINE_DEFAULT_CONSTRUCTOR_CALL(ULargeInt)
 
 
 #define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeInt_h_17_PRIVATE_PROPERTY_OFFSET

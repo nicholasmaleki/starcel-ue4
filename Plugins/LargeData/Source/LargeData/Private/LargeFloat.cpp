@@ -7,7 +7,7 @@ void ULargeFloat::SetFromString(const FString& InDecimal, int32 PrecisionBits)
 
     TArray<uint8> Bytes;
     SerializeToBytes(Bytes);
-    BuildChunks(Bytes);
+    BuildChunks();
 }
 
 FString ULargeFloat::ToString() const
