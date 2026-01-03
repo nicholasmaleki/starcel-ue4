@@ -1,0 +1,105 @@
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Development\SaveExtensionTest\Definitions.SaveExtensionTest.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/SaveExtension/Source/Test/Private/Files.spec.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\Test\Private\Automatron.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Public\EngineUtils.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\ProfilingDebugging/ProfilingHelpers.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Classes\GameFramework/WorldSettings.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Classes\GameFramework/DamageType.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\DamageType.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Classes\GameFramework/Info.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\Info.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Classes\Sound/AudioVolume.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Classes\GameFramework/Volume.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\Volume.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Classes\Sound\ReverbSettings.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\ReverbSettings.generated.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\AudioVolume.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/ConstructorHelpers.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\WorldSettings.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Classes\GameFramework/GameModeBase.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Classes\Engine/ServerStatReplicator.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\ServerStatReplicator.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/CoreOnline.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Classes\GameFramework/PlayerController.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Classes\GameFramework/OnlineReplStructs.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\OnlineReplStructs.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Classes\GameFramework/PlayerMuteList.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\PlayerMuteList.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Classes\Camera/PlayerCameraManager.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\PlayerCameraManager.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Classes\Components/InputComponent.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\InputComponent.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Classes\GameFramework/ForceFeedbackEffect.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\ForceFeedbackEffect.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Classes\GameFramework/UpdateLevelVisibilityLevelInfo.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\UpdateLevelVisibilityLevelInfo.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\ApplicationCore\Public\GenericPlatform/IInputInterface.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\PlayerController.generated.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\GameModeBase.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\EngineSettings\Classes\GameMapsSettings.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\EngineSettings\GameMapsSettings.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/AutomationTest.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\HAL/PlatformStackWalk.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Windows/WindowsPlatformStackWalk.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\GenericPlatform/GenericPlatformStackWalk.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/FeedbackContext.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/SlowTaskStack.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Async/Async.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Internationalization/Regex.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Public\Tests/AutomationCommon.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\UnrealEd\Public\Tests/AutomationEditorPromotionCommon.h
+C:\UE_4.27Chaos_Source\Engine\Source\Developer\FunctionalTesting\Public\AutomationScreenshotOptions.h
+C:\UE_4.27Chaos_Source\Engine\Source\Developer\FunctionalTesting\Public\AutomationViewSettings.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\FunctionalTesting\AutomationViewSettings.generated.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\FunctionalTesting\AutomationScreenshotOptions.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\Test\Private\Helpers/TestActor.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtensionTest\TestActor.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\SaveManager.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\Delegates.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\SlotInfo.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Classes\GameFramework/SaveGame.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\SaveGame.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtension\SlotInfo.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\LatentActions/DeleteSlotsAction.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\LatentActions/LoadGameAction.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\LatentActions/SaveGameAction.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\LevelStreamingNotifier.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtension\LevelStreamingNotifier.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\Multithreading/ScopedTaskManager.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\Misc/TypeTraits.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\Multithreading/Delegates.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\SaveExtensionInterface.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\LevelFilter.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\SavePreset.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/NoExportTypes.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/PropertyAccessUtil.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/UnitConversion.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/UnitConversion.inl
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Internationalization/PolyglotTextData.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\Misc/ClassFilter.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtension\ClassFilter.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtension\SavePreset.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtension\LevelFilter.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtension\SaveExtensionInterface.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\Serialization/SlotDataTask.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\ISaveExtension.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\SlotData.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Classes\Engine/LevelScriptActor.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\LevelScriptActor.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\Serialization/ObjectAndNameAsStringProxyArchive.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Serialization/NameAsStringProxyArchive.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\Serialization/Records.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtension\Records.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\Serialization/LevelRecords.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtension\LevelRecords.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtension\SlotData.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtension\SlotDataTask.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtension\SaveManager.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\SaveExtension\Public\FileAdapter.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Public\PlatformFeatures.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/SaveExtension/Source/Test/Private/GameInstance.spec.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\Test\Private\Helpers/TestGameInstance.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Intermediate\Build\Win64\UE4Editor\Inc\SaveExtensionTest\TestGameInstance.generated.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/SaveExtension/Source/Test/Private/Save.spec.cpp
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/SaveExtension/Source/Test/Private/SaveExtensionTest.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\SaveExtension\Source\Test\Public\SaveExtensionTest.h

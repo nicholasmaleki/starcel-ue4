@@ -1,0 +1,26 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "LargeData",
+	"Description": "Extremely large dynamic int, float, string, and tensor data with replication",
+	"Category": "Math",
+	"CreatedBy": "Nick Maleki",
+	"CreatedByURL": "https://github.com/nicholasmaleki",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": true,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"EnabledByDefault": true,
+	"CanContainContent": true,
+	"Modules": [
+		{
+			"Name": "LargeData",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}

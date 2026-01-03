@@ -1,0 +1,16 @@
+{
+	"RemapUnityFiles": 
+	{
+		"Module.SaveExtensionTest.cpp.obj": [
+			"Files.spec.cpp.obj",
+			"GameInstance.spec.cpp.obj",
+			"Save.spec.cpp.obj",
+			"SaveExtensionTest.cpp.obj"
+		],
+		"Module.SaveExtensionTest.gen.cpp.obj": [
+			"SaveExtensionTest.init.gen.cpp.obj",
+			"TestActor.gen.cpp.obj",
+			"TestGameInstance.gen.cpp.obj"
+		]
+	}
+}
