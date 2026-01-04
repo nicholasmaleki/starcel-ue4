@@ -1,0 +1,19 @@
+{
+	"RemapUnityFiles": 
+	{
+		"Module.WindowCapture2D.cpp.obj": [
+			"CaptureMachine.cpp.obj",
+			"WCWorkerThread.cpp.obj",
+			"WindowCapture2D.cpp.obj",
+			"WindowCaptureActor.cpp.obj",
+			"WindowCaptureWidget.cpp.obj"
+		],
+		"Module.WindowCapture2D.gen.cpp.obj": [
+			"CaptureMachine.gen.cpp.obj",
+			"CaptureMachineProperties.gen.cpp.obj",
+			"WindowCapture2D.init.gen.cpp.obj",
+			"WindowCaptureActor.gen.cpp.obj",
+			"WindowCaptureWidget.gen.cpp.obj"
+		]
+	}
+}
