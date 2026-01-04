@@ -3,15 +3,15 @@
 	{
 		"Module.LargeData.cpp.obj": [
 			"LargeByteDataObject.cpp.obj",
+			"LargeData.cpp.obj",
 			"LargeDataObject.cpp.obj",
-			"LargeString.cpp.obj",
-			"LargeData.cpp.obj"
+			"LargeString.cpp.obj"
 		],
 		"Module.LargeData.gen.cpp.obj": [
 			"LargeByteDataObject.gen.cpp.obj",
+			"LargeData.init.gen.cpp.obj",
 			"LargeDataObject.gen.cpp.obj",
-			"LargeString.gen.cpp.obj",
-			"LargeData.init.gen.cpp.obj"
+			"LargeString.gen.cpp.obj"
 		]
 	}
 }
