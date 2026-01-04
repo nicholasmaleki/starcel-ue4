@@ -1,0 +1,12 @@
+/NOLOGO
+/errorReport:prompt
+/MACHINE:x64
+/SUBSYSTEM:WINDOWS
+/DEF
+/NAME:"UnrealEditor-WindowCapture2D.dll"
+/IGNORE:4221
+/NODEFAULTLIB
+"C:\Users\xnick\Documents\Unreal Projects\starcelspice\Intermediate\Build\Win64\GATest3Editor\Development\Engine\SharedPCH.Engine.ShadowErrors.InclOrderUnreal5_0.h.obj"
+"C:\Users\xnick\Documents\Unreal Projects\starcelspice\Plugins\WindowCapture2D\Intermediate\Build\Win64\UnrealEditor\Development\WindowCapture2D\Module.WindowCapture2D.cpp.obj"
+"C:\Users\xnick\Documents\Unreal Projects\starcelspice\Plugins\WindowCapture2D\Intermediate\Build\Win64\UnrealEditor\Development\WindowCapture2D\Default.rc2.res"
+/OUT:"C:\Users\xnick\Documents\Unreal Projects\starcelspice\Plugins\WindowCapture2D\Intermediate\Build\Win64\UnrealEditor\Development\WindowCapture2D\UnrealEditor-WindowCapture2D.lib"

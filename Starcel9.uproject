@@ -77,6 +77,25 @@
 		{
 			"Name": "LWCExtreme",
 			"Enabled": false
+		},
+		{
+			"Name": "RuntimeImageLoader",
+			"Enabled": true,
+			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/e8d4771b882343199acaf995c32a5fea"
+		},
+		{
+			"Name": "SaveExtension",
+			"Enabled": true,
+			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/content/91084f43b68047ac8da6fc88a7467936"
+		},
+		{
+			"Name": "RuntimeMeshLoader",
+			"Enabled": true
+		},
+		{
+			"Name": "WindowCapture2D",
+			"Enabled": true,
+			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/content/4ea251016c084e0da00e7392231e24b3"
 		}
 	]
 }

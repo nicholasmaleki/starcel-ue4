@@ -2,24 +2,16 @@
 	"RemapUnityFiles": 
 	{
 		"Module.LargeData.cpp.obj": [
-			"LargeInt.cpp.obj",
-			"LargeString.cpp.obj",
-			"LargeTensorRegion.cpp.obj",
 			"LargeByteDataObject.cpp.obj",
 			"LargeDataObject.cpp.obj",
-			"LargeFloat.cpp.obj",
-			"LargeTensor.cpp.obj",
-			"LargeTensorMPFRDataObject.cpp.obj"
+			"LargeString.cpp.obj",
+			"LargeData.cpp.obj"
 		],
 		"Module.LargeData.gen.cpp.obj": [
-			"LargeTensorRegion.gen.cpp.obj",
 			"LargeByteDataObject.gen.cpp.obj",
-			"LargeData.init.gen.cpp.obj",
 			"LargeDataObject.gen.cpp.obj",
-			"LargeFloat.gen.cpp.obj",
-			"LargeInt.gen.cpp.obj",
 			"LargeString.gen.cpp.obj",
-			"LargeTensorMPFRDataObject.gen.cpp.obj"
+			"LargeData.init.gen.cpp.obj"
 		]
 	}
 }

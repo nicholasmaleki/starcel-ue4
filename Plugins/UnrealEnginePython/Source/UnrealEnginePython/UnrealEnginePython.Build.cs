@@ -3,6 +3,7 @@
 using UnrealBuildTool;
 using System.IO;
 using System.Collections.Generic;
+using System;
 
 public class UnrealEnginePython : ModuleRules
 {
@@ -15,10 +16,14 @@ public class UnrealEnginePython : ModuleRules
     //private string pythonHome = "/usr/local/Cellar/python3/3.6.0/Frameworks/Python.framework/Versions/3.6/";
     // on Linux an include;libs syntax is expected:
     //private string pythonHome = "/usr/local/include/python3.6;/usr/local/lib/libpython3.6.so";
-
+    private static readonly string UserFolderPath = Environment.GetEnvironmentVariable("USERPROFILE") ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
     private string[] windowsKnownPaths =
     {
-       // "C:/Program Files/Python37",
+        UserFolderPath + "/AppData/Local/Programs/Python/Python39",
+        UserFolderPath + "/AppData/Local/Programs/Python/Python38",
+        "C:/Program Files/Python39",
+        "C:/Program Files/Python38",
+        "C:/Program Files/Python37",
         "C:/Program Files/Python36",
         "C:/Program Files/Python35",
         "C:/Python27",

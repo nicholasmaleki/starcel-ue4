@@ -1,0 +1,3 @@
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LargeData\Intermediate\Build\Win64\UE4Editor\Development\LargeData\Definitions.LargeData.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LargeData\Source\LargeData\Public\LargeTensorRegion.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LargeData\Intermediate\Build\Win64\UE4Editor\Inc\LargeData\LargeTensorRegion.generated.h

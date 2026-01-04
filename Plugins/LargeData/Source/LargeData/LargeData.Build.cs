@@ -11,13 +11,11 @@ public class LargeData : ModuleRules
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 		CppStandard = CppStandardVersion.Cpp17;
+		//PublicDefinitions.Add("NOMINMAX");
+		//PublicDefinitions.Add("WIN32_LEAN_AND_MEAN");
+		//PublicDefinitions.Add("BOOST_NO_CLANG=1");
+		//PublicDefinitions.Add("BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE=1");
 
-		PublicDefinitions.Add("NOMINMAX");
-		PublicDefinitions.Add("_MSC_VER=" + Target.WindowsPlatform.CompilerVersion);
-		PublicDefinitions.Add("__GNUC__=0");
-		PublicDefinitions.Add("__clang__=0");
-		PublicDefinitions.Add("__GNUC_PATCHLEVEL__=0");
-		PublicDefinitions.Add("__GNUC_MINOR__=0");
 
 		PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "../../ThirdParty/MPFR/include"));
 		PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "../../ThirdParty/GMP/include"));
@@ -42,6 +40,18 @@ public class LargeData : ModuleRules
 		PublicDelayLoadDLLs.Add("hdf5_hl.dll");
 		PublicDelayLoadDLLs.Add("zlib.dll");
 		PublicDelayLoadDLLs.Add("aec.dll");
+
+		// Force isolated TU to compile without PCH
+		//string BridgeFile = Path.Combine(ModuleDirectory, "Private/XTensorBridge.cpp");
+		//if (File.Exists(BridgeFile))
+		//{
+		//	bUsePrecompiled = false;
+		//	bUseUnity = false;
+		//	// UE4/5 way to exclude from PCH
+		//	//Ruleset.AdditionalNonPCHFiles.Add(BridgeFile);
+		//	//bFasterWithoutPCH = true; // optional for the module
+		//	// or use: Target.BuildEnvironment = TargetBuildEnvironment.Unique;
+		//}
 
 		RuntimeDependencies.Add(
 			Path.Combine(BinPath, "mpfr-6.dll")
@@ -93,7 +103,8 @@ public class LargeData : ModuleRules
 				"NetCore",
 				"InputCore",
 				"RHI",
-				"RenderCore"
+				"RenderCore",
+				"XTensorBridge"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
