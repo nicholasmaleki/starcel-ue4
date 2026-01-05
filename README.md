@@ -68,6 +68,14 @@ Starcel is currently Windows only. It can be compiled on these Operating Systems
 Not currently, expect crashes and lost work. Eventually we will release a stable update. 
 
 
+## AR/VR integration? 
+Starcel-Panda3D had some [integration for AR glasses](https://github.com/nickmaleki/TCLRayneoAir2SDK). This functionality will return and there will be more functionality for VR soon. 
+
+
+## Can I make a 2D UI? 
+It is not recommended to control any elements in Starcel with a 2D UI. You can build a UI out of 3D elements in the 3D space and make it always display flat on the screen. However, if you need, you could use Tkinter, QT, etc. to make a 2D UI outside the game window. UnrealEnginePython has built in support for QT in Engine using Slate. This would render directly on top of the existing Starcel viewport. 
+
+
 ## UE5 and Python upgrade? 
 The latest edition of Starcel is written in Python 3.9 and Unreal Engine 4.27Chaos. This likely will not change for a while as Python cannot be upgraded as its C++ bindings have been deprecated and changed in Python 3.10. This will take a month or few to upgrade. An Unreal Engine 5 upgrade of the UnrealEnginePython plugin will require header, module, and api changes. This could take a month to upgrade. If you plan on working on this, message me for some info that should help you begin. 
 I do not plan on upgrading the project myself unless this project receives a lot of support and use. 

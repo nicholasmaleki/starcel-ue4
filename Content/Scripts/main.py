@@ -4,7 +4,7 @@ import os, sys, subprocess, urllib.request, socket, math, sympy, cmdix, fast_aut
 from unreal_engine import FVector, FRotator, FTransform, FHitResult, CLASS_CONFIG, CLASS_DEFAULT_CONFIG, CPF_CONFIG, CPF_GLOBAL_CONFIG, CPF_EXPOSE_ON_SPAWN, CPF_NET, CPF_REP_NOTIFY
 from unreal_engine.classes import Actor, Character, PlayerController, KismetMathLibrary, KismetSystemLibrary, Object, StrProperty, IntProperty
 from unreal_engine.enums import EInputEvent, ETraceTypeQuery, EDrawDebugTrace
-from symbols import Symbols
+from constants import Symbols
 # import builtins
 # import functools
 
