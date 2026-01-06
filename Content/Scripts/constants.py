@@ -266,3 +266,261 @@ class WorldSize():
         # 2.09024042 × 10^(-28)nm particle width by idiot math using electrons weight and size, 2 orders of magnitude difference between this and planck length
         self.photon_visible_weight = 4.42 * 10 ^ (-36)  # 9.70468767*10^(-15)nm by idiot math
         self.photon_gamma_weight = 2.21 * 10 ^ (-19)  # 485.234384nm by idiot math
+
+class FiniteRepetitionSelector():
+    # +1
+    # 1     2     3     4     5     6
+    # +2
+    # 0     2     4     6     8     10     12
+    #
+    # *2
+    # 2 + 2     4 + 4     8 + 8     16 + 16    32 + 32
+    #
+    # ^ 2
+    # 2 * 2     4 * 4     16 * 16     256 * 256
+    #
+    # ↑2
+    # 2 ^ 2 = 4     4 ^ 4     256 ^ 256
+    #
+    # ↑↑2
+    # 2↑2 = 4     4↑4 = 4 ^ 4 ^ 4 ^ 4
+    #
+    # 2↑↑2 = 2↑2 = 4
+    #
+    # 2↑↑↑↑2 = 2↑↑↑2 = 2↑↑2
+    #
+    # auto(negate/direction)?
+    # auto(negate/direction) threshold: 1
+    def __init__(self, current_operator = "+", current_operand = 2):
+        self.operators = ["C/S", "+", "*", "^", "↑", "↑↑"]
+        self.current_operator = current_operator
+        self.current_operand = current_operand
+        self.autonegate_threshold = 0.0
+        self.autonegate = False
+
+    def autonegate_value(self, value):
+        if self.autonegate:
+            if self.autonegate_threshold > value > -1 * self.autonegate_threshold:
+                return -1 * value
+        return value
+
+    def basic_tetration(self, a, b):
+        # a is the first input value and b is the second input value
+        total = a
+        for i in range(1, round(b)):
+            total = a ^ total
+        return total
+
+    def decrease_value(self, value):
+        value = self.autonegate_value(value)
+        if self.current_operator == self.operators[1]:
+            return value - self.current_operand
+        if self.current_operator == self.operators[2]:
+            return value / self.current_operand
+        if self.current_operator == self.operators[3]:
+            return pow(value, (1 / self.current_operand))
+        if self.current_operator == self.operators[4]:
+            return self.basic_tetration(value,self.current_operand)
+        return value
+
+    def increase_value(self, value):
+        value = self.autonegate_value(value)
+        if self.current_operator == self.operators[1]:
+            return value + self.current_operand
+        if self.current_operator == self.operators[2]:
+            return value * self.current_operand
+        if self.current_operator == self.operators[3]:
+            return pow(value, self.current_operand)
+        return value
+
+class SpatialDimensionSelector():
+    def __init__(self):
+        Line2 = [[-1.000000, 0.000000, 0.000000], [1.000000, 0.000000, 0.000000]]
+        Plane4 = [[0.000000, 1.000000, 0.000000], [1.000000, 0.000000, 0.000000], [0.000000, -1.000000, 0.000000],
+                  [-1.000000, 0.000000, 0.000000]]
+        Optimal6 = [[1.000000, 0.000000, 0.000000], [-1.000000, 0.000000, 0.000000], [0.000000, 1.000000, 0.000000],
+                    [0.000000, -1.000000, 0.000000], [0.000000, 0.000000, 1.000000], [0.000000, 0.000000, -1.000000]]
+        Optimal4 = [[0.577350, 0.577350, 0.577350], [-0.577350, -0.577350, 0.577350], [-0.577350, 0.577350, -0.577350],
+                    [0.577350, -0.577350, -0.577350]]
+        Wolfram5 = [[-1.000000, 0.000000, 0.000000], [1.000000, 0.000000, 0.000000], [0.000000, -0.866025, -0.500000],
+                    [0.000000, 0.866025, -0.500000], [0.000000, 0.000000, 1.000000]]
+        Optimal6_0 = [[1.000000, 0.000000, 0.000000], [-1.000000, 0.000000, 0.000000], [0.000000, 1.000000, 0.000000],
+                      [0.000000, -1.000000, 0.000000], [0.000000, 0.000000, 1.000000], [0.000000, 0.000000, -1.000000]]
+        Wolfram7 = [[0.000000, 0.000000, -1.000000], [0.000000, 0.000000, 1.000000], [1.000000, 0.000000, 0.000000],
+                    [0.309017, -0.951057, 0.000000], [0.309017, 0.951057, 0.000000], [-0.809017, -0.587785, 0.000000],
+                    [-0.809017, 0.587785, 0.000000]]
+        Optimal8 = [[0.859533, 0.000000, 0.511081], [-0.859533, 0.000000, 0.511081], [0.000000, 0.859533, 0.511081],
+                    [0.000000, -0.859533, 0.511081], [0.607781, 0.607781, -0.511081], [0.607781, -0.607781, -0.511081],
+                    [-0.607781, 0.607781, -0.511081], [-0.607781, -0.607781, -0.511081]]
+        Cube8 = [[0.577350, 0.577350, 0.577350], [-0.577350, 0.577350, 0.577350], [0.577350, -0.577350, 0.577350],
+                 [-0.577350, -0.577350, 0.577350], [0.577350, 0.577350, -0.577350], [-0.577350, 0.577350, -0.577350],
+                 [0.577350, -0.577350, -0.577350], [-0.577350, -0.577350, -0.577350]]
+        Wolfram9 = [[-0.37796447300922725, -0.6546536707079771, -0.6546536707079771],
+                    [-0.37796447300922725, -0.6546536707079771, 0.6546536707079771],
+                    [-0.37796447300922725, 0.6546536707079771, -0.6546536707079771],
+                    [-0.37796447300922725, 0.6546536707079771, 0.6546536707079771],
+                    [0.7559289460184545, 0., -0.6546536707079771], [0.7559289460184545, 0., 0.6546536707079771],
+                    [-1., 0., 0.], [0.5, -0.8660254037844386, 0.], [0.5, 0.8660254037844386, 0.]]
+        Wolfram10 = [[-0.8944271909999157, 0., -0.44721359549995787], [0.8944271909999157, 0., 0.44721359549995787],
+                     [-0.7236067977499789, -0.5257311121191336, 0.44721359549995787],
+                     [-0.7236067977499789, 0.5257311121191336, 0.44721359549995787],
+                     [-0.276393202250021, -0.85065080835204, -0.44721359549995787],
+                     [-0.276393202250021, 0.85065080835204, -0.44721359549995787],
+                     [0.276393202250021, -0.85065080835204, 0.44721359549995787],
+                     [0.276393202250021, 0.85065080835204, 0.44721359549995787],
+                     [0.7236067977499789, -0.5257311121191336, -0.44721359549995787],
+                     [0.7236067977499789, 0.5257311121191336, -0.44721359549995787]]
+        Wolfram11 = [[0., 0., 1.], [-0.8944271909999157, 0., -0.44721359549995787],
+                     [0.8944271909999157, 0., 0.44721359549995787],
+                     [-0.276393202250021, -0.85065080835204, -0.44721359549995787],
+                     [-0.276393202250021, 0.85065080835204, -0.44721359549995787],
+                     [0.276393202250021, -0.85065080835204, 0.44721359549995787],
+                     [0.276393202250021, 0.85065080835204, 0.44721359549995787],
+                     [-0.7236067977499789, -0.5257311121191336, 0.44721359549995787],
+                     [-0.7236067977499789, 0.5257311121191336, 0.44721359549995787],
+                     [0.7236067977499789, -0.5257311121191336, -0.44721359549995787],
+                     [0.7236067977499789, 0.5257311121191336, -0.44721359549995787]]
+        Optimal12 = [[0.850651, 0.000000, -0.525731], [0.525731, -0.850651, 0.000000], [0.000000, -0.525731, 0.850651],
+                     [0.850651, 0.000000, 0.525731], [-0.525731, -0.850651, 0.000000], [0.000000, 0.525731, -0.850651],
+                     [-0.850651, 0.000000, -0.525731], [-0.525731, 0.850651, 0.000000], [0.000000, 0.525731, 0.850651],
+                     [-0.850651, 0.000000, 0.525731], [0.525731, 0.850651, 0.000000], [0.000000, -0.525731, -0.850651]]
+
+# class Cylinder():
+#     def __init__(self, line_start, line_end, line_thickness, reparent_to):
+#         self.line_start = np.array(line_start)
+#         self.line_end = np.array(line_end)
+#         self.line_thickness = line_thickness
+#         self.line_midpoint = (np.array(line_start) + np.array(line_end)) / 2.0
+#         self.model = loader.loadModel("models/Cylinder.bam")
+#         self.model.reparent_to(reparent_to)
+#         euler_angles = look_at_rotation(self.line_midpoint, self.line_end)
+#         euler_angles = [x + 180 for x in euler_angles]
+#         self.model.setPosHprScale(self.line_midpoint[0], self.line_midpoint[1], self.line_midpoint[2], euler_angles[2]+90, euler_angles[1]+270, euler_angles[0], line_thickness, line_thickness, float(np.sqrt((self.line_end - self.line_start).dot((self.line_end - self.line_start))))/2)
+#
+#     def update(self, line_start, line_end, line_thickness):
+#         self.line_start = np.array(line_start)
+#         self.line_end = np.array(line_end)
+#         self.line_thickness = line_thickness
+#         self.line_midpoint = (np.array(line_start) + np.array(line_end)) / 2.0
+#         euler_angles = look_at_rotation(self.line_midpoint, self.line_end)
+#         euler_angles = [x + 180 for x in euler_angles] #[x + 360 if x < 0 else x for x in euler_angles]
+#         print(euler_angles) # roll, pitch, yaw
+#         self.model.setPosHprScale(self.line_midpoint[0], self.line_midpoint[1], self.line_midpoint[2], euler_angles[2]+90, euler_angles[1]+270, euler_angles[0], line_thickness, line_thickness, float(np.sqrt((self.line_end - self.line_start).dot((self.line_end - self.line_start))))/2)
+#
+#
+# class StdoutHandler:
+#     def __init__(self):
+#         self.last_output = ""
+#
+#     def start(self):
+#         self._handled_stdout = sys.stdout
+#         sys.stdout = self
+#
+#     def write(self, data: str):
+#         # write(data="") is called for the end kwarg in print(..., end="")
+#         if data:
+#             # print("does this work?")
+#             self.last_output += data
+#             self._handled_stdout.write(data)
+#
+#     def end(self):
+#         sys.stdout = self._handled_stdout
+#
+#     def flush(self):
+#         self._handled_stdout.flush()
+#
+#
+#
+#     def autocomplete(search_word):
+#         autocomplete = fast_autocomplete.AutoComplete(words=words)
+#         ac_output = []
+#         if search_word:
+#             ac_output = autocomplete.search(word=search_word[0])
+#         #print(ac_output)
+#         #return [''.join(x) for x in ac_output]
+#         return ['_autocomplete'] + ac_output
+#
+#     def plot(_):
+#         x, y, z = np.pi*np.mgrid[-1:1:7j, -1:1:7j, -1:1:7j]
+#         vol = np.cos(x) + np.cos(y) + np.cos(z)
+#         iso_val=0.0
+#         verts, faces, normals, values = marching_cubes(vol, iso_val, spacing=(0.4, 0.4, 0.4))
+#         return ("_vertices", [["X=%.3f"%x[0] + " Y=%.3f"%x[1] + " Z=%.3f"%x[2]]for x in verts] , "_faces", [["X=%s"%x[0] + " Y=%s"%x[1] + " Z=%s"%x[2]]for x in faces] , "_normals", [["X=%.3f"%x[0] + " Y=%.3f"%x[1] + " Z=%.3f"%x[2]]for x in normals])
+#
+#
+#
+#     # Linux Commands
+#     def ls(args):
+#         windows_command="dir /b /ogn"
+#         if not args or args is None:
+#             # cmdix.runcommandline(windows_command + " ".join(args))
+#             print(subprocess.check_output(windows_command.split(" "), shell=True, cwd=os.getcwd(), text=True))
+#             #return subprocess.run(windows_command.split(" "), capture_output=True, text=True, shell=True,cwd=os.path.dirname(os.path.realpath(__file__))).stdout
+#             #return subprocess.Popen(windows_command.split(" "), stdout=subprocess.PIPE, shell=True, cwd=os.path.dirname(os.path.realpath(__file__))).communicate()[0].decode('utf-8')
+#             #subprocess.check_output(windows_command.split(" "))
+#             #subprocess.run(windows_command.split(" "), capture_output=True, shell=True,cwd=os.getcwd()).stdout.decode('utf-8')
+#             # op = subprocess.Popen(windows_command.split(" "), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+#             # if op:
+#             #     o, e = op.communicate()
+#             #     # print(op.stdout.read())
+#             #     #print('Error: '  + e.decode('ascii'))
+#             #     #print('code: ' + str(proc.returncode))
+#             #     return o.decode('ascii')
+#         else:
+#             print(subprocess.check_output(windows_command.split(" ").append(args), shell=True, cwd=os.getcwd(), text=True))
+#             #return subprocess.run(windows_command.split(" ").append(args), capture_output=True, text=True).stdout
+#             #return subprocess.Popen(windows_command.split(" ").append(args), stdout=subprocess.PIPE, shell=True, cwd = os.path.dirname(os.path.realpath(__file__))).communicate()[0].decode('utf-8')
+#             # subprocess.check_output(windows_command.split(" ").append(args))
+#             #subprocess.run(windows_command.split(" ").append(args), shell=True)
+#             # op = subprocess.Popen(windows_command.split(" ").append(args), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+#             # if op:
+#             #     o, e = op.communicate()
+#             #     #print('Error: '  + e.decode('ascii'))
+#             #     #print('code: ' + str(proc.returncode))
+#             #     return o.decode('ascii')
+#
+#     def man(args):
+#         print((subprocess.run(["help"], shell=True, capture_output=True, text=True).stdout))
+#
+# self.stdout_handler.last_output = ""
+#             input_text = text
+#             print(text)
+#             parsed = input_text.strip().split(' ')
+#             print(locals().keys())
+#             if parsed[0] in list(cmdix.listcommands()):  # linux commands
+#                 output = cmdix.runcommandline(input_text)
+#             elif ((parsed[0]) in locals().keys()):  # functions defined in this file
+#                 print("customfunc called")
+#                 output = locals()[parsed[0]](parsed[1:])  # TODO: Support for no argument functions
+#             else:
+#                 # print("eval called")
+#                 try:
+#                     output = exec(
+#                         input_text)  # Executing of receieved statement. Exec relies on the stdout print statements to receive output whereas when this is switched to eval, output is sent back over the socket
+#                     # output = repr(self.stdout_handler.last_output)
+#                     # print(self.stdout_handler.last_output)
+#                 except Exception as e:
+#                     output = e
+#
+#             try:
+#                 if not str(output) or output is None or output == "":
+#                     # print("FFFF" + stdout_handler.last_output)
+#                     output = repr(self.stdout_handler.last_output)
+#                     # t.start()
+#                     # if output is None or output == "":
+#                     # output = self.tempoutput
+#             except:
+#                 pass
+#
+#
+### Begin Command Processing ###
+# list(cmdix.listcommands()): arch, base64, basename, bunzip2, bzip2, cal, cat, cp, crond, diff, dirname, env, expand, gunzip, gzip, httpd, init, kill, ln, logger, ls, md5sum, mkdir, mktemp, more, mv, nl, pwd, rm, rmdir, sendmail, seq, sh, sha1sum, sha224sum, sha256sum, sha384sum, sha512sum, shred, shuf, sleep, sort, tail, tar, touch, uname, uuidgen, wc, wget, yes, zip
+
+# cmd = ['echo', 'I like potatos']
+# proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+# o, e = proc.communicate()
+
+# print('Output: ' + o.decode('ascii'))
+# print('Error: '  + e.decode('ascii'))
+# print('code: ' + str(proc.returncode))
