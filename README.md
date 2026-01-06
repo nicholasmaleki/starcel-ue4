@@ -69,7 +69,7 @@ Not currently, expect crashes and lost work. Eventually we will release a stable
 
 
 ## AR/VR integration? 
-Starcel-Panda3D had some [integration for AR glasses](https://github.com/nickmaleki/TCLRayneoAir2SDK). This functionality will return and there will be more functionality for VR soon. 
+[Starcel-Panda3D](https://github.com/thejasonfisher/starcel-panda3d/) had some [integration for AR glasses](https://github.com/nickmaleki/TCLRayneoAir2SDK). This functionality will return and there will be more functionality for VR soon. 
 
 
 ## Can I make a 2D UI? 
