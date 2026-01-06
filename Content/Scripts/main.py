@@ -1,20 +1,10 @@
 import unreal_engine as ue
 import numpy as np
-import os, sys, subprocess, urllib.request, socket, math, sympy, cmdix, fast_autocomplete, numba, kingdon #numba_cuda
+import os, sys, subprocess, urllib.request, socket, math, sympy, cmdix, fast_autocomplete, numba, kingdon, dill #numba_cuda
 from unreal_engine import FVector, FRotator, FTransform, FHitResult, CLASS_CONFIG, CLASS_DEFAULT_CONFIG, CPF_CONFIG, CPF_GLOBAL_CONFIG, CPF_EXPOSE_ON_SPAWN, CPF_NET, CPF_REP_NOTIFY
 from unreal_engine.classes import Actor, Character, PlayerController, KismetMathLibrary, KismetSystemLibrary, Object, StrProperty, IntProperty
 from unreal_engine.enums import EInputEvent, ETraceTypeQuery, EDrawDebugTrace
-from constants import Symbols
-# import builtins
-# import functools
-
-# original_print = builtins.print
-#
-# def custom_print(*args, **kwargs):
-#     ue.log(*args, **kwargs)
-#
-# builtins.print = custom_print
-# print("Python print to ue.log working.")
+from constants import Constants, WorldSize
 
 ue.log('Hello i am a Python module')
 
