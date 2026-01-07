@@ -1,3 +1,5 @@
+import pickle
+
 class Constants:
     def __init__(self):
         self.default_alphabet = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r",
@@ -140,155 +142,15 @@ class Constants:
         # LeftShift, z, x, c, v, b, n, m,, , ., /, RightShift
         # LeftCtrl, Win, LeftAlt, Space, RightAlt, Win, Menu, RightCtrl
 
-        self.quotes = [ #TODO: pickle
-            "Why, where are you now?",
-            "You'd be nowhere",
-            "Their heads are gone",
-            "Visit either you like",
-            "You wouldn't have come here",
-            "Oh, you can't help that”, “We're all mad here. I'm mad. You're mad.",
-            "That depends a good deal on where you want to get to",
-            "Then it doesn't matter which way you go",
-            "If you only walk long enough",
-            "Oh, you're sure to do that",
-
-            "What did that to you?",
-            "Well, I better have a look",
-            "At least let me find it for you",
-            "What do you call yourself",
-            "You best be on your way",
-            "Fine",
-            "But, that's the end of it",
-            "Coming?",
-            "Times up.",
-            "Bloody big head",
-            "What happened that day was not my fault",
-            "Uh oh",
-            "Goodbye",
-            "I've always admired that hat",
-            "Since you won't be needing it anymore",
-            "It is a pity about all this",
-            "I was looking forward to see you-",
-            "I really do love that hat. I would wear it to all the finest occasions",
-            "Good morning everyone",
-            "Not impossible, merely unpossible",
-            "and do try not to break the past present or future",
-            "I'm right on time",
-
-            "Lose something?",
-            "That depends on where you want to get to",
-            "Then it really doesn't matter which way you go",
-            "You may have noticed that I am not all there myself",
-
-            "It looks like you're writing. Would you like help with that?",
-            "I notice you've been working late!",
-            "Would you like help formatting your document?",
-            "Do you want to change margins?",
-            "Do you want to add a table?",
-            "It looks like you're creating a list.",
-            "Would you like help creating a list?",
-            "Do you want to add bullets or numbering?",
-            "Would you like help checking spelling?",
-            "Would you like help checking grammar?",
-            "Do you want to check spelling and grammar?",
-            "Would you like help inserting a picture?",
-            "It looks like you're working with numbers.",
-            "Would you like help creating a chart?",
-            "Would you like help creating a table?",
-            "Do you want to adjust column widths?",
-            "Would you like help formatting this table?",
-            "Do you want to analyze this data?",
-            "Would you like help creating a formula?",
-            "Do you want to insert a function?",
-            "Do you want to sort this list?",
-            "Do you want to filter this data?",
-            "What would you like to do?",
-            "I can help with that.",
-            "I'm here to help!",
-            "That's not something I can help with.",
-            "I don't think that's what you want.",
-            "You seem to be having trouble.",
-            "Are you sure you want to do that?",
-            "This might affect other parts of your document.",
-            "Would you like help choosing a chart type?",
-            "Do you want to add a legend?",
-            "Would you like help formatting this chart?",
-            "Do you want to add axis labels?",
-            "Would you like help composing this message?",
-            "This action cannot be undone.",
-            "Okay.",
-            "Got it.",
-            "I'll stay out of the way.",
-            "Let me know if you need help.",
-            "You can turn me off if you like.",
-
-            "Donate to make my hair longer",
-            "I lost my mouse, have you seen it?",
-
-            "Take this REPL, brother, and may it serve you well.",
-            "This could be the start of a beautiful program.",
-
-            "Infinite Recursion describes Recursion without a base case",
-            "We are the result of infinite recursion",
-            "Unbounded thinking",
-            "Thinking about thinking",
-            "Observe observations"
-            "Fixing broken things, breaking working things",
-            "Fixing broken things, bre-"
-            "Sequent Calculus: True and False!",
-            "Neither True nor False",
-            "Challenging paradoxes",
-            "The self-application of self-application",
-            "The clock is ticking",
-            "Both infinity and zero are infinitely certain",
-            "Introducing infinity from a finite perspective",
-            "You don't know where you are without being relative to something",
-            "\"I would rather regret something I did, than something I didn't.\"",
-            "\"Steal from the best, invent the rest.\" - Micheal Corsetto",
-            "\"You will never get younger than now.\"",
-            "\"There are no differences but differences of degree between different degrees of difference and no difference.\" - William James",
-            "\"Time is the most valuable thing a person can spend.\" - Theophrastus",
-            "\"Sooner or later, everything old is new again.\" - Steven King",
-            "\"That which can be destroyed by the truth should be.\" - Patricia Christine Hodgell",
-            "\"Life itself is an exercise in exceptions.\" - Jean-Luc Picard",
-            "\"It is okay to make mistakes as long as things are happening.\"",
-            "\"The inventors of the alphabet were unable to read until after they created letters.\" - SirHerald",
-            "\"Because Nothing was, therefore All Things are.\" - Edgar Allen Poe",
-            "\"Space and duration are one.\" - Edgar Allen Poe",
-            "\"Rhythmic Balanced Interchange\" - Walter Russell",
-            "\"We can't talk about how reality functions without sounding crazy.\"",
-            "\"Our unalterable resolution should be to be free.\" - Samuel Adams",
-            "Someone's entire life: memories, worries, hopes, dreams, fears, and decisions are all contained within the brain.",
-            "Almost all of your neurons form before your birth and may survive after your death. Treat them well.",
-
-            "over 10,000 bugs/errors fixed!",
-
-            "Donate on Patreon, Paypal, or with Crypto!",
-            "Please Donate to keep this project running!",
-            "Buy devs a coffee!",
-            "Donate for more Starcel",
-            "pls donate",
-
-            "You saved my life, Robert",
-            "Marcus, is that you?",
-            "Robert, they took my 2014 Nissan Pathfinder and sold it to the Costa Rican government.",
-            "Hey, how have the hemorrhoids been? I know you got them real bad. Don't worry, I'll keep quiet about it. I know you had it for years, your chronic hemorrhoid issue. We'll get you some cream soon, big guy, for your hemorrhoids that you have. Your really bad hemmorhoids.",
-            "25% off coupon at Walgreens",
-            "Robert, this place is evil. They don't sell any 2000 PSI cold water corded electric pressure washers.",
-            "Robert, there is an issue. I accidentally fueled my Toyota Camry with 1% low fat milk.",
-            "Apparently it's not legal to launder $17,000 through a locally owned Greek restaurant.",
-            "You have Google Play cards. Did you redeem them? Don't redeem them, you can't redeem them Robert.",
-            "Nah.",
-            "oman",
-            "oh man i am not good with computer plz to help",
-            "We listened. Starting in 2026, all drones will be made from 100% egg",
-            "Now available in Lemon flavor!",
-            "sometimes i spread peanut butter on my toes, get into the bath tub, and release crickets from PetSmart™. only $15 for 100 crickets!",
-            "In Credit Card We Trust",
-
-            "Nick Maleki For President 2048"
-        ]
-
+        file_path = "quotes.pkl"
+        self.quotes = None
+        try:
+            with open(file_path, 'rb') as file:
+                loaded_quotes_hex = pickle.load(file)
+                self.quotes = [bytes.fromhex(h).decode('utf-8') for h in loaded_quotes_hex]
+            print("Successfully unpickled quotes")
+        except:
+            print("Failed to unpickle quotes")
 
 class WorldSize():
     def __init__(self):  # most large world sizes require origin rebasing
