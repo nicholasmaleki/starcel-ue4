@@ -315,7 +315,7 @@ class Main:
         # self.uobject.bind_event('OnActorBeginOverlap', self.manage_overlap)
         # self.uobject.bind_action('Jump', ue.IE_PRESSED, self.uobject.jump)
         self.uobject.enable_input()
-        self.uobject.bind_key('K', ue.IE_PRESSED, self.you_pressed_K)
+        self.uobject.bind_key('K', ue.IE_PRESSED, self.you_pressed_K) # IE_AXIS, IE_DOUBLE_CLICK, IE_PRESSED, IE_RELEASED, IE_REPEAT
         # self.uobject.bind_axis('MoveForward', self.move_forward)
         # text_render_component = ue.find_class('TextRenderComponent')
         # spawn a new PyActor
