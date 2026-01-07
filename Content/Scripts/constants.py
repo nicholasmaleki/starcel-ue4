@@ -140,7 +140,7 @@ class Constants:
         # LeftShift, z, x, c, v, b, n, m,, , ., /, RightShift
         # LeftCtrl, Win, LeftAlt, Space, RightAlt, Win, Menu, RightCtrl
 
-        self.quotes = [
+        self.quotes = [ #TODO: pickle
             "Why, where are you now?",
             "You'd be nowhere",
             "Their heads are gone",
@@ -180,9 +180,56 @@ class Constants:
             "Then it really doesn't matter which way you go",
             "You may have noticed that I am not all there myself",
 
+            "It looks like you're writing. Would you like help with that?",
+            "I notice you've been working late!",
+            "Would you like help formatting your document?",
+            "Do you want to change margins?",
+            "Do you want to add a table?",
+            "It looks like you're creating a list.",
+            "Would you like help creating a list?",
+            "Do you want to add bullets or numbering?",
+            "Would you like help checking spelling?",
+            "Would you like help checking grammar?",
+            "Do you want to check spelling and grammar?",
+            "Would you like help inserting a picture?",
+            "It looks like you're working with numbers.",
+            "Would you like help creating a chart?",
+            "Would you like help creating a table?",
+            "Do you want to adjust column widths?",
+            "Would you like help formatting this table?",
+            "Do you want to analyze this data?",
+            "Would you like help creating a formula?",
+            "Do you want to insert a function?",
+            "Do you want to sort this list?",
+            "Do you want to filter this data?",
+            "What would you like to do?",
+            "I can help with that.",
+            "I'm here to help!",
+            "That's not something I can help with.",
+            "I don't think that's what you want.",
+            "You seem to be having trouble.",
+            "Are you sure you want to do that?",
+            "This might affect other parts of your document.",
+            "Would you like help choosing a chart type?",
+            "Do you want to add a legend?",
+            "Would you like help formatting this chart?",
+            "Do you want to add axis labels?",
+            "Would you like help composing this message?",
+            "This action cannot be undone.",
+            "Okay.",
+            "Got it.",
+            "I'll stay out of the way.",
+            "Let me know if you need help.",
+            "You can turn me off if you like.",
+
+            "Donate to make my hair longer",
+            "I lost my mouse, have you seen it?",
+
             "Take this REPL, brother, and may it serve you well.",
             "This could be the start of a beautiful program.",
 
+            "Infinite Recursion describes Recursion without a base case",
+            "We are the result of infinite recursion",
             "Unbounded thinking",
             "Thinking about thinking",
             "Observe observations"
@@ -214,12 +261,30 @@ class Constants:
             "Someone's entire life: memories, worries, hopes, dreams, fears, and decisions are all contained within the brain.",
             "Almost all of your neurons form before your birth and may survive after your death. Treat them well.",
 
+            "over 10,000 bugs/errors fixed!",
+
             "Donate on Patreon, Paypal, or with Crypto!",
             "Please Donate to keep this project running!",
-            "Buy me a coffee!",
+            "Buy devs a coffee!",
             "Donate for more Starcel",
-            "Donate to make my hair longer",
             "pls donate",
+
+            "You saved my life, Robert",
+            "Marcus, is that you?",
+            "Robert, they took my 2014 Nissan Pathfinder and sold it to the Costa Rican government.",
+            "Hey, how have the hemorrhoids been? I know you got them real bad. Don't worry, I'll keep quiet about it. I know you had it for years, your chronic hemorrhoid issue. We'll get you some cream soon, big guy, for your hemorrhoids that you have. Your really bad hemmorhoids.",
+            "25% off coupon at Walgreens",
+            "Robert, this place is evil. They don't sell any 2000 PSI cold water corded electric pressure washers.",
+            "Robert, there is an issue. I accidentally fueled my Toyota Camry with 1% low fat milk.",
+            "Apparently it's not legal to launder $17,000 through a locally owned Greek restaurant.",
+            "You have Google Play cards. Did you redeem them? Don't redeem them, you can't redeem them Robert.",
+            "Nah.",
+            "oman",
+            "oh man i am not good with computer plz to help",
+            "We listened. Starting in 2026, all drones will be made from 100% egg",
+            "Now available in Lemon flavor!",
+            "sometimes i spread peanut butter on my toes, get into the bath tub, and release crickets from PetSmart™. only $15 for 100 crickets!",
+            "In Credit Card We Trust",
 
             "Nick Maleki For President 2048"
         ]
@@ -230,14 +295,25 @@ class WorldSize():
         # all in meters
         self.ue4_world_max = 20971  # disable World Bounds Checks to exceed, change UE_USE_UE4_WORLD_MAX located in the EngineDefines.h, then recompile the engine. WORLD_MAX is the constant that is set to 2097152.0 Unreal Units(UU/cm)
         self.MAX = 16655451  # using 1024 4033x4033 tiles: https://youtu.be/uesmtsQZ3lI?si=wkfQtAVbnlrK-1i-&t=386
-        self.earth_size = 12756000  # includes bulge at the equator. Notice that it fits into the tiled ue4 world
         self.editor_precision = .001
         self.ue4_precision = .0000001  # check IEEE754 for more info. ~7 sig figs
         self.ue5_precision = .000000000000001  # ~15-16 sig figs
         # self.ue4_world_max = 88000000000 # bEnableLargeWorlds = true, UE_USE_UE4_WORLD_MAX=0. Although, this reports larger: https://old.reddit.com/r/unrealengine/comments/1axhmhm/is_the_88_million_km_max_world_size_total_area_or/kro5la5/
 
         # all in meters
-        self.observable_universe = 10 ^ 26
+        self.observable_universe = 8.8*10 ^ 26
+        self.milky_way_galaxy = 9 * 10 ^ 20
+        self.solar_system = 3 * 10 ^ 13
+        self.au = 1.496*10^11
+        self.earth_size = 12756000  # includes bulge at the equator. Notice that it fits into the tiled ue4 world
+        self.usa = 4500000
+        self.usa_state = 800000
+        self.usa_city = 30000
+        self.office_building = 50
+        self.home = 15
+        self.human = 1.7
+        self.hand = .2
+
         self.large_manmade_radiowave_wavelength = 100000000
         self.max_visible_wavelength = 7.8 * 10 ^ (-7)
         self.min_visible_wavelength = 3.8 * 10 ^ (-7)
@@ -524,3 +600,79 @@ class SpatialDimensionSelector():
 # print('Output: ' + o.decode('ascii'))
 # print('Error: '  + e.decode('ascii'))
 # print('code: ' + str(proc.returncode))
+
+
+
+# /** Handles image2D update**/
+# int32 AGACube::GetTexture2DDynamicWidth(UTexture2DDynamic* InTexture2DDynamicReference)
+# {
+# 	if (!InTexture2DDynamicReference)
+# 	{
+# 		return -1;
+# 	}
+# 	return InTexture2DDynamicReference->SizeX;
+# }
+#
+# int32 AGACube::GetTexture2DDynamicHeight(UTexture2DDynamic* InTexture2DDynamicReference)
+# {
+# 	if (!InTexture2DDynamicReference)
+# 	{
+# 		return -1;
+# 	}
+# 	return InTexture2DDynamicReference->SizeY;
+# }
+#
+# FVector2D AGACube::GetGameViewportSize()
+# {
+# 	FVector2D Result = FVector2D( 1, 1 );
+#
+# 	if ( GEngine && GEngine->GameViewport )
+# 	{
+# 		GEngine->GameViewport->GetViewportSize( /*out*/Result );
+# 	}
+#
+# 	return Result;
+# }
+#
+# FVector2D AGACube::GetGameResolution()
+# {
+# 	FVector2D Result = FVector2D( 1, 1 );
+#
+# 	Result.X = GSystemResolution.ResX;
+# 	Result.Y = GSystemResolution.ResY;
+#
+# 	return Result;
+# }
+#
+# /**https://forums.unrealengine.com/t/how-to-inject-simulate-mouse-clicks/25602/7**/
+# void AGACube::ClickLMB()
+# {
+# 	FSlateApplication& SlateApp = FSlateApplication::Get();
+# 	FPointerEvent MouseDownEvent(
+# 		0,
+# 		SlateApp.CursorPointerIndex,
+# 		SlateApp.GetCursorPos(),
+# 		SlateApp.GetLastCursorPos(),
+# 		SlateApp.GetPressedMouseButtons(),
+# 		EKeys::LeftMouseButton,
+# 		0,
+# 		SlateApp.GetPlatformApplication()->GetModifierKeys()
+# 	);
+# 	TSharedPtr<FGenericWindow> GenWindow;
+# 	SlateApp.ProcessMouseButtonDownEvent(GenWindow, MouseDownEvent);
+# }
+
+# 	UFUNCTION(BlueprintCallable, Category = "Starcel")
+# 	FVector2D GetGameViewportSize();
+#
+# 	UFUNCTION(BlueprintCallable, Category = "Starcel")
+# 	FVector2D GetGameResolution();
+#
+# 	UFUNCTION(BlueprintCallable, Category = "Starcel")
+# 	void ClickLMB();
+#
+# 	UFUNCTION(BlueprintCallable)
+# 	int32 GetTexture2DDynamicWidth(UTexture2DDynamic* InTexture2DDynamicReference);
+#
+# 	UFUNCTION(BlueprintCallable)
+# 	int32 GetTexture2DDynamicHeight(UTexture2DDynamic* InTexture2DDynamicReference);

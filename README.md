@@ -120,7 +120,7 @@ Blender's UPBGE and NVIDIA Omniverse were not ready for a server capable game wi
 - "cel" relates to our player acceleration function. It is intended that Starcel accelerates users and development around the world. 
 - We built a function that spawns basis of various dimensions within a spatial dimension. These basis look like stars.
 ![Commands and Features](/Images/StarcelUE5-old/DimSelectorOverride3.png)
-- You, the user, are a Star! *
+- You are a Star! *
 
 
 ## Need to contact me?
