@@ -13,6 +13,10 @@ THIRD_PARTY_INCLUDES_START
 #pragma push_macro("max")
 #pragma push_macro("constant")
 #undef check
+#undef verify
+#undef PI
+#undef small
+#undef big
 #undef min
 #undef max
 #undef constant

@@ -11,18 +11,22 @@
 #endif
 PRAGMA_DISABLE_DEPRECATION_WARNINGS
 void EmptyLinkFunctionForGeneratedCodeLargeData_init() {}
+	LARGEDATA_API UFunction* Z_Construct_UDelegateFunction_LargeData_OnLargeStringAsyncReceived__DelegateSignature();
 	UPackage* Z_Construct_UPackage__Script_LargeData()
 	{
 		static UPackage* ReturnPackage = nullptr;
 		if (!ReturnPackage)
 		{
+			static UObject* (*const SingletonFuncArray[])() = {
+				(UObject* (*)())Z_Construct_UDelegateFunction_LargeData_OnLargeStringAsyncReceived__DelegateSignature,
+			};
 			static const UE4CodeGen_Private::FPackageParams PackageParams = {
 				"/Script/LargeData",
-				nullptr,
-				0,
+				SingletonFuncArray,
+				UE_ARRAY_COUNT(SingletonFuncArray),
 				PKG_CompiledIn | 0x00000000,
-				0xAA9A1C9F,
-				0xD4D6FC99,
+				0x5BCE9313,
+				0x425D4C85,
 				METADATA_PARAMS(nullptr, 0)
 			};
 			UE4CodeGen_Private::ConstructUPackage(ReturnPackage, PackageParams);

@@ -2,4 +2,3 @@
 #include "C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/LargeData/Source/LargeData/Private/LargeByteDataObject.cpp"
 #include "C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/LargeData/Source/LargeData/Private/LargeData.cpp"
 #include "C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/LargeData/Source/LargeData/Private/LargeDataObject.cpp"
-#include "C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/LargeData/Source/LargeData/Private/LargeString.cpp"
