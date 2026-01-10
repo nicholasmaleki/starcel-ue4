@@ -365,3 +365,42 @@ class Main:
 
     def move_forward(self, amount):
         ue.print_string('axis value: ' + str(amount))
+
+
+
+
+import unreal_engine as ue
+from unreal_engine.classes import LargeStringAsync
+from constants import LargeStringAsyncStandalone
+
+# Callback when full string is received
+def on_string_received(full_string):
+    print("Standalone helper received string!")
+    print(f"Length: {len(full_string)}")
+    print(full_string[:200])  # first 200 characters
+
+# Create a standalone ULargeStringAsync object
+large_string = LargeStringAsync()
+
+# Set a very large string asynchronously
+large_string.SetFromStringAsync("Hello Unreal Standalone!" * 1000000)  # ~multi-MB for demo
+
+# Define how to send a chunk (for demo, we just loop it back)
+def send_chunk(chunk, index, total_chunks):
+    """
+    Example send function.
+    In a real system, replace this with your network or RPC call.
+    """
+    # Simulate receiving the chunk immediately (loopback)
+    helper.receive_chunk(chunk, index, total_chunks)
+
+# Create the standalone helper
+helper = LargeStringAsyncStandalone(
+    large_string_obj=large_string,
+    send_chunk_callback=send_chunk,
+    on_received_callback=on_string_received
+)
+
+# Send the string via chunks
+helper.send_string()
+

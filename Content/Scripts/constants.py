@@ -1,5 +1,51 @@
 import pickle
 
+class LargeStringAsyncStandalone:
+    """
+    Python helper for ULargeStringAsync without an actor.
+    Handles:
+    - Chunked sending and receiving
+    - Async reassembly
+    - Callback when full string is received
+    """
+
+    def __init__(self, large_string_obj, send_chunk_callback, on_received_callback=None):
+        """
+        :param large_string_obj: ULargeStringAsync instance
+        :param send_chunk_callback: Python callable to send a chunk
+                                    Signature: func(chunk: TArray[uint8], index: int, total_chunks: int)
+        :param on_received_callback: Python callable when full string is received
+        """
+        self.large_string = large_string_obj
+        self.send_chunk_callback = send_chunk_callback
+        self.on_received_callback = on_received_callback
+        self.received_chunks = []
+
+        # Bind to C++ async event
+        self.large_string.OnFullyReceived.add_callable(self._on_fully_received)
+
+    def _on_fully_received(self):
+        """Called when full string is reassembled in C++"""
+        if self.on_received_callback:
+            self.on_received_callback(self.large_string.ToString())
+
+    def send_string(self):
+        """Send all chunks using the provided callback"""
+        total_chunks = self.large_string.GetChunkCount()
+        for i in range(total_chunks):
+            chunk = self.large_string.GetChunk(i)
+            self.send_chunk_callback(chunk, i, total_chunks)
+
+    def receive_chunk(self, chunk, index, total_chunks):
+        """Receive a chunk from remote source"""
+        if len(self.received_chunks) < total_chunks:
+            self.received_chunks.extend([None] * (total_chunks - len(self.received_chunks)))
+        self.received_chunks[index] = chunk
+
+        # Forward chunk to C++ async object
+        self.large_string.ReceiveChunk(chunk, index, total_chunks)
+
+
 class Constants:
     def __init__(self):
         self.default_alphabet = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r",

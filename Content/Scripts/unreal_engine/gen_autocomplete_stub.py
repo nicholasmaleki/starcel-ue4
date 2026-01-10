@@ -19,7 +19,7 @@ class Main:
         funcDefs = '\n'.join([pystubgen.make_source(funcObj) for funcObj in functions_list])
 
         # Output
-        stubFilePath = Path('C:/Users/nicho/Documents/Unreal Projects/Starcel1/Content/Scripts/unreal_engine/__init__.py')
+        stubFilePath = Path('C:/Users/nicho/Documents/Unreal Projects/Starcel9/Content/Scripts/unreal_engine/__init__.py')
         print(os.getcwd())
         if not os.access(str(stubFilePath), os.W_OK):
             print(f"p4 edit {str(stubFilePath)}")
@@ -44,7 +44,7 @@ class Main:
 
             class_def_list.append('\n'.join(class_def))
 
-        stubFilePath = Path('C:/Users/nicho/Documents/Unreal Projects/Starcel1/Content/Scripts/unreal_engine/classes.py')
+        stubFilePath = Path('C:/Users/nicho/Documents/Unreal Projects/Starcel9/Content/Scripts/unreal_engine/classes.py')
         with open( str(stubFilePath), 'w', encoding='utf8') as outputFile:
             outputFile.write('\n'.join(class_def_list))
 

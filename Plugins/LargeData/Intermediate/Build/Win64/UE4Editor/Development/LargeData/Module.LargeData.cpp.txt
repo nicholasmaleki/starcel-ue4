@@ -7,7 +7,3 @@ C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LargeData\Intermediate
 C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LargeData\Intermediate\Build\Win64\UE4Editor\Inc\LargeData\LargeByteDataObject.generated.h
 C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/LargeData/Source/LargeData/Private/LargeData.cpp
 C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/LargeData/Source/LargeData/Private/LargeDataObject.cpp
-C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/LargeData/Source/LargeData/Private/LargeString.cpp
-C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LargeData\Source\LargeData\Public\LargeString.h
-C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\INCLUDE\string
-C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LargeData\Intermediate\Build\Win64\UE4Editor\Inc\LargeData\LargeString.generated.h
