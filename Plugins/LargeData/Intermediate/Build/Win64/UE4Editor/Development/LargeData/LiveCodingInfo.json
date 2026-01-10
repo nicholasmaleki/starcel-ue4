@@ -10,8 +10,8 @@
 		],
 		"Module.LargeData.gen.cpp.obj": [
 			"LargeByteDataObject.gen.cpp.obj",
-			"LargeDataObject.gen.cpp.obj",
 			"LargeData.init.gen.cpp.obj",
+			"LargeDataObject.gen.cpp.obj",
 			"LargeStringAsync.gen.cpp.obj",
 			"LargeStringDemoActor.gen.cpp.obj"
 		]

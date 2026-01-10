@@ -1,4 +1,109 @@
-# Freeform Methods# Generated from built-in function add_asset_view_context_menu_extension using pystubgen
+# UE4.27 Constants Stub
+# --- Class Flags (CLASS_*) ---
+CLASS_NONE: int
+CLASS_ABSTRACT: int
+CLASS_DEFAULT_CONFIG: int
+CLASS_CONFIG: int
+CLASS_TRANSIENT: int
+CLASS_OPTIONAL: int
+CLASS_CONFIG_DO_NOT_CHECK_DEFAULTS: int
+
+# --- Property Flags (CPF_*) ---
+CPF_NONE: int
+CPF_EDIT: int
+CPF_CONSTPARM: int
+CPF_BLUEPRINT_VISIBLE: int
+CPF_EXPORT_OBJECT: int
+CPF_BLUEPRINT_READ_ONLY: int
+CPF_NET: int
+CPF_EDIT_FIXED_SIZE: int
+CPF_PARM: int
+CPF_OUT_PARM: int
+CPF_ZERO_CONSTRUCTOR: int
+CPF_RETURN_PARM: int
+CPF_DISABLE_EDIT_ON_TEMPLATE: int
+CPF_NON_NULLABLE: int
+CPF_TRANSIENT: int
+CPF_CONFIG: int
+CPF_REQUIRED_PARM: int
+CPF_DISABLE_EDIT_ON_INSTANCE: int
+CPF_EDIT_CONST: int
+CPF_GLOBAL_CONFIG: int
+CPF_INSTANCED_REFERENCE: int
+CPF_EXPERIMENTAL_EXTERNAL_OBJECTS: int
+CPF_DUPLICATE_TRANSIENT: int
+CPF_SAVE_GAME: int
+CPF_NO_CLEAR: int
+CPF_VIRTUAL: int
+CPF_REFERENCE_PARM: int
+CPF_BLUEPRINT_ASSIGNABLE: int
+CPF_DEPRECATED: int
+CPF_IS_PLAIN_OLD_DATA: int
+CPF_REP_SKIP: int
+CPF_REP_NOTIFY: int
+CPF_INTERP: int
+CPF_NON_TRANSACTIONAL: int
+CPF_EDITOR_ONLY: int
+CPF_NO_DESTRUCTOR: int
+CPF_AUTO_WEAK: int
+CPF_CONTAINS_INSTANCED_REFERENCE: int
+CPF_ASSET_REGISTRY_SEARCHABLE: int
+CPF_SIMPLE_DISPLAY: int
+CPF_ADVANCED_DISPLAY: int
+CPF_PROTECTED: int
+CPF_BLUEPRINT_CALLABLE: int
+CPF_BLUEPRINT_AUTHORITY_ONLY: int
+CPF_TEXT_EXPORT_TRANSIENT: int
+CPF_NON_PIE_DUPLICATE_TRANSIENT: int
+CPF_EXPOSE_ON_SPAWN: int
+CPF_PERSISTENT_INSTANCE: int
+CPF_UOBJECT_WRAPPER: int
+CPF_HAS_GET_VALUE_TYPE_HASH: int
+CPF_NATIVE_ACCESS_SPECIFIER_PUBLIC: int
+CPF_NATIVE_ACCESS_SPECIFIER_PROTECTED: int
+CPF_NATIVE_ACCESS_SPECIFIER_PRIVATE: int
+CPF_SKIP_SERIALIZATION: int
+CPF_TOBJECT_PTR: int
+CPF_EXPERIMENTAL_OVERRIDABLE_LOGIC: int
+CPF_EXPERIMENTAL_ALWAYS_OVERRIDEN: int
+CPF_EXPERIMENTAL_NEVER_OVERRIDEN: int
+CPF_ALLOW_SELF_REFERENCE: int
+
+# --- Object Flags (RF_*) ---
+RF_NO_FLAGS: int
+RF_PUBLIC: int
+RF_STANDALONE: int
+RF_MARK_AS_NATIVE: int
+RF_TRANSACTIONAL: int
+RF_CLASS_DEFAULT_OBJECT: int
+RF_ARCHETYPE_OBJECT: int
+RF_TRANSIENT: int
+RF_MARK_AS_ROOT_SET: int
+RF_TAG_GARBAGE_TEMP: int
+RF_NEED_INITIALIZATION: int
+RF_NEED_LOAD: int
+RF_KEEP_FOR_COOKER: int
+RF_NEED_POST_LOAD: int
+RF_NEED_POST_LOAD_SUBOBJECTS: int
+RF_NEWER_VERSION_EXISTS: int
+RF_BEGIN_DESTROYED: int
+RF_FINISH_DESTROYED: int
+RF_BEING_REGENERATED: int
+RF_DEFAULT_SUB_OBJECT: int
+RF_WAS_LOADED: int
+RF_TEXT_EXPORT_TRANSIENT: int
+RF_LOAD_COMPLETED: int
+RF_INHERITABLE_COMPONENT_TEMPLATE: int
+RF_DUPLICATE_TRANSIENT: int
+RF_STRONG_REF_ON_FRAME: int
+RF_DYNAMIC: int
+RF_WILL_BE_LOADED: int
+RF_HAS_EXTERNAL_PACKAGE: int
+RF_ALL_FLAGS: int
+
+
+# Freeform Methods
+# Generated from built-in function add_asset_view_context_menu_extension using pystubgen
 
 def add_asset_view_context_menu_extension(__unknown_params__):
     pass
@@ -944,7 +1049,6 @@ def wait_for_assets(__unknown_params__):
     pass
 
 
-
 # Generated from built-in module unreal_engine using pystubgen
 
 class Callable(object):
@@ -983,35 +1087,17 @@ class ESlateEnums(object):
         Create and return a new object.  See help(type) for accurate signature.
         """
 
-    EUserInterfaceActionType.Button = "<unreal_engine.ESlateEnums object at 0x000002035302E4B0>" # DATA
-    """
-    Unreal Engine ESlateEnums
-    """
+    EUserInterfaceActionType.Button = "<unreal_engine.ESlateEnums object at 0x000001ED0FDDCB30>" # DATA
 
-    EUserInterfaceActionType.Check = "<unreal_engine.ESlateEnums object at 0x000002035302E510>" # DATA
-    """
-    Unreal Engine ESlateEnums
-    """
+    EUserInterfaceActionType.Check = "<unreal_engine.ESlateEnums object at 0x000001ED0FDDCB90>" # DATA
 
-    EUserInterfaceActionType.CollapsedButton = "<unreal_engine.ESlateEnums object at 0x000002035302E530>" # DATA
-    """
-    Unreal Engine ESlateEnums
-    """
+    EUserInterfaceActionType.CollapsedButton = "<unreal_engine.ESlateEnums object at 0x000001ED0FDDCBB0>" # DATA
 
-    EUserInterfaceActionType.None = "<unreal_engine.ESlateEnums object at 0x000002035302E490>" # DATA
-    """
-    Unreal Engine ESlateEnums
-    """
+    EUserInterfaceActionType.None = "<unreal_engine.ESlateEnums object at 0x000001ED0FDDCB10>" # DATA
 
-    EUserInterfaceActionType.RadioButton = "<unreal_engine.ESlateEnums object at 0x000002035302E4F0>" # DATA
-    """
-    Unreal Engine ESlateEnums
-    """
+    EUserInterfaceActionType.RadioButton = "<unreal_engine.ESlateEnums object at 0x000001ED0FDDCB70>" # DATA
 
-    EUserInterfaceActionType.ToggleButton = "<unreal_engine.ESlateEnums object at 0x000002035302E4D0>" # DATA
-    """
-    Unreal Engine ESlateEnums
-    """
+    EUserInterfaceActionType.ToggleButton = "<unreal_engine.ESlateEnums object at 0x000001ED0FDDCB50>" # DATA
 
     val = "<attribute 'val' of 'unreal_engine.ESlateEnums' objects>" # DATA
 
@@ -1053,6 +1139,8 @@ class EdGraphPin(object):
     default_text_value = "<attribute 'default_text_value' of 'unreal_engine.EdGraphPin' objects>" # DATA
 
     default_value = "<attribute 'default_value' of 'unreal_engine.EdGraphPin' objects>" # DATA
+
+    direction = "<attribute 'direction' of 'unreal_engine.EdGraphPin' objects>" # DATA
 
     name = "<attribute 'name' of 'unreal_engine.EdGraphPin' objects>" # DATA
 
@@ -1271,70 +1359,31 @@ class FColor(object):
         Create and return a new object.  See help(type) for accurate signature.
         """
 
-    Black = "<unreal_engine.FColor object at 0x0000020346928330>" # DATA
-    """
-    Unreal Engine FColor
-    """
+    Black = "<unreal_engine.FColor object at 0x000001ED0FD28B30>" # DATA
 
-    Blue = "<unreal_engine.FColor object at 0x0000020346928470>" # DATA
-    """
-    Unreal Engine FColor
-    """
+    Blue = "<unreal_engine.FColor object at 0x000001ED0FD28B50>" # DATA
 
-    Cyan = "<unreal_engine.FColor object at 0x0000020346928510>" # DATA
-    """
-    Unreal Engine FColor
-    """
+    Cyan = "<unreal_engine.FColor object at 0x000001ED0FD28B70>" # DATA
 
-    Emerald = "<unreal_engine.FColor object at 0x0000020346928530>" # DATA
-    """
-    Unreal Engine FColor
-    """
+    Emerald = "<unreal_engine.FColor object at 0x000001ED0FD28B90>" # DATA
 
-    Green = "<unreal_engine.FColor object at 0x0000020346928550>" # DATA
-    """
-    Unreal Engine FColor
-    """
+    Green = "<unreal_engine.FColor object at 0x000001ED0FD28BB0>" # DATA
 
-    Magenta = "<unreal_engine.FColor object at 0x0000020346928570>" # DATA
-    """
-    Unreal Engine FColor
-    """
+    Magenta = "<unreal_engine.FColor object at 0x000001ED0FD28BD0>" # DATA
 
-    Orange = "<unreal_engine.FColor object at 0x0000020346928590>" # DATA
-    """
-    Unreal Engine FColor
-    """
+    Orange = "<unreal_engine.FColor object at 0x000001ED0FD28BF0>" # DATA
 
-    Purple = "<unreal_engine.FColor object at 0x00000203469285B0>" # DATA
-    """
-    Unreal Engine FColor
-    """
+    Purple = "<unreal_engine.FColor object at 0x000001ED0FD28C10>" # DATA
 
-    Red = "<unreal_engine.FColor object at 0x00000203469285D0>" # DATA
-    """
-    Unreal Engine FColor
-    """
+    Red = "<unreal_engine.FColor object at 0x000001ED0FD28C30>" # DATA
 
-    Silver = "<unreal_engine.FColor object at 0x00000203469285F0>" # DATA
-    """
-    Unreal Engine FColor
-    """
+    Silver = "<unreal_engine.FColor object at 0x000001ED0FD28C50>" # DATA
 
-    Turquoise = "<unreal_engine.FColor object at 0x0000020346928610>" # DATA
-    """
-    Unreal Engine FColor
-    """
+    Turquoise = "<unreal_engine.FColor object at 0x000001ED0FD28C70>" # DATA
 
-    White = "<unreal_engine.FColor object at 0x0000020346928630>" # DATA
-    """
-    Unreal Engine FColor
-    """
+    White = "<unreal_engine.FColor object at 0x000001ED0FD28C90>" # DATA
 
-    Yellow = "<unreal_engine.FColor object at 0x0000020346928650>" # DATA
-    """
-    Unreal Engine FColor
-    """
+    Yellow = "<unreal_engine.FColor object at 0x000001ED0FD28CB0>" # DATA
 
     a = "<attribute 'a' of 'unreal_engine.FColor' objects>" # DATA
 
@@ -1403,6 +1452,47 @@ class FEditorViewportClient(FViewportClient):
 
     def tick(__unknown_params__):
         pass
+
+    @staticmethod
+    def __new__(type, *args, **kwargs):
+        """
+        Create and return a new object.  See help(type) for accurate signature.
+        """
+
+
+class FFieldClass(object):
+    """
+    Unreal Engine FFieldClass wrapper
+    """
+    def __call__(self, *args, **kwargs):
+        """
+        Call self as a function.
+        """
+
+    def __delattr__(self, name):
+        """
+        Implement delattr(self, name).
+        """
+
+    def __getattribute__(self, name):
+        """
+        Return getattr(self, name).
+        """
+
+    def __init__(self, *args, **kwargs):
+        """
+        Initialize self.  See help(type(self)) for accurate signature.
+        """
+
+    def __setattr__(self, name, value):
+        """
+        Implement setattr(self, name, value).
+        """
+
+    def __str__(self):
+        """
+        Return str(self).
+        """
 
     @staticmethod
     def __new__(type, *args, **kwargs):
@@ -1587,40 +1677,19 @@ class FLinearColor(object):
         Create and return a new object.  See help(type) for accurate signature.
         """
 
-    Black = "<unreal_engine.FLinearColor object at 0x0000020346928690>" # DATA
-    """
-    Unreal Engine FLinearColor
-    """
+    Black = "<unreal_engine.FLinearColor object at 0x000001ED0FD28CF0>" # DATA
 
-    Blue = "<unreal_engine.FLinearColor object at 0x00000203469286B0>" # DATA
-    """
-    Unreal Engine FLinearColor
-    """
+    Blue = "<unreal_engine.FLinearColor object at 0x000001ED0FD28D10>" # DATA
 
-    Gray = "<unreal_engine.FLinearColor object at 0x00000203469286D0>" # DATA
-    """
-    Unreal Engine FLinearColor
-    """
+    Gray = "<unreal_engine.FLinearColor object at 0x000001ED0FD28D30>" # DATA
 
-    Green = "<unreal_engine.FLinearColor object at 0x00000203469286F0>" # DATA
-    """
-    Unreal Engine FLinearColor
-    """
+    Green = "<unreal_engine.FLinearColor object at 0x000001ED0FD28D50>" # DATA
 
-    Red = "<unreal_engine.FLinearColor object at 0x0000020346928710>" # DATA
-    """
-    Unreal Engine FLinearColor
-    """
+    Red = "<unreal_engine.FLinearColor object at 0x000001ED0FD28D70>" # DATA
 
-    White = "<unreal_engine.FLinearColor object at 0x0000020346928730>" # DATA
-    """
-    Unreal Engine FLinearColor
-    """
+    White = "<unreal_engine.FLinearColor object at 0x000001ED0FD28D90>" # DATA
 
-    Yellow = "<unreal_engine.FLinearColor object at 0x0000020346928750>" # DATA
-    """
-    Unreal Engine FLinearColor
-    """
+    Yellow = "<unreal_engine.FLinearColor object at 0x000001ED0FD28DB0>" # DATA
 
     a = "<attribute 'a' of 'unreal_engine.FLinearColor' objects>" # DATA
 
@@ -1695,6 +1764,46 @@ class FMenuBuilder(object):
         pass
 
     def make_widget(__unknown_params__):
+        pass
+
+    @staticmethod
+    def __new__(type, *args, **kwargs):
+        """
+        Create and return a new object.  See help(type) for accurate signature.
+        """
+
+
+class FMeshDescription(object):
+    """
+    Unreal Engine FMeshDesription
+    """
+    def __init__(self, *args, **kwargs):
+        """
+        Initialize self.  See help(type(self)) for accurate signature.
+        """
+
+    def get_polygons(__unknown_params__):
+        pass
+
+    def get_polygons_num(__unknown_params__):
+        pass
+
+    def get_triangles(__unknown_params__):
+        pass
+
+    def get_triangles_num(__unknown_params__):
+        pass
+
+    def get_vertex_instances(__unknown_params__):
+        pass
+
+    def get_vertex_positions(__unknown_params__):
+        pass
+
+    def get_vertices(__unknown_params__):
+        pass
+
+    def get_vertices_num(__unknown_params__):
         pass
 
     @staticmethod
@@ -1853,6 +1962,56 @@ class FPointerEvent(FInputEvent):
 
     def get_wheel_delta(__unknown_params__):
         pass
+
+
+class FProperty(object):
+    """
+    Unreal Engine FProperty wrapper
+    """
+    def __call__(self, *args, **kwargs):
+        """
+        Call self as a function.
+        """
+
+    def __delattr__(self, name):
+        """
+        Implement delattr(self, name).
+        """
+
+    def __getattribute__(self, name):
+        """
+        Return getattr(self, name).
+        """
+
+    def __init__(self, *args, **kwargs):
+        """
+        Initialize self.  See help(type(self)) for accurate signature.
+        """
+
+    def __setattr__(self, name, value):
+        """
+        Implement setattr(self, name, value).
+        """
+
+    def __str__(self):
+        """
+        Return str(self).
+        """
+
+    def get_metadata(__unknown_params__):
+        pass
+
+    def has_metadata(__unknown_params__):
+        pass
+
+    def set_metadata(__unknown_params__):
+        pass
+
+    @staticmethod
+    def __new__(type, *args, **kwargs):
+        """
+        Create and return a new object.  See help(type) for accurate signature.
+        """
 
 
 class FPythonOutputDevice(object):
@@ -2843,20 +3002,11 @@ class FVector(object):
 
     __hash__ = "None" # DATA
 
-    forward = "<unreal_engine.FVector object at 0x000002034660C4D0>" # DATA
-    """
-    Unreal Engine FVector
-    """
+    forward = "<unreal_engine.FVector object at 0x000001ED0FD28910>" # DATA
 
-    right = "<unreal_engine.FVector object at 0x00000203469283B0>" # DATA
-    """
-    Unreal Engine FVector
-    """
+    right = "<unreal_engine.FVector object at 0x000001ED0FD28A90>" # DATA
 
-    up = "<unreal_engine.FVector object at 0x0000020346928450>" # DATA
-    """
-    Unreal Engine FVector
-    """
+    up = "<unreal_engine.FVector object at 0x000001ED0FD28A10>" # DATA
 
     x = "<attribute 'x' of 'unreal_engine.FVector' objects>" # DATA
 
@@ -5430,6 +5580,9 @@ class UObject(object):
     def get_forward_vector(__unknown_params__):
         pass
 
+    def get_fproperty(__unknown_params__):
+        pass
+
     def get_full_name(__unknown_params__):
         pass
 
@@ -5607,9 +5760,6 @@ class UObject(object):
     def get_up_vector(__unknown_params__):
         pass
 
-    def get_uproperty(__unknown_params__):
-        pass
-
     def get_value_prop(__unknown_params__):
         pass
 
@@ -5742,7 +5892,7 @@ class UObject(object):
     def jump(__unknown_params__):
         pass
 
-    def landscape_export_to_raw_mesh(__unknown_params__):
+    def landscape_export_to_mesh_description(__unknown_params__):
         pass
 
     def landscape_import(__unknown_params__):
@@ -5797,6 +5947,9 @@ class UObject(object):
         pass
 
     def node_reconstruct(__unknown_params__):
+        pass
+
+    def node_set_purity(__unknown_params__):
         pass
 
     def own(__unknown_params__):
@@ -5883,6 +6036,9 @@ class UObject(object):
     def sequencer_add_actor_component(__unknown_params__):
         pass
 
+    def sequencer_add_camera(__unknown_params__):
+        pass
+
     def sequencer_add_camera_cut_track(__unknown_params__):
         pass
 
@@ -5965,6 +6121,9 @@ class UObject(object):
         pass
 
     def sequencer_set_playback_range(__unknown_params__):
+        pass
+
+    def sequencer_set_section_camera_guid(__unknown_params__):
         pass
 
     def sequencer_set_section_range(__unknown_params__):

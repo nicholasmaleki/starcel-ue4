@@ -7,3 +7,12 @@ C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LargeData\Intermediate
 C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LargeData\Intermediate\Build\Win64\UE4Editor\Inc\LargeData\LargeByteDataObject.generated.h
 C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/LargeData/Source/LargeData/Private/LargeData.cpp
 C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/LargeData/Source/LargeData/Private/LargeDataObject.cpp
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/LargeData/Source/LargeData/Private/LargeStringAsync.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LargeData\Source\LargeData\Public\LargeStringAsync.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Classes\Kismet/KismetSystemLibrary.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/PropertyAccessUtil.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\KismetSystemLibrary.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LargeData\Intermediate\Build\Win64\UE4Editor\Inc\LargeData\LargeStringAsync.generated.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/LargeData/Source/LargeData/Private/LargeStringDemoActor.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LargeData\Source\LargeData\Public\LargeStringDemoActor.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LargeData\Intermediate\Build\Win64\UE4Editor\Inc\LargeData\LargeStringDemoActor.generated.h

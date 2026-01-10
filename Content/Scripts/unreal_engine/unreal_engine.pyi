@@ -1,0 +1,106 @@
+# unreal_engine.pyi
+# UE4.27 constants-only stub for IntelliSense
+# Safe: purely for IDE, does NOT override runtime values
+
+# --- Class Flags (CLASS_*) ---
+CLASS_None: int
+CLASS_Abstract: int
+CLASS_DefaultConfig: int
+CLASS_Config: int
+CLASS_Transient: int
+CLASS_Optional: int
+CLASS_ConfigDoNotCheckDefaults: int
+# Add more CLASS_* flags if needed
+
+# --- Property Flags (CPF_*) ---
+CPF_None: int
+CPF_Edit: int
+CPF_ConstParm: int
+CPF_BlueprintVisible: int
+CPF_ExportObject: int
+CPF_BlueprintReadOnly: int
+CPF_Net: int
+CPF_EditFixedSize: int
+CPF_Parm: int
+CPF_OutParm: int
+CPF_ZeroConstructor: int
+CPF_ReturnParm: int
+CPF_DisableEditOnTemplate: int
+CPF_NonNullable: int
+CPF_Transient: int
+CPF_Config: int
+CPF_RequiredParm: int
+CPF_DisableEditOnInstance: int
+CPF_EditConst: int
+CPF_GlobalConfig: int
+CPF_InstancedReference: int
+CPF_ExperimentalExternalObjects: int
+CPF_DuplicateTransient: int
+CPF_SaveGame: int
+CPF_NoClear: int
+CPF_Virtual: int
+CPF_ReferenceParm: int
+CPF_BlueprintAssignable: int
+CPF_Deprecated: int
+CPF_IsPlainOldData: int
+CPF_RepSkip: int
+CPF_RepNotify: int
+CPF_Interp: int
+CPF_NonTransactional: int
+CPF_EditorOnly: int
+CPF_NoDestructor: int
+CPF_AutoWeak: int
+CPF_ContainsInstancedReference: int
+CPF_AssetRegistrySearchable: int
+CPF_SimpleDisplay: int
+CPF_AdvancedDisplay: int
+CPF_Protected: int
+CPF_BlueprintCallable: int
+CPF_BlueprintAuthorityOnly: int
+CPF_TextExportTransient: int
+CPF_NonPIEDuplicateTransient: int
+CPF_ExposeOnSpawn: int
+CPF_PersistentInstance: int
+CPF_UObjectWrapper: int
+CPF_HasGetValueTypeHash: int
+CPF_NativeAccessSpecifierPublic: int
+CPF_NativeAccessSpecifierProtected: int
+CPF_NativeAccessSpecifierPrivate: int
+CPF_SkipSerialization: int
+CPF_TObjectPtr: int
+CPF_ExperimentalOverridableLogic: int
+CPF_ExperimentalAlwaysOverriden: int
+CPF_ExperimentalNeverOverriden: int
+CPF_AllowSelfReference: int
+
+# --- Object Flags (RF_*) ---
+RF_NoFlags: int
+RF_Public: int
+RF_Standalone: int
+RF_MarkAsNative: int
+RF_Transactional: int
+RF_ClassDefaultObject: int
+RF_ArchetypeObject: int
+RF_Transient: int
+RF_MarkAsRootSet: int
+RF_TagGarbageTemp: int
+RF_NeedInitialization: int
+RF_NeedLoad: int
+RF_KeepForCooker: int
+RF_NeedPostLoad: int
+RF_NeedPostLoadSubobjects: int
+RF_NewerVersionExists: int
+RF_BeginDestroyed: int
+RF_FinishDestroyed: int
+RF_BeingRegenerated: int
+RF_DefaultSubObject: int
+RF_WasLoaded: int
+RF_TextExportTransient: int
+RF_LoadCompleted: int
+RF_InheritableComponentTemplate: int
+RF_DuplicateTransient: int
+RF_StrongRefOnFrame: int
+RF_Dynamic: int
+RF_WillBeLoaded: int
+RF_HasExternalPackage: int
+RF_AllFlags: int

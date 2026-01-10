@@ -96,6 +96,11 @@
 			"Name": "WindowCapture2D",
 			"Enabled": true,
 			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/content/4ea251016c084e0da00e7392231e24b3"
+		},
+		{
+			"Name": "LogViewer",
+			"Enabled": true,
+			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/content/4853cdc0a6a54d7b9c0712cbe72f6b68"
 		}
 	]
 }
