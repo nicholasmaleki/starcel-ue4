@@ -1,0 +1,12 @@
+/NOLOGO
+/errorReport:prompt
+/MACHINE:x64
+/SUBSYSTEM:WINDOWS
+/DEF
+/NAME:"UE4Editor-LogViewer.dll"
+/IGNORE:4221
+/NODEFAULTLIB
+"C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Development\UnrealEd\SharedPCH.UnrealEd.ShadowErrors.h.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LogVIewer\Intermediate\Build\Win64\UE4Editor\Development\LogViewer\Module.LogViewer.cpp.obj"
+"C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Development\Default.rc2.res"
+/OUT:"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LogVIewer\Intermediate\Build\Win64\UE4Editor\Development\LogViewer\UE4Editor-LogViewer.lib"

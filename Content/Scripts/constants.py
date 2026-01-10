@@ -106,11 +106,11 @@ class Constants:
                                     "𝖕", "𝖖", "𝖗"]
 
         file_path = "quotes.pkl"
-        self.quotes = None
+        self.__quotes = None
         try:
             with open(file_path, 'rb') as file:
                 loaded_quotes_hex = pickle.load(file)
-                self.quotes = [bytes.fromhex(h).decode('utf-8') for h in loaded_quotes_hex]
+                self.__quotes = [bytes.fromhex(h).decode('utf-8') for h in loaded_quotes_hex]
             print("Successfully unpickled quotes")
         except:
             print("Failed to unpickle quotes")

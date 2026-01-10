@@ -1,0 +1,67 @@
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LogVIewer\Intermediate\Build\Win64\UE4Editor\Development\LogViewer\Definitions.LogViewer.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/LogVIewer/Source/LogViewer/Private/LogFilter.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LogVIewer\Source\LogViewer\Public\LogFilter.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LogVIewer\Source\LogViewer\Public\LogViewerOutputDevice.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LogVIewer\Source\LogViewer\Public\LogViewerStructs.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/TextFilterExpressionEvaluator.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/ExpressionParser.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/TextFilterUtils.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LogVIewer\Source\LogViewer\Public\LogViewerWidgetMain.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LogVIewer\Source\LogViewer\Public\LogViewerWidgetCategoriesView.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/TextFilter.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/LogVIewer/Source/LogViewer/Private/LogViewer.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LogVIewer\Source\LogViewer\Public\LogViewer.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LogVIewer\Source\LogViewer\Public\LogViewerStyle.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\SlateCore\Public\Styling/SlateStyle.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\SlateCore\Public\Brushes/SlateBorderBrush.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\SlateCore\Public\Brushes/SlateBoxBrush.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\SlateCore\Public\Brushes/SlateColorBrush.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\SlateCore\Public\Brushes/SlateImageBrush.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LogVIewer\Source\LogViewer\Public\LogViewerCommands.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\LevelEditor\Public\LevelEditor.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\LevelEditor\Public\ILevelEditor.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\LevelEditor\Public\ViewportTypeDefinition.h
+C:\UE_4.27Chaos_Source\Engine\Source\Developer\DesktopPlatform/Public/IDesktopPlatform.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/FileHelper.h
+C:\UE_4.27Chaos_Source\Engine\Source\Developer\DesktopPlatform/Public/DesktopPlatformModule.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\MainFrame/Public/Interfaces/IMainFrameModule.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Slate\Public\Widgets/Input/SHyperlink.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Slate\Public\Widgets/Accessibility/SlateAccessibleWidgets.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/LogVIewer/Source/LogViewer/Private/LogViewerCommands.cpp
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/LogVIewer/Source/LogViewer/Private/LogViewerOutputDevice.cpp
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/OutputDeviceHelper.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/LogVIewer/Source/LogViewer/Private/LogViewerStyle.cpp
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\SlateCore\Public\Styling/SlateStyleRegistry.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Public\Slate/SlateGameResources.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Projects\Public\Interfaces/IPluginManager.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Projects\Public\PluginDescriptor.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Projects\Public\ModuleDescriptor.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Json\Public\Serialization/JsonWriter.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Json\Public\Serialization/JsonTypes.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Projects\Public\CustomBuildSteps.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Projects\Public\LocalizationDescriptor.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Projects\Public\PluginReferenceDescriptor.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/LogVIewer/Source/LogViewer/Private/LogViewerWidgetCategoriesView.cpp
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Slate\Public\SlateOptMacros.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Slate\Public\Widgets/Input/SSearchBox.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\HAL/IPlatformFileModule.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/LogVIewer/Source/LogViewer/Private/LogViewerWidgetMain.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LogVIewer\Source\LogViewer\Public\OutputLogTextLayoutMarshaller.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Slate\Public\Framework/Text/BaseTextLayoutMarshaller.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Slate\Public\Framework/Text/ITextLayoutMarshaller.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Slate\Public\Widgets/Input/SMultiLineEditableTextBox.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Slate\Public\Widgets/Text/SMultiLineEditableText.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Slate\Public\Framework/Text/SlateTextLayoutFactory.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Slate\Public\Framework/Text/SlateTextLayout.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LogVIewer\Source\LogViewer\Public\LogViewerWidgetTopBar.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/LogVIewer/Source/LogViewer/Private/LogViewerWidgetTopBar.cpp
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Projects\Public\ProjectDescriptor.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\UnrealEd\Public\EditorDirectories.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\UnrealEd\Public\Settings/EditorSettings.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Public\Scalability.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\UnrealEd\EditorSettings.generated.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/LogVIewer/Source/LogViewer/Private/OutputLogTextLayoutMarshaller.cpp
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Slate\Public\Framework/Text/SlateTextRun.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Slate\Public\Framework/Text/ILayoutBlock.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Slate\Public\Framework/Text/IRunRenderer.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Slate\Public\Framework/Text/ISlateRun.h

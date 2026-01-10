@@ -1,0 +1,16 @@
+{
+	"RemapUnityFiles": 
+	{
+		"Module.LogViewer.cpp.obj": [
+			"LogFilter.cpp.obj",
+			"LogViewer.cpp.obj",
+			"LogViewerCommands.cpp.obj",
+			"LogViewerOutputDevice.cpp.obj",
+			"LogViewerStyle.cpp.obj",
+			"LogViewerWidgetCategoriesView.cpp.obj",
+			"LogViewerWidgetMain.cpp.obj",
+			"LogViewerWidgetTopBar.cpp.obj",
+			"OutputLogTextLayoutMarshaller.cpp.obj"
+		]
+	}
+}
