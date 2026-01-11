@@ -5,6 +5,7 @@ from unreal_engine import FVector, FRotator, FTransform, FHitResult, CLASS_CONFI
 from unreal_engine.classes import Actor, Character, PlayerController, KismetMathLibrary, KismetSystemLibrary, Object, StrProperty, IntProperty
 from unreal_engine.enums import EInputEvent, ETraceTypeQuery, EDrawDebugTrace
 from constants import Constants, WorldSize
+from languages import *
 
 ue.log('Hello i am a Python module')
 
