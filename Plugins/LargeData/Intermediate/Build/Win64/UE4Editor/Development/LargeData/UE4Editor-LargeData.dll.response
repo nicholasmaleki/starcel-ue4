@@ -40,6 +40,7 @@
 /NODEFAULTLIB:"LIBCPD"
 /FUNCTIONPADMIN
 "C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Development\Engine\SharedPCH.Engine.ShadowErrors.Cpp17.h.obj"
+"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LargeData\Intermediate\Build\Win64\UE4Editor\Development\LargeData\LargeStringAsync.cpp.obj"
 "C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LargeData\Intermediate\Build\Win64\UE4Editor\Development\LargeData\Module.LargeData.cpp.obj"
 "C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LargeData\Intermediate\Build\Win64\UE4Editor\Development\LargeData\Module.LargeData.gen.cpp.obj"
 "C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Development\Default.rc2.res"
@@ -49,7 +50,6 @@
 "C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LargeData\ThirdParty\boost\lib\boost_random-vc142-mt-x64-1_90.lib"
 "C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LargeData\ThirdParty\hdf5\lib\hdf5.lib"
 "C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LargeData\ThirdParty\hdf5\lib\hdf5_hl.lib"
-"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LargeData\ThirdParty\hdf5\lib\zlib.lib"
 "C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Development\Projects\UE4Editor-Projects.lib"
 "C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Development\Core\UE4Editor-Core.lib"
 "C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Development\CoreUObject\UE4Editor-CoreUObject.lib"

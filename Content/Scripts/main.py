@@ -2,10 +2,11 @@ import unreal_engine as ue
 import numpy as np
 import os, sys, subprocess, urllib.request, socket, math, sympy, cmdix, fast_autocomplete, numba, kingdon, dill #numba_cuda
 from unreal_engine import FVector, FRotator, FTransform, FHitResult, CLASS_CONFIG, CLASS_DEFAULT_CONFIG, CPF_CONFIG, CPF_GLOBAL_CONFIG, CPF_EXPOSE_ON_SPAWN, CPF_NET, CPF_REP_NOTIFY
-from unreal_engine.classes import Actor, Character, PlayerController, KismetMathLibrary, KismetSystemLibrary, Object, StrProperty, IntProperty
+from unreal_engine.classes import Actor, Character, PlayerController, KismetMathLibrary, KismetSystemLibrary, Object, StrProperty, IntProperty, LargeStringAsync
 from unreal_engine.enums import EInputEvent, ETraceTypeQuery, EDrawDebugTrace
-from constants import Constants, WorldSize
+from constants import Constants, WorldSize, LargeStringAsyncStandalone
 from languages import *
+from cli import *
 
 ue.log('Hello i am a Python module')
 
@@ -141,88 +142,88 @@ class Main:
     # FooWorld = [IntProperty]
     # FooWorld = [17, 22, 30]
 
-    # ------------------------------------------------------------
-    # MULTICAST FLAG TEST
-    # ------------------------------------------------------------
-    def test_multicast_flag(self, msg):
-        """
-        If .multicast works, this should run on:
-        - Dedicated Server
-        - All connected Clients
-
-        In practice (UE4Python), this usually runs server-only.
-        """
-        if KismetSystemLibrary.IsDedicatedServer():
-            ue.log(f"[multicast flag] SERVER executed: {msg}")
-        else:
-            ue.log(f"[multicast flag] CLIENT executed: {msg}")
-
-    # Register as RPC
-    test_multicast_flag.event = True
-    test_multicast_flag.multicast = True
-    test_multicast_flag.reliable = True
-
-    # ------------------------------------------------------------
-    # SERVER RPC – MANUAL MULTICAST
-    # ------------------------------------------------------------
-    def server_manual_multicast(self, msg):
-        """
-        Authoritative server RPC.
-        Explicitly calls a client RPC on every PlayerController.
-        """
-        ue.log("[manual multicast] SERVER executing")
-
-        for pc in self.uobject.get_world().all_actors():
-            if pc:
-                pc.client_receive_manual(msg)
-
-    # Register as Server RPC
-    server_manual_multicast.event = True
-    server_manual_multicast.server = True
-    server_manual_multicast.reliable = True
-
-    # ------------------------------------------------------------
-    # CLIENT RPC – MANUAL MULTICAST TARGET
-    # ------------------------------------------------------------
-    def client_receive_manual(self, msg):
-        """
-        Should only ever run on clients.
-        """
-        if KismetSystemLibrary.IsDedicatedServer():
-            ue.log("[manual multicast] ERROR: executed on server")
-        else:
-            ue.log(f"[manual multicast] CLIENT executed: {msg}")
-
-    # Register as Client RPC
-    client_receive_manual.event = True
-    client_receive_manual.client = True
-    client_receive_manual.reliable = True
+    # # ------------------------------------------------------------
+    # # MULTICAST FLAG TEST
+    # # ------------------------------------------------------------
+    # def test_multicast_flag(self, msg):
+    #     """
+    #     If .multicast works, this should run on:
+    #     - Dedicated Server
+    #     - All connected Clients
+    #
+    #     In practice (UE4Python), this usually runs server-only.
+    #     """
+    #     if KismetSystemLibrary.IsDedicatedServer():
+    #         ue.log(f"[multicast flag] SERVER executed: {msg}")
+    #     else:
+    #         ue.log(f"[multicast flag] CLIENT executed: {msg}")
+    #
+    # # Register as RPC
+    # test_multicast_flag.event = True
+    # test_multicast_flag.multicast = True
+    # test_multicast_flag.reliable = True
+    #
+    # # ------------------------------------------------------------
+    # # SERVER RPC – MANUAL MULTICAST
+    # # ------------------------------------------------------------
+    # def server_manual_multicast(self, msg):
+    #     """
+    #     Authoritative server RPC.
+    #     Explicitly calls a client RPC on every PlayerController.
+    #     """
+    #     ue.log("[manual multicast] SERVER executing")
+    #
+    #     for pc in self.uobject.get_world().all_actors():
+    #         if pc:
+    #             pc.client_receive_manual(msg)
+    #
+    # # Register as Server RPC
+    # server_manual_multicast.event = True
+    # server_manual_multicast.server = True
+    # server_manual_multicast.reliable = True
+    #
+    # # ------------------------------------------------------------
+    # # CLIENT RPC – MANUAL MULTICAST TARGET
+    # # ------------------------------------------------------------
+    # def client_receive_manual(self, msg):
+    #     """
+    #     Should only ever run on clients.
+    #     """
+    #     if KismetSystemLibrary.IsDedicatedServer():
+    #         ue.log("[manual multicast] ERROR: executed on server")
+    #     else:
+    #         ue.log(f"[manual multicast] CLIENT executed: {msg}")
+    #
+    # # Register as Client RPC
+    # client_receive_manual.event = True
+    # client_receive_manual.client = True
+    # client_receive_manual.reliable = True
 
     # this is called on game start
     def begin_play(self):
         ue.log('Begin Play on Main class')
 
-        if KismetSystemLibrary.IsDedicatedServer():
-            ue.log("=== BeginPlay on DEDICATED SERVER ===")
-            hostname = socket.gethostname()
-            local_ip = socket.gethostbyname(hostname)
-            ue.log(f"Server LAN IP: {local_ip}")
-            try:
-                public_ip = urllib.request.urlopen('https://api.ipify.org').read().decode('utf-8')
-                ue.log(f"Public IP: {public_ip}")
-            except Exception as e:
-                ue.log(f"Could not fetch public IP: {e}")
-            ue.log("If you correctly port forwarded the LAN IP, the server is on the public IP: " + public_ip)
-
-            # Server-originated multicast test
-            ue.log("Calling test_multicast_flag() from server")
-            self.test_multicast_flag("hello via multicast flag")
-
-        else:
-            ue.log("=== BeginPlay on CLIENT ===")
-            # Client → Server → Clients
-            ue.log("Calling server_manual_multicast() from client")
-            self.server_manual_multicast("hello via manual multicast")
+        # if KismetSystemLibrary.IsDedicatedServer():
+        #     ue.log("=== BeginPlay on DEDICATED SERVER ===")
+        #     hostname = socket.gethostname()
+        #     local_ip = socket.gethostbyname(hostname)
+        #     ue.log(f"Server LAN IP: {local_ip}")
+        #     try:
+        #         public_ip = urllib.request.urlopen('https://api.ipify.org').read().decode('utf-8')
+        #         ue.log(f"Public IP: {public_ip}")
+        #     except Exception as e:
+        #         ue.log(f"Could not fetch public IP: {e}")
+        #     ue.log("If you correctly port forwarded the LAN IP, the server is on the public IP: " + public_ip)
+        #
+        #     # Server-originated multicast test
+        #     ue.log("Calling test_multicast_flag() from server")
+        #     self.test_multicast_flag("hello via multicast flag")
+        #
+        # else:
+        #     ue.log("=== BeginPlay on CLIENT ===")
+        #     # Client → Server → Clients
+        #     ue.log("Calling server_manual_multicast() from client")
+        #     self.server_manual_multicast("hello via manual multicast")
 
         # ue.exec('Script.py') # run a Python script file by passing its name
         # ue.log(self.uobject.get_world().call_function('IsDedicatedServer')) # ('GetNetMode'))
@@ -369,39 +370,51 @@ class Main:
 
 
 
+#
+# def on_string_received(full_string):
+#     print("Standalone helper received string!")
+#     print("Length:", len(full_string))
+#     print("Chunks received:", helper.large_string.GetChunkCount())
+#     print("Preview:", full_string[:200])
+#
+# # Create a standalone ULargeStringAsync
+# large_string = LargeStringAsync()
+#
+# # Example loopback send function
+# def send_chunk(chunk, index, total_chunks):
+#     helper.receive_chunk(chunk, index, total_chunks)
+#
+# # Create the helper (auto-waits for chunks)
+# helper = LargeStringAsyncStandalone(
+#     large_string_obj=large_string,
+#     send_chunk_callback=send_chunk,
+#     on_received_callback=on_string_received
+# )
+#
+# # Start async string build
+# large_string.SetFromStringAsync("Hello Unreal Standalone!" * 100000)
+#
+# # Now send all chunks
+# helper.send_string()
 
-import unreal_engine as ue
-from unreal_engine.classes import LargeStringAsync
-from constants import LargeStringAsyncStandalone
 
-# Callback when full string is received
-def on_string_received(full_string):
-    print("Standalone helper received string!")
-    print(f"Length: {len(full_string)}")
-    print(full_string[:200])  # first 200 characters
-
-# Create a standalone ULargeStringAsync object
-large_string = LargeStringAsync()
-
-# Set a very large string asynchronously
-large_string.SetFromStringAsync("Hello Unreal Standalone!" * 1000000)  # ~multi-MB for demo
-
-# Define how to send a chunk (for demo, we just loop it back)
-def send_chunk(chunk, index, total_chunks):
-    """
-    Example send function.
-    In a real system, replace this with your network or RPC call.
-    """
-    # Simulate receiving the chunk immediately (loopback)
-    helper.receive_chunk(chunk, index, total_chunks)
-
-# Create the standalone helper
-helper = LargeStringAsyncStandalone(
-    large_string_obj=large_string,
-    send_chunk_callback=send_chunk,
-    on_received_callback=on_string_received
-)
-
-# Send the string via chunks
-helper.send_string()
-
+# # 1GB String Test
+# large_string = LargeStringAsync()
+# N = 1_000_000_000 // len("X")  # Number of repeats to reach ~1GB
+# test_string = "X" * N
+#
+# large_string.SetFromStringAsync(test_string)
+#
+# def on_received(full_string):
+#     print("Received string!")
+#     print("Length (chars):", len(full_string))
+#     print("Chunk count:", helper.large_string.GetChunkCount())
+#     print("Preview:", full_string[:200])  # small preview
+#
+# helper = LargeStringAsyncStandalone(
+#     large_string_obj=large_string,
+#     send_chunk_callback=lambda c,i,t: helper.receive_chunk(c,i,t),
+#     on_received_callback=on_received
+# )
+#
+# helper.send_string()

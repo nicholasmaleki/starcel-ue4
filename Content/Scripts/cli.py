@@ -1,12 +1,46 @@
+from __future__ import annotations
+
+__GENERATED_AT__ = "2026-01-11T23:58:05.500952+00:00"
+
+import os
+import sys
+import subprocess
+from datetime import datetime, timezone, timedelta
+
+# auto-regeneration start (5 days)
+
+_MAX_AGE = timedelta(days=5)
+
+def _maybe_regenerate() -> None:
+    try:
+        generated = datetime.fromisoformat(__GENERATED_AT__)
+        if datetime.now(timezone.utc) - generated < _MAX_AGE:
+            return
+    except Exception:
+        pass
+
+    generator = os.path.join(os.path.dirname(__file__), "generate_cli.py")
+
+    # Best-effort regeneration (silent, non-fatal)
+    subprocess.run(
+        [sys.executable, generator],
+        cwd=os.path.dirname(__file__),
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+
+_maybe_regenerate()
+
+# end auto-regeneration
+
 r"""
 Auto-generated command wrappers.
 Source directories: C:\Program Files\Git\usr\bin
-['C:\\Program Files\\Git\\bin\\git.exe', 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe', 'C:\\Users\\nicho\\Documents\\Unreal Projects\\Starcel9\\Content\\CLITools\\ES-1.1.0.30.x64\\es.exe']
+['C:\\Program Files\\Git\\bin\\git.exe', 'C:\\Windows\\System32\\cmd.exeC:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe', 'C:\\Users\\nicho\\Documents\\Unreal Projects\\Starcel9\\Content\\CLITools\\ES-1.1.0.30.x64\\es.exe']
 """
 
-from __future__ import annotations
 import subprocess
-import os
 from dataclasses import dataclass
 from typing import List
 
@@ -533,9 +567,6 @@ class CLI:
 
     def pluginviewer(self, *args: str, print_output: bool = True) -> CommandResult:
         return self._run('pluginviewer', list(args), print_output=print_output)
-
-    def powershell(self, *args: str, print_output: bool = True) -> CommandResult:
-        return self._run('C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe', list(args), print_output=print_output)
 
     def pr(self, *args: str, print_output: bool = True) -> CommandResult:
         return self._run('pr', list(args), print_output=print_output)

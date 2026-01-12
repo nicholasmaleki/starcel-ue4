@@ -30,7 +30,7 @@ public class LargeData : ModuleRules
 		PublicAdditionalLibraries.Add(Path.Combine(ModuleDirectory, "../../ThirdParty/boost/lib/boost_random-vc142-mt-x64-1_90.lib"));
 		PublicAdditionalLibraries.Add(Path.Combine(ModuleDirectory, "../../ThirdParty/hdf5/lib/hdf5.lib"));
 		PublicAdditionalLibraries.Add(Path.Combine(ModuleDirectory, "../../ThirdParty/hdf5/lib/hdf5_hl.lib"));
-		PublicAdditionalLibraries.Add(Path.Combine(ModuleDirectory, "../../ThirdParty/hdf5/lib/zlib.lib"));
+		//PublicAdditionalLibraries.Add(Path.Combine(ModuleDirectory, "../../ThirdParty/hdf5/lib/zlib.lib"));
 
 		string BinPath = Path.Combine(ModuleDirectory, "..", "Binaries", "Win64");
 

@@ -1,48 +1,50 @@
 import pickle
 
-class LargeStringAsyncStandalone:
-    """
-    Python helper for ULargeStringAsync without an actor.
-    Handles:
-    - Chunked sending and receiving
-    - Async reassembly
-    - Callback when full string is received
-    """
 
-    def __init__(self, large_string_obj, send_chunk_callback, on_received_callback=None):
-        """
-        :param large_string_obj: ULargeStringAsync instance
-        :param send_chunk_callback: Python callable to send a chunk
-                                    Signature: func(chunk: TArray[uint8], index: int, total_chunks: int)
-        :param on_received_callback: Python callable when full string is received
-        """
+class LargeStringAsyncStandalone:
+    def __init__(self, large_string_obj, send_chunk_callback, on_received_callback=None, on_progress_callback=None, auto_send=True):
         self.large_string = large_string_obj
         self.send_chunk_callback = send_chunk_callback
         self.on_received_callback = on_received_callback
-        self.received_chunks = []
+        self.on_progress_callback = on_progress_callback
+        self.auto_send = auto_send
 
-        # Bind to C++ async event
-        self.large_string.OnFullyReceived.add_callable(self._on_fully_received)
+        self._chunks_ready = False
+        self._sending_started = False
+
+        # Bind completion events
+        self.large_string.bind_event('OnFullyReceived', self._on_fully_received)
+        self.large_string.bind_event('OnChunksBuilt', self._on_chunks_built)
+
+    def _on_chunks_built(self):
+        """Called when async chunk building completes in C++."""
+        self._chunks_ready = True
+        if self.auto_send and not self._sending_started:
+            self.send_string()
 
     def _on_fully_received(self):
-        """Called when full string is reassembled in C++"""
+        """Called when full string is reassembled in C++."""
         if self.on_received_callback:
+            # Safe access to string
             self.on_received_callback(self.large_string.ToString())
 
     def send_string(self):
-        """Send all chunks using the provided callback"""
+        """Send all chunks using provided callback, optionally reporting progress."""
+        if not self._chunks_ready:
+            return  # Can't send before chunks exist
+
+        self._sending_started = True
         total_chunks = self.large_string.GetChunkCount()
+
         for i in range(total_chunks):
             chunk = self.large_string.GetChunk(i)
             self.send_chunk_callback(chunk, i, total_chunks)
 
-    def receive_chunk(self, chunk, index, total_chunks):
-        """Receive a chunk from remote source"""
-        if len(self.received_chunks) < total_chunks:
-            self.received_chunks.extend([None] * (total_chunks - len(self.received_chunks)))
-        self.received_chunks[index] = chunk
+            if self.on_progress_callback:
+                self.on_progress_callback(i + 1, total_chunks)
 
-        # Forward chunk to C++ async object
+    def receive_chunk(self, chunk, index, total_chunks):
+        """Receive a chunk from remote source and forward to C++."""
         self.large_string.ReceiveChunk(chunk, index, total_chunks)
 
 
@@ -115,7 +117,6 @@ class Constants:
         except:
             print("Failed to unpickle quotes")
 
-
     def keyboard_to_ue_keyboard(self, keyboard_layout):
         ue_keyboard = []
 
@@ -149,10 +150,10 @@ class WorldSize():
         # self.ue4_world_max = 88000000000 # bEnableLargeWorlds = true, UE_USE_UE4_WORLD_MAX=0. Although, this reports larger: https://old.reddit.com/r/unrealengine/comments/1axhmhm/is_the_88_million_km_max_world_size_total_area_or/kro5la5/
 
         # all in meters
-        self.observable_universe = 8.8*10 ^ 26
+        self.observable_universe = 8.8 * 10 ^ 26
         self.milky_way_galaxy = 9 * 10 ^ 20
         self.solar_system = 3 * 10 ^ 13
-        self.au = 1.496*10^11
+        self.au = 1.496 * 10 ^ 11
         self.earth_size = 12756000  # includes bulge at the equator. Notice that it fits into the tiled ue4 world
         self.usa = 4500000
         self.usa_state = 800000
@@ -191,6 +192,7 @@ class WorldSize():
         self.photon_visible_weight = 4.42 * 10 ^ (-36)  # 9.70468767*10^(-15)nm by idiot math
         self.photon_gamma_weight = 2.21 * 10 ^ (-19)  # 485.234384nm by idiot math
 
+
 class FiniteRepetitionSelector():
     # +1
     # 1     2     3     4     5     6
@@ -215,8 +217,8 @@ class FiniteRepetitionSelector():
     #
     # auto(negate/direction)?
     # auto(negate/direction) threshold: 1
-    def __init__(self, current_operator = "+", current_operand = 2):
-        self.operators = ["C/S", "+", "*", "^", "↑", "↑↑"] # Counting/Successor
+    def __init__(self, current_operator="+", current_operand=2):
+        self.operators = ["C/S", "+", "*", "^", "↑", "↑↑"]  # Counting/Successor
         self.current_operator = current_operator
         self.current_operand = current_operand
         self.autonegate_threshold = 0.0
@@ -244,7 +246,7 @@ class FiniteRepetitionSelector():
         if self.current_operator == self.operators[3]:
             return pow(value, (1 / self.current_operand))
         if self.current_operator == self.operators[4]:
-            return self.basic_tetration(value,self.current_operand)
+            return self.basic_tetration(value, self.current_operand)
         return value
 
     def increase_value(self, value):
@@ -256,6 +258,7 @@ class FiniteRepetitionSelector():
         if self.current_operator == self.operators[3]:
             return pow(value, self.current_operand)
         return value
+
 
 class SpatialDimensionSelector():
     def __init__(self):
@@ -632,7 +635,6 @@ class Keyboards:
 # print('Output: ' + o.decode('ascii'))
 # print('Error: '  + e.decode('ascii'))
 # print('code: ' + str(proc.returncode))
-
 
 
 # /** Handles image2D update**/

@@ -13,12 +13,35 @@
 PRAGMA_DISABLE_DEPRECATION_WARNINGS
 void EmptyLinkFunctionForGeneratedCodeLargeStringAsync() {}
 // Cross Module References
-	LARGEDATA_API UFunction* Z_Construct_UDelegateFunction_LargeData_OnLargeStringAsyncReceived__DelegateSignature();
+	LARGEDATA_API UFunction* Z_Construct_UDelegateFunction_LargeData_OnChunksBuilt__DelegateSignature();
 	UPackage* Z_Construct_UPackage__Script_LargeData();
+	LARGEDATA_API UFunction* Z_Construct_UDelegateFunction_LargeData_OnLargeStringAsyncReceived__DelegateSignature();
 	LARGEDATA_API UClass* Z_Construct_UClass_ULargeStringAsync_NoRegister();
 	LARGEDATA_API UClass* Z_Construct_UClass_ULargeStringAsync();
 	LARGEDATA_API UClass* Z_Construct_UClass_ULargeDataObject();
 // End Cross Module References
+	struct Z_Construct_UDelegateFunction_LargeData_OnChunksBuilt__DelegateSignature_Statics
+	{
+#if WITH_METADATA
+		static const UE4CodeGen_Private::FMetaDataPairParam Function_MetaDataParams[];
+#endif
+		static const UE4CodeGen_Private::FFunctionParams FuncParams;
+	};
+#if WITH_METADATA
+	const UE4CodeGen_Private::FMetaDataPairParam Z_Construct_UDelegateFunction_LargeData_OnChunksBuilt__DelegateSignature_Statics::Function_MetaDataParams[] = {
+		{ "ModuleRelativePath", "Public/LargeStringAsync.h" },
+	};
+#endif
+	const UE4CodeGen_Private::FFunctionParams Z_Construct_UDelegateFunction_LargeData_OnChunksBuilt__DelegateSignature_Statics::FuncParams = { (UObject*(*)())Z_Construct_UPackage__Script_LargeData, nullptr, "OnChunksBuilt__DelegateSignature", nullptr, nullptr, 0, nullptr, 0, RF_Public|RF_Transient|RF_MarkAsNative, (EFunctionFlags)0x00130000, 0, 0, METADATA_PARAMS(Z_Construct_UDelegateFunction_LargeData_OnChunksBuilt__DelegateSignature_Statics::Function_MetaDataParams, UE_ARRAY_COUNT(Z_Construct_UDelegateFunction_LargeData_OnChunksBuilt__DelegateSignature_Statics::Function_MetaDataParams)) };
+	UFunction* Z_Construct_UDelegateFunction_LargeData_OnChunksBuilt__DelegateSignature()
+	{
+		static UFunction* ReturnFunction = nullptr;
+		if (!ReturnFunction)
+		{
+			UE4CodeGen_Private::ConstructUFunction(ReturnFunction, Z_Construct_UDelegateFunction_LargeData_OnChunksBuilt__DelegateSignature_Statics::FuncParams);
+		}
+		return ReturnFunction;
+	}
 	struct Z_Construct_UDelegateFunction_LargeData_OnLargeStringAsyncReceived__DelegateSignature_Statics
 	{
 #if WITH_METADATA
@@ -386,6 +409,10 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringAsync() {}
 		static const UE4CodeGen_Private::FMetaDataPairParam NewProp_OnFullyReceived_MetaData[];
 #endif
 		static const UE4CodeGen_Private::FMulticastDelegatePropertyParams NewProp_OnFullyReceived;
+#if WITH_METADATA
+		static const UE4CodeGen_Private::FMetaDataPairParam NewProp_OnChunksBuilt_MetaData[];
+#endif
+		static const UE4CodeGen_Private::FMulticastDelegatePropertyParams NewProp_OnChunksBuilt;
 		static const UE4CodeGen_Private::FPropertyParamsBase* const PropPointers[];
 		static const FCppClassTypeInfoStatic StaticCppClassTypeInfo;
 		static const UE4CodeGen_Private::FClassParams ClassParams;
@@ -420,8 +447,17 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringAsync() {}
 	};
 #endif
 	const UE4CodeGen_Private::FMulticastDelegatePropertyParams Z_Construct_UClass_ULargeStringAsync_Statics::NewProp_OnFullyReceived = { "OnFullyReceived", nullptr, (EPropertyFlags)0x0010000010080000, UE4CodeGen_Private::EPropertyGenFlags::InlineMulticastDelegate, RF_Public|RF_Transient|RF_MarkAsNative, 1, STRUCT_OFFSET(ULargeStringAsync, OnFullyReceived), Z_Construct_UDelegateFunction_LargeData_OnLargeStringAsyncReceived__DelegateSignature, METADATA_PARAMS(Z_Construct_UClass_ULargeStringAsync_Statics::NewProp_OnFullyReceived_MetaData, UE_ARRAY_COUNT(Z_Construct_UClass_ULargeStringAsync_Statics::NewProp_OnFullyReceived_MetaData)) };
+#if WITH_METADATA
+	const UE4CodeGen_Private::FMetaDataPairParam Z_Construct_UClass_ULargeStringAsync_Statics::NewProp_OnChunksBuilt_MetaData[] = {
+		{ "Comment", "/** Event called when chunks are ready after SetFromStringAsync */" },
+		{ "ModuleRelativePath", "Public/LargeStringAsync.h" },
+		{ "ToolTip", "Event called when chunks are ready after SetFromStringAsync" },
+	};
+#endif
+	const UE4CodeGen_Private::FMulticastDelegatePropertyParams Z_Construct_UClass_ULargeStringAsync_Statics::NewProp_OnChunksBuilt = { "OnChunksBuilt", nullptr, (EPropertyFlags)0x0010000010080000, UE4CodeGen_Private::EPropertyGenFlags::InlineMulticastDelegate, RF_Public|RF_Transient|RF_MarkAsNative, 1, STRUCT_OFFSET(ULargeStringAsync, OnChunksBuilt), Z_Construct_UDelegateFunction_LargeData_OnChunksBuilt__DelegateSignature, METADATA_PARAMS(Z_Construct_UClass_ULargeStringAsync_Statics::NewProp_OnChunksBuilt_MetaData, UE_ARRAY_COUNT(Z_Construct_UClass_ULargeStringAsync_Statics::NewProp_OnChunksBuilt_MetaData)) };
 	const UE4CodeGen_Private::FPropertyParamsBase* const Z_Construct_UClass_ULargeStringAsync_Statics::PropPointers[] = {
 		(const UE4CodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_ULargeStringAsync_Statics::NewProp_OnFullyReceived,
+		(const UE4CodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_ULargeStringAsync_Statics::NewProp_OnChunksBuilt,
 	};
 	const FCppClassTypeInfoStatic Z_Construct_UClass_ULargeStringAsync_Statics::StaticCppClassTypeInfo = {
 		TCppClassTypeTraits<ULargeStringAsync>::IsAbstract,
@@ -450,7 +486,7 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringAsync() {}
 		}
 		return OuterClass;
 	}
-	IMPLEMENT_CLASS(ULargeStringAsync, 2094411301);
+	IMPLEMENT_CLASS(ULargeStringAsync, 1319802501);
 	template<> LARGEDATA_API UClass* StaticClass<ULargeStringAsync>()
 	{
 		return ULargeStringAsync::StaticClass();

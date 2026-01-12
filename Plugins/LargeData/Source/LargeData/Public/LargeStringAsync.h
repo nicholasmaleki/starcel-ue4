@@ -6,6 +6,7 @@
 #include "LargeStringAsync.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLargeStringAsyncReceived);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnChunksBuilt);
 
 /**
  * ULargeStringAsync
@@ -35,6 +36,10 @@ public:
     /** Event called when the full string has been received */
     UPROPERTY(BlueprintAssignable)
         FOnLargeStringAsyncReceived OnFullyReceived;
+
+    /** Event called when chunks are ready after SetFromStringAsync */
+    UPROPERTY(BlueprintAssignable)
+        FOnChunksBuilt OnChunksBuilt;
 
     /** Get total number of chunks */
     UFUNCTION(BlueprintCallable)

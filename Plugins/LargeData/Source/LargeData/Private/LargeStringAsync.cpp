@@ -15,6 +15,13 @@ void ULargeStringAsync::SetFromStringAsync(const FString& InString)
 
             // Build chunks from serialized data
             BuildChunks();
+
+            // Notify main thread that chunks are ready
+            Async(EAsyncExecution::TaskGraphMainThread, [this]()
+                {
+                    UE_LOG(LogTemp, Log, TEXT("Chunks built: %d"), Chunks.Num());
+                    OnChunksBuilt.Broadcast();
+                });
         });
 }
 
@@ -33,6 +40,8 @@ void ULargeStringAsync::BuildChunks()
 
         Chunks.Add(Chunk);
     }
+
+    UE_LOG(LogTemp, Log, TEXT("SerializedData size: %d bytes, chunks: %d"), TotalBytes, Chunks.Num());
 }
 
 TArray<uint8> ULargeStringAsync::GetChunk(int32 Index) const

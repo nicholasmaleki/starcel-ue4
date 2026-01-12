@@ -189,9 +189,12 @@ void FUnrealEnginePythonModule::UESetupPythonInterpreter(bool verbose)
 static void setup_stdout_stderr()
 {
 	// Redirecting stdout
-	char const* code = "import sys\n"
+	char const* code =
+		"import sys\n"
 		"import builtins\n"
-		"import unreal_engine\n" // "import locale\n" 		"locale.setlocale(locale.LC_ALL, 'C')\n" //set locale to C to fix cooking errors. Otherwise it would be English_United States.1252
+		"import unreal_engine\n"
+		"\n"
+		"# Redirect stdout/stderr to UE log\n"
 		"class UnrealEngineOutput:\n"
 		"    def __init__(self, logger):\n"
 		"        self.logger = logger\n"
@@ -200,17 +203,18 @@ static void setup_stdout_stderr()
 		"            return\n"
 		"        try:\n"
 		"            text = str(buf)\n"
-		"        except Exception : \n"
-		"            text = \"<unprintable>\"\n"
-		"            self.logger(text)\n"
+		"        except Exception:\n"
+		"            text = '<unprintable>'\n"
+		"        self.logger(text)\n"
 		"    def flush(self):\n"
-		"        return\n"
+		"        pass\n"
 		"    def isatty(self):\n"
 		"        return False\n"
 		"\n"
 		"sys.stdout = UnrealEngineOutput(unreal_engine.log)\n"
 		"sys.stderr = UnrealEngineOutput(unreal_engine.log_error)\n"
 		"\n"
+		"# Helper decorator for UE events\n"
 		"class event:\n"
 		"    def __init__(self, event_signature):\n"
 		"        self.event_signature = event_signature\n"
@@ -219,13 +223,16 @@ static void setup_stdout_stderr()
 		"        return f\n"
 		"\n"
 		"unreal_engine.event = event\n"
-		"original_python_print = builtins.print\n" // somewhere inbetween upgrade from python37 and ue4.23 print stops working, so we override it
 		"\n"
-		"def custom_print(*args, **kwargs) :\n"
-		"	unreal_engine.log(*args, **kwargs)\n"
+		"# Override built-in print to support multiple arguments\n"
+		"original_python_print = builtins.print\n"
+		"def custom_print(*args, sep=' ', end='\\n', **kwargs):\n"
+		"    text = sep.join(str(a) for a in args) + end\n"
+		"    unreal_engine.log(text)\n"
 		"\n"
 		"builtins.print = custom_print\n"
-		"print(\"Python print to ue.log working.\")\n";
+		"\n"
+		"print('Python print to ue.log working.')\n";
 
 	//UE_LOG(LogPython, Log, TEXT("Python setup_stdout_stderr() const created"));
 	PyRun_SimpleString(code);

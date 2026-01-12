@@ -1,12 +1,16 @@
 import os
 import keyword
 import re
+from datetime import datetime, timezone
+
+generated_at = datetime.now(timezone.utc).isoformat()
 
 BIN_DIR = r"C:\Program Files\Git\usr\bin"
 OUTPUT_FILE = "cli.py"
 # Add extra full-path executables
 extra_exes = [
     r"C:\Program Files\Git\bin\git.exe",
+    r"C:\Windows\System32\cmd.exe"
     r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe",
     os.path.join(os.path.dirname(os.getcwd()), "CLITools", "ES-1.1.0.30.x64", "es.exe"),
 ]
@@ -61,15 +65,47 @@ for path in extra_exes:
 
 
 with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-    f.write(f'''r"""
+    f.write(f'''from __future__ import annotations
+
+__GENERATED_AT__ = "{generated_at}"
+
+import os
+import sys
+import subprocess
+from datetime import datetime, timezone, timedelta
+
+# auto-regeneration start (5 days)
+_MAX_AGE = timedelta(days=5)
+
+def _maybe_regenerate() -> None:
+    try:
+        generated = datetime.fromisoformat(__GENERATED_AT__)
+        if datetime.now(timezone.utc) - generated < _MAX_AGE:
+            return
+    except Exception:
+        pass
+
+    generator = os.path.join(os.path.dirname(__file__), "generate_cli.py")
+
+    # Best-effort regeneration (silent, non-fatal)
+    subprocess.run(
+        [sys.executable, generator],
+        cwd=os.path.dirname(__file__),
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+
+_maybe_regenerate()
+# end auto-regeneration
+
+r"""
 Auto-generated command wrappers.
 Source directories: {BIN_DIR}
 {extra_exes}
 """
 
-from __future__ import annotations
 import subprocess
-import os
 from dataclasses import dataclass
 from typing import List
 
