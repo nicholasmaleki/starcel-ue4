@@ -1,0 +1,221 @@
+"""
+history.py
+Robust history tracking system with crash-safe logging.
+Features:
+- Separate classes per history type (Keyboard, Copy, Insert, Delete, Undo, Movement, Action, Crash)
+- Automatic file logging to /Logs/, append-only
+- Single or batch logging
+- Clipboard tracking for CopyHistory
+- Optional background keyboard logging
+- Enable/disable logging per type
+- Automatic background polling thread for clipboard
+"""
+
+import os
+import json
+import threading
+import time
+from datetime import datetime
+
+try:
+    import pyperclip  # For clipboard tracking
+except ImportError:
+    pyperclip = None
+
+try:
+    import pynput  # For keyboard logging
+    from pynput import keyboard
+except ImportError:
+    pynput = None  # Keyboard logging disabled if pynput not installed
+
+# --- Ensure log directory exists ---
+LOG_DIR = os.path.join(os.getcwd(), "Logs")
+os.makedirs(LOG_DIR, exist_ok=True)
+
+
+# --- Base history class ---
+class BaseHistory:
+    def __init__(self, name):
+        self.name = name
+        self.data = []
+        self.timestamps = []
+        self.enabled = True
+        self.log_file = os.path.join(LOG_DIR, f"{self.name}.log")
+
+    def log(self, item):
+        """Log single item or list of items."""
+        if not self.enabled:
+            return
+
+        ts = datetime.now()
+        if isinstance(item, list):
+            self.data.extend(item)
+            self.timestamps.extend([ts] * len(item))
+            self._write_to_file(item, ts)
+        else:
+            self.data.append(item)
+            self.timestamps.append(ts)
+            self._write_to_file(item, ts)
+
+    def _write_to_file(self, item, ts):
+        """Append single item or list of items to log file."""
+        with open(self.log_file, "a", encoding="utf-8") as f:
+            if isinstance(item, list):
+                for i in item:
+                    f.write(json.dumps({"timestamp": ts.isoformat(), "data": i}) + "\n")
+            else:
+                f.write(json.dumps({"timestamp": ts.isoformat(), "data": item}) + "\n")
+
+    def enable(self):
+        self.enabled = True
+
+    def disable(self):
+        self.enabled = False
+
+    def get_history(self):
+        return self.data
+
+    def get_timestamps(self):
+        return self.timestamps
+
+    def clear(self):
+        self.data.clear()
+        self.timestamps.clear()
+        open(self.log_file, "w").close()
+
+
+# --- Subclasses ---
+class KeyboardHistory(BaseHistory):
+    def __init__(self):
+        super().__init__("Keyboard")
+
+
+class CopyHistory(BaseHistory):
+    def __init__(self):
+        super().__init__("Copy")
+        self.last_clipboard = None
+
+    def poll_clipboard(self):
+        """Check clipboard and log new content if changed."""
+        if pyperclip is None:
+            return
+        try:
+            current = pyperclip.paste()
+            if current != self.last_clipboard and current != "":
+                self.last_clipboard = current
+                self.log(current)
+        except Exception as e:
+            print(f"Clipboard polling error: {e}")
+
+
+class ActionHistory(BaseHistory):
+    def __init__(self):
+        super().__init__("Action")
+
+
+class InsertHistory(BaseHistory):
+    def __init__(self):
+        super().__init__("Insert")
+
+
+class DeleteHistory(BaseHistory):
+    def __init__(self):
+        super().__init__("Delete")
+
+
+class MovementHistory(BaseHistory):
+    def __init__(self):
+        super().__init__("Movement")
+
+
+class UndoHistory(BaseHistory):
+    def __init__(self):
+        super().__init__("Undo")
+
+
+class CrashHistory(BaseHistory):
+    def __init__(self):
+        super().__init__("Crash")
+
+
+# --- History Manager ---
+class HistoryManager:
+    POLL_INTERVAL = 0.5  # seconds
+
+    def __init__(self, auto_start=True, poll_clipboard=True, keyboard_logging=True):
+        self.histories = {
+            "Keyboard": KeyboardHistory(),
+            "Copy": CopyHistory(),
+            "Action": ActionHistory(),
+            "Insert": InsertHistory(),
+            "Delete": DeleteHistory(),
+            "Movement": MovementHistory(),
+            "Undo": UndoHistory(),
+            "Crash": CrashHistory(),
+        }
+        self._stop_event = threading.Event()
+        self.poll_clipboard_enabled = poll_clipboard
+        self.keyboard_logging_enabled = keyboard_logging
+
+        if auto_start:
+            self.start_background_thread()
+
+    # --- Logging functions ---
+    def log(self, history_type, item):
+        if history_type not in self.histories:
+            raise ValueError(f"Unknown history type: {history_type}")
+        self.histories[history_type].log(item)
+
+    def enable_type(self, history_type):
+        self.histories[history_type].enable()
+
+    def disable_type(self, history_type):
+        self.histories[history_type].disable()
+
+    def get_history(self, history_type):
+        return self.histories[history_type].get_history()
+
+    def get_timestamps(self, history_type):
+        return self.histories[history_type].get_timestamps()
+
+    def clear_history(self, history_type=None):
+        if history_type:
+            self.histories[history_type].clear()
+        else:
+            for h in self.histories.values():
+                h.clear()
+
+    # --- Background tasks ---
+    def start_background_thread(self):
+        self._thread = threading.Thread(target=self._background_loop, daemon=True)
+        self._thread.start()
+        if self.keyboard_logging_enabled and pynput is not None:
+            self._start_keyboard_listener()
+
+    def stop_background_thread(self):
+        self._stop_event.set()
+        if hasattr(self, "_keyboard_listener"):
+            self._keyboard_listener.stop()
+        if hasattr(self, "_thread"):
+            self._thread.join()
+
+    def _background_loop(self):
+        while not self._stop_event.is_set():
+            if self.poll_clipboard_enabled:
+                self.poll_copy()
+            time.sleep(self.POLL_INTERVAL)
+
+    # --- Clipboard polling ---
+    def poll_copy(self):
+        self.histories["Copy"].poll_clipboard()
+
+    # --- Keyboard logging ---
+    def _start_keyboard_listener(self):
+        def on_press(key):
+            try:
+                self.log("Keyboard", str(key).replace("'", ""))
+            except Exception as e:
+                self.log("Crash", f"Keyboard logging error: {e}")
+
+        self._keyboard_listener = keyboard.Listener(on_press=on_press)
+        self._keyboard_listener.start()

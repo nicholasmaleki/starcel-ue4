@@ -93,6 +93,13 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringAsync() {}
 		*(int32*)Z_Param__Result=P_THIS->GetChunkCount();
 		P_NATIVE_END;
 	}
+	DEFINE_FUNCTION(ULargeStringAsync::execReassembleFromChunksAsync)
+	{
+		P_FINISH;
+		P_NATIVE_BEGIN;
+		P_THIS->ReassembleFromChunksAsync();
+		P_NATIVE_END;
+	}
 	DEFINE_FUNCTION(ULargeStringAsync::execReceiveChunk)
 	{
 		P_GET_TARRAY_REF(uint8,Z_Param_Out_Chunk);
@@ -101,13 +108,6 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringAsync() {}
 		P_FINISH;
 		P_NATIVE_BEGIN;
 		P_THIS->ReceiveChunk(Z_Param_Out_Chunk,Z_Param_Index,Z_Param_TotalChunks);
-		P_NATIVE_END;
-	}
-	DEFINE_FUNCTION(ULargeStringAsync::execReassembleFromChunksAsync)
-	{
-		P_FINISH;
-		P_NATIVE_BEGIN;
-		P_THIS->ReassembleFromChunksAsync();
 		P_NATIVE_END;
 	}
 	DEFINE_FUNCTION(ULargeStringAsync::execSetFromStringAsync)
@@ -158,9 +158,7 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringAsync() {}
 	};
 #if WITH_METADATA
 	const UE4CodeGen_Private::FMetaDataPairParam Z_Construct_UFunction_ULargeStringAsync_GetChunk_Statics::Function_MetaDataParams[] = {
-		{ "Comment", "/** Get a chunk by index */" },
 		{ "ModuleRelativePath", "Public/LargeStringAsync.h" },
-		{ "ToolTip", "Get a chunk by index" },
 	};
 #endif
 	const UE4CodeGen_Private::FFunctionParams Z_Construct_UFunction_ULargeStringAsync_GetChunk_Statics::FuncParams = { (UObject*(*)())Z_Construct_UClass_ULargeStringAsync, nullptr, "GetChunk", nullptr, nullptr, sizeof(LargeStringAsync_eventGetChunk_Parms), Z_Construct_UFunction_ULargeStringAsync_GetChunk_Statics::PropPointers, UE_ARRAY_COUNT(Z_Construct_UFunction_ULargeStringAsync_GetChunk_Statics::PropPointers), RF_Public|RF_Transient|RF_MarkAsNative, (EFunctionFlags)0x54020401, 0, 0, METADATA_PARAMS(Z_Construct_UFunction_ULargeStringAsync_GetChunk_Statics::Function_MetaDataParams, UE_ARRAY_COUNT(Z_Construct_UFunction_ULargeStringAsync_GetChunk_Statics::Function_MetaDataParams)) };
@@ -192,9 +190,7 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringAsync() {}
 	};
 #if WITH_METADATA
 	const UE4CodeGen_Private::FMetaDataPairParam Z_Construct_UFunction_ULargeStringAsync_GetChunkCount_Statics::Function_MetaDataParams[] = {
-		{ "Comment", "/** Get total number of chunks */" },
 		{ "ModuleRelativePath", "Public/LargeStringAsync.h" },
-		{ "ToolTip", "Get total number of chunks" },
 	};
 #endif
 	const UE4CodeGen_Private::FFunctionParams Z_Construct_UFunction_ULargeStringAsync_GetChunkCount_Statics::FuncParams = { (UObject*(*)())Z_Construct_UClass_ULargeStringAsync, nullptr, "GetChunkCount", nullptr, nullptr, sizeof(LargeStringAsync_eventGetChunkCount_Parms), Z_Construct_UFunction_ULargeStringAsync_GetChunkCount_Statics::PropPointers, UE_ARRAY_COUNT(Z_Construct_UFunction_ULargeStringAsync_GetChunkCount_Statics::PropPointers), RF_Public|RF_Transient|RF_MarkAsNative, (EFunctionFlags)0x54020401, 0, 0, METADATA_PARAMS(Z_Construct_UFunction_ULargeStringAsync_GetChunkCount_Statics::Function_MetaDataParams, UE_ARRAY_COUNT(Z_Construct_UFunction_ULargeStringAsync_GetChunkCount_Statics::Function_MetaDataParams)) };
@@ -226,9 +222,7 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringAsync() {}
 	};
 #if WITH_METADATA
 	const UE4CodeGen_Private::FMetaDataPairParam Z_Construct_UFunction_ULargeStringAsync_GetSerializedSize_Statics::Function_MetaDataParams[] = {
-		{ "Comment", "/** Get serialized UTF-8 size in bytes */" },
 		{ "ModuleRelativePath", "Public/LargeStringAsync.h" },
-		{ "ToolTip", "Get serialized UTF-8 size in bytes" },
 	};
 #endif
 	const UE4CodeGen_Private::FFunctionParams Z_Construct_UFunction_ULargeStringAsync_GetSerializedSize_Statics::FuncParams = { (UObject*(*)())Z_Construct_UClass_ULargeStringAsync, nullptr, "GetSerializedSize", nullptr, nullptr, sizeof(LargeStringAsync_eventGetSerializedSize_Parms), Z_Construct_UFunction_ULargeStringAsync_GetSerializedSize_Statics::PropPointers, UE_ARRAY_COUNT(Z_Construct_UFunction_ULargeStringAsync_GetSerializedSize_Statics::PropPointers), RF_Public|RF_Transient|RF_MarkAsNative, (EFunctionFlags)0x54020401, 0, 0, METADATA_PARAMS(Z_Construct_UFunction_ULargeStringAsync_GetSerializedSize_Statics::Function_MetaDataParams, UE_ARRAY_COUNT(Z_Construct_UFunction_ULargeStringAsync_GetSerializedSize_Statics::Function_MetaDataParams)) };
@@ -250,9 +244,9 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringAsync() {}
 	};
 #if WITH_METADATA
 	const UE4CodeGen_Private::FMetaDataPairParam Z_Construct_UFunction_ULargeStringAsync_ReassembleFromChunksAsync_Statics::Function_MetaDataParams[] = {
-		{ "Comment", "/** Async reassemble from received chunks */" },
+		{ "Comment", "/** Async reassembly */" },
 		{ "ModuleRelativePath", "Public/LargeStringAsync.h" },
-		{ "ToolTip", "Async reassemble from received chunks" },
+		{ "ToolTip", "Async reassembly" },
 	};
 #endif
 	const UE4CodeGen_Private::FFunctionParams Z_Construct_UFunction_ULargeStringAsync_ReassembleFromChunksAsync_Statics::FuncParams = { (UObject*(*)())Z_Construct_UClass_ULargeStringAsync, nullptr, "ReassembleFromChunksAsync", nullptr, nullptr, 0, nullptr, 0, RF_Public|RF_Transient|RF_MarkAsNative, (EFunctionFlags)0x04020401, 0, 0, METADATA_PARAMS(Z_Construct_UFunction_ULargeStringAsync_ReassembleFromChunksAsync_Statics::Function_MetaDataParams, UE_ARRAY_COUNT(Z_Construct_UFunction_ULargeStringAsync_ReassembleFromChunksAsync_Statics::Function_MetaDataParams)) };
@@ -303,9 +297,9 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringAsync() {}
 	};
 #if WITH_METADATA
 	const UE4CodeGen_Private::FMetaDataPairParam Z_Construct_UFunction_ULargeStringAsync_ReceiveChunk_Statics::Function_MetaDataParams[] = {
-		{ "Comment", "/** Receive a chunk (from RPC) */" },
+		{ "Comment", "/** Receive a chunk (called by RPC actor or Python) */" },
 		{ "ModuleRelativePath", "Public/LargeStringAsync.h" },
-		{ "ToolTip", "Receive a chunk (from RPC)" },
+		{ "ToolTip", "Receive a chunk (called by RPC actor or Python)" },
 	};
 #endif
 	const UE4CodeGen_Private::FFunctionParams Z_Construct_UFunction_ULargeStringAsync_ReceiveChunk_Statics::FuncParams = { (UObject*(*)())Z_Construct_UClass_ULargeStringAsync, nullptr, "ReceiveChunk", nullptr, nullptr, sizeof(LargeStringAsync_eventReceiveChunk_Parms), Z_Construct_UFunction_ULargeStringAsync_ReceiveChunk_Statics::PropPointers, UE_ARRAY_COUNT(Z_Construct_UFunction_ULargeStringAsync_ReceiveChunk_Statics::PropPointers), RF_Public|RF_Transient|RF_MarkAsNative, (EFunctionFlags)0x04420401, 0, 0, METADATA_PARAMS(Z_Construct_UFunction_ULargeStringAsync_ReceiveChunk_Statics::Function_MetaDataParams, UE_ARRAY_COUNT(Z_Construct_UFunction_ULargeStringAsync_ReceiveChunk_Statics::Function_MetaDataParams)) };
@@ -345,9 +339,9 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringAsync() {}
 	};
 #if WITH_METADATA
 	const UE4CodeGen_Private::FMetaDataPairParam Z_Construct_UFunction_ULargeStringAsync_SetFromStringAsync_Statics::Function_MetaDataParams[] = {
-		{ "Comment", "/** Async set string (builds chunks off game thread) */" },
+		{ "Comment", "/** Build chunks asynchronously from FString */" },
 		{ "ModuleRelativePath", "Public/LargeStringAsync.h" },
-		{ "ToolTip", "Async set string (builds chunks off game thread)" },
+		{ "ToolTip", "Build chunks asynchronously from FString" },
 	};
 #endif
 	const UE4CodeGen_Private::FFunctionParams Z_Construct_UFunction_ULargeStringAsync_SetFromStringAsync_Statics::FuncParams = { (UObject*(*)())Z_Construct_UClass_ULargeStringAsync, nullptr, "SetFromStringAsync", nullptr, nullptr, sizeof(LargeStringAsync_eventSetFromStringAsync_Parms), Z_Construct_UFunction_ULargeStringAsync_SetFromStringAsync_Statics::PropPointers, UE_ARRAY_COUNT(Z_Construct_UFunction_ULargeStringAsync_SetFromStringAsync_Statics::PropPointers), RF_Public|RF_Transient|RF_MarkAsNative, (EFunctionFlags)0x04020401, 0, 0, METADATA_PARAMS(Z_Construct_UFunction_ULargeStringAsync_SetFromStringAsync_Statics::Function_MetaDataParams, UE_ARRAY_COUNT(Z_Construct_UFunction_ULargeStringAsync_SetFromStringAsync_Statics::Function_MetaDataParams)) };
@@ -379,9 +373,7 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringAsync() {}
 	};
 #if WITH_METADATA
 	const UE4CodeGen_Private::FMetaDataPairParam Z_Construct_UFunction_ULargeStringAsync_ToString_Statics::Function_MetaDataParams[] = {
-		{ "Comment", "/** Get the reconstructed FString */" },
 		{ "ModuleRelativePath", "Public/LargeStringAsync.h" },
-		{ "ToolTip", "Get the reconstructed FString" },
 	};
 #endif
 	const UE4CodeGen_Private::FFunctionParams Z_Construct_UFunction_ULargeStringAsync_ToString_Statics::FuncParams = { (UObject*(*)())Z_Construct_UClass_ULargeStringAsync, nullptr, "ToString", nullptr, nullptr, sizeof(LargeStringAsync_eventToString_Parms), Z_Construct_UFunction_ULargeStringAsync_ToString_Statics::PropPointers, UE_ARRAY_COUNT(Z_Construct_UFunction_ULargeStringAsync_ToString_Statics::PropPointers), RF_Public|RF_Transient|RF_MarkAsNative, (EFunctionFlags)0x54020401, 0, 0, METADATA_PARAMS(Z_Construct_UFunction_ULargeStringAsync_ToString_Statics::Function_MetaDataParams, UE_ARRAY_COUNT(Z_Construct_UFunction_ULargeStringAsync_ToString_Statics::Function_MetaDataParams)) };
@@ -422,36 +414,36 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringAsync() {}
 		(UObject* (*)())Z_Construct_UPackage__Script_LargeData,
 	};
 	const FClassFunctionLinkInfo Z_Construct_UClass_ULargeStringAsync_Statics::FuncInfo[] = {
-		{ &Z_Construct_UFunction_ULargeStringAsync_GetChunk, "GetChunk" }, // 3654786275
-		{ &Z_Construct_UFunction_ULargeStringAsync_GetChunkCount, "GetChunkCount" }, // 1222624585
-		{ &Z_Construct_UFunction_ULargeStringAsync_GetSerializedSize, "GetSerializedSize" }, // 1595585033
-		{ &Z_Construct_UFunction_ULargeStringAsync_ReassembleFromChunksAsync, "ReassembleFromChunksAsync" }, // 405476709
-		{ &Z_Construct_UFunction_ULargeStringAsync_ReceiveChunk, "ReceiveChunk" }, // 7962992
-		{ &Z_Construct_UFunction_ULargeStringAsync_SetFromStringAsync, "SetFromStringAsync" }, // 3155309772
-		{ &Z_Construct_UFunction_ULargeStringAsync_ToString, "ToString" }, // 2755281609
+		{ &Z_Construct_UFunction_ULargeStringAsync_GetChunk, "GetChunk" }, // 2078071925
+		{ &Z_Construct_UFunction_ULargeStringAsync_GetChunkCount, "GetChunkCount" }, // 3154786892
+		{ &Z_Construct_UFunction_ULargeStringAsync_GetSerializedSize, "GetSerializedSize" }, // 4133764479
+		{ &Z_Construct_UFunction_ULargeStringAsync_ReassembleFromChunksAsync, "ReassembleFromChunksAsync" }, // 1953374076
+		{ &Z_Construct_UFunction_ULargeStringAsync_ReceiveChunk, "ReceiveChunk" }, // 804026855
+		{ &Z_Construct_UFunction_ULargeStringAsync_SetFromStringAsync, "SetFromStringAsync" }, // 697932192
+		{ &Z_Construct_UFunction_ULargeStringAsync_ToString, "ToString" }, // 2718216335
 	};
 #if WITH_METADATA
 	const UE4CodeGen_Private::FMetaDataPairParam Z_Construct_UClass_ULargeStringAsync_Statics::Class_MetaDataParams[] = {
 		{ "BlueprintType", "true" },
-		{ "Comment", "/**\n * ULargeStringAsync\n *\n * Async, chunked large string support.\n * Can be used with or without an actor.\n * Fully compatible with RPC or Python usage.\n */" },
+		{ "Comment", "/**\n * ULargeStringAsync\n *\n * Async, chunked large string support.\n * Pure data + async logic (NO RPCs here).\n * 1GB-safe via chunking.\n */" },
 		{ "IncludePath", "LargeStringAsync.h" },
 		{ "ModuleRelativePath", "Public/LargeStringAsync.h" },
-		{ "ToolTip", "ULargeStringAsync\n\nAsync, chunked large string support.\nCan be used with or without an actor.\nFully compatible with RPC or Python usage." },
+		{ "ToolTip", "ULargeStringAsync\n\nAsync, chunked large string support.\nPure data + async logic (NO RPCs here).\n1GB-safe via chunking." },
 	};
 #endif
 #if WITH_METADATA
 	const UE4CodeGen_Private::FMetaDataPairParam Z_Construct_UClass_ULargeStringAsync_Statics::NewProp_OnFullyReceived_MetaData[] = {
-		{ "Comment", "/** Event called when the full string has been received */" },
+		{ "Comment", "/** Fired when full string reconstructed */" },
 		{ "ModuleRelativePath", "Public/LargeStringAsync.h" },
-		{ "ToolTip", "Event called when the full string has been received" },
+		{ "ToolTip", "Fired when full string reconstructed" },
 	};
 #endif
 	const UE4CodeGen_Private::FMulticastDelegatePropertyParams Z_Construct_UClass_ULargeStringAsync_Statics::NewProp_OnFullyReceived = { "OnFullyReceived", nullptr, (EPropertyFlags)0x0010000010080000, UE4CodeGen_Private::EPropertyGenFlags::InlineMulticastDelegate, RF_Public|RF_Transient|RF_MarkAsNative, 1, STRUCT_OFFSET(ULargeStringAsync, OnFullyReceived), Z_Construct_UDelegateFunction_LargeData_OnLargeStringAsyncReceived__DelegateSignature, METADATA_PARAMS(Z_Construct_UClass_ULargeStringAsync_Statics::NewProp_OnFullyReceived_MetaData, UE_ARRAY_COUNT(Z_Construct_UClass_ULargeStringAsync_Statics::NewProp_OnFullyReceived_MetaData)) };
 #if WITH_METADATA
 	const UE4CodeGen_Private::FMetaDataPairParam Z_Construct_UClass_ULargeStringAsync_Statics::NewProp_OnChunksBuilt_MetaData[] = {
-		{ "Comment", "/** Event called when chunks are ready after SetFromStringAsync */" },
+		{ "Comment", "/** Fired when chunks are ready */" },
 		{ "ModuleRelativePath", "Public/LargeStringAsync.h" },
-		{ "ToolTip", "Event called when chunks are ready after SetFromStringAsync" },
+		{ "ToolTip", "Fired when chunks are ready" },
 	};
 #endif
 	const UE4CodeGen_Private::FMulticastDelegatePropertyParams Z_Construct_UClass_ULargeStringAsync_Statics::NewProp_OnChunksBuilt = { "OnChunksBuilt", nullptr, (EPropertyFlags)0x0010000010080000, UE4CodeGen_Private::EPropertyGenFlags::InlineMulticastDelegate, RF_Public|RF_Transient|RF_MarkAsNative, 1, STRUCT_OFFSET(ULargeStringAsync, OnChunksBuilt), Z_Construct_UDelegateFunction_LargeData_OnChunksBuilt__DelegateSignature, METADATA_PARAMS(Z_Construct_UClass_ULargeStringAsync_Statics::NewProp_OnChunksBuilt_MetaData, UE_ARRAY_COUNT(Z_Construct_UClass_ULargeStringAsync_Statics::NewProp_OnChunksBuilt_MetaData)) };
@@ -486,7 +478,7 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringAsync() {}
 		}
 		return OuterClass;
 	}
-	IMPLEMENT_CLASS(ULargeStringAsync, 1319802501);
+	IMPLEMENT_CLASS(ULargeStringAsync, 1140165297);
 	template<> LARGEDATA_API UClass* StaticClass<ULargeStringAsync>()
 	{
 		return ULargeStringAsync::StaticClass();

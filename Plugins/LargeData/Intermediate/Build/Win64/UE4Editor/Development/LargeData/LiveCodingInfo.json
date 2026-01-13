@@ -6,14 +6,16 @@
 			"LargeData.cpp.obj",
 			"LargeDataObject.cpp.obj",
 			"LargeStringDemoActor.cpp.obj",
-			"LargeStringAsync.cpp.obj"
+			"LargeStringAsync.cpp.obj",
+			"LargeStringRPCActor.cpp.obj"
 		],
 		"Module.LargeData.gen.cpp.obj": [
 			"LargeByteDataObject.gen.cpp.obj",
-			"LargeData.init.gen.cpp.obj",
 			"LargeDataObject.gen.cpp.obj",
+			"LargeStringDemoActor.gen.cpp.obj",
+			"LargeData.init.gen.cpp.obj",
 			"LargeStringAsync.gen.cpp.obj",
-			"LargeStringDemoActor.gen.cpp.obj"
+			"LargeStringRPCActor.gen.cpp.obj"
 		]
 	}
 }

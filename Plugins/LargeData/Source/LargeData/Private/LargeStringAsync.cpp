@@ -3,23 +3,27 @@
 
 void ULargeStringAsync::SetFromStringAsync(const FString& InString)
 {
-    // Build chunks asynchronously off the game thread
+    UE_LOG(LogTemp, Log,
+        TEXT("SetFromStringAsync: chars=%d"),
+        InString.Len());
+
     Async(EAsyncExecution::Thread, [this, InString]()
         {
             Value = InString;
 
-            // Convert UTF-16 FString to UTF-8 bytes
             FTCHARToUTF8 Converter(*Value);
-            SerializedData.Empty(Converter.Length());
-            SerializedData.Append(reinterpret_cast<const uint8*>(Converter.Get()), Converter.Length());
+            SerializedData.Reset(Converter.Length());
+            SerializedData.Append(
+                reinterpret_cast<const uint8*>(Converter.Get()),
+                Converter.Length()
+            );
 
-            // Build chunks from serialized data
             BuildChunks();
 
-            // Notify main thread that chunks are ready
             Async(EAsyncExecution::TaskGraphMainThread, [this]()
                 {
-                    UE_LOG(LogTemp, Log, TEXT("Chunks built: %d"), Chunks.Num());
+                    UE_LOG(LogTemp, Log,
+                        TEXT("Chunks built: %d"), Chunks.Num());
                     OnChunksBuilt.Broadcast();
                 });
         });
@@ -27,52 +31,56 @@ void ULargeStringAsync::SetFromStringAsync(const FString& InString)
 
 void ULargeStringAsync::BuildChunks()
 {
-    Chunks.Empty();
-    int32 TotalBytes = SerializedData.Num();
+    Chunks.Reset();
 
+    const int32 TotalBytes = SerializedData.Num();
     for (int32 Offset = 0; Offset < TotalBytes; Offset += MaxChunkSize)
     {
-        int32 Size = FMath::Min(MaxChunkSize, TotalBytes - Offset);
-
-        // Copy bytes into a chunk
+        const int32 Size = FMath::Min(MaxChunkSize, TotalBytes - Offset);
         TArray<uint8> Chunk;
         Chunk.Append(&SerializedData[Offset], Size);
-
-        Chunks.Add(Chunk);
+        Chunks.Add(MoveTemp(Chunk));
     }
 
-    UE_LOG(LogTemp, Log, TEXT("SerializedData size: %d bytes, chunks: %d"), TotalBytes, Chunks.Num());
+    UE_LOG(LogTemp, Log,
+        TEXT("SerializedData=%d bytes, Chunks=%d"),
+        TotalBytes, Chunks.Num());
 }
 
 TArray<uint8> ULargeStringAsync::GetChunk(int32 Index) const
 {
-    if (Chunks.IsValidIndex(Index))
-        return Chunks[Index];
-    return TArray<uint8>();
+    return Chunks.IsValidIndex(Index) ? Chunks[Index] : TArray<uint8>();
 }
 
-void ULargeStringAsync::ReceiveChunk(const TArray<uint8>& Chunk, int32 Index, int32 TotalChunks)
+void ULargeStringAsync::ReceiveChunk(
+    const TArray<uint8>& Chunk,
+    int32 Index,
+    int32 TotalChunks)
 {
-    if (ReceivedChunks.Num() < TotalChunks)
+    if (Index < 0 || Index >= TotalChunks)
+    {
+        UE_LOG(LogTemp, Warning,
+            TEXT("ReceiveChunk: Invalid index %d/%d"),
+            Index, TotalChunks);
+        return;
+    }
+
+    if (ReceivedChunks.Num() != TotalChunks)
+    {
         ReceivedChunks.SetNum(TotalChunks);
+        UE_LOG(LogTemp, Log,
+            TEXT("Receiving %d chunks total"), TotalChunks);
+    }
 
     ReceivedChunks[Index] = Chunk;
 
-    // Check if all chunks are received
-    bool bAllReceived = true;
-    for (const auto& C : ReceivedChunks)
+    for (const TArray<uint8>& C : ReceivedChunks)
     {
         if (C.Num() == 0)
-        {
-            bAllReceived = false;
-            break;
-        }
+            return;
     }
 
-    if (bAllReceived)
-    {
-        ReassembleFromChunksAsync();
-    }
+    ReassembleFromChunksAsync();
 }
 
 void ULargeStringAsync::ReassembleFromChunksAsync()
@@ -81,9 +89,9 @@ void ULargeStringAsync::ReassembleFromChunksAsync()
         {
             ReassembleChunks();
 
-            // Notify main thread
             Async(EAsyncExecution::TaskGraphMainThread, [this]()
                 {
+                    UE_LOG(LogTemp, Log, TEXT("Reassembly complete"));
                     OnFullyReceived.Broadcast();
                 });
         });
@@ -91,14 +99,11 @@ void ULargeStringAsync::ReassembleFromChunksAsync()
 
 void ULargeStringAsync::ReassembleChunks()
 {
-    SerializedData.Empty();
+    SerializedData.Reset();
 
-    for (const auto& Chunk : ReceivedChunks)
+    for (const TArray<uint8>& Chunk : ReceivedChunks)
         SerializedData.Append(Chunk);
 
-    // Convert UTF-8 bytes back to FString
     Value = UTF8_TO_TCHAR(SerializedData.GetData());
-
-    // Clear temporary received storage
-    ReceivedChunks.Empty();
+    ReceivedChunks.Reset();
 }

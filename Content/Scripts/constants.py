@@ -1,51 +1,119 @@
 import pickle
-
+import numpy as np
+import unreal_engine as ue
 
 class LargeStringAsyncStandalone:
-    def __init__(self, large_string_obj, send_chunk_callback, on_received_callback=None, on_progress_callback=None, auto_send=True):
+    def __init__(
+        self,
+        large_string_obj,
+        rpc_actor,  # store the actor here
+        on_received_callback=None,       # client callback
+        on_server_received_callback=None, # server callback
+        on_progress_callback=None,
+        auto_send=True
+    ):
         self.large_string = large_string_obj
-        self.send_chunk_callback = send_chunk_callback
+        self.rpc_actor = rpc_actor       # store the actor instead of using global
         self.on_received_callback = on_received_callback
+        self.on_server_received_callback = on_server_received_callback
         self.on_progress_callback = on_progress_callback
         self.auto_send = auto_send
 
         self._chunks_ready = False
         self._sending_started = False
 
-        # Bind completion events
+        # Bind C++ events
         self.large_string.bind_event('OnFullyReceived', self._on_fully_received)
         self.large_string.bind_event('OnChunksBuilt', self._on_chunks_built)
 
     def _on_chunks_built(self):
-        """Called when async chunk building completes in C++."""
+        ue.log_warning("[Standalone] Chunks built")
         self._chunks_ready = True
         if self.auto_send and not self._sending_started:
-            self.send_string()
+            self.send_string()  # default mode
 
     def _on_fully_received(self):
-        """Called when full string is reassembled in C++."""
+        ue.log_warning("[Standalone] Fully received")
+        full_string = self.large_string.ToString()
+
+        # Client-side callback
         if self.on_received_callback:
-            # Safe access to string
-            self.on_received_callback(self.large_string.ToString())
+            try:
+                self.on_received_callback(full_string)
+            except Exception as e:
+                ue.log_error(f"on_received_callback error: {e}")
 
-    def send_string(self):
-        """Send all chunks using provided callback, optionally reporting progress."""
+        # Server-side callback
+        if self.on_server_received_callback:
+            try:
+                self.on_server_received_callback(full_string)
+            except Exception as e:
+                ue.log_error(f"on_server_received_callback error: {e}")
+
+    def send_string(self, mode="server_only", target_client=None):
         if not self._chunks_ready:
-            return  # Can't send before chunks exist
-
+            ue.log_warning("send_string: chunks not ready")
+            return
         self._sending_started = True
         total_chunks = self.large_string.GetChunkCount()
+        ue.log(f"Sending {total_chunks} chunks (mode={mode})")
 
         for i in range(total_chunks):
-            chunk = self.large_string.GetChunk(i)
-            self.send_chunk_callback(chunk, i, total_chunks)
+            try:
+                chunk = self.large_string.GetChunk(i)
+                self.send_chunk(chunk, i, total_chunks, mode=mode, target_client=target_client)
 
-            if self.on_progress_callback:
-                self.on_progress_callback(i + 1, total_chunks)
+                if self.on_progress_callback:
+                    self.on_progress_callback(i + 1, total_chunks)
+
+            except Exception as e:
+                ue.log_error(f"Error sending chunk {i}: {e}")
+                break
 
     def receive_chunk(self, chunk, index, total_chunks):
-        """Receive a chunk from remote source and forward to C++."""
-        self.large_string.ReceiveChunk(chunk, index, total_chunks)
+        try:
+            self.large_string.ReceiveChunk(chunk, index, total_chunks)
+        except Exception as e:
+            ue.log_error(f"receive_chunk error: {e}")
+
+    def send_chunk(self, chunk, index, total_chunks, mode="server_only", target_client=None):
+        """
+        Send a chunk with selectable network mode.
+        mode: "server_only" | "multicast" | "client" | "server_to_client"
+        target_client: PlayerController for client-specific send
+        """
+        if not self.rpc_actor:
+            ue.log_error("send_chunk: rpc_actor is None")
+            return
+
+        try:
+            if mode == "server_only":
+                ue.log(f"send_chunk: CLIENT → SERVER ({index+1}/{total_chunks})")
+                self.rpc_actor.Server_ReceiveChunk(chunk, index, total_chunks)
+
+            elif mode == "multicast":
+                ue.log(f"send_chunk: SERVER → MULTICAST ({index+1}/{total_chunks})")
+                self.rpc_actor.Multicast_ReceiveChunk(chunk, index, total_chunks)
+
+            elif mode == "client":
+                if target_client:
+                    ue.log(f"send_chunk: SERVER → specific client ({index+1}/{total_chunks})")
+                    self.rpc_actor.Client_ReceiveChunk(chunk, index, total_chunks)
+                else:
+                    ue.log_warning("send_chunk: No target PlayerController provided for client mode")
+
+            elif mode == "server_to_client":
+                ue.log(f"send_chunk: SERVER → CLIENT ({index+1}/{total_chunks})")
+                self.rpc_actor.Client_ReceiveChunk(chunk, index, total_chunks)
+
+            else:
+                ue.log_warning(f"send_chunk: Unknown mode '{mode}'")
+
+        except Exception as e:
+            ue.log_error(f"send_chunk RPC error: {e}")
+
+
+
 
 
 class Constants:
@@ -137,6 +205,74 @@ class Constants:
             ue_keyboard.append(ue_row)
 
         return ue_keyboard
+
+
+class Axis:
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+
+    def swap_axis(self, input):
+        input[0] = input[1]
+        # for i in range(input[0]):
+        #     input[0][i] = input[1][i]
+        return [input[1],input[0]]
+
+    def setup_axis(self):
+        default_16d_axis = ["x", "y", "z", "w", "v", "u", "t", "s", "r", "q", "p", "o", "n", "m", "l", "k"]
+
+        default_3d_axis = default_16d_axis[:3] # 48 possible orientations for the 3 axis and their negatives in orthogonal(90 degree) space. 3! * 2^3
+        default_0d_axis = 0 # or [] # 1 orientation in nD
+        default_1d_axis = default_16d_axis[:1] # 2 in 1d. 4 in 2d. 12 in 3D
+        default_2d_axis = default_16d_axis[:2] # 8 in 2d. 24 in 3D
+        default_4d_axis = default_16d_axis[:4] # 384 possible orientations for the 4 axis and their negatives in orthogonal(90 degree) space. 4! * 2^4
+
+        unreal_default_axis = default_3d_axis # on start, unreal has z up, y right, and x away from camera
+        unreal_default_walltable_axis = [unreal_default_axis[1], -unreal_default_axis[2], unreal_default_axis[0]] # best for 2D and 3D tables on screens
+        unreal_default_groundtable_axis = [unreal_default_axis[1], -unreal_default_axis[0], -unreal_default_axis[2]]
+        unreal_default_groundtable_axis_zup = [unreal_default_axis[1], -unreal_default_axis[0], unreal_default_axis[2]]
+        unreal_default_wallgraph_axis = [unreal_default_axis[1], unreal_default_axis[2], unreal_default_axis[0]] # usually used for 2D graphs on screens. not usually used in 3D
+        unreal_default_groundgraph_axis = [unreal_default_axis[1], unreal_default_axis[0], unreal_default_axis[2]]
+        self.swap_axis()
+
+
+class Table:
+    def __init__(self, table, axis=["x","y","z","w"]):
+        self.table = table
+        self.axis = axis
+
+
+    def create_letter_labels(self, default_letter_axis='x'): # or default_label_target_dimension
+        pass
+        # X(A1) -> default_letter_axis(A1) -> A1
+        # Y(A1)
+
+    def test_multidimensional_table(self):
+        def setup_lengths(lengths):
+            for i in range(len(lengths)):
+                (lengths[i][0], lengths[i][1])
+
+            xlen = lengths[0]
+            ylen = lengths[1]
+            zlen = lengths[2]
+            wlen = lengths[3]
+
+    def array_setup(self):
+        custom_table_labels = ["ha","haha","hahaha"]
+        custom_table_lettering = [["ha",["bla", "blablabla", "blablabla"]],["haha", ["ja","jaja","jajaja"]]]
+        nozero=["x", "y"]
+        letter_start_offset=[["x",1],["y",-1]]
+
+        # Create a 3D array of shape (2, 2, 3) - 2 "pages", each with 2 rows and 3 columns
+        arr_3d = np.array([
+            [[1, 2, 3], [4, 5, 6]],
+            [[7, 8, 9], [10, 11, 12]]
+        ])
+
+        print(arr_3d)
+        print(f"Shape: {arr_3d.shape}")
+        print(f"Dimensions (ndim): {arr_3d.ndim}")
 
 
 class WorldSize():
@@ -626,6 +762,7 @@ class Keyboards:
 ### Begin Command Processing ###
 # list(cmdix.listcommands()): arch, base64, basename, bunzip2, bzip2, cal, cat, cp, crond, diff, dirname, env, expand, gunzip, gzip, httpd, init, kill, ln, logger, ls, md5sum, mkdir, mktemp, more, mv, nl, pwd, rm, rmdir, sendmail, seq, sh, sha1sum, sha224sum, sha256sum, sha384sum, sha512sum, shred, shuf, sleep, sort, tail, tar, touch, uname, uuidgen, wc, wget, yes, zip
 # you can also get all of these from GitBash(C:\Program Files\Git\usr\bin): arch, awk, b2sum, base32, base64, basename, basenc, bash, bunzip2, bzcat, bzip2, bzip2recover, captoinfo, cat, chattr, chcon, chgrp, chmod, chown, chroot, cksum, clear, cmp, column, comm, cp, csplit, cut, cygcheck, cygpath, cygwin-console-helper, d2u, dash, date, dd, df, diff, diff3, dir, dircolors, dirmngr-client, dirmngr, dirname, dos2unix, du, dumpsexp, echo, env, ex, expand, expr, factor, false, file, find, fmt, fold, funzip, gawk-5.0.0, gawk, gencat, getconf, getfacl, getopt, gkill, gmondump, gpg-agent, gpg-card, gpg-connect-agent, gpg-error, gpg-mail-tube, gpg-wks-client, gpg-wks-server, gpg, gpgconf, gpgparsemail, gpgscm, gpgsm, gpgsplit, gpgtar, gpgv, grep, groups, gzip, head, hmac256, hostid, hostname, iconv, id, infocmp, infotocap, install, join, kbxutil, kill, ldd, ldh, less, lessecho, lesskey, link, ln, locale, locate, logname, ls, lsattr, mac2unix, md5sum, minidumper, mintty, mkdir, mkfifo, mkgroup, mknod, mkpasswd, mktemp, mount, mpicalc, mv, nano, nettle-hash, nettle-lfib-stream, nettle-pbkdf2, newgrp, nice, nl, nohup, nproc, numfmt, od, openssl, p11-kit, passwd, paste, patch, pathchk, perl, perl5.38.2, pinentry-w32, pinentry, pinky, pkcs1-conv, pldd, pluginviewer, pr, printenv, printf, profiler, ps, psl, ptx, pwd, readlink, realpath, rebase, regtool, reset, rm, rmdir, rnano, runcon, rview, rvim, scp, sdiff, sed, seq, setfacl, setmetamode, sexp-conv, sftp, sh, sha1sum, sha224sum, sha256sum, sha384sum, sha512sum, shred, shuf, sleep, sort, split, ssh-add, ssh-agent, ssh-keygen, ssh-keyscan, ssh-pageant, ssh, ssp, stat, stdbuf, strace, stty, sum, sync, tabs, tac, tail, tar, tee, test, tic, tig, timeout, toe, touch, tput, tr, true, truncate, trust, tset, tsort, tty, tzset, u2d, umount, uname, unexpand, uniq, unix2dos, unix2mac, unlink, unzip, unzipsfx, users, vdir, view, vim, vimdiff, watchgnupg, wc, which, who, whoami, winpty-agent, winpty-debugserver, winpty, xargs, xxd, yat2m, yes, zipinfo
+# notice cmdix contians these extra things: cal, crond, gunzip, httpd, init, logger, more, sendmail, uuidgen, wget, zip
 
 # cmd = ['echo', 'I like potatos']
 # proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

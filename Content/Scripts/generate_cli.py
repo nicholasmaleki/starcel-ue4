@@ -1,203 +1,273 @@
 import os
-import keyword
 import re
+import keyword
+import json
 from datetime import datetime, timezone
+from typing import Dict, Any, List
 
-generated_at = datetime.now(timezone.utc).isoformat()
-
+# -----------------------------
+# Config
+# -----------------------------
 BIN_DIR = r"C:\Program Files\Git\usr\bin"
 OUTPUT_FILE = "cli.py"
-# Add extra full-path executables
+STUB_FILE = "cli.pyi"
+
 extra_exes = [
     r"C:\Program Files\Git\bin\git.exe",
-    r"C:\Windows\System32\cmd.exe"
+    r"C:\Windows\System32\cmd.exe",
     r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe",
     os.path.join(os.path.dirname(os.getcwd()), "CLITools", "ES-1.1.0.30.x64", "es.exe"),
 ]
-# content_path = KismetSystemLibrary.GetProjectContentDirectory()
-# "yt-dlp"
-# "ffmpeg"
 
-def is_exe(name: str) -> bool:
-    return name.lower().endswith(".exe")
+ALIASES = {
+    "ps": {"target": "powershell", "args": []},
+    "search_system": {"target": "es", "args": []},
+}
 
+COMMAND_GROUPS = {
+    "git": {
+        "_cmd": "git",
+        "status": {"_cmd": "git", "_args": ["status"]},
+        "commit": {"_cmd": "git", "_args": ["commit"]},
+        "push": {"_cmd": "git", "_args": ["push"]},
+        "pull": {"_cmd": "git", "_args": ["pull"]},
+        "pullrebase": {"_cmd": "git", "_args": ["pull", "--rebase"]},
+        "add": {"_cmd": "git", "_args": ["add"]},
+    }
+}
 
+# -----------------------------
+# Helpers
+# -----------------------------
 def sanitize(name: str) -> str:
-    """
-    Convert executable name to a valid Python method name.
-    """
     name = name.replace("-", "_")
     name = re.sub(r"[^0-9a-zA-Z_]", "_", name)
-    if name[0].isdigit():
+    if name and name[0].isdigit():
         name = "_" + name
     if keyword.iskeyword(name):
         name += "_"
     return name
 
+def is_exe(name: str) -> bool:
+    return name.lower().endswith(".exe")
 
-tools = {}
-# Add standard usr/bin executables
-for filename in os.listdir(BIN_DIR):
-    if not is_exe(filename):
-        continue
+# -----------------------------
+# Discover commands
+# -----------------------------
+tools: Dict[str, Dict[str, Any]] = {}
 
-    cmd = filename[:-4]
-    method = sanitize(cmd)
-
-    if method in tools:
-        method = f"{method}_cmd"
-
-    if method in {"_"}:  # skip weird commands like '['
-        continue
-
-    tools[method] = cmd
-
+if os.path.isdir(BIN_DIR):
+    for fname in os.listdir(BIN_DIR):
+        if is_exe(fname):
+            cmd = fname[:-4]
+            tools[sanitize(cmd)] = {"cmd": cmd, "preset_args": []}
 
 for path in extra_exes:
-    if not os.path.isfile(path):
-        continue
-    cmd = os.path.basename(path)[:-4]  # remove .exe
-    method = sanitize(cmd)
-    if method in tools:
-        method = f"{method}_cmd"
+    if os.path.isfile(path):
+        cmd = os.path.basename(path)[:-4]
+        tools[sanitize(cmd)] = {"cmd": path, "preset_args": []}
 
-    tools[method] = path  # store full path
+for alias, spec in ALIASES.items():
+    t = sanitize(spec["target"])
+    if t in tools:
+        tools[sanitize(alias)] = {
+            "cmd": tools[t]["cmd"],
+            "preset_args": spec.get("args", []),
+        }
 
+# -----------------------------
+# Normalize groups
+# -----------------------------
+def normalize(node):
+    if isinstance(node, dict):
+        result = {}
+        if "_cmd" in node:
+            cmd = sanitize(node["_cmd"])
+            if cmd in tools:
+                result["_self"] = {
+                    "cmd": tools[cmd]["cmd"],
+                    "preset_args": node.get("_args", []),
+                }
+        children = {}
+        for k, v in node.items():
+            if k.startswith("_"):
+                continue
+            c = normalize(v)
+            if c:
+                children[sanitize(k)] = c
+        if result or children:
+            return {"type": "group", **result, "children": children}
+    return None
 
+GROUP_TREE = {}
+for name, node in COMMAND_GROUPS.items():
+    n = normalize(node)
+    if n:
+        GROUP_TREE[sanitize(name)] = n
+
+TOP_LEVEL_COMMANDS = tools
+generated_at = datetime.now(timezone.utc).isoformat()
+
+# -----------------------------
+# Write cli.py
+# -----------------------------
 with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
     f.write(f'''from __future__ import annotations
-
-__GENERATED_AT__ = "{generated_at}"
+# generated at {generated_at}
 
 import os
 import sys
 import subprocess
-from datetime import datetime, timezone, timedelta
-
-# auto-regeneration start (5 days)
-_MAX_AGE = timedelta(days=5)
-
-def _maybe_regenerate() -> None:
-    try:
-        generated = datetime.fromisoformat(__GENERATED_AT__)
-        if datetime.now(timezone.utc) - generated < _MAX_AGE:
-            return
-    except Exception:
-        pass
-
-    generator = os.path.join(os.path.dirname(__file__), "generate_cli.py")
-
-    # Best-effort regeneration (silent, non-fatal)
-    subprocess.run(
-        [sys.executable, generator],
-        cwd=os.path.dirname(__file__),
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        check=False,
-    )
-
-_maybe_regenerate()
-# end auto-regeneration
-
-r"""
-Auto-generated command wrappers.
-Source directories: {BIN_DIR}
-{extra_exes}
-"""
-
-import subprocess
-from dataclasses import dataclass
+import json
+import time
 from typing import List
 
+INTERACTIVE_COMMANDS = {{"ps", "cmd", "powershell"}}
 
-@dataclass
 class CommandResult:
-    stdout: str
-    stderr: str
-    returncode: int
+    def __init__(self, stdout: str, stderr: str, returncode: int):
+        self.stdout = stdout
+        self.stderr = stderr
+        self.returncode = returncode
 
     def __repr__(self):
-        if self.stdout or self.stderr:
-            lines = []
-            if self.stdout:
-                lines.append(self.stdout.rstrip())
-            if self.stderr:
-                lines.append(self.stderr.rstrip())
-            return "\\n".join(lines)
-        return "<No output>"
+        return ""  # hide by default
+
+    def json(self):
+        if not self.stdout:
+            return None
+        try:
+            return json.loads(self.stdout)
+        except json.JSONDecodeError:
+            return None
+
+    def pipe(self, cmd: str, *args: str):
+        return _Pipeline([(cmd, list(args))], self.stdout)
+
+    def time(self, elapsed: float):
+        print(f"Time: {{elapsed:.6f}}s")
+        return elapsed
+
+
+class _Pipeline:
+    def __init__(self, cmds, input_text=None):
+        self._cmds = cmds
+        self._input = input_text
+
+    def pipe(self, cmd: str, *args: str):
+        self._cmds.append((cmd, list(args)))
+        return self
+
+    def run(self):
+        prev = None
+        for i, (cmd, args) in enumerate(self._cmds):
+            p = subprocess.Popen(
+                [cmd] + args,
+                stdin=subprocess.PIPE if prev else None,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            if prev:
+                out, _ = prev.communicate()
+                p.stdin.write(out)
+                p.stdin.close()
+            prev = p
+        out, err = prev.communicate()
+        if out:
+            print(out, end="")
+        if err:
+            print(err, end="", file=sys.stderr)
+        return CommandResult(out, err, prev.returncode)
+
+
+class _CommandNode:
+    def __init__(self, cli, node=None, cmd=None, preset_args=None):
+        self._cli = cli
+        self._node = node
+        self._cmd = cmd
+        self._preset_args = preset_args or []
+
+    def __call__(self, *args):
+        if self._node and "_self" in self._node:
+            cmd = self._node["_self"]["cmd"]
+            args_list = self._node["_self"].get("preset_args", []) + list(args)
+        elif self._cmd:
+            cmd = self._cmd
+            args_list = self._preset_args + list(args)
+        else:
+            raise TypeError("This node is a group")
+
+        start = time.perf_counter()
+        exe_name = os.path.basename(cmd).lower()
+        # Interactive commands run directly in console
+        if exe_name in INTERACTIVE_COMMANDS:
+            return_code = subprocess.run([cmd] + list(args_list)).returncode
+            elapsed = time.perf_counter() - start
+            print(f"Time: {{elapsed:.6f}}s")
+            return CommandResult("", "", return_code)
+        else:
+            p = subprocess.run([cmd] + list(args_list), text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            elapsed = time.perf_counter() - start
+            if p.stdout:
+                print(p.stdout, end="")
+            if p.stderr:
+                print(p.stderr, end="", file=sys.stderr)
+            result = CommandResult(p.stdout, p.stderr, p.returncode)
+            # attach helpers
+            result.time = lambda: CommandResult.time(result, elapsed)
+            return result
+
+    def __getattr__(self, name):
+        c = None
+        if self._node:
+            c = self._node.get("children", {{}}).get(name)
+        if c:
+            return _CommandNode(self._cli, node=c)
+        raise AttributeError(name)
 
 
 class CLI:
-    _BIN_DIR = r"{BIN_DIR}"
+    def __init__(self):
+        for name, t in {TOP_LEVEL_COMMANDS!r}.items():
+            setattr(self, name, _CommandNode(self, cmd=t["cmd"], preset_args=t.get("preset_args", [])))
+        for name, node in {GROUP_TREE!r}.items():
+            setattr(self, name, _CommandNode(self, node=node))
 
-    def __init__(self, cwd: str | None = None, env: dict | None = None):
-        self.cwd = cwd
-        self.env = env
 
-    def _run(self, cmd: str, args: List[str], print_output: bool = True) -> CommandResult:
-        exe = cmd if os.path.isabs(cmd) else os.path.join(self._BIN_DIR, cmd + ".exe")
-        completed = subprocess.run(
-            [exe, *args],
-            cwd=self.cwd,
-            env=self.env,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
-        if print_output:
-            if completed.stdout:
-                print(completed.stdout, end="", flush=True)
-            if completed.stderr:
-                print(completed.stderr, end="", file=os.sys.stderr, flush=True)
-        return CommandResult(
-            stdout=completed.stdout,
-            stderr=completed.stderr,
-            returncode=completed.returncode
-        )
-
-    def run_pipeline(self, commands: List[List[str]], print_output: bool = True) -> CommandResult:
-        if not commands:
-            raise ValueError("No commands to run")
-
-        procs = []
-        prev_proc = None
-
-        for cmd_args in commands:
-            exe = cmd_args[0]
-            exe_path = exe if os.path.isabs(exe) else os.path.join(self._BIN_DIR, exe + ".exe")
-            args = [exe_path, *cmd_args[1:]]
-
-            stdin = prev_proc.stdout if prev_proc else None
-            proc = subprocess.Popen(
-                args,
-                stdin=stdin,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True
-            )
-            if prev_proc:
-                prev_proc.stdout.close()
-            prev_proc = proc
-            procs.append(proc)
-
-        stdout, stderr = procs[-1].communicate()
-
-        if print_output:
-            if stdout:
-                print(stdout, end="", flush=True)
-            if stderr:
-                print(stderr, end="", file=os.sys.stderr, flush=True)
-
-        return CommandResult(stdout=stdout, stderr=stderr, returncode=procs[-1].returncode)
+_default_cli = CLI()
+globals().update({{k: getattr(_default_cli, k) for k in dir(_default_cli) if not k.startswith("_")}})
 ''')
 
-    methods_str = "\n".join(
-        f"    def {method}(self, *args: str, print_output: bool = True) -> CommandResult:\n"
-        f"        return self._run({repr(cmd)}, list(args), print_output=print_output)\n"
-        for method, cmd in sorted(tools.items())
-    )
+print(f"Generated {OUTPUT_FILE}")
 
-    f.write(methods_str)
-    f.write("\n\n__all__ = [\"CLI\", \"CommandResult\"]\n")
+# -----------------------------
+# Generate cli.pyi
+# -----------------------------
+def write_stub_group(f, name: str, node: Dict[str, Any], indent: str = ""):
+    f.write(f"{indent}class {name}:\n")
+    if "_self" in node:
+        f.write(f"{indent}    def __call__(self, *args: str) -> 'CommandResult': ...\n")
+    children = node.get("children", {})
+    if not children and "_self" not in node:
+        f.write(f"{indent}    pass\n")
+    for k, v in children.items():
+        if v.get("type") == "group":
+            write_stub_group(f, k, v, indent + "    ")
+        else:
+            f.write(f"{indent}    def {k}(self, *args: str) -> 'CommandResult': ...\n")
 
-print(f"Generated {OUTPUT_FILE} with {len(tools)} methods.")
+with open(STUB_FILE, "w", encoding="utf-8") as f:
+    f.write(f"""# generated at {generated_at}
+from __future__ import annotations
+from typing import Any
+from {OUTPUT_FILE[:-3]} import CommandResult
+
+""")
+    for name in sorted(TOP_LEVEL_COMMANDS.keys()):
+        f.write(f"def {name}(*args: str) -> CommandResult: ...\n")
+    f.write("\n")
+    for group_name, group_node in GROUP_TREE.items():
+        write_stub_group(f, group_name, group_node)
+
+print(f"Generated {STUB_FILE}")
