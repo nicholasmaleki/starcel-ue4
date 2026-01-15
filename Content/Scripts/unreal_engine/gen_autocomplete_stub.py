@@ -4,18 +4,30 @@ from pathlib import Path
 import pystubgen
 import inspect
 import unreal_engine.enums as enums
+import unreal_engine.structs as structs
 
+#TODO: Maybe add unreal to python property mapping
+# Unreal property	Python value
+# float	            float
+# int32	            int
+# bool	            bool
+# FString	        str
+# FName	            str
+# UObject*	        UObject wrapper
+# UStruct	        struct wrapper
+# TArray<T>	        list
 
-class Main:
-    # this is called on game start
-    def begin_play(self):
-        self.gen_intellisense_stubs()
-        self.gen_intellisense_stubs_classes()
-        self.gen_intellisense_stubs_enums()
+# class Main:
+#     # this is called on game start
+#     def begin_play(self):
+#         self.gen_intellisense_stubs()
+#         self.gen_intellisense_stubs_classes()
+#         self.gen_intellisense_stubs_structs()
+#         self.gen_intellisense_stubs_enums()
 
-    def gen_intellisense_stubs(self):
-        # --- UE4.27 constants stub ---
-        constants_stub = '''\
+def gen_intellisense_stubs():
+    # --- UE4.27 constants stub ---
+    constants_stub = '''\
 # --- Class Flags (CLASS_*) ---
 CLASS_NONE: int
 CLASS_ABSTRACT: int
@@ -119,115 +131,188 @@ RF_HAS_EXTERNAL_PACKAGE: int
 RF_ALL_FLAGS: int
 '''
 
-        # --- Generate stub for freeform methods ---
-        source = pystubgen.make_source(ue)
+    # --- Generate stub for freeform methods ---
+    source = pystubgen.make_source(ue)
 
-        functions_list = [o[1] for o in inspect.getmembers(ue) if inspect.isroutine(o[1])]
-        funcDefs = '\n'.join([pystubgen.make_source(funcObj) for funcObj in functions_list])
+    functions_list = [o[1] for o in inspect.getmembers(ue) if inspect.isroutine(o[1])]
+    funcDefs = '\n'.join([pystubgen.make_source(funcObj) for funcObj in functions_list])
 
-        # --- Output path ---
-        stubFilePath = Path('C:/Users/nicho/Documents/Unreal Projects/Starcel9/Content/Scripts/unreal_engine/__init__.py')
-        print(os.getcwd())
+    # --- Output path ---
+    stubFilePath = Path(os.path.join(os.path.abspath(ue.get_content_dir()), "Scripts", "unreal_engine", "__init__.py"))
+    print(os.getcwd())
 
-        if not os.access(str(stubFilePath), os.W_OK):
-            print(f"p4 edit {str(stubFilePath)}")
-            os.system(f"p4 edit {str(stubFilePath)} && pause>nul")
+    if not os.access(str(stubFilePath), os.W_OK):
+        print(f"p4 edit {str(stubFilePath)}")
+        os.system(f"p4 edit {str(stubFilePath)} && pause>nul")
 
-        # --- Write everything to file ---
-        with open(str(stubFilePath), 'w', encoding='utf8') as outputFile:
-            outputFile.write('# UE4.27 Constants Stub\n')
-            outputFile.write(constants_stub)
-            outputFile.write('\n\n# Freeform Methods\n')
-            outputFile.write(funcDefs)
-            outputFile.write('\n\n')
-            outputFile.write(source)
+    # --- Write everything to file ---
+    with open(str(stubFilePath), 'w', encoding='utf8') as outputFile:
+        outputFile.write('# UE4.27 Constants Stub\n')
+        outputFile.write(constants_stub)
+        outputFile.write('\n\n# Freeform Methods\n')
+        outputFile.write(funcDefs)
+        outputFile.write('\n\n')
+        outputFile.write(source)
 
-    def gen_intellisense_stubs_classes(self):
-        class_def_list = []
-        for _class in ue.all_classes():
-            class_def = [f'class {_class.get_name()}:']
-            for function in _class.functions():
-                class_def.append(f'    def {function}(__unknown_params__):')
-                class_def.append(f'        pass\n')
+def gen_intellisense_stubs_classes():
+    class_def_list = []
+    for _class in ue.all_classes():
+        class_def = [f'class {_class.get_name()}:']
+        for function in _class.functions():
+            class_def.append(f'    def {function}(__unknown_params__):')
+            class_def.append(f'        pass\n')
 
-            for _property in _class.properties():
-                class_def.append(f'    {_property} = "__unknown__"\n')
+        for _property in _class.properties():
+            class_def.append(f'    {_property} = "__unknown__"\n')
 
-            class_def_list.append('\n'.join(class_def))
+        class_def_list.append('\n'.join(class_def))
 
-        stubFilePath = Path('C:/Users/nicho/Documents/Unreal Projects/Starcel9/Content/Scripts/unreal_engine/classes.py')
-        with open(str(stubFilePath), 'w', encoding='utf8') as outputFile:
-            outputFile.write('\n'.join(class_def_list))
+    stubFilePath = Path(os.path.join(os.path.abspath(ue.get_content_dir()), "Scripts", "unreal_engine", "classes.py"))
+    with open(str(stubFilePath), 'w', encoding='utf8') as outputFile:
+        outputFile.write('\n'.join(class_def_list))
 
-    def gen_intellisense_stubs_enums(self):
-        ENGINE_ENUMS = [
-            # Collision / tracing
-            "ECollisionChannel",
-            "ECollisionEnabled",
-            "ECollisionResponse",
-            "ECollisionResponseContainer",
-            "EObjectTypeQuery",
-            "ETraceTypeQuery",
-            "EDrawDebugTrace",
 
-            # Ticking / lifecycle
-            "ETickingGroup",
-            "EEndPlayReason",
+def gen_intellisense_stubs_structs():
+    # Mapping of structs to fields with Python types
+    structs_to_stub = {
+        "FVector": {"X": float, "Y": float, "Z": float},
+        "FRotator": {"Pitch": float, "Yaw": float, "Roll": float},
+        "FTransform": {"Translation": "FVector", "Rotation": "FRotator", "Scale3D": "FVector"},
+        "FQuat": {"X": float, "Y": float, "Z": float, "W": float},
+        "FLinearColor": {"R": float, "G": float, "B": float, "A": float},
+        "FColor": {"R": int, "G": int, "B": int, "A": int},
+        "FHitResult": {
+            "bBlockingHit": bool, "bStartPenetrating": bool, "Time": float, "Distance": float,
+            "Location": "FVector", "ImpactPoint": "FVector", "Normal": "FVector", "ImpactNormal": "FVector",
+            "PhysMaterial": "Any", "HitObject": "Any", "BoneName": str, "FaceIndex": int
+        },
+        "FVector2D": {"X": float, "Y": float},
+        "FMargin": {"Left": float, "Top": float, "Right": float, "Bottom": float},
+        "FSlateColor": {"SpecifiedColor": "FLinearColor", "ColorUseRule": int},
+        "FAnchors": {"Minimum": "FVector2D", "Maximum": "FVector2D"},
+        "FAnchorData": {"Offsets": "FMargin", "Anchors": "FAnchors", "Alignment": "FVector2D", "SizeRule": int},
+        "FStaticMeshSourceModel": {"BuildSettings": "FMeshBuildSettings", "ReductionSettings": "Any", "ScreenSize": float},
+        "FMeshBuildSettings": {
+            "bRecomputeNormals": bool, "bRecomputeTangents": bool, "bRemoveDegenerates": bool,
+            "bUseMikkTSpace": bool, "bBuildAdjacencyBuffer": bool, "bUseHighPrecisionTangentBasis": bool,
+            "bUseFullPrecisionUVs": bool, "bGenerateLightmapUVs": bool, "MinLightmapResolution": int,
+            "SrcLightmapIndex": int, "DstLightmapIndex": int
+        },
+        "FStaticMaterial": {"MaterialInterface": "Any", "MaterialSlotName": str, "UVChannelData": "Any", "ImportedMaterialSlotName": str},
 
-            # Actor / component
-            "EAutoReceiveInput",
-            "EComponentMobility",
-            "ENetRole",
-            "ENetDormancy",
+        # Project-specific structs
+        "FInputActionKeyMapping": {"ActionName": str, "Key": "Any", "bShift": bool, "bCtrl": bool, "bAlt": bool, "bCmd": bool},
+        "FKey": {"KeyName": str},
+        "FGraphReference": {"GraphGuid": str, "GraphBlueprint": "Any", "NodeGuid": str},
+        "FAggregateGeom": {"Spheres": "list[Any]", "Boxes": "list[Any]", "Sphyls": "list[Any]", "ConvexElems": "list[Any]"},
+        "FEdGraphPinType": {
+            "PinCategory": str, "PinSubCategory": str, "PinSubCategoryObject": "Any", "bIsArray": bool,
+            "bIsReference": bool, "bIsConst": bool, "bIsWeakPointer": bool, "bIsUObjectWrapper": bool, "PinValueType": "Any"
+        },
+        "FEdGraphTerminalType": {
+            "TerminalCategory": str, "TerminalSubCategory": str, "TerminalSubCategoryObject": "Any",
+            "bTerminalIsArray": bool, "bTerminalIsReference": bool, "bTerminalIsConst": bool,
+            "bTerminalIsWeakPointer": bool, "bTerminalIsUObjectWrapper": bool
+        },
+    }
 
-            # Input
-            "EInputEvent",
-            "EControllerHand",
-            "EUserInterfaceActionType",
-            "EInputEvent",
+    stubFilePath = Path(os.path.join(os.path.abspath(ue.get_content_dir()), "Scripts", "unreal_engine", "structs.py"))
 
-            # Physics
-            "EPhysicalSurface",
+    with open(stubFilePath, "w", encoding="utf8") as f:
+        f.write("from typing import Any, List\n\n")
+        for struct_name, fields in structs_to_stub.items():
+            f.write(f"class {struct_name}:\n")
+            if not fields:
+                f.write("    pass\n\n")
+                continue
+            for field_name, field_type in fields.items():
+                if isinstance(field_type, str):
+                    type_str = field_type
+                elif isinstance(field_type, type):
+                    type_str = field_type.__name__
+                else:
+                    type_str = "Any"
+                f.write(f"    {field_name}: {type_str}\n")
+            f.write("\n")
 
-            # Rendering
-            "EDepthPriorityGroup",
-            "EBlendMode",
 
-            # Misc
-            "ELifetimeCondition",
-            "EAttachmentRule",
-        ]
+def gen_intellisense_stubs_enums():
+    ENGINE_ENUMS = [
+        # Collision / tracing
+        "ECollisionChannel",
+        "ECollisionEnabled",
+        "ECollisionResponse",
+        "ECollisionResponseContainer",
+        "EObjectTypeQuery",
+        "ETraceTypeQuery",
+        "EDrawDebugTrace",
 
-        enum_def_list = []
-        for enum_name in ENGINE_ENUMS:
-            try:
-                enum_obj = getattr(enums, enum_name)
-            except Exception:
-                continue  # enum not available in this engine version
+        # Ticking / lifecycle
+        "ETickingGroup",
+        "EEndPlayReason",
 
-            enum_def = [f"class {enum_name}:"]
+        # Actor / component
+        "EAutoReceiveInput",
+        "EComponentMobility",
+        "ENetRole",
+        "ENetDormancy",
 
-            try:
-                for entry in enum_obj:
-                    name = getattr(entry, "name", None)
-                    value = getattr(entry, "value", None)
+        # Input
+        "EInputEvent",
+        "EControllerHand",
+        "EUserInterfaceActionType",
+        "EInputEvent",
 
-                    if not name:
-                        continue
+        # Physics
+        "EPhysicalSurface",
 
-                    if value is None:
-                        enum_def.append(f"    {name} = 0")
-                    else:
-                        enum_def.append(f"    {name} = {value}")
-            except Exception:
-                enum_def.append("    pass")
+        # Rendering
+        "EDepthPriorityGroup",
+        "EBlendMode",
 
-            enum_def.append("")
-            enum_def_list.append("\n".join(enum_def))
+        # Misc
+        "ELifetimeCondition",
+        "EAttachmentRule",
+    ]
 
-        stubFilePath = Path(
-            "C:/Users/nicho/Documents/Unreal Projects/Starcel9/Content/Scripts/unreal_engine/enums.py"
-        )
+    enum_def_list = []
+    for enum_name in ENGINE_ENUMS:
+        try:
+            enum_obj = getattr(enums, enum_name)
+        except Exception:
+            continue  # enum not available in this engine version
 
-        with open(stubFilePath, "w", encoding="utf8") as outputFile:
-            outputFile.write("\n".join(enum_def_list))
+        enum_def = [f"class {enum_name}:"]
+
+        try:
+            for entry in enum_obj:
+                name = getattr(entry, "name", None)
+                value = getattr(entry, "value", None)
+
+                if not name:
+                    continue
+
+                if value is None:
+                    enum_def.append(f"    {name} = 0")
+                else:
+                    enum_def.append(f"    {name} = {value}")
+        except Exception:
+            enum_def.append("    pass")
+
+        enum_def.append("")
+        enum_def_list.append("\n".join(enum_def))
+
+    stubFilePath = Path(
+        os.path.join(os.path.abspath(ue.get_content_dir()), "Scripts", "unreal_engine", "enums.py")
+    )
+
+    with open(stubFilePath, "w", encoding="utf8") as outputFile:
+        outputFile.write("\n".join(enum_def_list))
+
+
+print("Started building stubs for unreal_engine, classes, structs, and enums")
+gen_intellisense_stubs()
+gen_intellisense_stubs_classes()
+gen_intellisense_stubs_structs()
+gen_intellisense_stubs_enums()
+print("Finished building stubs")

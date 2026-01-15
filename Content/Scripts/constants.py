@@ -1,6 +1,32 @@
-import pickle
+import pickle, os
 import numpy as np
 import unreal_engine as ue
+import platform
+
+os_name = platform.system()
+# if os_name == "Windows":
+#     print("Running on Windows")
+# elif os_name == "Darwin":
+#     print("Running on Mac (macOS/OS X)")
+# elif os_name == "Linux":
+#     print("Running on Linux")
+# else:
+#     print(f"Running on an unknown or other OS: {os_name}")
+
+def rebuild_libraries():
+    libraries_to_build = [os.path.join(os.path.abspath(ue.get_content_dir()), "Scripts", "unreal_engine", "gen_autocomplete_stub.py"), os.path.join(os.path.abspath(ue.get_content_dir()), "Scripts", "generate_cli.py")]
+    print("Building libraries:", libraries_to_build)
+    try:
+        for library in libraries_to_build:
+            ue.py_exec(library)
+        print("Finished building libraries")
+    except Exception as e:
+        print("Building libraries failed", e)
+
+    # from pickle import picklequotes
+    # picklequotes.pickle_quotes()
+
+
 
 class LargeStringAsyncStandalone:
     def __init__(

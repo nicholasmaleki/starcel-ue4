@@ -4,6 +4,7 @@ import keyword
 import json
 from datetime import datetime, timezone
 from typing import Dict, Any, List
+import unreal_engine as ue
 
 # -----------------------------
 # Config
@@ -16,7 +17,7 @@ extra_exes = [
     r"C:\Program Files\Git\bin\git.exe",
     r"C:\Windows\System32\cmd.exe",
     r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe",
-    os.path.join(os.path.dirname(os.getcwd()), "CLITools", "ES-1.1.0.30.x64", "es.exe"),
+    os.path.join(os.path.abspath(ue.get_content_dir()), "CLITools","ES-1.1.0.30.x64","es.exe")
 ]
 
 ALIASES = {

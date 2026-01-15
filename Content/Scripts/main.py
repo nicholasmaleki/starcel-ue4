@@ -2,9 +2,10 @@ import unreal_engine as ue
 import numpy as np
 import os, sys, subprocess, urllib.request, socket, math, sympy, cmdix, fast_autocomplete, numba, kingdon, dill #numba_cuda
 from unreal_engine import FVector, FRotator, FTransform, FHitResult, CLASS_CONFIG, CLASS_DEFAULT_CONFIG, CPF_CONFIG, CPF_GLOBAL_CONFIG, CPF_EXPOSE_ON_SPAWN, CPF_NET, CPF_REP_NOTIFY
-from unreal_engine.classes import Actor, Character, PlayerController, KismetMathLibrary, KismetSystemLibrary, Object, StrProperty, IntProperty, LargeStringAsync, LargeStringRPCActor
+from unreal_engine.classes import Actor, Character, PlayerController, KismetMathLibrary, KismetSystemLibrary, Object, StrProperty, IntProperty, Material, Texture, LargeStringAsync, LargeStringRPCActor
 from unreal_engine.enums import EInputEvent, ETraceTypeQuery, EDrawDebugTrace
 from constants import Constants, WorldSize, LargeStringAsyncStandalone
+import constants, windowtool
 from languages import *
 from cli import *
 
@@ -12,6 +13,36 @@ RPC_ACTOR = None
 HELPER = None
 
 ue.log('Hello i am a Python module')
+# constants.rebuild_libraries()
+
+# windowtool.stop_all_background_hooks_systemwide()
+# windowtool.start_background_hook("notepad.exe", expand_to_screen=True,custom_rect=(-10, 0, 1940, 1085)) # , monitor_number=0)
+
+
+#actor hidden in game, visible, and enabled
+
+# # component = self.uobject.get_actor_component('Mesh')
+# new_material = ue.load_object(Material, '/Game/Blueprints/Materials/')
+# # component.set_material(index, material);
+#
+# material_instance = ue.create_material_instance(new_material)
+# material_instance = ue.create_material_instance(new_material, '/Game/Materials/', 'New Funny Material Instance')
+# mid = self.uobject.create_material_instance_dynamic(material_instance)
+#
+# for expression in material_instance.Parent.Expressions: # You cannot access the property list from a material instance, you need to get it from the parent.
+#     parameter_name = expression.ParameterName
+#     parameter_group = expression.Group
+#
+#
+# mid.get_material_scalar_parameter('Parameter name') # retuns a float
+# mid.get_material_vector_parameter('Parameter name') # returns a FVector
+# # material_instance.get_material_texture_parameter('Parameter name') # returns a Texture
+#
+# material_instance.set_material_scalar_parameter('Parameter name', float)
+# material_instance.set_material_vector_parameter('Parameter name', FVector)
+# # material_instance.set_material_texture_parameter('Parameter name', Texture)
+
+
 
 #use instanced static meshes for the gridlines
 
