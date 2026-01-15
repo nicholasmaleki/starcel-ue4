@@ -2,6 +2,7 @@ import pickle, os
 import numpy as np
 import unreal_engine as ue
 import platform
+import worldhello
 
 os_name = platform.system()
 # if os_name == "Windows":
@@ -201,12 +202,14 @@ class Constants:
 
                                     "𝖕", "𝖖", "𝖗"]
 
+
         file_path = "quotes.pkl"
         self.__quotes = None
         try:
             with open(file_path, 'rb') as file:
                 loaded_quotes_hex = pickle.load(file)
                 self.__quotes = [bytes.fromhex(h).decode('utf-8') for h in loaded_quotes_hex]
+                self.__quotes.append(worldhello.hello_world())
             print("Successfully unpickled quotes")
         except:
             print("Failed to unpickle quotes")
