@@ -93,7 +93,7 @@ The last Starcel release was written, at the time, in the newest Python, Python 
 - File explorer and desktop environment.
 - CLI, SSH, and SCP. 
 - API for the Reals.
-- Units and text editing.
+- Units(convert on click) and text editing.
 - Math, algebra, calculus, LaTeX.
 - Geometric algebra rendering: PGA, VGA, CGA, STA.
 - Full Excel, Google Sheets, HDF5, and FOAM3 importer.
@@ -124,4 +124,4 @@ Blender's UPBGE and NVIDIA Omniverse were not ready for a server capable game wi
 
 
 ## Need to contact me?
-I prefer to be reached via the Discord, but if you need or if you are looking to donate or sponsor the project, you can contact me by email, nick@recursion.is. 
+I prefer to be reached via Discord, but if you need or if you are looking to donate or sponsor the project, you can contact me by email, nick@recursion.is. 

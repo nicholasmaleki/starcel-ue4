@@ -1,8 +1,10 @@
+from scipy.fft import set_global_backend
+
 import unreal_engine as ue
 import numpy as np
 import os, sys, subprocess, urllib.request, socket, math, sympy, cmdix, fast_autocomplete, numba, kingdon, dill #numba_cuda
 from unreal_engine import FVector, FRotator, FTransform, FHitResult, CLASS_CONFIG, CLASS_DEFAULT_CONFIG, CPF_CONFIG, CPF_GLOBAL_CONFIG, CPF_EXPOSE_ON_SPAWN, CPF_NET, CPF_REP_NOTIFY
-from unreal_engine.classes import Actor, Character, PlayerController, KismetMathLibrary, KismetSystemLibrary, Object, StrProperty, IntProperty, Material, Texture, LargeStringAsync, LargeStringRPCActor
+from unreal_engine.classes import Actor, Character, PlayerController, StaticMeshActor, KismetMathLibrary, KismetSystemLibrary, Object, StrProperty, IntProperty, Material, Texture, LargeStringAsync, LargeStringRPCActor
 from unreal_engine.enums import EInputEvent, ETraceTypeQuery, EDrawDebugTrace
 from constants import Constants, WorldSize, LargeStringAsyncStandalone
 import constants, windowtool
@@ -14,6 +16,26 @@ HELPER = None
 
 
 ue.log('Hello i am a Python module')
+
+
+scmaps = []
+global world
+
+for _world in ue.all_worlds():
+    if _world.get_name() == "StarcelExampleMap":
+        scmaps.append(_world)
+
+if len(scmaps) == 1:
+    world = scmaps[0]
+else:
+    world = scmaps[len(scmaps) - 1]
+    ue.log_warning("There is more than one StarcelExampleMap world, using the last one found")
+
+if not world:
+    world = ue.all_worlds()[0]
+    ue.log_warning("Can't find world, assigning the first existing world, " + world.get_name())
+
+
 # constants.rebuild_libraries()
 
 # windowtool.stop_all_background_hooks_systemwide()
@@ -22,26 +44,71 @@ ue.log('Hello i am a Python module')
 
 #actor hidden in game, visible, and enabled
 
-# # component = self.uobject.get_actor_component('Mesh')
-# new_material = ue.load_object(Material, '/Game/Blueprints/Materials/')
-# # component.set_material(index, material);
-#
-# material_instance = ue.create_material_instance(new_material)
-# material_instance = ue.create_material_instance(new_material, '/Game/Materials/', 'New Funny Material Instance')
-# mid = self.uobject.create_material_instance_dynamic(material_instance)
-#
-# for expression in material_instance.Parent.Expressions: # You cannot access the property list from a material instance, you need to get it from the parent.
-#     parameter_name = expression.ParameterName
-#     parameter_group = expression.Group
-#
-#
-# mid.get_material_scalar_parameter('Parameter name') # retuns a float
-# mid.get_material_vector_parameter('Parameter name') # returns a FVector
-# # material_instance.get_material_texture_parameter('Parameter name') # returns a Texture
-#
-# material_instance.set_material_scalar_parameter('Parameter name', float)
-# material_instance.set_material_vector_parameter('Parameter name', FVector)
-# # material_instance.set_material_texture_parameter('Parameter name', Texture)
+import unreal_engine as ue
+from unreal_engine.classes import StaticMeshActor, Material
+
+
+def apply_material(
+    actor_name=None,
+    component_name=None,
+    material_path="/Game/Materials/M_Color.M_Color",
+    color=None,                       # default None means don’t touch
+    material_index=0,
+    **scalar_params                     # pass any other scalar parameters explicitly
+):
+    """
+    Apply a material to a mesh component of an actor.
+
+    color: tuple (r,g,b) to set vector parameter "color"
+    scalar_params: pass any scalar parameters that exist in the material, e.g.
+                   Metallic=0.8, Roughness=0.2, Outline=5.0, EmissiveMultiplier=2.0
+    """
+    # --- find actor ---
+    actors = world.all_actors()
+    actor = None
+    for a in actors:
+        if actor_name is None or a.get_name() == actor_name:
+            actor = a
+            break
+    if not actor:
+        raise Exception(f"Actor not found: {actor_name or '(any)'}")
+
+    # --- find mesh component ---
+    target_comp = None
+    if component_name:
+        for comp in actor.get_components():
+            if comp.get_name() == component_name:
+                target_comp = comp
+                break
+    else:
+        for comp in actor.get_components():
+            if comp.get_class().get_name().endswith("MeshComponent"):
+                target_comp = comp
+                break
+
+    if not target_comp:
+        raise Exception(f"Mesh component not found on actor '{actor.get_name()}'")
+
+    # --- load material ---
+    mat = ue.load_object(Material, material_path)
+    if not mat:
+        raise Exception(f"Material not found: {material_path}")
+
+    # --- create dynamic material instance ---
+    mid = target_comp.create_material_instance_dynamic(mat)
+
+    # --- set vector parameter if provided ---
+    if color is not None:
+        mid.set_material_vector_parameter("color", ue.FVector(color[0], color[1], color[2]))
+
+    # --- set any scalar parameters that were explicitly passed ---
+    for param_name, value in scalar_params.items():
+        mid.set_material_scalar_parameter(param_name, value)
+
+    # --- assign to mesh ---
+    target_comp.set_material(material_index, mid)
+
+    return mid
 
 
 
@@ -76,7 +143,6 @@ def progress_callback(current, total):
 
 # ---- Actor creation ----
 def find_rpc_actor():
-    world = ue.all_worlds()[0]
     ue.log("Making a LargeStringRPCActor...")
     try:
         actor = world.actor_spawn(LargeStringRPCActor)
@@ -199,9 +265,32 @@ class Main:
     # client_receive_manual.client = True
     # client_receive_manual.reliable = True
 
+    def set_global_time_dilation(self, time_dilation = 1):
+        self.uobject.TimeDilation = time_dilation
+        self.uobject.call_function('EventRunBlueprintFunctions')
+
     # this is called on game start
     def begin_play(self):
         ue.log('Begin Play on Main class')
+
+        apply_material(
+            actor_name="TestSphere",
+            color=(1, 0, 0, 1),
+            metallic=0.8,
+            specular=0.5,
+            roughness=0.2,
+            anisotropy=0.1,
+            emissive_multiplier=2.0,
+            ambient_occlusion=1.0
+        )
+
+        apply_material(
+            actor_name="ThirdPersonCharacter_C_0",  # runtime instance name (check via print)
+            component_name="SkeletalMeshOutline",
+            material_path="/Game/Materials/M_Outline.M_Outline",
+            outline=5.0,
+            color=(0, 1, 0, 1)
+        )
 
         if KismetSystemLibrary.IsDedicatedServer():
             ue.log("BeginPlay on DEDICATED SERVER")
@@ -360,8 +449,6 @@ class Main:
     # ------------------------------------------------------------------------
     def you_pressed_K(self):
         ue.log_warning("=== YOU PRESSED K ===")
-
-        world = ue.all_worlds()[0]
         ue.log(f"World: {world}")
 
         global RPC_ACTOR, HELPER

@@ -1,53 +1,165 @@
 """
 history.py
-Robust history tracking system with crash-safe logging.
+Robust history tracking system with crash-safe logging + rotation.
+
 Features:
-- Separate classes per history type (Keyboard, Copy, Insert, Delete, Undo, Movement, Action, Crash)
-- Automatic file logging to /Logs/, append-only
-- Single or batch logging
-- Clipboard tracking for CopyHistory
-- Optional background keyboard logging
-- Enable/disable logging per type
-- Automatic background polling thread for clipboard
+- Separate classes per history type
+- Automatic file logging with rotation
+- Rotate by time window or entry count
+- Folder per log session
+- Log start/end markers
+- Retention cleanup by count or age
+- Clipboard tracking
+- Optional keyboard logging
 """
 
 import os
 import json
 import threading
 import time
-from datetime import datetime
+import shutil
+from datetime import datetime, timedelta
 
 try:
-    import pyperclip  # For clipboard tracking
+    import pyperclip
 except ImportError:
     pyperclip = None
 
 try:
-    import pynput  # For keyboard logging
+    import pynput
     from pynput import keyboard
 except ImportError:
-    pynput = None  # Keyboard logging disabled if pynput not installed
+    pynput = None
+
 
 # --- Ensure log directory exists ---
 LOG_DIR = os.path.join(os.getcwd(), "Logs")
 os.makedirs(LOG_DIR, exist_ok=True)
 
 
-# --- Base history class ---
+# ------------------------------------------------------------
+# Base History With Rotation + Retention
+# ------------------------------------------------------------
 class BaseHistory:
-    def __init__(self, name):
+    def __init__(
+        self,
+        name,
+        rotate_by="session",      # session, second, minute, hour, day, week, month, year
+        max_entries=None,         # int
+        max_files=None,           # retention count
+        max_age=None,             # timedelta
+    ):
         self.name = name
         self.data = []
         self.timestamps = []
         self.enabled = True
-        self.log_file = os.path.join(LOG_DIR, f"{self.name}.log")
+
+        self.rotate_by = rotate_by
+        self.max_entries = max_entries
+        self.max_files = max_files
+        self.max_age = max_age
+
+        self.entries_written = 0
+        self.log_start_time = datetime.now()
+
+        self.base_dir = os.path.join(LOG_DIR, self.name)
+        os.makedirs(self.base_dir, exist_ok=True)
+
+        self._open_new_log()
+
+    # ---------------- Rotation ---------------- #
+
+    def _rotation_delta(self):
+        if self.rotate_by == "session":
+            return None
+        if self.rotate_by == "second":
+            return timedelta(seconds=1)
+        if self.rotate_by == "minute":
+            return timedelta(minutes=1)
+        if self.rotate_by == "hour":
+            return timedelta(hours=1)
+        if self.rotate_by == "day":
+            return timedelta(days=1)
+        if self.rotate_by == "week":
+            return timedelta(weeks=1)
+        if self.rotate_by == "month":
+            return timedelta(days=30)
+        if self.rotate_by == "year":
+            return timedelta(days=365)
+        return None
+
+    def _should_rotate(self):
+        if self.max_entries and self.entries_written >= self.max_entries:
+            return True
+
+        delta = self._rotation_delta()
+        if delta and datetime.now() - self.log_start_time >= delta:
+            return True
+
+        return False
+
+    def _open_new_log(self):
+        self.log_start_time = datetime.now()
+        self.entries_written = 0
+
+        folder_name = self.log_start_time.strftime("%Y-%m-%d_%H-%M-%S")
+        self.log_folder = os.path.join(self.base_dir, folder_name)
+        os.makedirs(self.log_folder, exist_ok=True)
+
+        self.log_file = os.path.join(self.log_folder, f"{self.name}.log")
+
+        with open(self.log_file, "w", encoding="utf-8") as f:
+            f.write(json.dumps({"log_start": self.log_start_time.isoformat()}) + "\n")
+
+    def _close_log(self):
+        try:
+            with open(self.log_file, "a", encoding="utf-8") as f:
+                f.write(json.dumps({"log_end": datetime.now().isoformat()}) + "\n")
+        except Exception:
+            pass
+
+        self._cleanup_logs()
+
+    def _rotate(self):
+        self._close_log()
+        self._open_new_log()
+
+    # ---------------- Cleanup ---------------- #
+
+    def _cleanup_logs(self):
+        if not os.path.exists(self.base_dir):
+            return
+
+        folders = sorted(os.listdir(self.base_dir))
+        paths = [os.path.join(self.base_dir, f) for f in folders if os.path.isdir(os.path.join(self.base_dir, f))]
+
+        # Max files
+        if self.max_files and len(paths) > self.max_files:
+            for p in paths[:-self.max_files]:
+                shutil.rmtree(p, ignore_errors=True)
+
+        # Max age
+        if self.max_age:
+            now = datetime.now()
+            for p in paths:
+                try:
+                    ts = datetime.strptime(os.path.basename(p), "%Y-%m-%d_%H-%M-%S")
+                    if now - ts > self.max_age:
+                        shutil.rmtree(p, ignore_errors=True)
+                except Exception:
+                    pass
+
+    # ---------------- Logging ---------------- #
 
     def log(self, item):
-        """Log single item or list of items."""
         if not self.enabled:
             return
 
+        if self._should_rotate():
+            self._rotate()
+
         ts = datetime.now()
+
         if isinstance(item, list):
             self.data.extend(item)
             self.timestamps.extend([ts] * len(item))
@@ -58,13 +170,16 @@ class BaseHistory:
             self._write_to_file(item, ts)
 
     def _write_to_file(self, item, ts):
-        """Append single item or list of items to log file."""
         with open(self.log_file, "a", encoding="utf-8") as f:
             if isinstance(item, list):
                 for i in item:
                     f.write(json.dumps({"timestamp": ts.isoformat(), "data": i}) + "\n")
+                    self.entries_written += 1
             else:
                 f.write(json.dumps({"timestamp": ts.isoformat(), "data": item}) + "\n")
+                self.entries_written += 1
+
+    # ---------------- API ---------------- #
 
     def enable(self):
         self.enabled = True
@@ -81,10 +196,12 @@ class BaseHistory:
     def clear(self):
         self.data.clear()
         self.timestamps.clear()
-        open(self.log_file, "w").close()
+        self._rotate()
 
 
-# --- Subclasses ---
+# ------------------------------------------------------------
+# Subclasses
+# ------------------------------------------------------------
 class KeyboardHistory(BaseHistory):
     def __init__(self):
         super().__init__("Keyboard")
@@ -96,7 +213,6 @@ class CopyHistory(BaseHistory):
         self.last_clipboard = None
 
     def poll_clipboard(self):
-        """Check clipboard and log new content if changed."""
         if pyperclip is None:
             return
         try:
@@ -138,9 +254,11 @@ class CrashHistory(BaseHistory):
         super().__init__("Crash")
 
 
-# --- History Manager ---
+# ------------------------------------------------------------
+# History Manager
+# ------------------------------------------------------------
 class HistoryManager:
-    POLL_INTERVAL = 0.5  # seconds
+    POLL_INTERVAL = 0.5
 
     def __init__(self, auto_start=True, poll_clipboard=True, keyboard_logging=True):
         self.histories = {
@@ -153,6 +271,7 @@ class HistoryManager:
             "Undo": UndoHistory(),
             "Crash": CrashHistory(),
         }
+
         self._stop_event = threading.Event()
         self.poll_clipboard_enabled = poll_clipboard
         self.keyboard_logging_enabled = keyboard_logging
@@ -160,7 +279,8 @@ class HistoryManager:
         if auto_start:
             self.start_background_thread()
 
-    # --- Logging functions ---
+    # --- Logging API ---
+
     def log(self, history_type, item):
         if history_type not in self.histories:
             raise ValueError(f"Unknown history type: {history_type}")
@@ -186,18 +306,25 @@ class HistoryManager:
                 h.clear()
 
     # --- Background tasks ---
+
     def start_background_thread(self):
         self._thread = threading.Thread(target=self._background_loop, daemon=True)
         self._thread.start()
+
         if self.keyboard_logging_enabled and pynput is not None:
             self._start_keyboard_listener()
 
     def stop_background_thread(self):
         self._stop_event.set()
+
         if hasattr(self, "_keyboard_listener"):
             self._keyboard_listener.stop()
+
         if hasattr(self, "_thread"):
             self._thread.join()
+
+        for h in self.histories.values():
+            h._close_log()
 
     def _background_loop(self):
         while not self._stop_event.is_set():
@@ -206,10 +333,12 @@ class HistoryManager:
             time.sleep(self.POLL_INTERVAL)
 
     # --- Clipboard polling ---
+
     def poll_copy(self):
         self.histories["Copy"].poll_clipboard()
 
     # --- Keyboard logging ---
+
     def _start_keyboard_listener(self):
         def on_press(key):
             try:

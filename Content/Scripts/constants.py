@@ -1,3 +1,5 @@
+import math
+
 import pickle, os
 import numpy as np
 import unreal_engine as ue
@@ -356,6 +358,11 @@ class WorldSize():
         # 2.09024042 × 10^(-28)nm particle width by idiot math using electrons weight and size, 2 orders of magnitude difference between this and planck length
         self.photon_visible_weight = 4.42 * 10 ^ (-36)  # 9.70468767*10^(-15)nm by idiot math
         self.photon_gamma_weight = 2.21 * 10 ^ (-19)  # 485.234384nm by idiot math
+
+        self.speed_of_light = 299792458 # (m / s)
+        radius = 1
+        self.speed_of_rotation = self.speed_of_light / (2 * math.pi * radius) # (radians / s) # 47713451.5924 cycles per second if radius is 1, usually radius is 0 in particle physics
+
 
 
 class FiniteRepetitionSelector():
