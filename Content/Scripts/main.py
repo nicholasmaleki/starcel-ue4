@@ -1,6 +1,7 @@
 from scipy.fft import set_global_backend
 
 import unreal_engine as ue
+from unreal_engine_tools import *
 import numpy as np
 import os, sys, subprocess, urllib.request, socket, math, sympy, cmdix, fast_autocomplete, numba, kingdon, dill #numba_cuda
 from unreal_engine import FVector, FRotator, FTransform, FHitResult, CLASS_CONFIG, CLASS_DEFAULT_CONFIG, CPF_CONFIG, CPF_GLOBAL_CONFIG, CPF_EXPOSE_ON_SPAWN, CPF_NET, CPF_REP_NOTIFY
@@ -11,6 +12,7 @@ import constants, windowtool
 from languages import *
 from cli import *
 
+
 RPC_ACTOR = None
 HELPER = None
 
@@ -18,22 +20,8 @@ HELPER = None
 ue.log('Hello i am a Python module')
 
 
-scmaps = []
 global world
-
-for _world in ue.all_worlds():
-    if _world.get_name() == "StarcelExampleMap":
-        scmaps.append(_world)
-
-if len(scmaps) == 1:
-    world = scmaps[0]
-else:
-    world = scmaps[len(scmaps) - 1]
-    ue.log_warning("There is more than one StarcelExampleMap world, using the last one found")
-
-if not world:
-    world = ue.all_worlds()[0]
-    ue.log_warning("Can't find world, assigning the first existing world, " + world.get_name())
+world = get_world()
 
 
 # constants.rebuild_libraries()
@@ -42,10 +30,32 @@ if not world:
 # windowtool.start_background_hook("notepad.exe", expand_to_screen=True,custom_rect=(-10, 0, 1940, 1085)) # , monitor_number=0)
 
 
-#actor hidden in game, visible, and enabled
 
-import unreal_engine as ue
-from unreal_engine.classes import StaticMeshActor, Material
+# SkySpheres
+# BP_SkySphere: Rendering -> Actor Hidden in Game = True
+# SM_SkySphere: Materials -> Element 0: M_SkyBox. Rendering -> Visible = True
+# M_SkyBox Emissive Multiplier = 0.5
+# M_SkyBox With ParamCube Parameter Name = Texture. SkyBoxTexture = starmap_g8k
+# SM_SkySpherePureWhite Rendering -> Visible = False
+# SM_SkySpherePureWhiteManualExposure: M_SkyBoxWhiteForManualExposure
+
+# Fog
+# ExponentialHeightFogColor Visible = True. Exponential Height Fog Component -> Fog Inscattering Color: RGBA
+
+# Post Processing
+# PostProcessVolumeExposureCamera: Lens -> Exposure -> Metering Mode = False; (Auto Exposure Histogram, Auto Exposure Basic, Manual). Exposure Compensation = True; 9.5
+# PostProcessVolumeGray: Rendering Features: Abmient Cubemap -> Cubemap Texture: blacktexturecubehdr (Texture Cube: File Path -> Source File "whitetexturecubehdr.hdr"). Post Process Volume Settings -> Enabled = True
+# PostProcessVolumeRemoveBloom: Enabled = False
+
+# SkyLight:
+# Light ->
+# Intensity Scale = 3.0
+# Lower Hemisphere is Solid Color = True
+# Lower Hemisphere Color = 0,0,0,1
+
+
+
+
 
 
 def apply_material(
@@ -280,7 +290,7 @@ class Main:
             specular=0.5,
             roughness=0.2,
             anisotropy=0.1,
-            emissive_multiplier=2.0,
+            emissive_multiplier=10.0,
             ambient_occlusion=1.0
         )
 
