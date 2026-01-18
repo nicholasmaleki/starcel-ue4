@@ -1,12 +1,10 @@
 import unreal_engine as ue
 from unreal_engine.classes import Material, Texture, Texture2D, TextureCube
-
-
+import os
 
 def get_world():
     scmaps = []
-    global world
-
+    world = None
     if not world:
         for _world in ue.all_worlds():
             if _world.get_name() == "StarcelExampleMap":
@@ -15,8 +13,8 @@ def get_world():
         if len(scmaps) == 1:
             world = scmaps[0]
         else:
-            world = scmaps[len(scmaps) - 1]
-            ue.log_warning("There is more than one StarcelExampleMap world, using the last one found")
+            world = scmaps[0] # len(scmaps) - 1
+            ue.log_warning("There is more than one StarcelExampleMap world, using the first one found")
 
         if not world:
             world = ue.all_worlds()[0]
@@ -24,41 +22,64 @@ def get_world():
 
     return world
 
+global world
+world = get_world()
+
 def find_actor(name):
     for a in world.all_actors():
         if a.get_name() == name:
             return a
+        if name in a.get_name():
+            return a
     return None
 
+def print_all_actors():
+    actors = world.all_actors()
+    for a in actors:
+        print(a.get_name())
 
-def set_actor_hidden(name, hidden=True):
-    a = find_actor(name)
-    if not a:
-        return None
+def get_content_folder():
+    return os.path.abspath(ue.get_content_dir())
 
-    a.set_property("bHidden", hidden)
-    return a
+def get_game_folder():
+    return os.path.abspath(ue.get_content_dir())
 
-
-def set_actor_enabled(name, enabled=True):
-    a = find_actor(name)
-    if not a:
-        return None
-
-    a.set_property("bActorEnableCollision", enabled)
-    a.set_property("bCanBeDamaged", enabled)
-    return a
+def get_scripts_folder():
+    return os.path.join(os.path.abspath(ue.get_content_dir()), "Scripts")
 
 
-def set_components_visible(actor, visible=True):
+
+
+def set_actor_hidden_in_game(actor, hidden=True): # Certain blueprints like BP_SkySphere
     if not actor:
-        return
+        return None
 
-    for c in actor.get_components():
-        try:
-            c.set_property("bVisible", visible)
-        except Exception:
-            pass
+    out = actor.set_property("bActorHiddenInGame", hidden)
+    return out
+
+
+def set_actor_enabled(actor, enabled=True): # post process
+    if not actor:
+        return None
+
+    out = actor.set_property("bEnabled", enabled)
+    return out
+
+def set_actor_visible(actor, visible=True):
+    if not actor:
+        return None
+
+    out = actor.set_property("bActorHiddenInGame", visible)
+    return out
+    # relevant editor access https://github.com/20tab/UnrealEnginePython/issues/655 https://github.com/20tab/UnrealEnginePython/issues/363
+    # if not actor:
+    #     return
+    #
+    # for c in actor.get_components():
+    #     try:
+    #         c.set_property("bVisible", visible)
+    #     except Exception:
+    #         pass
 
 
 def _load_texture_any(path):
@@ -176,8 +197,8 @@ def change_background(mode="white", image_path=None):
 
     # --- reset ---
     for a in (sky, sky_white):
-        set_actor_hidden(a.get_name(), True)
-        set_actor_enabled(a.get_name(), False)
+        set_actor_hidden(a, True)
+        set_actor_enabled(a, False)
         set_components_visible(a, False)
 
     if pp_bloom:

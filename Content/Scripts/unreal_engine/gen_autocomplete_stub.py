@@ -1,11 +1,10 @@
 import unreal_engine as ue
-import os
 from pathlib import Path
-import pystubgen
-import inspect
+import pystubgen, inspect, re, os
 import unreal_engine.enums as enums
 import unreal_engine.structs as structs
 
+#TODO: rewrite UnrealEnginePython C++ Plugin to include all_enums() and all_structs()
 #TODO: Maybe add unreal to python property mapping
 # Unreal property	Python value
 # float	            float
@@ -26,6 +25,11 @@ import unreal_engine.structs as structs
 #         self.gen_intellisense_stubs_enums()
 
 def gen_intellisense_stubs():
+    """
+    Generates Python stubs for all Unreal classes in ue.all_classes()
+    Replaces __unknown_params__ with (*args, **kwargs)
+    Differentiates instance vs static methods
+    """
     # --- UE4.27 constants stub ---
     constants_stub = '''\
 # --- Class Flags (CLASS_*) ---
@@ -131,14 +135,18 @@ RF_HAS_EXTERNAL_PACKAGE: int
 RF_ALL_FLAGS: int
 '''
 
-    # --- Generate stub for freeform methods ---
+    # --- Generate the original source ---
     source = pystubgen.make_source(ue)
 
     functions_list = [o[1] for o in inspect.getmembers(ue) if inspect.isroutine(o[1])]
     funcDefs = '\n'.join([pystubgen.make_source(funcObj) for funcObj in functions_list])
 
+    # --- Replace all __unknown_params__ with self, *args, **kwargs ---
+    source = re.sub(r"\(__unknown_params__\)", "(self, *args, **kwargs)", source)
+
     # --- Output path ---
-    stubFilePath = Path(os.path.join(os.path.abspath(ue.get_content_dir()), "Scripts", "unreal_engine", "__init__.py"))
+    stubFilePath = Path(os.path.join(os.path.abspath(ue.get_content_dir()),
+                                     "Scripts", "unreal_engine", "__init__.py"))
     print(os.getcwd())
 
     if not os.access(str(stubFilePath), os.W_OK):
@@ -151,8 +159,33 @@ RF_ALL_FLAGS: int
         outputFile.write(constants_stub)
         outputFile.write('\n\n# Freeform Methods\n')
         outputFile.write(funcDefs)
-        outputFile.write('\n\n')
+        outputFile.write('\n\n# Fixed Unreal module stubs\n')
         outputFile.write(source)
+
+    # source = pystubgen.make_source(ue)
+    #
+    # functions_list = [o[1] for o in inspect.getmembers(ue) if inspect.isroutine(o[1])]
+    # funcDefs = '\n'.join([pystubgen.make_source(funcObj) for funcObj in functions_list])
+    #
+    # # --- Output path ---
+    # stubFilePath = Path(os.path.join(os.path.abspath(ue.get_content_dir()), "Scripts", "unreal_engine", "__init__.py"))
+    # print(os.getcwd())
+    #
+    # if not os.access(str(stubFilePath), os.W_OK):
+    #     print(f"p4 edit {str(stubFilePath)}")
+    #     os.system(f"p4 edit {str(stubFilePath)} && pause>nul")
+    #
+    # # --- Write everything to file ---
+    # with open(str(stubFilePath), 'w', encoding='utf8') as outputFile:
+    #     outputFile.write('# UE4.27 Constants Stub\n')
+    #     outputFile.write(constants_stub)
+    #     outputFile.write('\n\n# Freeform Methods\n')
+    #     outputFile.write(funcDefs)
+    #     outputFile.write('\n\n')
+    #     outputFile.write(source)
+
+    print("Stub generation complete:", stubFilePath)
+
 
 def gen_intellisense_stubs_classes():
     class_def_list = []
@@ -170,6 +203,8 @@ def gen_intellisense_stubs_classes():
     stubFilePath = Path(os.path.join(os.path.abspath(ue.get_content_dir()), "Scripts", "unreal_engine", "classes.py"))
     with open(str(stubFilePath), 'w', encoding='utf8') as outputFile:
         outputFile.write('\n'.join(class_def_list))
+
+    print("Stub generation complete:", stubFilePath)
 
 
 def gen_intellisense_stubs_structs():
@@ -234,6 +269,8 @@ def gen_intellisense_stubs_structs():
                     type_str = "Any"
                 f.write(f"    {field_name}: {type_str}\n")
             f.write("\n")
+
+    print("Stub generation complete:", stubFilePath)
 
 
 def gen_intellisense_stubs_enums():
@@ -308,6 +345,8 @@ def gen_intellisense_stubs_enums():
 
     with open(stubFilePath, "w", encoding="utf8") as outputFile:
         outputFile.write("\n".join(enum_def_list))
+
+    print("Stub generation complete:", stubFilePath)
 
 
 print("Started building stubs for unreal_engine, classes, structs, and enums")

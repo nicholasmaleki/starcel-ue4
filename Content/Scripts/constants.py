@@ -16,20 +16,6 @@ os_name = platform.system()
 # else:
 #     print(f"Running on an unknown or other OS: {os_name}")
 
-def rebuild_libraries():
-    libraries_to_build = [os.path.join(os.path.abspath(ue.get_content_dir()), "Scripts", "unreal_engine", "gen_autocomplete_stub.py"), os.path.join(os.path.abspath(ue.get_content_dir()), "Scripts", "generate_cli.py")]
-    print("Building libraries:", libraries_to_build)
-    try:
-        for library in libraries_to_build:
-            ue.py_exec(library)
-        print("Finished building libraries")
-    except Exception as e:
-        print("Building libraries failed", e)
-
-    # from pickle import picklequotes
-    # picklequotes.pickle_quotes()
-
-
 
 class LargeStringAsyncStandalone:
     def __init__(

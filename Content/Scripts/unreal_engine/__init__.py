@@ -1049,6 +1049,7 @@ def wait_for_assets(__unknown_params__):
     pass
 
 
+# Fixed Unreal module stubs
 # Generated from built-in module unreal_engine using pystubgen
 
 class Callable(object):
@@ -1087,17 +1088,17 @@ class ESlateEnums(object):
         Create and return a new object.  See help(type) for accurate signature.
         """
 
-    EUserInterfaceActionType.Button = "<unreal_engine.ESlateEnums object at 0x0000026FEC02DB30>" # DATA
+    EUserInterfaceActionType.Button = "<unreal_engine.ESlateEnums object at 0x0000023E86DB2BB0>" # DATA
 
-    EUserInterfaceActionType.Check = "<unreal_engine.ESlateEnums object at 0x0000026FEC02DB90>" # DATA
+    EUserInterfaceActionType.Check = "<unreal_engine.ESlateEnums object at 0x0000023E86DB2C10>" # DATA
 
-    EUserInterfaceActionType.CollapsedButton = "<unreal_engine.ESlateEnums object at 0x0000026FEC02DBB0>" # DATA
+    EUserInterfaceActionType.CollapsedButton = "<unreal_engine.ESlateEnums object at 0x0000023E86DB2C30>" # DATA
 
-    EUserInterfaceActionType.None = "<unreal_engine.ESlateEnums object at 0x0000026FEC02DB10>" # DATA
+    EUserInterfaceActionType.None = "<unreal_engine.ESlateEnums object at 0x0000023E86DB2B90>" # DATA
 
-    EUserInterfaceActionType.RadioButton = "<unreal_engine.ESlateEnums object at 0x0000026FEC02DB70>" # DATA
+    EUserInterfaceActionType.RadioButton = "<unreal_engine.ESlateEnums object at 0x0000023E86DB2BF0>" # DATA
 
-    EUserInterfaceActionType.ToggleButton = "<unreal_engine.ESlateEnums object at 0x0000026FEC02DB50>" # DATA
+    EUserInterfaceActionType.ToggleButton = "<unreal_engine.ESlateEnums object at 0x0000023E86DB2BD0>" # DATA
 
     val = "<attribute 'val' of 'unreal_engine.ESlateEnums' objects>" # DATA
 
@@ -1111,19 +1112,19 @@ class EdGraphPin(object):
         Return str(self).
         """
 
-    def break_all_pin_links(__unknown_params__):
+    def break_all_pin_links(self, *args, **kwargs):
         pass
 
-    def break_link_to(__unknown_params__):
+    def break_link_to(self, *args, **kwargs):
         pass
 
-    def connect(__unknown_params__):
+    def connect(self, *args, **kwargs):
         pass
 
-    def get_linked_to(__unknown_params__):
+    def get_linked_to(self, *args, **kwargs):
         pass
 
-    def make_link_to(__unknown_params__):
+    def make_link_to(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -1172,13 +1173,13 @@ class FARFilter(object):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def append(__unknown_params__):
+    def append(self, *args, **kwargs):
         pass
 
-    def clear(__unknown_params__):
+    def clear(self, *args, **kwargs):
         pass
 
-    def is_empty(__unknown_params__):
+    def is_empty(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -1238,19 +1239,19 @@ class FAssetData(object):
         Return str(self).
         """
 
-    def get_asset(__unknown_params__):
+    def get_asset(self, *args, **kwargs):
         pass
 
-    def get_thumbnail(__unknown_params__):
+    def get_thumbnail(self, *args, **kwargs):
         pass
 
-    def has_cached_thumbnail(__unknown_params__):
+    def has_cached_thumbnail(self, *args, **kwargs):
         pass
 
-    def has_custom_thumbnail(__unknown_params__):
+    def has_custom_thumbnail(self, *args, **kwargs):
         pass
 
-    def is_asset_loaded(__unknown_params__):
+    def is_asset_loaded(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -1309,7 +1310,7 @@ class FCharacterEvent(FInputEvent):
         Return str(self).
         """
 
-    def get_character(__unknown_params__):
+    def get_character(self, *args, **kwargs):
         pass
 
 
@@ -1347,10 +1348,10 @@ class FColor(object):
         Return str(self).
         """
 
-    def to_hex(__unknown_params__):
+    def to_hex(self, *args, **kwargs):
         pass
 
-    def to_linear(__unknown_params__):
+    def to_linear(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -1359,31 +1360,31 @@ class FColor(object):
         Create and return a new object.  See help(type) for accurate signature.
         """
 
-    Black = "<unreal_engine.FColor object at 0x0000026FD3638B30>" # DATA
+    Black = "<unreal_engine.FColor object at 0x0000023E86CF8AB0>" # DATA
 
-    Blue = "<unreal_engine.FColor object at 0x0000026FD3638B50>" # DATA
+    Blue = "<unreal_engine.FColor object at 0x0000023E86CF89F0>" # DATA
 
-    Cyan = "<unreal_engine.FColor object at 0x0000026FD3638B70>" # DATA
+    Cyan = "<unreal_engine.FColor object at 0x0000023E86CF8BF0>" # DATA
 
-    Emerald = "<unreal_engine.FColor object at 0x0000026FD3638B90>" # DATA
+    Emerald = "<unreal_engine.FColor object at 0x0000023E86CF8C10>" # DATA
 
-    Green = "<unreal_engine.FColor object at 0x0000026FD3638BB0>" # DATA
+    Green = "<unreal_engine.FColor object at 0x0000023E86CF8C30>" # DATA
 
-    Magenta = "<unreal_engine.FColor object at 0x0000026FD3638BD0>" # DATA
+    Magenta = "<unreal_engine.FColor object at 0x0000023E86CF8C50>" # DATA
 
-    Orange = "<unreal_engine.FColor object at 0x0000026FD3638BF0>" # DATA
+    Orange = "<unreal_engine.FColor object at 0x0000023E86CF8C70>" # DATA
 
-    Purple = "<unreal_engine.FColor object at 0x0000026FD3638C10>" # DATA
+    Purple = "<unreal_engine.FColor object at 0x0000023E86CF8C90>" # DATA
 
-    Red = "<unreal_engine.FColor object at 0x0000026FD3638C30>" # DATA
+    Red = "<unreal_engine.FColor object at 0x0000023E86CF8CB0>" # DATA
 
-    Silver = "<unreal_engine.FColor object at 0x0000026FD3638C50>" # DATA
+    Silver = "<unreal_engine.FColor object at 0x0000023E86CF8CD0>" # DATA
 
-    Turquoise = "<unreal_engine.FColor object at 0x0000026FD3638C70>" # DATA
+    Turquoise = "<unreal_engine.FColor object at 0x0000023E86CF8CF0>" # DATA
 
-    White = "<unreal_engine.FColor object at 0x0000026FD3638C90>" # DATA
+    White = "<unreal_engine.FColor object at 0x0000023E86CF8D10>" # DATA
 
-    Yellow = "<unreal_engine.FColor object at 0x0000026FD3638CB0>" # DATA
+    Yellow = "<unreal_engine.FColor object at 0x0000023E86CF8D30>" # DATA
 
     a = "<attribute 'a' of 'unreal_engine.FColor' objects>" # DATA
 
@@ -1414,43 +1415,43 @@ class FEditorViewportClient(FViewportClient):
         Return str(self).
         """
 
-    def get_camera_speed(__unknown_params__):
+    def get_camera_speed(self, *args, **kwargs):
         pass
 
-    def get_look_at_location(__unknown_params__):
+    def get_look_at_location(self, *args, **kwargs):
         pass
 
-    def get_scene_depth_at_location(__unknown_params__):
+    def get_scene_depth_at_location(self, *args, **kwargs):
         pass
 
-    def get_view_location(__unknown_params__):
+    def get_view_location(self, *args, **kwargs):
         pass
 
-    def get_view_rotation(__unknown_params__):
+    def get_view_rotation(self, *args, **kwargs):
         pass
 
-    def get_viewport_dimensions(__unknown_params__):
+    def get_viewport_dimensions(self, *args, **kwargs):
         pass
 
-    def is_visible(__unknown_params__):
+    def is_visible(self, *args, **kwargs):
         pass
 
-    def set_look_at_location(__unknown_params__):
+    def set_look_at_location(self, *args, **kwargs):
         pass
 
-    def set_realtime(__unknown_params__):
+    def set_realtime(self, *args, **kwargs):
         pass
 
-    def set_view_location(__unknown_params__):
+    def set_view_location(self, *args, **kwargs):
         pass
 
-    def set_view_rotation(__unknown_params__):
+    def set_view_rotation(self, *args, **kwargs):
         pass
 
-    def take_high_res_screen_shot(__unknown_params__):
+    def take_high_res_screen_shot(self, *args, **kwargs):
         pass
 
-    def tick(__unknown_params__):
+    def tick(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -1531,13 +1532,13 @@ class FGeometry(object):
         Return str(self).
         """
 
-    def absolute_to_local(__unknown_params__):
+    def absolute_to_local(self, *args, **kwargs):
         pass
 
-    def get_absolute_position(__unknown_params__):
+    def get_absolute_position(self, *args, **kwargs):
         pass
 
-    def get_local_size(__unknown_params__):
+    def get_local_size(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -1556,7 +1557,7 @@ class FHitResult(object):
         Return str(self).
         """
 
-    def get_reversed_hit(__unknown_params__):
+    def get_reversed_hit(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -1591,19 +1592,19 @@ class FInputEvent(object):
         Return str(self).
         """
 
-    def get_user_index(__unknown_params__):
+    def get_user_index(self, *args, **kwargs):
         pass
 
-    def is_alt_down(__unknown_params__):
+    def is_alt_down(self, *args, **kwargs):
         pass
 
-    def is_command_down(__unknown_params__):
+    def is_command_down(self, *args, **kwargs):
         pass
 
-    def is_control_down(__unknown_params__):
+    def is_control_down(self, *args, **kwargs):
         pass
 
-    def to_text(__unknown_params__):
+    def to_text(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -1627,10 +1628,10 @@ class FKeyEvent(FInputEvent):
         Return str(self).
         """
 
-    def get_key(__unknown_params__):
+    def get_key(self, *args, **kwargs):
         pass
 
-    def get_key_name(__unknown_params__):
+    def get_key_name(self, *args, **kwargs):
         pass
 
 
@@ -1668,7 +1669,7 @@ class FLinearColor(object):
         Return str(self).
         """
 
-    def to_fcolor(__unknown_params__):
+    def to_fcolor(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -1677,19 +1678,19 @@ class FLinearColor(object):
         Create and return a new object.  See help(type) for accurate signature.
         """
 
-    Black = "<unreal_engine.FLinearColor object at 0x0000026FD3638CF0>" # DATA
+    Black = "<unreal_engine.FLinearColor object at 0x0000023E86CF8D70>" # DATA
 
-    Blue = "<unreal_engine.FLinearColor object at 0x0000026FD3638D10>" # DATA
+    Blue = "<unreal_engine.FLinearColor object at 0x0000023E86CF8D90>" # DATA
 
-    Gray = "<unreal_engine.FLinearColor object at 0x0000026FD3638D30>" # DATA
+    Gray = "<unreal_engine.FLinearColor object at 0x0000023E86CF8DB0>" # DATA
 
-    Green = "<unreal_engine.FLinearColor object at 0x0000026FD3638D50>" # DATA
+    Green = "<unreal_engine.FLinearColor object at 0x0000023E86CF8DD0>" # DATA
 
-    Red = "<unreal_engine.FLinearColor object at 0x0000026FD3638D70>" # DATA
+    Red = "<unreal_engine.FLinearColor object at 0x0000023E86CF8DF0>" # DATA
 
-    White = "<unreal_engine.FLinearColor object at 0x0000026FD3638D90>" # DATA
+    White = "<unreal_engine.FLinearColor object at 0x0000023E86CF8E10>" # DATA
 
-    Yellow = "<unreal_engine.FLinearColor object at 0x0000026FD3638DB0>" # DATA
+    Yellow = "<unreal_engine.FLinearColor object at 0x0000023E86CF8E30>" # DATA
 
     a = "<attribute 'a' of 'unreal_engine.FLinearColor' objects>" # DATA
 
@@ -1716,15 +1717,15 @@ class FMaterialEditorUtilities(object):
         """
 
     @classmethod
-    def command_apply(__unknown_params__):
+    def command_apply(self, *args, **kwargs):
         pass
 
     @classmethod
-    def paste_nodes_here(__unknown_params__):
+    def paste_nodes_here(self, *args, **kwargs):
         pass
 
     @classmethod
-    def update_material_after_graph_change(__unknown_params__):
+    def update_material_after_graph_change(self, *args, **kwargs):
         pass
 
 
@@ -1742,28 +1743,28 @@ class FMenuBuilder(object):
         Return str(self).
         """
 
-    def add_asset_actions(__unknown_params__):
+    def add_asset_actions(self, *args, **kwargs):
         pass
 
-    def add_menu_entry(__unknown_params__):
+    def add_menu_entry(self, *args, **kwargs):
         pass
 
-    def add_menu_separator(__unknown_params__):
+    def add_menu_separator(self, *args, **kwargs):
         pass
 
-    def add_search_widget(__unknown_params__):
+    def add_search_widget(self, *args, **kwargs):
         pass
 
-    def add_sub_menu(__unknown_params__):
+    def add_sub_menu(self, *args, **kwargs):
         pass
 
-    def begin_section(__unknown_params__):
+    def begin_section(self, *args, **kwargs):
         pass
 
-    def end_section(__unknown_params__):
+    def end_section(self, *args, **kwargs):
         pass
 
-    def make_widget(__unknown_params__):
+    def make_widget(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -1782,28 +1783,28 @@ class FMeshDescription(object):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def get_polygons(__unknown_params__):
+    def get_polygons(self, *args, **kwargs):
         pass
 
-    def get_polygons_num(__unknown_params__):
+    def get_polygons_num(self, *args, **kwargs):
         pass
 
-    def get_triangles(__unknown_params__):
+    def get_triangles(self, *args, **kwargs):
         pass
 
-    def get_triangles_num(__unknown_params__):
+    def get_triangles_num(self, *args, **kwargs):
         pass
 
-    def get_vertex_instances(__unknown_params__):
+    def get_vertex_instances(self, *args, **kwargs):
         pass
 
-    def get_vertex_positions(__unknown_params__):
+    def get_vertex_positions(self, *args, **kwargs):
         pass
 
-    def get_vertices(__unknown_params__):
+    def get_vertices(self, *args, **kwargs):
         pass
 
-    def get_vertices_num(__unknown_params__):
+    def get_vertices_num(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -1827,7 +1828,7 @@ class FModifierKeysState(object):
         Return str(self).
         """
 
-    def are_caps_locked(__unknown_params__):
+    def are_caps_locked(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -1878,19 +1879,19 @@ class FObjectThumbnail(object):
         Return str(self).
         """
 
-    def compress_image_data(__unknown_params__):
+    def compress_image_data(self, *args, **kwargs):
         pass
 
-    def get_compressed_data_size(__unknown_params__):
+    def get_compressed_data_size(self, *args, **kwargs):
         pass
 
-    def get_image_height(__unknown_params__):
+    def get_image_height(self, *args, **kwargs):
         pass
 
-    def get_image_width(__unknown_params__):
+    def get_image_width(self, *args, **kwargs):
         pass
 
-    def get_uncompressed_image_data(__unknown_params__):
+    def get_uncompressed_image_data(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -1909,22 +1910,22 @@ class FPaintContext(object):
         Return str(self).
         """
 
-    def draw_box(__unknown_params__):
+    def draw_box(self, *args, **kwargs):
         pass
 
-    def draw_line(__unknown_params__):
+    def draw_line(self, *args, **kwargs):
         pass
 
-    def draw_lines(__unknown_params__):
+    def draw_lines(self, *args, **kwargs):
         pass
 
-    def draw_spline(__unknown_params__):
+    def draw_spline(self, *args, **kwargs):
         pass
 
-    def draw_text(__unknown_params__):
+    def draw_text(self, *args, **kwargs):
         pass
 
-    def get_geometry(__unknown_params__):
+    def get_geometry(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -1948,19 +1949,19 @@ class FPointerEvent(FInputEvent):
         Return str(self).
         """
 
-    def get_cursor_delta(__unknown_params__):
+    def get_cursor_delta(self, *args, **kwargs):
         pass
 
-    def get_effecting_button(__unknown_params__):
+    def get_effecting_button(self, *args, **kwargs):
         pass
 
-    def get_effecting_button_name(__unknown_params__):
+    def get_effecting_button_name(self, *args, **kwargs):
         pass
 
-    def get_screen_space_position(__unknown_params__):
+    def get_screen_space_position(self, *args, **kwargs):
         pass
 
-    def get_wheel_delta(__unknown_params__):
+    def get_wheel_delta(self, *args, **kwargs):
         pass
 
 
@@ -1998,13 +1999,13 @@ class FProperty(object):
         Return str(self).
         """
 
-    def get_metadata(__unknown_params__):
+    def get_metadata(self, *args, **kwargs):
         pass
 
-    def has_metadata(__unknown_params__):
+    def has_metadata(self, *args, **kwargs):
         pass
 
-    def set_metadata(__unknown_params__):
+    def set_metadata(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -2099,40 +2100,40 @@ class FQuat(object):
         Return self-value.
         """
 
-    def angular_distance(__unknown_params__):
+    def angular_distance(self, *args, **kwargs):
         pass
 
-    def euler(__unknown_params__):
+    def euler(self, *args, **kwargs):
         pass
 
-    def get_axis_x(__unknown_params__):
+    def get_axis_x(self, *args, **kwargs):
         pass
 
-    def get_axis_y(__unknown_params__):
+    def get_axis_y(self, *args, **kwargs):
         pass
 
-    def get_axis_z(__unknown_params__):
+    def get_axis_z(self, *args, **kwargs):
         pass
 
-    def get_forward_vector(__unknown_params__):
+    def get_forward_vector(self, *args, **kwargs):
         pass
 
-    def get_normalized(__unknown_params__):
+    def get_normalized(self, *args, **kwargs):
         pass
 
-    def get_right_vector(__unknown_params__):
+    def get_right_vector(self, *args, **kwargs):
         pass
 
-    def get_up_vector(__unknown_params__):
+    def get_up_vector(self, *args, **kwargs):
         pass
 
-    def inverse(__unknown_params__):
+    def inverse(self, *args, **kwargs):
         pass
 
-    def rotator(__unknown_params__):
+    def rotator(self, *args, **kwargs):
         pass
 
-    def vector(__unknown_params__):
+    def vector(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -2164,46 +2165,46 @@ class FRandomStream(object):
         Return str(self).
         """
 
-    def frand(__unknown_params__):
+    def frand(self, *args, **kwargs):
         pass
 
-    def frand_range(__unknown_params__):
+    def frand_range(self, *args, **kwargs):
         pass
 
-    def generate_new_seed(__unknown_params__):
+    def generate_new_seed(self, *args, **kwargs):
         pass
 
-    def get_current_seed(__unknown_params__):
+    def get_current_seed(self, *args, **kwargs):
         pass
 
-    def get_fraction(__unknown_params__):
+    def get_fraction(self, *args, **kwargs):
         pass
 
-    def get_initial_seed(__unknown_params__):
+    def get_initial_seed(self, *args, **kwargs):
         pass
 
-    def get_unit_vector(__unknown_params__):
+    def get_unit_vector(self, *args, **kwargs):
         pass
 
-    def get_unsigned_int(__unknown_params__):
+    def get_unsigned_int(self, *args, **kwargs):
         pass
 
-    def initialize(__unknown_params__):
+    def initialize(self, *args, **kwargs):
         pass
 
-    def rand_helper(__unknown_params__):
+    def rand_helper(self, *args, **kwargs):
         pass
 
-    def rand_range(__unknown_params__):
+    def rand_range(self, *args, **kwargs):
         pass
 
-    def reset(__unknown_params__):
+    def reset(self, *args, **kwargs):
         pass
 
-    def vrand(__unknown_params__):
+    def vrand(self, *args, **kwargs):
         pass
 
-    def vrand_cone(__unknown_params__):
+    def vrand_cone(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -2244,61 +2245,61 @@ class FRawMesh(object):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def get_face_material_indices(__unknown_params__):
+    def get_face_material_indices(self, *args, **kwargs):
         pass
 
-    def get_vertex_positions(__unknown_params__):
+    def get_vertex_positions(self, *args, **kwargs):
         pass
 
-    def get_wedge_colors(__unknown_params__):
+    def get_wedge_colors(self, *args, **kwargs):
         pass
 
-    def get_wedge_indices(__unknown_params__):
+    def get_wedge_indices(self, *args, **kwargs):
         pass
 
-    def get_wedge_position(__unknown_params__):
+    def get_wedge_position(self, *args, **kwargs):
         pass
 
-    def get_wedge_tangent_x(__unknown_params__):
+    def get_wedge_tangent_x(self, *args, **kwargs):
         pass
 
-    def get_wedge_tangent_y(__unknown_params__):
+    def get_wedge_tangent_y(self, *args, **kwargs):
         pass
 
-    def get_wedge_tangent_z(__unknown_params__):
+    def get_wedge_tangent_z(self, *args, **kwargs):
         pass
 
-    def get_wedge_tex_coords(__unknown_params__):
+    def get_wedge_tex_coords(self, *args, **kwargs):
         pass
 
-    def get_wedges_num(__unknown_params__):
+    def get_wedges_num(self, *args, **kwargs):
         pass
 
-    def save_to_static_mesh_source_model(__unknown_params__):
+    def save_to_static_mesh_source_model(self, *args, **kwargs):
         pass
 
-    def set_face_material_indices(__unknown_params__):
+    def set_face_material_indices(self, *args, **kwargs):
         pass
 
-    def set_vertex_positions(__unknown_params__):
+    def set_vertex_positions(self, *args, **kwargs):
         pass
 
-    def set_wedge_colors(__unknown_params__):
+    def set_wedge_colors(self, *args, **kwargs):
         pass
 
-    def set_wedge_indices(__unknown_params__):
+    def set_wedge_indices(self, *args, **kwargs):
         pass
 
-    def set_wedge_tangent_x(__unknown_params__):
+    def set_wedge_tangent_x(self, *args, **kwargs):
         pass
 
-    def set_wedge_tangent_y(__unknown_params__):
+    def set_wedge_tangent_y(self, *args, **kwargs):
         pass
 
-    def set_wedge_tangent_z(__unknown_params__):
+    def set_wedge_tangent_z(self, *args, **kwargs):
         pass
 
-    def set_wedge_tex_coords(__unknown_params__):
+    def set_wedge_tex_coords(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -2372,19 +2373,19 @@ class FRotator(object):
         Return self-value.
         """
 
-    def get_euler(__unknown_params__):
+    def get_euler(self, *args, **kwargs):
         pass
 
-    def get_vector(__unknown_params__):
+    def get_vector(self, *args, **kwargs):
         pass
 
-    def inversed(__unknown_params__):
+    def inversed(self, *args, **kwargs):
         pass
 
-    def normalized(__unknown_params__):
+    def normalized(self, *args, **kwargs):
         pass
 
-    def quaternion(__unknown_params__):
+    def quaternion(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -2416,59 +2417,59 @@ class FSlateApplication(object):
         """
 
     @classmethod
-    def create(__unknown_params__):
+    def create(self, *args, **kwargs):
         pass
 
     @classmethod
-    def get_active_top_level_window(__unknown_params__):
+    def get_active_top_level_window(self, *args, **kwargs):
         pass
 
     @classmethod
-    def get_average_delta_time(__unknown_params__):
+    def get_average_delta_time(self, *args, **kwargs):
         pass
 
     @classmethod
-    def get_cursor_radius(__unknown_params__):
+    def get_cursor_radius(self, *args, **kwargs):
         pass
 
     @classmethod
-    def get_delta_time(__unknown_params__):
+    def get_delta_time(self, *args, **kwargs):
         pass
 
     @classmethod
-    def get_modifier_keys(__unknown_params__):
+    def get_modifier_keys(self, *args, **kwargs):
         pass
 
     @classmethod
-    def goto_line_in_source(__unknown_params__):
+    def goto_line_in_source(self, *args, **kwargs):
         pass
 
     @classmethod
-    def is_gamepad_attached(__unknown_params__):
+    def is_gamepad_attached(self, *args, **kwargs):
         pass
 
     @classmethod
-    def is_mouse_attached(__unknown_params__):
+    def is_mouse_attached(self, *args, **kwargs):
         pass
 
     @classmethod
-    def process_key_char_event(__unknown_params__):
+    def process_key_char_event(self, *args, **kwargs):
         pass
 
     @classmethod
-    def process_key_down_event(__unknown_params__):
+    def process_key_down_event(self, *args, **kwargs):
         pass
 
     @classmethod
-    def set_all_user_focus(__unknown_params__):
+    def set_all_user_focus(self, *args, **kwargs):
         pass
 
     @classmethod
-    def set_application_scale(__unknown_params__):
+    def set_application_scale(self, *args, **kwargs):
         pass
 
     @classmethod
-    def set_cursor_pos(__unknown_params__):
+    def set_cursor_pos(self, *args, **kwargs):
         pass
 
 
@@ -2486,7 +2487,7 @@ class FSlateIcon(object):
         Return str(self).
         """
 
-    def get_icon(__unknown_params__):
+    def get_icon(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -2510,16 +2511,16 @@ class FSlateStyleSet(object):
         Return str(self).
         """
 
-    def get(__unknown_params__):
+    def get(self, *args, **kwargs):
         pass
 
-    def register(__unknown_params__):
+    def register(self, *args, **kwargs):
         pass
 
-    def set(__unknown_params__):
+    def set(self, *args, **kwargs):
         pass
 
-    def set_content_root(__unknown_params__):
+    def set_content_root(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -2538,25 +2539,25 @@ class FSlowTask(object):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def destroy(__unknown_params__):
+    def destroy(self, *args, **kwargs):
         pass
 
-    def enter_progress_frame(__unknown_params__):
+    def enter_progress_frame(self, *args, **kwargs):
         pass
 
-    def get_current_message(__unknown_params__):
+    def get_current_message(self, *args, **kwargs):
         pass
 
-    def initialize(__unknown_params__):
+    def initialize(self, *args, **kwargs):
         pass
 
-    def make_dialog(__unknown_params__):
+    def make_dialog(self, *args, **kwargs):
         pass
 
-    def make_dialog_delayed(__unknown_params__):
+    def make_dialog_delayed(self, *args, **kwargs):
         pass
 
-    def received_user_cancel(__unknown_params__):
+    def received_user_cancel(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -2580,13 +2581,13 @@ class FSocket(object):
         Return str(self).
         """
 
-    def close(__unknown_params__):
+    def close(self, *args, **kwargs):
         pass
 
-    def start_receiver(__unknown_params__):
+    def start_receiver(self, *args, **kwargs):
         pass
 
-    def stop_receiver(__unknown_params__):
+    def stop_receiver(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -2610,10 +2611,10 @@ class FStringAssetReference(object):
         Return str(self).
         """
 
-    def get_asset_name(__unknown_params__):
+    def get_asset_name(self, *args, **kwargs):
         pass
 
-    def get_long_package_name(__unknown_params__):
+    def get_long_package_name(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -2637,7 +2638,7 @@ class FSoftSkinVertex(object):
         Return str(self).
         """
 
-    def copy(__unknown_params__):
+    def copy(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -2681,10 +2682,10 @@ class FStringAssetReference(object):
         Return str(self).
         """
 
-    def get_asset_name(__unknown_params__):
+    def get_asset_name(self, *args, **kwargs):
         pass
 
-    def get_long_package_name(__unknown_params__):
+    def get_long_package_name(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -2719,10 +2720,10 @@ class FTabSpawnerEntry(object):
         Return str(self).
         """
 
-    def set_display_name(__unknown_params__):
+    def set_display_name(self, *args, **kwargs):
         pass
 
-    def set_tooltip_text(__unknown_params__):
+    def set_tooltip_text(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -2736,13 +2737,13 @@ class FTimerHandle(object):
     """
     Unreal Engine FTimerHandle
     """
-    def clear(__unknown_params__):
+    def clear(self, *args, **kwargs):
         pass
 
-    def pause(__unknown_params__):
+    def pause(self, *args, **kwargs):
         pass
 
-    def unpause(__unknown_params__):
+    def unpause(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -2766,25 +2767,25 @@ class FToolBarBuilder(object):
         Return str(self).
         """
 
-    def add_separator(__unknown_params__):
+    def add_separator(self, *args, **kwargs):
         pass
 
-    def add_tool_bar_button(__unknown_params__):
+    def add_tool_bar_button(self, *args, **kwargs):
         pass
 
-    def begin_block_group(__unknown_params__):
+    def begin_block_group(self, *args, **kwargs):
         pass
 
-    def begin_section(__unknown_params__):
+    def begin_section(self, *args, **kwargs):
         pass
 
-    def end_block_group(__unknown_params__):
+    def end_block_group(self, *args, **kwargs):
         pass
 
-    def end_section(__unknown_params__):
+    def end_section(self, *args, **kwargs):
         pass
 
-    def make_widget(__unknown_params__):
+    def make_widget(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -2818,31 +2819,31 @@ class FTransform(object):
         Return str(self).
         """
 
-    def get_matrix(__unknown_params__):
+    def get_matrix(self, *args, **kwargs):
         pass
 
-    def get_relative_transform(__unknown_params__):
+    def get_relative_transform(self, *args, **kwargs):
         pass
 
-    def inverse(__unknown_params__):
+    def inverse(self, *args, **kwargs):
         pass
 
-    def normalize_rotation(__unknown_params__):
+    def normalize_rotation(self, *args, **kwargs):
         pass
 
-    def transform_position(__unknown_params__):
+    def transform_position(self, *args, **kwargs):
         pass
 
-    def transform_position_no_scale(__unknown_params__):
+    def transform_position_no_scale(self, *args, **kwargs):
         pass
 
-    def transform_rotation(__unknown_params__):
+    def transform_rotation(self, *args, **kwargs):
         pass
 
-    def transform_vector(__unknown_params__):
+    def transform_vector(self, *args, **kwargs):
         pass
 
-    def transform_vector_no_scale(__unknown_params__):
+    def transform_vector_no_scale(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -2964,34 +2965,34 @@ class FVector(object):
         Return self/value.
         """
 
-    def cross(__unknown_params__):
+    def cross(self, *args, **kwargs):
         pass
 
-    def dot(__unknown_params__):
+    def dot(self, *args, **kwargs):
         pass
 
-    def length(__unknown_params__):
+    def length(self, *args, **kwargs):
         pass
 
-    def length_squared(__unknown_params__):
+    def length_squared(self, *args, **kwargs):
         pass
 
-    def normalized(__unknown_params__):
+    def normalized(self, *args, **kwargs):
         pass
 
-    def project_on_to(__unknown_params__):
+    def project_on_to(self, *args, **kwargs):
         pass
 
-    def project_on_to_normal(__unknown_params__):
+    def project_on_to_normal(self, *args, **kwargs):
         pass
 
-    def rotation(__unknown_params__):
+    def rotation(self, *args, **kwargs):
         pass
 
-    def size(__unknown_params__):
+    def size(self, *args, **kwargs):
         pass
 
-    def size_squared(__unknown_params__):
+    def size_squared(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -3002,11 +3003,11 @@ class FVector(object):
 
     __hash__ = "None" # DATA
 
-    forward = "<unreal_engine.FVector object at 0x0000026FD3638910>" # DATA
+    forward = "<unreal_engine.FVector object at 0x0000023E86CF8970>" # DATA
 
-    right = "<unreal_engine.FVector object at 0x0000026FD3638A90>" # DATA
+    right = "<unreal_engine.FVector object at 0x0000023E86CF8A50>" # DATA
 
-    up = "<unreal_engine.FVector object at 0x0000026FD3638A10>" # DATA
+    up = "<unreal_engine.FVector object at 0x0000023E86CF8A10>" # DATA
 
     x = "<attribute 'x' of 'unreal_engine.FVector' objects>" # DATA
 
@@ -3119,25 +3120,25 @@ class FVector2D(object):
         Return self/value.
         """
 
-    def cross(__unknown_params__):
+    def cross(self, *args, **kwargs):
         pass
 
-    def dot(__unknown_params__):
+    def dot(self, *args, **kwargs):
         pass
 
-    def length(__unknown_params__):
+    def length(self, *args, **kwargs):
         pass
 
-    def length_squared(__unknown_params__):
+    def length_squared(self, *args, **kwargs):
         pass
 
-    def normalized(__unknown_params__):
+    def normalized(self, *args, **kwargs):
         pass
 
-    def size(__unknown_params__):
+    def size(self, *args, **kwargs):
         pass
 
-    def size_squared(__unknown_params__):
+    def size_squared(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -3162,13 +3163,13 @@ class FViewportClient(object):
         Return str(self).
         """
 
-    def get_world(__unknown_params__):
+    def get_world(self, *args, **kwargs):
         pass
 
-    def is_in_game_view(__unknown_params__):
+    def is_in_game_view(self, *args, **kwargs):
         pass
 
-    def is_ortho(__unknown_params__):
+    def is_ortho(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -3203,16 +3204,16 @@ class FbxImporter(object):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def _import(__unknown_params__):
+    def _import(self, *args, **kwargs):
         pass
 
-    def get_anim_stack_count(__unknown_params__):
+    def get_anim_stack_count(self, *args, **kwargs):
         pass
 
-    def get_take_local_time_span(__unknown_params__):
+    def get_take_local_time_span(self, *args, **kwargs):
         pass
 
-    def initialize(__unknown_params__):
+    def initialize(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -3231,10 +3232,10 @@ class FbxManager(object):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def create_missing_bind_poses(__unknown_params__):
+    def create_missing_bind_poses(self, *args, **kwargs):
         pass
 
-    def set_io_settings(__unknown_params__):
+    def set_io_settings(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -3253,34 +3254,34 @@ class FbxMesh(object):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def get_control_points(__unknown_params__):
+    def get_control_points(self, *args, **kwargs):
         pass
 
-    def get_control_points_count(__unknown_params__):
+    def get_control_points_count(self, *args, **kwargs):
         pass
 
-    def get_name(__unknown_params__):
+    def get_name(self, *args, **kwargs):
         pass
 
-    def get_polygon_count(__unknown_params__):
+    def get_polygon_count(self, *args, **kwargs):
         pass
 
-    def get_polygon_vertex_count(__unknown_params__):
+    def get_polygon_vertex_count(self, *args, **kwargs):
         pass
 
-    def get_polygon_vertex_normals(__unknown_params__):
+    def get_polygon_vertex_normals(self, *args, **kwargs):
         pass
 
-    def get_polygon_vertex_uvs(__unknown_params__):
+    def get_polygon_vertex_uvs(self, *args, **kwargs):
         pass
 
-    def get_polygon_vertices(__unknown_params__):
+    def get_polygon_vertices(self, *args, **kwargs):
         pass
 
-    def get_uv_set_names(__unknown_params__):
+    def get_uv_set_names(self, *args, **kwargs):
         pass
 
-    def remove_bad_polygons(__unknown_params__):
+    def remove_bad_polygons(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -3299,43 +3300,43 @@ class FbxNode(object):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def evaluate_global_transform(__unknown_params__):
+    def evaluate_global_transform(self, *args, **kwargs):
         pass
 
-    def evaluate_local_transform(__unknown_params__):
+    def evaluate_local_transform(self, *args, **kwargs):
         pass
 
-    def get_child(__unknown_params__):
+    def get_child(self, *args, **kwargs):
         pass
 
-    def get_child_count(__unknown_params__):
+    def get_child_count(self, *args, **kwargs):
         pass
 
-    def get_local_rotation(__unknown_params__):
+    def get_local_rotation(self, *args, **kwargs):
         pass
 
-    def get_local_scaling(__unknown_params__):
+    def get_local_scaling(self, *args, **kwargs):
         pass
 
-    def get_local_translation(__unknown_params__):
+    def get_local_translation(self, *args, **kwargs):
         pass
 
-    def get_mesh(__unknown_params__):
+    def get_mesh(self, *args, **kwargs):
         pass
 
-    def get_name(__unknown_params__):
+    def get_name(self, *args, **kwargs):
         pass
 
-    def get_node_attribute(__unknown_params__):
+    def get_node_attribute(self, *args, **kwargs):
         pass
 
-    def get_node_attribute_by_index(__unknown_params__):
+    def get_node_attribute_by_index(self, *args, **kwargs):
         pass
 
-    def get_node_attribute_count(__unknown_params__):
+    def get_node_attribute_count(self, *args, **kwargs):
         pass
 
-    def get_parent(__unknown_params__):
+    def get_parent(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -3354,58 +3355,58 @@ class FbxObject(object):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def get_channel_name(__unknown_params__):
+    def get_channel_name(self, *args, **kwargs):
         pass
 
-    def get_channels_count(__unknown_params__):
+    def get_channels_count(self, *args, **kwargs):
         pass
 
-    def get_class_name(__unknown_params__):
+    def get_class_name(self, *args, **kwargs):
         pass
 
-    def get_curve(__unknown_params__):
+    def get_curve(self, *args, **kwargs):
         pass
 
-    def get_curve_count(__unknown_params__):
+    def get_curve_count(self, *args, **kwargs):
         pass
 
-    def get_first_property(__unknown_params__):
+    def get_first_property(self, *args, **kwargs):
         pass
 
-    def get_member(__unknown_params__):
+    def get_member(self, *args, **kwargs):
         pass
 
-    def get_member_count(__unknown_params__):
+    def get_member_count(self, *args, **kwargs):
         pass
 
-    def get_name(__unknown_params__):
+    def get_name(self, *args, **kwargs):
         pass
 
-    def get_next_property(__unknown_params__):
+    def get_next_property(self, *args, **kwargs):
         pass
 
-    def key_get_count(__unknown_params__):
+    def key_get_count(self, *args, **kwargs):
         pass
 
-    def key_get_interp_mode(__unknown_params__):
+    def key_get_interp_mode(self, *args, **kwargs):
         pass
 
-    def key_get_left_tangent(__unknown_params__):
+    def key_get_left_tangent(self, *args, **kwargs):
         pass
 
-    def key_get_right_tangent(__unknown_params__):
+    def key_get_right_tangent(self, *args, **kwargs):
         pass
 
-    def key_get_seconds(__unknown_params__):
+    def key_get_seconds(self, *args, **kwargs):
         pass
 
-    def key_get_tangent_mode(__unknown_params__):
+    def key_get_tangent_mode(self, *args, **kwargs):
         pass
 
-    def key_get_value(__unknown_params__):
+    def key_get_value(self, *args, **kwargs):
         pass
 
-    def to_node(__unknown_params__):
+    def to_node(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -3424,25 +3425,25 @@ class FbxPose(object):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def find(__unknown_params__):
+    def find(self, *args, **kwargs):
         pass
 
-    def get_count(__unknown_params__):
+    def get_count(self, *args, **kwargs):
         pass
 
-    def get_name(__unknown_params__):
+    def get_name(self, *args, **kwargs):
         pass
 
-    def get_node(__unknown_params__):
+    def get_node(self, *args, **kwargs):
         pass
 
-    def get_transform(__unknown_params__):
+    def get_transform(self, *args, **kwargs):
         pass
 
-    def is_bind_pose(__unknown_params__):
+    def is_bind_pose(self, *args, **kwargs):
         pass
 
-    def is_rest_pose(__unknown_params__):
+    def is_rest_pose(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -3461,25 +3462,25 @@ class FbxProperty(object):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def get_bool(__unknown_params__):
+    def get_bool(self, *args, **kwargs):
         pass
 
-    def get_curve_node(__unknown_params__):
+    def get_curve_node(self, *args, **kwargs):
         pass
 
-    def get_double3(__unknown_params__):
+    def get_double3(self, *args, **kwargs):
         pass
 
-    def get_int(__unknown_params__):
+    def get_int(self, *args, **kwargs):
         pass
 
-    def get_name(__unknown_params__):
+    def get_name(self, *args, **kwargs):
         pass
 
-    def get_string(__unknown_params__):
+    def get_string(self, *args, **kwargs):
         pass
 
-    def is_valid(__unknown_params__):
+    def is_valid(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -3498,25 +3499,25 @@ class FbxScene(object):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def convert(__unknown_params__):
+    def convert(self, *args, **kwargs):
         pass
 
-    def get_pose(__unknown_params__):
+    def get_pose(self, *args, **kwargs):
         pass
 
-    def get_pose_count(__unknown_params__):
+    def get_pose_count(self, *args, **kwargs):
         pass
 
-    def get_root_node(__unknown_params__):
+    def get_root_node(self, *args, **kwargs):
         pass
 
-    def get_src_object(__unknown_params__):
+    def get_src_object(self, *args, **kwargs):
         pass
 
-    def get_src_object_count(__unknown_params__):
+    def get_src_object_count(self, *args, **kwargs):
         pass
 
-    def triangulate(__unknown_params__):
+    def triangulate(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -3535,10 +3536,10 @@ class FFoliageInstance(object):
         Return str(self).
         """
 
-    def align_to_normal(__unknown_params__):
+    def align_to_normal(self, *args, **kwargs):
         pass
 
-    def get_instance_world_transform(__unknown_params__):
+    def get_instance_world_transform(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -3579,16 +3580,16 @@ class IAssetEditorInstance(object):
         Return str(self).
         """
 
-    def close_window(__unknown_params__):
+    def close_window(self, *args, **kwargs):
         pass
 
-    def focus_window(__unknown_params__):
+    def focus_window(self, *args, **kwargs):
         pass
 
-    def get_editor_name(__unknown_params__):
+    def get_editor_name(self, *args, **kwargs):
         pass
 
-    def get_last_activation_time(__unknown_params__):
+    def get_last_activation_time(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -3614,95 +3615,95 @@ class ICollectionManager(object):
         """
 
     @classmethod
-    def add_to_collection(__unknown_params__):
+    def add_to_collection(self, *args, **kwargs):
         pass
 
     @classmethod
-    def collection_exists(__unknown_params__):
+    def collection_exists(self, *args, **kwargs):
         pass
 
     @classmethod
-    def create_collection(__unknown_params__):
+    def create_collection(self, *args, **kwargs):
         pass
 
     @classmethod
-    def create_dynamic_collection(__unknown_params__):
+    def create_dynamic_collection(self, *args, **kwargs):
         pass
 
     @classmethod
-    def create_static_collection(__unknown_params__):
+    def create_static_collection(self, *args, **kwargs):
         pass
 
     @classmethod
-    def create_unique_collection_name(__unknown_params__):
+    def create_unique_collection_name(self, *args, **kwargs):
         pass
 
     @classmethod
-    def destroy_collection(__unknown_params__):
+    def destroy_collection(self, *args, **kwargs):
         pass
 
     @classmethod
-    def empty_collection(__unknown_params__):
+    def empty_collection(self, *args, **kwargs):
         pass
 
     @classmethod
-    def get_assets_in_collection(__unknown_params__):
+    def get_assets_in_collection(self, *args, **kwargs):
         pass
 
     @classmethod
-    def get_child_collections(__unknown_params__):
+    def get_child_collections(self, *args, **kwargs):
         pass
 
     @classmethod
-    def get_classes_in_collection(__unknown_params__):
+    def get_classes_in_collection(self, *args, **kwargs):
         pass
 
     @classmethod
-    def get_collection_names(__unknown_params__):
+    def get_collection_names(self, *args, **kwargs):
         pass
 
     @classmethod
-    def get_collections(__unknown_params__):
+    def get_collections(self, *args, **kwargs):
         pass
 
     @classmethod
-    def get_dynamic_query_text(__unknown_params__):
+    def get_dynamic_query_text(self, *args, **kwargs):
         pass
 
     @classmethod
-    def get_objects_in_collection(__unknown_params__):
+    def get_objects_in_collection(self, *args, **kwargs):
         pass
 
     @classmethod
-    def get_parent_collection(__unknown_params__):
+    def get_parent_collection(self, *args, **kwargs):
         pass
 
     @classmethod
-    def get_root_collection_names(__unknown_params__):
+    def get_root_collection_names(self, *args, **kwargs):
         pass
 
     @classmethod
-    def get_root_collections(__unknown_params__):
+    def get_root_collections(self, *args, **kwargs):
         pass
 
     @classmethod
-    def has_collections(__unknown_params__):
+    def has_collections(self, *args, **kwargs):
         pass
 
     @classmethod
-    def remove_from_collection(__unknown_params__):
+    def remove_from_collection(self, *args, **kwargs):
         pass
 
     @classmethod
-    def rename_collection(__unknown_params__):
+    def rename_collection(self, *args, **kwargs):
         pass
 
     @classmethod
-    def reparent_collection(__unknown_params__):
+    def reparent_collection(self, *args, **kwargs):
         pass
 
     @classmethod
-    def set_dynamic_query_text(__unknown_params__):
+    def set_dynamic_query_text(self, *args, **kwargs):
         pass
 
 
@@ -3722,99 +3723,99 @@ class IConsoleManager(object):
         """
 
     @classmethod
-    def add_history_entry(__unknown_params__):
+    def add_history_entry(self, *args, **kwargs):
         pass
 
     @classmethod
-    def get_float(__unknown_params__):
+    def get_float(self, *args, **kwargs):
         pass
 
     @classmethod
-    def get_help(__unknown_params__):
+    def get_help(self, *args, **kwargs):
         pass
 
     @classmethod
-    def get_history(__unknown_params__):
+    def get_history(self, *args, **kwargs):
         pass
 
     @classmethod
-    def get_int(__unknown_params__):
+    def get_int(self, *args, **kwargs):
         pass
 
     @classmethod
-    def get_objects(__unknown_params__):
+    def get_objects(self, *args, **kwargs):
         pass
 
     @classmethod
-    def get_objects_containing(__unknown_params__):
+    def get_objects_containing(self, *args, **kwargs):
         pass
 
     @classmethod
-    def get_objects_starting_with(__unknown_params__):
+    def get_objects_starting_with(self, *args, **kwargs):
         pass
 
     @classmethod
-    def get_string(__unknown_params__):
+    def get_string(self, *args, **kwargs):
         pass
 
     @classmethod
-    def is_command(__unknown_params__):
+    def is_command(self, *args, **kwargs):
         pass
 
     @classmethod
-    def is_name_registered(__unknown_params__):
+    def is_name_registered(self, *args, **kwargs):
         pass
 
     @classmethod
-    def is_variable(__unknown_params__):
+    def is_variable(self, *args, **kwargs):
         pass
 
     @classmethod
-    def is_variable_float(__unknown_params__):
+    def is_variable_float(self, *args, **kwargs):
         pass
 
     @classmethod
-    def is_variable_int(__unknown_params__):
+    def is_variable_int(self, *args, **kwargs):
         pass
 
     @classmethod
-    def is_variable_string(__unknown_params__):
+    def is_variable_string(self, *args, **kwargs):
         pass
 
     @classmethod
-    def register_command(__unknown_params__):
+    def register_command(self, *args, **kwargs):
         pass
 
     @classmethod
-    def register_variable_float(__unknown_params__):
+    def register_variable_float(self, *args, **kwargs):
         pass
 
     @classmethod
-    def register_variable_int(__unknown_params__):
+    def register_variable_int(self, *args, **kwargs):
         pass
 
     @classmethod
-    def register_variable_string(__unknown_params__):
+    def register_variable_string(self, *args, **kwargs):
         pass
 
     @classmethod
-    def set_float(__unknown_params__):
+    def set_float(self, *args, **kwargs):
         pass
 
     @classmethod
-    def set_help(__unknown_params__):
+    def set_help(self, *args, **kwargs):
         pass
 
     @classmethod
-    def set_int(__unknown_params__):
+    def set_int(self, *args, **kwargs):
         pass
 
     @classmethod
-    def set_string(__unknown_params__):
+    def set_string(self, *args, **kwargs):
         pass
 
     @classmethod
-    def unregister_object(__unknown_params__):
+    def unregister_object(self, *args, **kwargs):
         pass
 
 
@@ -3822,7 +3823,7 @@ class IDetailsView(SCompoundWidget):
     """
     Unreal Engine IDetailsView
     """
-    def set_object(__unknown_params__):
+    def set_object(self, *args, **kwargs):
         pass
 
 
@@ -3835,25 +3836,25 @@ class IHttpBase(object):
         Return str(self).
         """
 
-    def get_all_headers(__unknown_params__):
+    def get_all_headers(self, *args, **kwargs):
         pass
 
-    def get_content(__unknown_params__):
+    def get_content(self, *args, **kwargs):
         pass
 
-    def get_content_length(__unknown_params__):
+    def get_content_length(self, *args, **kwargs):
         pass
 
-    def get_content_type(__unknown_params__):
+    def get_content_type(self, *args, **kwargs):
         pass
 
-    def get_header(__unknown_params__):
+    def get_header(self, *args, **kwargs):
         pass
 
-    def get_url(__unknown_params__):
+    def get_url(self, *args, **kwargs):
         pass
 
-    def get_url_parameter(__unknown_params__):
+    def get_url_parameter(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -3892,46 +3893,46 @@ class IHttpRequest(IHttpBase):
         Return str(self).
         """
 
-    def append_to_header(__unknown_params__):
+    def append_to_header(self, *args, **kwargs):
         pass
 
-    def bind_on_process_request_complete(__unknown_params__):
+    def bind_on_process_request_complete(self, *args, **kwargs):
         pass
 
-    def bind_on_request_progress(__unknown_params__):
+    def bind_on_request_progress(self, *args, **kwargs):
         pass
 
-    def cancel_request(__unknown_params__):
+    def cancel_request(self, *args, **kwargs):
         pass
 
-    def get_elapsed_time(__unknown_params__):
+    def get_elapsed_time(self, *args, **kwargs):
         pass
 
-    def get_response(__unknown_params__):
+    def get_response(self, *args, **kwargs):
         pass
 
-    def get_status(__unknown_params__):
+    def get_status(self, *args, **kwargs):
         pass
 
-    def get_verb(__unknown_params__):
+    def get_verb(self, *args, **kwargs):
         pass
 
-    def process_request(__unknown_params__):
+    def process_request(self, *args, **kwargs):
         pass
 
-    def set_content(__unknown_params__):
+    def set_content(self, *args, **kwargs):
         pass
 
-    def set_header(__unknown_params__):
+    def set_header(self, *args, **kwargs):
         pass
 
-    def set_url(__unknown_params__):
+    def set_url(self, *args, **kwargs):
         pass
 
-    def set_verb(__unknown_params__):
+    def set_verb(self, *args, **kwargs):
         pass
 
-    def tick(__unknown_params__):
+    def tick(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -3950,10 +3951,10 @@ class IHttpResponse(IHttpBase):
         Return str(self).
         """
 
-    def get_content_as_string(__unknown_params__):
+    def get_content_as_string(self, *args, **kwargs):
         pass
 
-    def get_response_code(__unknown_params__):
+    def get_response_code(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -3972,31 +3973,31 @@ class IPlugin(object):
         Return str(self).
         """
 
-    def can_contain_content(__unknown_params__):
+    def can_contain_content(self, *args, **kwargs):
         pass
 
-    def from_json(__unknown_params__):
+    def from_json(self, *args, **kwargs):
         pass
 
-    def get_base_dir(__unknown_params__):
+    def get_base_dir(self, *args, **kwargs):
         pass
 
-    def get_content_dir(__unknown_params__):
+    def get_content_dir(self, *args, **kwargs):
         pass
 
-    def get_descriptor_file_name(__unknown_params__):
+    def get_descriptor_file_name(self, *args, **kwargs):
         pass
 
-    def get_mounted_asset_path(__unknown_params__):
+    def get_mounted_asset_path(self, *args, **kwargs):
         pass
 
-    def get_name(__unknown_params__):
+    def get_name(self, *args, **kwargs):
         pass
 
-    def is_enabled(__unknown_params__):
+    def is_enabled(self, *args, **kwargs):
         pass
 
-    def to_json(__unknown_params__):
+    def to_json(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -4065,10 +4066,10 @@ class IStructureDetailsView(object):
         Return str(self).
         """
 
-    def get_widget(__unknown_params__):
+    def get_widget(self, *args, **kwargs):
         pass
 
-    def set_structure_data(__unknown_params__):
+    def set_structure_data(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -4087,25 +4088,25 @@ class IVoiceCapture(object):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def get_capture_state(__unknown_params__):
+    def get_capture_state(self, *args, **kwargs):
         pass
 
-    def get_voice_data(__unknown_params__):
+    def get_voice_data(self, *args, **kwargs):
         pass
 
-    def init(__unknown_params__):
+    def init(self, *args, **kwargs):
         pass
 
-    def is_capturing(__unknown_params__):
+    def is_capturing(self, *args, **kwargs):
         pass
 
-    def shutdown(__unknown_params__):
+    def shutdown(self, *args, **kwargs):
         pass
 
-    def start(__unknown_params__):
+    def start(self, *args, **kwargs):
         pass
 
-    def stop(__unknown_params__):
+    def stop(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -4139,22 +4140,22 @@ class SBorder(SCompoundWidget):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def clear_content(__unknown_params__):
+    def clear_content(self, *args, **kwargs):
         pass
 
-    def set_border_image(__unknown_params__):
+    def set_border_image(self, *args, **kwargs):
         pass
 
-    def set_content(__unknown_params__):
+    def set_content(self, *args, **kwargs):
         pass
 
-    def set_h_align(__unknown_params__):
+    def set_h_align(self, *args, **kwargs):
         pass
 
-    def set_padding(__unknown_params__):
+    def set_padding(self, *args, **kwargs):
         pass
 
-    def set_v_align(__unknown_params__):
+    def set_v_align(self, *args, **kwargs):
         pass
 
 
@@ -4172,13 +4173,13 @@ class SBox(SPanel):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def set_content(__unknown_params__):
+    def set_content(self, *args, **kwargs):
         pass
 
-    def set_height_override(__unknown_params__):
+    def set_height_override(self, *args, **kwargs):
         pass
 
-    def set_width_override(__unknown_params__):
+    def set_width_override(self, *args, **kwargs):
         pass
 
 
@@ -4186,7 +4187,7 @@ class SBoxPanel(SPanel):
     """
     Unreal Engine SBoxPanel
     """
-    def clear_children(__unknown_params__):
+    def clear_children(self, *args, **kwargs):
         pass
 
 
@@ -4199,10 +4200,10 @@ class SButton(SBorder):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def bind_on_clicked(__unknown_params__):
+    def bind_on_clicked(self, *args, **kwargs):
         pass
 
-    def is_pressed(__unknown_params__):
+    def is_pressed(self, *args, **kwargs):
         pass
 
 
@@ -4220,10 +4221,10 @@ class SCanvas(SPanel):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def add_slot(__unknown_params__):
+    def add_slot(self, *args, **kwargs):
         pass
 
-    def clear_children(__unknown_params__):
+    def clear_children(self, *args, **kwargs):
         pass
 
 
@@ -4241,13 +4242,13 @@ class SCheckBox(SCompoundWidget):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def is_checked(__unknown_params__):
+    def is_checked(self, *args, **kwargs):
         pass
 
-    def set_content(__unknown_params__):
+    def set_content(self, *args, **kwargs):
         pass
 
-    def set_is_checked(__unknown_params__):
+    def set_is_checked(self, *args, **kwargs):
         pass
 
 
@@ -4265,10 +4266,10 @@ class SCompoundWidget(SWidget):
     """
     Unreal Engine SCompoundWidget
     """
-    def get_color_and_opacity(__unknown_params__):
+    def get_color_and_opacity(self, *args, **kwargs):
         pass
 
-    def set_color_and_opacity(__unknown_params__):
+    def set_color_and_opacity(self, *args, **kwargs):
         pass
 
 
@@ -4281,10 +4282,10 @@ class SDirectoryPicker(SCompoundWidget):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def get_directory(__unknown_params__):
+    def get_directory(self, *args, **kwargs):
         pass
 
-    def get_file_path(__unknown_params__):
+    def get_file_path(self, *args, **kwargs):
         pass
 
 
@@ -4297,13 +4298,13 @@ class SDockTab(SBorder):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def new_tab_manager(__unknown_params__):
+    def new_tab_manager(self, *args, **kwargs):
         pass
 
-    def request_close_tab(__unknown_params__):
+    def request_close_tab(self, *args, **kwargs):
         pass
 
-    def set_label(__unknown_params__):
+    def set_label(self, *args, **kwargs):
         pass
 
 
@@ -4323,19 +4324,19 @@ class SEditableTextBox(SBorder):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def clear_selection(__unknown_params__):
+    def clear_selection(self, *args, **kwargs):
         pass
 
-    def get_selected_text(__unknown_params__):
+    def get_selected_text(self, *args, **kwargs):
         pass
 
-    def get_text(__unknown_params__):
+    def get_text(self, *args, **kwargs):
         pass
 
-    def select_all_text(__unknown_params__):
+    def select_all_text(self, *args, **kwargs):
         pass
 
-    def set_text(__unknown_params__):
+    def set_text(self, *args, **kwargs):
         pass
 
 
@@ -4343,7 +4344,7 @@ class SEditorViewport(SCompoundWidget):
     """
     Unreal Engine SEditorViewport
     """
-    def enable_stereo_rendering(__unknown_params__):
+    def enable_stereo_rendering(self, *args, **kwargs):
         pass
 
 
@@ -4388,10 +4389,10 @@ class SGridPanel(SPanel):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def add_slot(__unknown_params__):
+    def add_slot(self, *args, **kwargs):
         pass
 
-    def clear_children(__unknown_params__):
+    def clear_children(self, *args, **kwargs):
         pass
 
 
@@ -4409,7 +4410,7 @@ class SHeaderRow(SBorder):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def add_column(__unknown_params__):
+    def add_column(self, *args, **kwargs):
         pass
 
 
@@ -4437,10 +4438,10 @@ class SHorizontalBox(SBoxPanel):
         Return value+self.
         """
 
-    def add_slot(__unknown_params__):
+    def add_slot(self, *args, **kwargs):
         pass
 
-    def num_slots(__unknown_params__):
+    def num_slots(self, *args, **kwargs):
         pass
 
 
@@ -4453,13 +4454,13 @@ class SImage(SLeafWidget):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def set_brush(__unknown_params__):
+    def set_brush(self, *args, **kwargs):
         pass
 
-    def set_image(__unknown_params__):
+    def set_image(self, *args, **kwargs):
         pass
 
-    def set_texture(__unknown_params__):
+    def set_texture(self, *args, **kwargs):
         pass
 
 
@@ -4479,19 +4480,19 @@ class SLevelViewport(SEditorViewport):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def get_world(__unknown_params__):
+    def get_world(self, *args, **kwargs):
         pass
 
-    def set_exposure_settings(__unknown_params__):
+    def set_exposure_settings(self, *args, **kwargs):
         pass
 
-    def set_show_bounds(__unknown_params__):
+    def set_show_bounds(self, *args, **kwargs):
         pass
 
-    def set_show_stats(__unknown_params__):
+    def set_show_stats(self, *args, **kwargs):
         pass
 
-    def set_view_mode(__unknown_params__):
+    def set_view_mode(self, *args, **kwargs):
         pass
 
 
@@ -4511,22 +4512,22 @@ class SMultiLineEditableText(SWidget):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def clear_selection(__unknown_params__):
+    def clear_selection(self, *args, **kwargs):
         pass
 
-    def get_plain_text(__unknown_params__):
+    def get_plain_text(self, *args, **kwargs):
         pass
 
-    def get_selected_text(__unknown_params__):
+    def get_selected_text(self, *args, **kwargs):
         pass
 
-    def get_text(__unknown_params__):
+    def get_text(self, *args, **kwargs):
         pass
 
-    def select_all_text(__unknown_params__):
+    def select_all_text(self, *args, **kwargs):
         pass
 
-    def set_text(__unknown_params__):
+    def set_text(self, *args, **kwargs):
         pass
 
 
@@ -4571,10 +4572,10 @@ class SOverlay(SPanel):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def add_slot(__unknown_params__):
+    def add_slot(self, *args, **kwargs):
         pass
 
-    def get_num_widgets(__unknown_params__):
+    def get_num_widgets(self, *args, **kwargs):
         pass
 
 
@@ -4594,7 +4595,7 @@ class SProgressBar(SLeafWidget):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def set_percent(__unknown_params__):
+    def set_percent(self, *args, **kwargs):
         pass
 
 
@@ -4607,13 +4608,13 @@ class SPythonComboBox(SPanel):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def clear_selection(__unknown_params__):
+    def clear_selection(self, *args, **kwargs):
         pass
 
-    def get_selected_item(__unknown_params__):
+    def get_selected_item(self, *args, **kwargs):
         pass
 
-    def set_selected_item(__unknown_params__):
+    def set_selected_item(self, *args, **kwargs):
         pass
 
 
@@ -4626,46 +4627,46 @@ class SPythonEditorViewport(SEditorViewport):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def get_editor_viewport_client(__unknown_params__):
+    def get_editor_viewport_client(self, *args, **kwargs):
         pass
 
-    def get_light(__unknown_params__):
+    def get_light(self, *args, **kwargs):
         pass
 
-    def get_world(__unknown_params__):
+    def get_world(self, *args, **kwargs):
         pass
 
-    def set_exposure_settings(__unknown_params__):
+    def set_exposure_settings(self, *args, **kwargs):
         pass
 
-    def set_light_brightness(__unknown_params__):
+    def set_light_brightness(self, *args, **kwargs):
         pass
 
-    def set_light_color(__unknown_params__):
+    def set_light_color(self, *args, **kwargs):
         pass
 
-    def set_light_direction(__unknown_params__):
+    def set_light_direction(self, *args, **kwargs):
         pass
 
-    def set_show_bounds(__unknown_params__):
+    def set_show_bounds(self, *args, **kwargs):
         pass
 
-    def set_show_stats(__unknown_params__):
+    def set_show_stats(self, *args, **kwargs):
         pass
 
-    def set_sky_brightness(__unknown_params__):
+    def set_sky_brightness(self, *args, **kwargs):
         pass
 
-    def set_view_location(__unknown_params__):
+    def set_view_location(self, *args, **kwargs):
         pass
 
-    def set_view_mode(__unknown_params__):
+    def set_view_mode(self, *args, **kwargs):
         pass
 
-    def set_view_rotation(__unknown_params__):
+    def set_view_rotation(self, *args, **kwargs):
         pass
 
-    def simulate(__unknown_params__):
+    def simulate(self, *args, **kwargs):
         pass
 
 
@@ -4678,19 +4679,19 @@ class SPythonListView(SListView):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def clear_selection(__unknown_params__):
+    def clear_selection(self, *args, **kwargs):
         pass
 
-    def get_num_items_selected(__unknown_params__):
+    def get_num_items_selected(self, *args, **kwargs):
         pass
 
-    def get_selected_items(__unknown_params__):
+    def get_selected_items(self, *args, **kwargs):
         pass
 
-    def set_header_row(__unknown_params__):
+    def set_header_row(self, *args, **kwargs):
         pass
 
-    def update_item_source_list(__unknown_params__):
+    def update_item_source_list(self, *args, **kwargs):
         pass
 
 
@@ -4723,7 +4724,7 @@ class SPythonTreeView(STreeView):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def set_item_expansion(__unknown_params__):
+    def set_item_expansion(self, *args, **kwargs):
         pass
 
 
@@ -4736,13 +4737,13 @@ class SPythonWidget(SCompoundWidget):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def clear_content(__unknown_params__):
+    def clear_content(self, *args, **kwargs):
         pass
 
-    def set_active(__unknown_params__):
+    def set_active(self, *args, **kwargs):
         pass
 
-    def set_content(__unknown_params__):
+    def set_content(self, *args, **kwargs):
         pass
 
 
@@ -4770,10 +4771,10 @@ class SScrollBox(SCompoundWidget):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def add_slot(__unknown_params__):
+    def add_slot(self, *args, **kwargs):
         pass
 
-    def clear_children(__unknown_params__):
+    def clear_children(self, *args, **kwargs):
         pass
 
 
@@ -4786,10 +4787,10 @@ class SSlider(SLeafWidget):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def get_value(__unknown_params__):
+    def get_value(self, *args, **kwargs):
         pass
 
-    def set_value(__unknown_params__):
+    def set_value(self, *args, **kwargs):
         pass
 
 
@@ -4817,7 +4818,7 @@ class SSplitter(SPanel):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def add_slot(__unknown_params__):
+    def add_slot(self, *args, **kwargs):
         pass
 
 
@@ -4825,13 +4826,13 @@ class STableViewBase(SCompoundWidget):
     """
     Unreal Engine STableViewBase
     """
-    def request_list_refresh(__unknown_params__):
+    def request_list_refresh(self, *args, **kwargs):
         pass
 
-    def set_item_height(__unknown_params__):
+    def set_item_height(self, *args, **kwargs):
         pass
 
-    def set_item_width(__unknown_params__):
+    def set_item_width(self, *args, **kwargs):
         pass
 
 
@@ -4844,13 +4845,13 @@ class STextBlock(SLeafWidget):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def get_text(__unknown_params__):
+    def get_text(self, *args, **kwargs):
         pass
 
-    def set_color_and_opacity(__unknown_params__):
+    def set_color_and_opacity(self, *args, **kwargs):
         pass
 
-    def set_text(__unknown_params__):
+    def set_text(self, *args, **kwargs):
         pass
 
 
@@ -4858,10 +4859,10 @@ class STreeView(SListView):
     """
     Unreal Engine STreeView
     """
-    def clear_expanded_items(__unknown_params__):
+    def clear_expanded_items(self, *args, **kwargs):
         pass
 
-    def request_tree_refresh(__unknown_params__):
+    def request_tree_refresh(self, *args, **kwargs):
         pass
 
 
@@ -4899,10 +4900,10 @@ class SVerticalBox(SBoxPanel):
         Return value+self.
         """
 
-    def add_slot(__unknown_params__):
+    def add_slot(self, *args, **kwargs):
         pass
 
-    def num_slots(__unknown_params__):
+    def num_slots(self, *args, **kwargs):
         pass
 
 
@@ -4915,7 +4916,7 @@ class SViewport(SCompoundWidget):
         Initialize self.  See help(type(self)) for accurate signature.
         """
 
-    def enable_stereo_rendering(__unknown_params__):
+    def enable_stereo_rendering(self, *args, **kwargs):
         pass
 
 
@@ -4928,61 +4929,61 @@ class SWidget(object):
         Return str(self).
         """
 
-    def assign(__unknown_params__):
+    def assign(self, *args, **kwargs):
         pass
 
-    def bind_on_mouse_button_down(__unknown_params__):
+    def bind_on_mouse_button_down(self, *args, **kwargs):
         pass
 
-    def bind_on_mouse_button_up(__unknown_params__):
+    def bind_on_mouse_button_up(self, *args, **kwargs):
         pass
 
-    def bind_on_mouse_double_click(__unknown_params__):
+    def bind_on_mouse_double_click(self, *args, **kwargs):
         pass
 
-    def bind_on_mouse_move(__unknown_params__):
+    def bind_on_mouse_move(self, *args, **kwargs):
         pass
 
-    def get_cached_geometry(__unknown_params__):
+    def get_cached_geometry(self, *args, **kwargs):
         pass
 
-    def get_children(__unknown_params__):
+    def get_children(self, *args, **kwargs):
         pass
 
-    def get_shared_reference_count(__unknown_params__):
+    def get_shared_reference_count(self, *args, **kwargs):
         pass
 
-    def get_type(__unknown_params__):
+    def get_type(self, *args, **kwargs):
         pass
 
-    def has_keyboard_focus(__unknown_params__):
+    def has_keyboard_focus(self, *args, **kwargs):
         pass
 
-    def invalidate(__unknown_params__):
+    def invalidate(self, *args, **kwargs):
         pass
 
-    def new_ref(__unknown_params__):
+    def new_ref(self, *args, **kwargs):
         pass
 
-    def on_mouse_button_down(__unknown_params__):
+    def on_mouse_button_down(self, *args, **kwargs):
         pass
 
-    def on_mouse_button_up(__unknown_params__):
+    def on_mouse_button_up(self, *args, **kwargs):
         pass
 
-    def set_cursor(__unknown_params__):
+    def set_cursor(self, *args, **kwargs):
         pass
 
-    def set_enabled(__unknown_params__):
+    def set_enabled(self, *args, **kwargs):
         pass
 
-    def set_keyboard_focus(__unknown_params__):
+    def set_keyboard_focus(self, *args, **kwargs):
         pass
 
-    def set_tooltip_text(__unknown_params__):
+    def set_tooltip_text(self, *args, **kwargs):
         pass
 
-    def set_visibility(__unknown_params__):
+    def set_visibility(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -5016,46 +5017,46 @@ class SWindow(SCompoundWidget):
         Return value<<self.
         """
 
-    def add_child(__unknown_params__):
+    def add_child(self, *args, **kwargs):
         pass
 
-    def add_modal(__unknown_params__):
+    def add_modal(self, *args, **kwargs):
         pass
 
-    def bring_to_front(__unknown_params__):
+    def bring_to_front(self, *args, **kwargs):
         pass
 
-    def get_child_windows(__unknown_params__):
+    def get_child_windows(self, *args, **kwargs):
         pass
 
-    def get_handle(__unknown_params__):
+    def get_handle(self, *args, **kwargs):
         pass
 
-    def get_title(__unknown_params__):
+    def get_title(self, *args, **kwargs):
         pass
 
-    def minimize(__unknown_params__):
+    def minimize(self, *args, **kwargs):
         pass
 
-    def request_destroy(__unknown_params__):
+    def request_destroy(self, *args, **kwargs):
         pass
 
-    def resize(__unknown_params__):
+    def resize(self, *args, **kwargs):
         pass
 
-    def set_as_owner(__unknown_params__):
+    def set_as_owner(self, *args, **kwargs):
         pass
 
-    def set_client_size(__unknown_params__):
+    def set_client_size(self, *args, **kwargs):
         pass
 
-    def set_content(__unknown_params__):
+    def set_content(self, *args, **kwargs):
         pass
 
-    def set_sizing_rule(__unknown_params__):
+    def set_sizing_rule(self, *args, **kwargs):
         pass
 
-    def set_title(__unknown_params__):
+    def set_title(self, *args, **kwargs):
         pass
 
 
@@ -5109,1360 +5110,1360 @@ class UObject(object):
         Return str(self).
         """
 
-    def actor_begin_play(__unknown_params__):
+    def actor_begin_play(self, *args, **kwargs):
         pass
 
-    def actor_create_default_subobject(__unknown_params__):
+    def actor_create_default_subobject(self, *args, **kwargs):
         pass
 
-    def actor_destroy(__unknown_params__):
+    def actor_destroy(self, *args, **kwargs):
         pass
 
-    def actor_destroy_component(__unknown_params__):
+    def actor_destroy_component(self, *args, **kwargs):
         pass
 
-    def actor_has_component_of_type(__unknown_params__):
+    def actor_has_component_of_type(self, *args, **kwargs):
         pass
 
-    def actor_has_tag(__unknown_params__):
+    def actor_has_tag(self, *args, **kwargs):
         pass
 
-    def actor_set_level_sequence(__unknown_params__):
+    def actor_set_level_sequence(self, *args, **kwargs):
         pass
 
-    def actor_spawn(__unknown_params__):
+    def actor_spawn(self, *args, **kwargs):
         pass
 
-    def add_actor_component(__unknown_params__):
+    def add_actor_component(self, *args, **kwargs):
         pass
 
-    def add_actor_local_offset(__unknown_params__):
+    def add_actor_local_offset(self, *args, **kwargs):
         pass
 
-    def add_actor_local_rotation(__unknown_params__):
+    def add_actor_local_rotation(self, *args, **kwargs):
         pass
 
-    def add_actor_root_component(__unknown_params__):
+    def add_actor_root_component(self, *args, **kwargs):
         pass
 
-    def add_actor_world_offset(__unknown_params__):
+    def add_actor_world_offset(self, *args, **kwargs):
         pass
 
-    def add_actor_world_rotation(__unknown_params__):
+    def add_actor_world_rotation(self, *args, **kwargs):
         pass
 
-    def add_angular_impulse(__unknown_params__):
+    def add_angular_impulse(self, *args, **kwargs):
         pass
 
-    def add_anim_composite_section(__unknown_params__):
+    def add_anim_composite_section(self, *args, **kwargs):
         pass
 
-    def add_controller_pitch_input(__unknown_params__):
+    def add_controller_pitch_input(self, *args, **kwargs):
         pass
 
-    def add_controller_roll_input(__unknown_params__):
+    def add_controller_roll_input(self, *args, **kwargs):
         pass
 
-    def add_controller_yaw_input(__unknown_params__):
+    def add_controller_yaw_input(self, *args, **kwargs):
         pass
 
-    def add_foliage_asset(__unknown_params__):
+    def add_foliage_asset(self, *args, **kwargs):
         pass
 
-    def add_force(__unknown_params__):
+    def add_force(self, *args, **kwargs):
         pass
 
-    def add_function(__unknown_params__):
+    def add_function(self, *args, **kwargs):
         pass
 
-    def add_impulse(__unknown_params__):
+    def add_impulse(self, *args, **kwargs):
         pass
 
-    def add_instance_component(__unknown_params__):
+    def add_instance_component(self, *args, **kwargs):
         pass
 
-    def add_key_to_sequence(__unknown_params__):
+    def add_key_to_sequence(self, *args, **kwargs):
         pass
 
-    def add_movement_input(__unknown_params__):
+    def add_movement_input(self, *args, **kwargs):
         pass
 
-    def add_new_raw_track(__unknown_params__):
+    def add_new_raw_track(self, *args, **kwargs):
         pass
 
-    def add_property(__unknown_params__):
+    def add_property(self, *args, **kwargs):
         pass
 
-    def add_property_flags(__unknown_params__):
+    def add_property_flags(self, *args, **kwargs):
         pass
 
-    def add_python_component(__unknown_params__):
+    def add_python_component(self, *args, **kwargs):
         pass
 
-    def add_to_root(__unknown_params__):
+    def add_to_root(self, *args, **kwargs):
         pass
 
-    def add_torque(__unknown_params__):
+    def add_torque(self, *args, **kwargs):
         pass
 
-    def add_viewport_widget_content(__unknown_params__):
+    def add_viewport_widget_content(self, *args, **kwargs):
         pass
 
-    def all_actors(__unknown_params__):
+    def all_actors(self, *args, **kwargs):
         pass
 
-    def all_objects(__unknown_params__):
+    def all_objects(self, *args, **kwargs):
         pass
 
-    def anim_get_skeleton(__unknown_params__):
+    def anim_get_skeleton(self, *args, **kwargs):
         pass
 
-    def anim_set_skeleton(__unknown_params__):
+    def anim_set_skeleton(self, *args, **kwargs):
         pass
 
-    def apply_raw_anim_changes(__unknown_params__):
+    def apply_raw_anim_changes(self, *args, **kwargs):
         pass
 
-    def as_dict(__unknown_params__):
+    def as_dict(self, *args, **kwargs):
         pass
 
-    def asset_can_reimport(__unknown_params__):
+    def asset_can_reimport(self, *args, **kwargs):
         pass
 
-    def asset_import_data(__unknown_params__):
+    def asset_import_data(self, *args, **kwargs):
         pass
 
-    def asset_import_data_set_sources(__unknown_params__):
+    def asset_import_data_set_sources(self, *args, **kwargs):
         pass
 
-    def asset_reimport(__unknown_params__):
+    def asset_reimport(self, *args, **kwargs):
         pass
 
-    def attach_to_actor(__unknown_params__):
+    def attach_to_actor(self, *args, **kwargs):
         pass
 
-    def attach_to_component(__unknown_params__):
+    def attach_to_component(self, *args, **kwargs):
         pass
 
-    def auto_root(__unknown_params__):
+    def auto_root(self, *args, **kwargs):
         pass
 
-    def bind_action(__unknown_params__):
+    def bind_action(self, *args, **kwargs):
         pass
 
-    def bind_axis(__unknown_params__):
+    def bind_axis(self, *args, **kwargs):
         pass
 
-    def bind_event(__unknown_params__):
+    def bind_event(self, *args, **kwargs):
         pass
 
-    def bind_input_axis(__unknown_params__):
+    def bind_input_axis(self, *args, **kwargs):
         pass
 
-    def bind_key(__unknown_params__):
+    def bind_key(self, *args, **kwargs):
         pass
 
-    def bind_pressed_key(__unknown_params__):
+    def bind_pressed_key(self, *args, **kwargs):
         pass
 
-    def bind_released_key(__unknown_params__):
+    def bind_released_key(self, *args, **kwargs):
         pass
 
-    def broadcast(__unknown_params__):
+    def broadcast(self, *args, **kwargs):
         pass
 
-    def call(__unknown_params__):
+    def call(self, *args, **kwargs):
         pass
 
-    def call_function(__unknown_params__):
+    def call_function(self, *args, **kwargs):
         pass
 
-    def can_crouch(__unknown_params__):
+    def can_crouch(self, *args, **kwargs):
         pass
 
-    def can_jump(__unknown_params__):
+    def can_jump(self, *args, **kwargs):
         pass
 
-    def can_modify(__unknown_params__):
+    def can_modify(self, *args, **kwargs):
         pass
 
-    def capture_initialize(__unknown_params__):
+    def capture_initialize(self, *args, **kwargs):
         pass
 
-    def capture_load_from_config(__unknown_params__):
+    def capture_load_from_config(self, *args, **kwargs):
         pass
 
-    def capture_start(__unknown_params__):
+    def capture_start(self, *args, **kwargs):
         pass
 
-    def capture_stop(__unknown_params__):
+    def capture_stop(self, *args, **kwargs):
         pass
 
-    def class_generated_by(__unknown_params__):
+    def class_generated_by(self, *args, **kwargs):
         pass
 
-    def class_get_config_name(__unknown_params__):
+    def class_get_config_name(self, *args, **kwargs):
         pass
 
-    def class_get_flags(__unknown_params__):
+    def class_get_flags(self, *args, **kwargs):
         pass
 
-    def class_set_config_name(__unknown_params__):
+    def class_set_config_name(self, *args, **kwargs):
         pass
 
-    def class_set_flags(__unknown_params__):
+    def class_set_flags(self, *args, **kwargs):
         pass
 
-    def clear_obj_flags(__unknown_params__):
+    def clear_obj_flags(self, *args, **kwargs):
         pass
 
-    def component_has_tag(__unknown_params__):
+    def component_has_tag(self, *args, **kwargs):
         pass
 
-    def component_is_registered(__unknown_params__):
+    def component_is_registered(self, *args, **kwargs):
         pass
 
-    def component_type_registry_invalidate_class(__unknown_params__):
+    def component_type_registry_invalidate_class(self, *args, **kwargs):
         pass
 
-    def components(__unknown_params__):
+    def components(self, *args, **kwargs):
         pass
 
-    def conditional_begin_destroy(__unknown_params__):
+    def conditional_begin_destroy(self, *args, **kwargs):
         pass
 
-    def create_default_subobject(__unknown_params__):
+    def create_default_subobject(self, *args, **kwargs):
         pass
 
-    def create_landscape_info(__unknown_params__):
+    def create_landscape_info(self, *args, **kwargs):
         pass
 
-    def create_material_instance_dynamic(__unknown_params__):
+    def create_material_instance_dynamic(self, *args, **kwargs):
         pass
 
-    def create_player(__unknown_params__):
+    def create_player(self, *args, **kwargs):
         pass
 
-    def create_widget(__unknown_params__):
+    def create_widget(self, *args, **kwargs):
         pass
 
-    def crouch(__unknown_params__):
+    def crouch(self, *args, **kwargs):
         pass
 
-    def data_table_add_row(__unknown_params__):
+    def data_table_add_row(self, *args, **kwargs):
         pass
 
-    def data_table_as_dict(__unknown_params__):
+    def data_table_as_dict(self, *args, **kwargs):
         pass
 
-    def data_table_as_json(__unknown_params__):
+    def data_table_as_json(self, *args, **kwargs):
         pass
 
-    def data_table_find_row(__unknown_params__):
+    def data_table_find_row(self, *args, **kwargs):
         pass
 
-    def data_table_get_all_rows(__unknown_params__):
+    def data_table_get_all_rows(self, *args, **kwargs):
         pass
 
-    def data_table_remove_row(__unknown_params__):
+    def data_table_remove_row(self, *args, **kwargs):
         pass
 
-    def data_table_rename_row(__unknown_params__):
+    def data_table_rename_row(self, *args, **kwargs):
         pass
 
-    def delegate_bind_ufunction(__unknown_params__):
+    def delegate_bind_ufunction(self, *args, **kwargs):
         pass
 
-    def destroy_actor_component(__unknown_params__):
+    def destroy_actor_component(self, *args, **kwargs):
         pass
 
-    def destroy_component(__unknown_params__):
+    def destroy_component(self, *args, **kwargs):
         pass
 
-    def destructible_apply_damage(__unknown_params__):
+    def destructible_apply_damage(self, *args, **kwargs):
         pass
 
-    def disown(__unknown_params__):
+    def disown(self, *args, **kwargs):
         pass
 
-    def draw_debug_line(__unknown_params__):
+    def draw_debug_line(self, *args, **kwargs):
         pass
 
-    def duplicate(__unknown_params__):
+    def duplicate(self, *args, **kwargs):
         pass
 
-    def enable_click_events(__unknown_params__):
+    def enable_click_events(self, *args, **kwargs):
         pass
 
-    def enable_input(__unknown_params__):
+    def enable_input(self, *args, **kwargs):
         pass
 
-    def enable_mouse_over_events(__unknown_params__):
+    def enable_mouse_over_events(self, *args, **kwargs):
         pass
 
-    def enum_names(__unknown_params__):
+    def enum_names(self, *args, **kwargs):
         pass
 
-    def enum_user_defined_names(__unknown_params__):
+    def enum_user_defined_names(self, *args, **kwargs):
         pass
 
-    def enum_values(__unknown_params__):
+    def enum_values(self, *args, **kwargs):
         pass
 
-    def export_to_file(__unknown_params__):
+    def export_to_file(self, *args, **kwargs):
         pass
 
-    def extract_bone_transform(__unknown_params__):
+    def extract_bone_transform(self, *args, **kwargs):
         pass
 
-    def extract_root_motion(__unknown_params__):
+    def extract_root_motion(self, *args, **kwargs):
         pass
 
-    def factory_create_new(__unknown_params__):
+    def factory_create_new(self, *args, **kwargs):
         pass
 
-    def factory_import_object(__unknown_params__):
+    def factory_import_object(self, *args, **kwargs):
         pass
 
-    def find_actor_by_label(__unknown_params__):
+    def find_actor_by_label(self, *args, **kwargs):
         pass
 
-    def find_function(__unknown_params__):
+    def find_function(self, *args, **kwargs):
         pass
 
-    def find_object(__unknown_params__):
+    def find_object(self, *args, **kwargs):
         pass
 
-    def from_bytes(__unknown_params__):
+    def from_bytes(self, *args, **kwargs):
         pass
 
-    def functions(__unknown_params__):
+    def functions(self, *args, **kwargs):
         pass
 
-    def game_viewport_client_get_window(__unknown_params__):
+    def game_viewport_client_get_window(self, *args, **kwargs):
         pass
 
-    def game_viewport_client_set_rendering_flag(__unknown_params__):
+    def game_viewport_client_set_rendering_flag(self, *args, **kwargs):
         pass
 
-    def get_actor_bounds(__unknown_params__):
+    def get_actor_bounds(self, *args, **kwargs):
         pass
 
-    def get_actor_component(__unknown_params__):
+    def get_actor_component(self, *args, **kwargs):
         pass
 
-    def get_actor_component_by_class(__unknown_params__):
+    def get_actor_component_by_class(self, *args, **kwargs):
         pass
 
-    def get_actor_component_by_type(__unknown_params__):
+    def get_actor_component_by_type(self, *args, **kwargs):
         pass
 
-    def get_actor_components(__unknown_params__):
+    def get_actor_components(self, *args, **kwargs):
         pass
 
-    def get_actor_components_by_class(__unknown_params__):
+    def get_actor_components_by_class(self, *args, **kwargs):
         pass
 
-    def get_actor_components_by_tag(__unknown_params__):
+    def get_actor_components_by_tag(self, *args, **kwargs):
         pass
 
-    def get_actor_components_by_type(__unknown_params__):
+    def get_actor_components_by_type(self, *args, **kwargs):
         pass
 
-    def get_actor_forward(__unknown_params__):
+    def get_actor_forward(self, *args, **kwargs):
         pass
 
-    def get_actor_label(__unknown_params__):
+    def get_actor_label(self, *args, **kwargs):
         pass
 
-    def get_actor_location(__unknown_params__):
+    def get_actor_location(self, *args, **kwargs):
         pass
 
-    def get_actor_right(__unknown_params__):
+    def get_actor_right(self, *args, **kwargs):
         pass
 
-    def get_actor_root_component(__unknown_params__):
+    def get_actor_root_component(self, *args, **kwargs):
         pass
 
-    def get_actor_rotation(__unknown_params__):
+    def get_actor_rotation(self, *args, **kwargs):
         pass
 
-    def get_actor_scale(__unknown_params__):
+    def get_actor_scale(self, *args, **kwargs):
         pass
 
-    def get_actor_transform(__unknown_params__):
+    def get_actor_transform(self, *args, **kwargs):
         pass
 
-    def get_actor_up(__unknown_params__):
+    def get_actor_up(self, *args, **kwargs):
         pass
 
-    def get_actor_velocity(__unknown_params__):
+    def get_actor_velocity(self, *args, **kwargs):
         pass
 
-    def get_all_child_actors(__unknown_params__):
+    def get_all_child_actors(self, *args, **kwargs):
         pass
 
-    def get_anim_instance(__unknown_params__):
+    def get_anim_instance(self, *args, **kwargs):
         pass
 
-    def get_archetype(__unknown_params__):
+    def get_archetype(self, *args, **kwargs):
         pass
 
-    def get_archetype_instances(__unknown_params__):
+    def get_archetype_instances(self, *args, **kwargs):
         pass
 
-    def get_attached_actors(__unknown_params__):
+    def get_attached_actors(self, *args, **kwargs):
         pass
 
-    def get_available_audio_byte_count(__unknown_params__):
+    def get_available_audio_byte_count(self, *args, **kwargs):
         pass
 
-    def get_blend_parameter(__unknown_params__):
+    def get_blend_parameter(self, *args, **kwargs):
         pass
 
-    def get_bone_transform(__unknown_params__):
+    def get_bone_transform(self, *args, **kwargs):
         pass
 
-    def get_cdo(__unknown_params__):
+    def get_cdo(self, *args, **kwargs):
         pass
 
-    def get_class(__unknown_params__):
+    def get_class(self, *args, **kwargs):
         pass
 
-    def get_component(__unknown_params__):
+    def get_component(self, *args, **kwargs):
         pass
 
-    def get_component_by_class(__unknown_params__):
+    def get_component_by_class(self, *args, **kwargs):
         pass
 
-    def get_component_by_type(__unknown_params__):
+    def get_component_by_type(self, *args, **kwargs):
         pass
 
-    def get_components(__unknown_params__):
+    def get_components(self, *args, **kwargs):
         pass
 
-    def get_components_by_class(__unknown_params__):
+    def get_components_by_class(self, *args, **kwargs):
         pass
 
-    def get_components_by_tag(__unknown_params__):
+    def get_components_by_tag(self, *args, **kwargs):
         pass
 
-    def get_components_by_type(__unknown_params__):
+    def get_components_by_type(self, *args, **kwargs):
         pass
 
-    def get_control_rotation(__unknown_params__):
+    def get_control_rotation(self, *args, **kwargs):
         pass
 
-    def get_controlled_pawn(__unknown_params__):
+    def get_controlled_pawn(self, *args, **kwargs):
         pass
 
-    def get_controller(__unknown_params__):
+    def get_controller(self, *args, **kwargs):
         pass
 
-    def get_current_level(__unknown_params__):
+    def get_current_level(self, *args, **kwargs):
         pass
 
-    def get_display_name(__unknown_params__):
+    def get_display_name(self, *args, **kwargs):
         pass
 
-    def get_editor_world_counterpart_actor(__unknown_params__):
+    def get_editor_world_counterpart_actor(self, *args, **kwargs):
         pass
 
-    def get_folder_path(__unknown_params__):
+    def get_folder_path(self, *args, **kwargs):
         pass
 
-    def get_foliage_instances(__unknown_params__):
+    def get_foliage_instances(self, *args, **kwargs):
         pass
 
-    def get_foliage_types(__unknown_params__):
+    def get_foliage_types(self, *args, **kwargs):
         pass
 
-    def get_forward_vector(__unknown_params__):
+    def get_forward_vector(self, *args, **kwargs):
         pass
 
-    def get_fproperty(__unknown_params__):
+    def get_fproperty(self, *args, **kwargs):
         pass
 
-    def get_full_name(__unknown_params__):
+    def get_full_name(self, *args, **kwargs):
         pass
 
-    def get_game_viewport(__unknown_params__):
+    def get_game_viewport(self, *args, **kwargs):
         pass
 
-    def get_hit_result_under_cursor(__unknown_params__):
+    def get_hit_result_under_cursor(self, *args, **kwargs):
         pass
 
-    def get_hud(__unknown_params__):
+    def get_hud(self, *args, **kwargs):
         pass
 
-    def get_inner(__unknown_params__):
+    def get_inner(self, *args, **kwargs):
         pass
 
-    def get_input_axis(__unknown_params__):
+    def get_input_axis(self, *args, **kwargs):
         pass
 
-    def get_instanced_foliage_actor_for_current_level(__unknown_params__):
+    def get_instanced_foliage_actor_for_current_level(self, *args, **kwargs):
         pass
 
-    def get_instanced_foliage_actor_for_level(__unknown_params__):
+    def get_instanced_foliage_actor_for_level(self, *args, **kwargs):
         pass
 
-    def get_key_prop(__unknown_params__):
+    def get_key_prop(self, *args, **kwargs):
         pass
 
-    def get_landscape_info(__unknown_params__):
+    def get_landscape_info(self, *args, **kwargs):
         pass
 
-    def get_level_script_blueprint(__unknown_params__):
+    def get_level_script_blueprint(self, *args, **kwargs):
         pass
 
-    def get_levels(__unknown_params__):
+    def get_levels(self, *args, **kwargs):
         pass
 
-    def get_material_graph(__unknown_params__):
+    def get_material_graph(self, *args, **kwargs):
         pass
 
-    def get_material_scalar_parameter(__unknown_params__):
+    def get_material_scalar_parameter(self, *args, **kwargs):
         pass
 
-    def get_material_static_switch_parameter(__unknown_params__):
+    def get_material_static_switch_parameter(self, *args, **kwargs):
         pass
 
-    def get_material_texture_parameter(__unknown_params__):
+    def get_material_texture_parameter(self, *args, **kwargs):
         pass
 
-    def get_material_vector_parameter(__unknown_params__):
+    def get_material_vector_parameter(self, *args, **kwargs):
         pass
 
-    def get_metadata(__unknown_params__):
+    def get_metadata(self, *args, **kwargs):
         pass
 
-    def get_metadata_tag(__unknown_params__):
+    def get_metadata_tag(self, *args, **kwargs):
         pass
 
-    def get_name(__unknown_params__):
+    def get_name(self, *args, **kwargs):
         pass
 
-    def get_num_players(__unknown_params__):
+    def get_num_players(self, *args, **kwargs):
         pass
 
-    def get_num_spectators(__unknown_params__):
+    def get_num_spectators(self, *args, **kwargs):
         pass
 
-    def get_obj_flags(__unknown_params__):
+    def get_obj_flags(self, *args, **kwargs):
         pass
 
-    def get_outer(__unknown_params__):
+    def get_outer(self, *args, **kwargs):
         pass
 
-    def get_outermost(__unknown_params__):
+    def get_outermost(self, *args, **kwargs):
         pass
 
-    def get_overlapping_actors(__unknown_params__):
+    def get_overlapping_actors(self, *args, **kwargs):
         pass
 
-    def get_owner(__unknown_params__):
+    def get_owner(self, *args, **kwargs):
         pass
 
-    def get_path_name(__unknown_params__):
+    def get_path_name(self, *args, **kwargs):
         pass
 
-    def get_pawn(__unknown_params__):
+    def get_pawn(self, *args, **kwargs):
         pass
 
-    def get_physics_angular_velocity(__unknown_params__):
+    def get_physics_angular_velocity(self, *args, **kwargs):
         pass
 
-    def get_physics_linear_velocity(__unknown_params__):
+    def get_physics_linear_velocity(self, *args, **kwargs):
         pass
 
-    def get_player_camera_manager(__unknown_params__):
+    def get_player_camera_manager(self, *args, **kwargs):
         pass
 
-    def get_player_controller(__unknown_params__):
+    def get_player_controller(self, *args, **kwargs):
         pass
 
-    def get_player_hud(__unknown_params__):
+    def get_player_hud(self, *args, **kwargs):
         pass
 
-    def get_player_pawn(__unknown_params__):
+    def get_player_pawn(self, *args, **kwargs):
         pass
 
-    def get_property(__unknown_params__):
+    def get_property(self, *args, **kwargs):
         pass
 
-    def get_property_array_dim(__unknown_params__):
+    def get_property_array_dim(self, *args, **kwargs):
         pass
 
-    def get_property_class(__unknown_params__):
+    def get_property_class(self, *args, **kwargs):
         pass
 
-    def get_property_flags(__unknown_params__):
+    def get_property_flags(self, *args, **kwargs):
         pass
 
-    def get_property_struct(__unknown_params__):
+    def get_property_struct(self, *args, **kwargs):
         pass
 
-    def get_py_proxy(__unknown_params__):
+    def get_py_proxy(self, *args, **kwargs):
         pass
 
-    def get_raw_animation_data(__unknown_params__):
+    def get_raw_animation_data(self, *args, **kwargs):
         pass
 
-    def get_raw_animation_track(__unknown_params__):
+    def get_raw_animation_track(self, *args, **kwargs):
         pass
 
-    def get_raw_mesh(__unknown_params__):
+    def get_raw_mesh(self, *args, **kwargs):
         pass
 
-    def get_relative_location(__unknown_params__):
+    def get_relative_location(self, *args, **kwargs):
         pass
 
-    def get_relative_rotation(__unknown_params__):
+    def get_relative_rotation(self, *args, **kwargs):
         pass
 
-    def get_relative_scale(__unknown_params__):
+    def get_relative_scale(self, *args, **kwargs):
         pass
 
-    def get_relative_transform(__unknown_params__):
+    def get_relative_transform(self, *args, **kwargs):
         pass
 
-    def get_right_vector(__unknown_params__):
+    def get_right_vector(self, *args, **kwargs):
         pass
 
-    def get_socket_actor_transform(__unknown_params__):
+    def get_socket_actor_transform(self, *args, **kwargs):
         pass
 
-    def get_socket_location(__unknown_params__):
+    def get_socket_location(self, *args, **kwargs):
         pass
 
-    def get_socket_rotation(__unknown_params__):
+    def get_socket_rotation(self, *args, **kwargs):
         pass
 
-    def get_socket_transform(__unknown_params__):
+    def get_socket_transform(self, *args, **kwargs):
         pass
 
-    def get_socket_world_transform(__unknown_params__):
+    def get_socket_world_transform(self, *args, **kwargs):
         pass
 
-    def get_spline_length(__unknown_params__):
+    def get_spline_length(self, *args, **kwargs):
         pass
 
-    def get_static_mesh_bounds(__unknown_params__):
+    def get_static_mesh_bounds(self, *args, **kwargs):
         pass
 
-    def get_super_class(__unknown_params__):
+    def get_super_class(self, *args, **kwargs):
         pass
 
-    def get_thumbnail(__unknown_params__):
+    def get_thumbnail(self, *args, **kwargs):
         pass
 
-    def get_up_vector(__unknown_params__):
+    def get_up_vector(self, *args, **kwargs):
         pass
 
-    def get_value_prop(__unknown_params__):
+    def get_value_prop(self, *args, **kwargs):
         pass
 
-    def get_world(__unknown_params__):
+    def get_world(self, *args, **kwargs):
         pass
 
-    def get_world_delta_seconds(__unknown_params__):
+    def get_world_delta_seconds(self, *args, **kwargs):
         pass
 
-    def get_world_location(__unknown_params__):
+    def get_world_location(self, *args, **kwargs):
         pass
 
-    def get_world_location_at_distance_along_spline(__unknown_params__):
+    def get_world_location_at_distance_along_spline(self, *args, **kwargs):
         pass
 
-    def get_world_rotation(__unknown_params__):
+    def get_world_rotation(self, *args, **kwargs):
         pass
 
-    def get_world_scale(__unknown_params__):
+    def get_world_scale(self, *args, **kwargs):
         pass
 
-    def get_world_transform(__unknown_params__):
+    def get_world_transform(self, *args, **kwargs):
         pass
 
-    def get_world_type(__unknown_params__):
+    def get_world_type(self, *args, **kwargs):
         pass
 
-    def graph_add_node(__unknown_params__):
+    def graph_add_node(self, *args, **kwargs):
         pass
 
-    def graph_add_node_call_function(__unknown_params__):
+    def graph_add_node_call_function(self, *args, **kwargs):
         pass
 
-    def graph_add_node_custom_event(__unknown_params__):
+    def graph_add_node_custom_event(self, *args, **kwargs):
         pass
 
-    def graph_add_node_dynamic_cast(__unknown_params__):
+    def graph_add_node_dynamic_cast(self, *args, **kwargs):
         pass
 
-    def graph_add_node_event(__unknown_params__):
+    def graph_add_node_event(self, *args, **kwargs):
         pass
 
-    def graph_add_node_variable_get(__unknown_params__):
+    def graph_add_node_variable_get(self, *args, **kwargs):
         pass
 
-    def graph_add_node_variable_set(__unknown_params__):
+    def graph_add_node_variable_set(self, *args, **kwargs):
         pass
 
-    def graph_get_good_place_for_new_node(__unknown_params__):
+    def graph_get_good_place_for_new_node(self, *args, **kwargs):
         pass
 
-    def graph_reconstruct_node(__unknown_params__):
+    def graph_reconstruct_node(self, *args, **kwargs):
         pass
 
-    def graph_remove_node(__unknown_params__):
+    def graph_remove_node(self, *args, **kwargs):
         pass
 
-    def has_metadata(__unknown_params__):
+    def has_metadata(self, *args, **kwargs):
         pass
 
-    def has_metadata_tag(__unknown_params__):
+    def has_metadata_tag(self, *args, **kwargs):
         pass
 
-    def has_property(__unknown_params__):
+    def has_property(self, *args, **kwargs):
         pass
 
-    def has_world(__unknown_params__):
+    def has_world(self, *args, **kwargs):
         pass
 
-    def hud_draw_2d_line(__unknown_params__):
+    def hud_draw_2d_line(self, *args, **kwargs):
         pass
 
-    def hud_draw_line(__unknown_params__):
+    def hud_draw_line(self, *args, **kwargs):
         pass
 
-    def hud_draw_rect(__unknown_params__):
+    def hud_draw_rect(self, *args, **kwargs):
         pass
 
-    def hud_draw_text(__unknown_params__):
+    def hud_draw_text(self, *args, **kwargs):
         pass
 
-    def hud_draw_texture(__unknown_params__):
+    def hud_draw_texture(self, *args, **kwargs):
         pass
 
-    def import_custom_properties(__unknown_params__):
+    def import_custom_properties(self, *args, **kwargs):
         pass
 
-    def input_axis(__unknown_params__):
+    def input_axis(self, *args, **kwargs):
         pass
 
-    def input_key(__unknown_params__):
+    def input_key(self, *args, **kwargs):
         pass
 
-    def is_a(__unknown_params__):
+    def is_a(self, *args, **kwargs):
         pass
 
-    def is_action_pressed(__unknown_params__):
+    def is_action_pressed(self, *args, **kwargs):
         pass
 
-    def is_action_released(__unknown_params__):
+    def is_action_released(self, *args, **kwargs):
         pass
 
-    def is_child_of(__unknown_params__):
+    def is_child_of(self, *args, **kwargs):
         pass
 
-    def is_crouched(__unknown_params__):
+    def is_crouched(self, *args, **kwargs):
         pass
 
-    def is_falling(__unknown_params__):
+    def is_falling(self, *args, **kwargs):
         pass
 
-    def is_flying(__unknown_params__):
+    def is_flying(self, *args, **kwargs):
         pass
 
-    def is_input_key_down(__unknown_params__):
+    def is_input_key_down(self, *args, **kwargs):
         pass
 
-    def is_jumping(__unknown_params__):
+    def is_jumping(self, *args, **kwargs):
         pass
 
-    def is_owned(__unknown_params__):
+    def is_owned(self, *args, **kwargs):
         pass
 
-    def is_rooted(__unknown_params__):
+    def is_rooted(self, *args, **kwargs):
         pass
 
-    def is_valid(__unknown_params__):
+    def is_valid(self, *args, **kwargs):
         pass
 
-    def jump(__unknown_params__):
+    def jump(self, *args, **kwargs):
         pass
 
-    def landscape_export_to_mesh_description(__unknown_params__):
+    def landscape_export_to_mesh_description(self, *args, **kwargs):
         pass
 
-    def landscape_import(__unknown_params__):
+    def landscape_import(self, *args, **kwargs):
         pass
 
-    def launch(__unknown_params__):
+    def launch(self, *args, **kwargs):
         pass
 
-    def line_trace_multi_by_channel(__unknown_params__):
+    def line_trace_multi_by_channel(self, *args, **kwargs):
         pass
 
-    def line_trace_single_by_channel(__unknown_params__):
+    def line_trace_single_by_channel(self, *args, **kwargs):
         pass
 
-    def make_unique_object_name(__unknown_params__):
+    def make_unique_object_name(self, *args, **kwargs):
         pass
 
-    def metadata_tags(__unknown_params__):
+    def metadata_tags(self, *args, **kwargs):
         pass
 
-    def modify(__unknown_params__):
+    def modify(self, *args, **kwargs):
         pass
 
-    def morph_target_get_deltas(__unknown_params__):
+    def morph_target_get_deltas(self, *args, **kwargs):
         pass
 
-    def morph_target_populate_deltas(__unknown_params__):
+    def morph_target_populate_deltas(self, *args, **kwargs):
         pass
 
-    def node_allocate_default_pins(__unknown_params__):
+    def node_allocate_default_pins(self, *args, **kwargs):
         pass
 
-    def node_create_pin(__unknown_params__):
+    def node_create_pin(self, *args, **kwargs):
         pass
 
-    def node_find_pin(__unknown_params__):
+    def node_find_pin(self, *args, **kwargs):
         pass
 
-    def node_function_entry_set_pure(__unknown_params__):
+    def node_function_entry_set_pure(self, *args, **kwargs):
         pass
 
-    def node_get_title(__unknown_params__):
+    def node_get_title(self, *args, **kwargs):
         pass
 
-    def node_pin_default_value_changed(__unknown_params__):
+    def node_pin_default_value_changed(self, *args, **kwargs):
         pass
 
-    def node_pin_type_changed(__unknown_params__):
+    def node_pin_type_changed(self, *args, **kwargs):
         pass
 
-    def node_pins(__unknown_params__):
+    def node_pins(self, *args, **kwargs):
         pass
 
-    def node_reconstruct(__unknown_params__):
+    def node_reconstruct(self, *args, **kwargs):
         pass
 
-    def node_set_purity(__unknown_params__):
+    def node_set_purity(self, *args, **kwargs):
         pass
 
-    def own(__unknown_params__):
+    def own(self, *args, **kwargs):
         pass
 
-    def package_get_filename(__unknown_params__):
+    def package_get_filename(self, *args, **kwargs):
         pass
 
-    def package_is_dirty(__unknown_params__):
+    def package_is_dirty(self, *args, **kwargs):
         pass
 
-    def play(__unknown_params__):
+    def play(self, *args, **kwargs):
         pass
 
-    def play_sound_at_location(__unknown_params__):
+    def play_sound_at_location(self, *args, **kwargs):
         pass
 
-    def posses(__unknown_params__):
+    def posses(self, *args, **kwargs):
         pass
 
-    def post_edit_change(__unknown_params__):
+    def post_edit_change(self, *args, **kwargs):
         pass
 
-    def post_edit_change_property(__unknown_params__):
+    def post_edit_change_property(self, *args, **kwargs):
         pass
 
-    def pre_edit_change(__unknown_params__):
+    def pre_edit_change(self, *args, **kwargs):
         pass
 
-    def project_world_location_to_screen(__unknown_params__):
+    def project_world_location_to_screen(self, *args, **kwargs):
         pass
 
-    def properties(__unknown_params__):
+    def properties(self, *args, **kwargs):
         pass
 
-    def queue_audio(__unknown_params__):
+    def queue_audio(self, *args, **kwargs):
         pass
 
-    def quit_game(__unknown_params__):
+    def quit_game(self, *args, **kwargs):
         pass
 
-    def register_component(__unknown_params__):
+    def register_component(self, *args, **kwargs):
         pass
 
-    def remove_all_viewport_widgets(__unknown_params__):
+    def remove_all_viewport_widgets(self, *args, **kwargs):
         pass
 
-    def remove_from_root(__unknown_params__):
+    def remove_from_root(self, *args, **kwargs):
         pass
 
-    def remove_metadata_tag(__unknown_params__):
+    def remove_metadata_tag(self, *args, **kwargs):
         pass
 
-    def remove_viewport_widget_content(__unknown_params__):
+    def remove_viewport_widget_content(self, *args, **kwargs):
         pass
 
-    def render_target_get_data(__unknown_params__):
+    def render_target_get_data(self, *args, **kwargs):
         pass
 
-    def render_target_get_data_to_buffer(__unknown_params__):
+    def render_target_get_data_to_buffer(self, *args, **kwargs):
         pass
 
-    def render_thumbnail(__unknown_params__):
+    def render_thumbnail(self, *args, **kwargs):
         pass
 
-    def reset_audio(__unknown_params__):
+    def reset_audio(self, *args, **kwargs):
         pass
 
-    def reset_obj_flags(__unknown_params__):
+    def reset_obj_flags(self, *args, **kwargs):
         pass
 
-    def restart_level(__unknown_params__):
+    def restart_level(self, *args, **kwargs):
         pass
 
-    def save_config(__unknown_params__):
+    def save_config(self, *args, **kwargs):
         pass
 
-    def save_package(__unknown_params__):
+    def save_package(self, *args, **kwargs):
         pass
 
-    def sequencer_add_actor(__unknown_params__):
+    def sequencer_add_actor(self, *args, **kwargs):
         pass
 
-    def sequencer_add_actor_component(__unknown_params__):
+    def sequencer_add_actor_component(self, *args, **kwargs):
         pass
 
-    def sequencer_add_camera(__unknown_params__):
+    def sequencer_add_camera(self, *args, **kwargs):
         pass
 
-    def sequencer_add_camera_cut_track(__unknown_params__):
+    def sequencer_add_camera_cut_track(self, *args, **kwargs):
         pass
 
-    def sequencer_add_master_track(__unknown_params__):
+    def sequencer_add_master_track(self, *args, **kwargs):
         pass
 
-    def sequencer_add_possessable(__unknown_params__):
+    def sequencer_add_possessable(self, *args, **kwargs):
         pass
 
-    def sequencer_add_track(__unknown_params__):
+    def sequencer_add_track(self, *args, **kwargs):
         pass
 
-    def sequencer_changed(__unknown_params__):
+    def sequencer_changed(self, *args, **kwargs):
         pass
 
-    def sequencer_create_folder(__unknown_params__):
+    def sequencer_create_folder(self, *args, **kwargs):
         pass
 
-    def sequencer_find_possessable(__unknown_params__):
+    def sequencer_find_possessable(self, *args, **kwargs):
         pass
 
-    def sequencer_find_spawnable(__unknown_params__):
+    def sequencer_find_spawnable(self, *args, **kwargs):
         pass
 
-    def sequencer_folders(__unknown_params__):
+    def sequencer_folders(self, *args, **kwargs):
         pass
 
-    def sequencer_get_camera_cut_track(__unknown_params__):
+    def sequencer_get_camera_cut_track(self, *args, **kwargs):
         pass
 
-    def sequencer_get_display_name(__unknown_params__):
+    def sequencer_get_display_name(self, *args, **kwargs):
         pass
 
-    def sequencer_get_playback_range(__unknown_params__):
+    def sequencer_get_playback_range(self, *args, **kwargs):
         pass
 
-    def sequencer_get_selection_range(__unknown_params__):
+    def sequencer_get_selection_range(self, *args, **kwargs):
         pass
 
-    def sequencer_import_fbx_transform(__unknown_params__):
+    def sequencer_import_fbx_transform(self, *args, **kwargs):
         pass
 
-    def sequencer_make_new_spawnable(__unknown_params__):
+    def sequencer_make_new_spawnable(self, *args, **kwargs):
         pass
 
-    def sequencer_master_tracks(__unknown_params__):
+    def sequencer_master_tracks(self, *args, **kwargs):
         pass
 
-    def sequencer_possessable_tracks(__unknown_params__):
+    def sequencer_possessable_tracks(self, *args, **kwargs):
         pass
 
-    def sequencer_possessables(__unknown_params__):
+    def sequencer_possessables(self, *args, **kwargs):
         pass
 
-    def sequencer_possessables_guid(__unknown_params__):
+    def sequencer_possessables_guid(self, *args, **kwargs):
         pass
 
-    def sequencer_remove_camera_cut_track(__unknown_params__):
+    def sequencer_remove_camera_cut_track(self, *args, **kwargs):
         pass
 
-    def sequencer_remove_master_track(__unknown_params__):
+    def sequencer_remove_master_track(self, *args, **kwargs):
         pass
 
-    def sequencer_remove_possessable(__unknown_params__):
+    def sequencer_remove_possessable(self, *args, **kwargs):
         pass
 
-    def sequencer_remove_spawnable(__unknown_params__):
+    def sequencer_remove_spawnable(self, *args, **kwargs):
         pass
 
-    def sequencer_remove_track(__unknown_params__):
+    def sequencer_remove_track(self, *args, **kwargs):
         pass
 
-    def sequencer_section_add_key(__unknown_params__):
+    def sequencer_section_add_key(self, *args, **kwargs):
         pass
 
-    def sequencer_sections(__unknown_params__):
+    def sequencer_sections(self, *args, **kwargs):
         pass
 
-    def sequencer_set_display_name(__unknown_params__):
+    def sequencer_set_display_name(self, *args, **kwargs):
         pass
 
-    def sequencer_set_playback_range(__unknown_params__):
+    def sequencer_set_playback_range(self, *args, **kwargs):
         pass
 
-    def sequencer_set_section_camera_guid(__unknown_params__):
+    def sequencer_set_section_camera_guid(self, *args, **kwargs):
         pass
 
-    def sequencer_set_section_range(__unknown_params__):
+    def sequencer_set_section_range(self, *args, **kwargs):
         pass
 
-    def sequencer_set_view_range(__unknown_params__):
+    def sequencer_set_view_range(self, *args, **kwargs):
         pass
 
-    def sequencer_set_working_range(__unknown_params__):
+    def sequencer_set_working_range(self, *args, **kwargs):
         pass
 
-    def sequencer_track_add_section(__unknown_params__):
+    def sequencer_track_add_section(self, *args, **kwargs):
         pass
 
-    def sequencer_track_sections(__unknown_params__):
+    def sequencer_track_sections(self, *args, **kwargs):
         pass
 
-    def set_actor_hidden_in_game(__unknown_params__):
+    def set_actor_hidden_in_game(self, *args, **kwargs):
         pass
 
-    def set_actor_label(__unknown_params__):
+    def set_actor_label(self, *args, **kwargs):
         pass
 
-    def set_actor_location(__unknown_params__):
+    def set_actor_location(self, *args, **kwargs):
         pass
 
-    def set_actor_rotation(__unknown_params__):
+    def set_actor_rotation(self, *args, **kwargs):
         pass
 
-    def set_actor_scale(__unknown_params__):
+    def set_actor_scale(self, *args, **kwargs):
         pass
 
-    def set_actor_transform(__unknown_params__):
+    def set_actor_transform(self, *args, **kwargs):
         pass
 
-    def set_blend_parameter(__unknown_params__):
+    def set_blend_parameter(self, *args, **kwargs):
         pass
 
-    def set_current_level(__unknown_params__):
+    def set_current_level(self, *args, **kwargs):
         pass
 
-    def set_folder_path(__unknown_params__):
+    def set_folder_path(self, *args, **kwargs):
         pass
 
-    def set_level_sequence_asset(__unknown_params__):
+    def set_level_sequence_asset(self, *args, **kwargs):
         pass
 
-    def set_material(__unknown_params__):
+    def set_material(self, *args, **kwargs):
         pass
 
-    def set_material_by_name(__unknown_params__):
+    def set_material_by_name(self, *args, **kwargs):
         pass
 
-    def set_material_parent(__unknown_params__):
+    def set_material_parent(self, *args, **kwargs):
         pass
 
-    def set_material_scalar_parameter(__unknown_params__):
+    def set_material_scalar_parameter(self, *args, **kwargs):
         pass
 
-    def set_material_static_switch_parameter(__unknown_params__):
+    def set_material_static_switch_parameter(self, *args, **kwargs):
         pass
 
-    def set_material_texture_parameter(__unknown_params__):
+    def set_material_texture_parameter(self, *args, **kwargs):
         pass
 
-    def set_material_vector_parameter(__unknown_params__):
+    def set_material_vector_parameter(self, *args, **kwargs):
         pass
 
-    def set_metadata(__unknown_params__):
+    def set_metadata(self, *args, **kwargs):
         pass
 
-    def set_metadata_tag(__unknown_params__):
+    def set_metadata_tag(self, *args, **kwargs):
         pass
 
-    def set_name(__unknown_params__):
+    def set_name(self, *args, **kwargs):
         pass
 
-    def set_obj_flags(__unknown_params__):
+    def set_obj_flags(self, *args, **kwargs):
         pass
 
-    def set_outer(__unknown_params__):
+    def set_outer(self, *args, **kwargs):
         pass
 
-    def set_physics_angular_velocity(__unknown_params__):
+    def set_physics_angular_velocity(self, *args, **kwargs):
         pass
 
-    def set_physics_linear_velocity(__unknown_params__):
+    def set_physics_linear_velocity(self, *args, **kwargs):
         pass
 
-    def set_player_hud(__unknown_params__):
+    def set_player_hud(self, *args, **kwargs):
         pass
 
-    def set_property(__unknown_params__):
+    def set_property(self, *args, **kwargs):
         pass
 
-    def set_property_flags(__unknown_params__):
+    def set_property_flags(self, *args, **kwargs):
         pass
 
-    def set_relative_location(__unknown_params__):
+    def set_relative_location(self, *args, **kwargs):
         pass
 
-    def set_relative_rotation(__unknown_params__):
+    def set_relative_rotation(self, *args, **kwargs):
         pass
 
-    def set_relative_scale(__unknown_params__):
+    def set_relative_scale(self, *args, **kwargs):
         pass
 
-    def set_relative_transform(__unknown_params__):
+    def set_relative_transform(self, *args, **kwargs):
         pass
 
-    def set_simulate_physics(__unknown_params__):
+    def set_simulate_physics(self, *args, **kwargs):
         pass
 
-    def set_skeletal_mesh(__unknown_params__):
+    def set_skeletal_mesh(self, *args, **kwargs):
         pass
 
-    def set_slate_widget(__unknown_params__):
+    def set_slate_widget(self, *args, **kwargs):
         pass
 
-    def set_timer(__unknown_params__):
+    def set_timer(self, *args, **kwargs):
         pass
 
-    def set_view_target(__unknown_params__):
+    def set_view_target(self, *args, **kwargs):
         pass
 
-    def set_world_location(__unknown_params__):
+    def set_world_location(self, *args, **kwargs):
         pass
 
-    def set_world_rotation(__unknown_params__):
+    def set_world_rotation(self, *args, **kwargs):
         pass
 
-    def set_world_scale(__unknown_params__):
+    def set_world_scale(self, *args, **kwargs):
         pass
 
-    def set_world_transform(__unknown_params__):
+    def set_world_transform(self, *args, **kwargs):
         pass
 
-    def show_mouse_cursor(__unknown_params__):
+    def show_mouse_cursor(self, *args, **kwargs):
         pass
 
-    def simple_move_to_location(__unknown_params__):
+    def simple_move_to_location(self, *args, **kwargs):
         pass
 
-    def skeletal_mesh_build_lod(__unknown_params__):
+    def skeletal_mesh_build_lod(self, *args, **kwargs):
         pass
 
-    def skeletal_mesh_get_active_bone_indices(__unknown_params__):
+    def skeletal_mesh_get_active_bone_indices(self, *args, **kwargs):
         pass
 
-    def skeletal_mesh_get_bone_map(__unknown_params__):
+    def skeletal_mesh_get_bone_map(self, *args, **kwargs):
         pass
 
-    def skeletal_mesh_get_lod(__unknown_params__):
+    def skeletal_mesh_get_lod(self, *args, **kwargs):
         pass
 
-    def skeletal_mesh_get_raw_indices(__unknown_params__):
+    def skeletal_mesh_get_raw_indices(self, *args, **kwargs):
         pass
 
-    def skeletal_mesh_get_required_bones(__unknown_params__):
+    def skeletal_mesh_get_required_bones(self, *args, **kwargs):
         pass
 
-    def skeletal_mesh_get_soft_vertices(__unknown_params__):
+    def skeletal_mesh_get_soft_vertices(self, *args, **kwargs):
         pass
 
-    def skeletal_mesh_lods_num(__unknown_params__):
+    def skeletal_mesh_lods_num(self, *args, **kwargs):
         pass
 
-    def skeletal_mesh_register_morph_target(__unknown_params__):
+    def skeletal_mesh_register_morph_target(self, *args, **kwargs):
         pass
 
-    def skeletal_mesh_sections_num(__unknown_params__):
+    def skeletal_mesh_sections_num(self, *args, **kwargs):
         pass
 
-    def skeletal_mesh_set_active_bone_indices(__unknown_params__):
+    def skeletal_mesh_set_active_bone_indices(self, *args, **kwargs):
         pass
 
-    def skeletal_mesh_set_bone_map(__unknown_params__):
+    def skeletal_mesh_set_bone_map(self, *args, **kwargs):
         pass
 
-    def skeletal_mesh_set_required_bones(__unknown_params__):
+    def skeletal_mesh_set_required_bones(self, *args, **kwargs):
         pass
 
-    def skeletal_mesh_set_skeleton(__unknown_params__):
+    def skeletal_mesh_set_skeleton(self, *args, **kwargs):
         pass
 
-    def skeletal_mesh_set_soft_vertices(__unknown_params__):
+    def skeletal_mesh_set_soft_vertices(self, *args, **kwargs):
         pass
 
-    def skeletal_mesh_to_import_vertex_map(__unknown_params__):
+    def skeletal_mesh_to_import_vertex_map(self, *args, **kwargs):
         pass
 
-    def skeleton_add_bone(__unknown_params__):
+    def skeleton_add_bone(self, *args, **kwargs):
         pass
 
-    def skeleton_bones_get_num(__unknown_params__):
+    def skeleton_bones_get_num(self, *args, **kwargs):
         pass
 
-    def skeleton_find_bone_index(__unknown_params__):
+    def skeleton_find_bone_index(self, *args, **kwargs):
         pass
 
-    def skeleton_get_bone_name(__unknown_params__):
+    def skeleton_get_bone_name(self, *args, **kwargs):
         pass
 
-    def skeleton_get_parent_index(__unknown_params__):
+    def skeleton_get_parent_index(self, *args, **kwargs):
         pass
 
-    def skeleton_get_ref_bone_pose(__unknown_params__):
+    def skeleton_get_ref_bone_pose(self, *args, **kwargs):
         pass
 
-    def sound_get_data(__unknown_params__):
+    def sound_get_data(self, *args, **kwargs):
         pass
 
-    def sound_set_data(__unknown_params__):
+    def sound_set_data(self, *args, **kwargs):
         pass
 
-    def static_mesh_build(__unknown_params__):
+    def static_mesh_build(self, *args, **kwargs):
         pass
 
-    def static_mesh_create_body_setup(__unknown_params__):
+    def static_mesh_create_body_setup(self, *args, **kwargs):
         pass
 
-    def static_mesh_generate_kdop10x(__unknown_params__):
+    def static_mesh_generate_kdop10x(self, *args, **kwargs):
         pass
 
-    def static_mesh_generate_kdop10y(__unknown_params__):
+    def static_mesh_generate_kdop10y(self, *args, **kwargs):
         pass
 
-    def static_mesh_generate_kdop10z(__unknown_params__):
+    def static_mesh_generate_kdop10z(self, *args, **kwargs):
         pass
 
-    def static_mesh_generate_kdop18(__unknown_params__):
+    def static_mesh_generate_kdop18(self, *args, **kwargs):
         pass
 
-    def static_mesh_generate_kdop26(__unknown_params__):
+    def static_mesh_generate_kdop26(self, *args, **kwargs):
         pass
 
-    def static_mesh_import_lod(__unknown_params__):
+    def static_mesh_import_lod(self, *args, **kwargs):
         pass
 
-    def static_mesh_set_collision_for_lod(__unknown_params__):
+    def static_mesh_set_collision_for_lod(self, *args, **kwargs):
         pass
 
-    def static_mesh_set_shadow_for_lod(__unknown_params__):
+    def static_mesh_set_shadow_for_lod(self, *args, **kwargs):
         pass
 
-    def stop_jumping(__unknown_params__):
+    def stop_jumping(self, *args, **kwargs):
         pass
 
-    def struct_add_variable(__unknown_params__):
+    def struct_add_variable(self, *args, **kwargs):
         pass
 
-    def struct_get_variables(__unknown_params__):
+    def struct_get_variables(self, *args, **kwargs):
         pass
 
-    def struct_move_variable_down(__unknown_params__):
+    def struct_move_variable_down(self, *args, **kwargs):
         pass
 
-    def struct_move_variable_up(__unknown_params__):
+    def struct_move_variable_up(self, *args, **kwargs):
         pass
 
-    def struct_remove_variable(__unknown_params__):
+    def struct_remove_variable(self, *args, **kwargs):
         pass
 
-    def take_widget(__unknown_params__):
+    def take_widget(self, *args, **kwargs):
         pass
 
-    def texture_get_data(__unknown_params__):
+    def texture_get_data(self, *args, **kwargs):
         pass
 
-    def texture_get_height(__unknown_params__):
+    def texture_get_height(self, *args, **kwargs):
         pass
 
-    def texture_get_source_data(__unknown_params__):
+    def texture_get_source_data(self, *args, **kwargs):
         pass
 
-    def texture_get_width(__unknown_params__):
+    def texture_get_width(self, *args, **kwargs):
         pass
 
-    def texture_has_alpha_channel(__unknown_params__):
+    def texture_has_alpha_channel(self, *args, **kwargs):
         pass
 
-    def texture_set_data(__unknown_params__):
+    def texture_set_data(self, *args, **kwargs):
         pass
 
-    def texture_set_source_data(__unknown_params__):
+    def texture_set_source_data(self, *args, **kwargs):
         pass
 
-    def texture_update_resource(__unknown_params__):
+    def texture_update_resource(self, *args, **kwargs):
         pass
 
-    def to_bytearray(__unknown_params__):
+    def to_bytearray(self, *args, **kwargs):
         pass
 
-    def to_bytes(__unknown_params__):
+    def to_bytes(self, *args, **kwargs):
         pass
 
-    def unbind_event(__unknown_params__):
+    def unbind_event(self, *args, **kwargs):
         pass
 
-    def uncrouch(__unknown_params__):
+    def uncrouch(self, *args, **kwargs):
         pass
 
-    def unposses(__unknown_params__):
+    def unposses(self, *args, **kwargs):
         pass
 
-    def unregister_component(__unknown_params__):
+    def unregister_component(self, *args, **kwargs):
         pass
 
-    def update_raw_track(__unknown_params__):
+    def update_raw_track(self, *args, **kwargs):
         pass
 
-    def vlog(__unknown_params__):
+    def vlog(self, *args, **kwargs):
         pass
 
-    def vlog_cylinder(__unknown_params__):
+    def vlog_cylinder(self, *args, **kwargs):
         pass
 
-    def was_input_key_just_pressed(__unknown_params__):
+    def was_input_key_just_pressed(self, *args, **kwargs):
         pass
 
-    def was_input_key_just_released(__unknown_params__):
+    def was_input_key_just_released(self, *args, **kwargs):
         pass
 
-    def world_create_folder(__unknown_params__):
+    def world_create_folder(self, *args, **kwargs):
         pass
 
-    def world_delete_folder(__unknown_params__):
+    def world_delete_folder(self, *args, **kwargs):
         pass
 
-    def world_exec(__unknown_params__):
+    def world_exec(self, *args, **kwargs):
         pass
 
-    def world_folders(__unknown_params__):
+    def world_folders(self, *args, **kwargs):
         pass
 
-    def world_rename_folder(__unknown_params__):
+    def world_rename_folder(self, *args, **kwargs):
         pass
 
-    def world_tick(__unknown_params__):
+    def world_tick(self, *args, **kwargs):
         pass
 
     @staticmethod
@@ -6531,28 +6532,28 @@ class UScriptStruct(object):
         Return str(self).
         """
 
-    def as_dict(__unknown_params__):
+    def as_dict(self, *args, **kwargs):
         pass
 
-    def clone(__unknown_params__):
+    def clone(self, *args, **kwargs):
         pass
 
-    def fields(__unknown_params__):
+    def fields(self, *args, **kwargs):
         pass
 
-    def get_field(__unknown_params__):
+    def get_field(self, *args, **kwargs):
         pass
 
-    def get_field_array_dim(__unknown_params__):
+    def get_field_array_dim(self, *args, **kwargs):
         pass
 
-    def get_struct(__unknown_params__):
+    def get_struct(self, *args, **kwargs):
         pass
 
-    def ref(__unknown_params__):
+    def ref(self, *args, **kwargs):
         pass
 
-    def set_field(__unknown_params__):
+    def set_field(self, *args, **kwargs):
         pass
 
     @staticmethod

@@ -1,9 +1,8 @@
-from scipy.fft import set_global_backend
-
+import hotreload
 import unreal_engine as ue
 from unreal_engine_tools import *
 import numpy as np
-import os, sys, subprocess, urllib.request, socket, math, sympy, cmdix, fast_autocomplete, numba, kingdon, dill #numba_cuda
+import os, sys, subprocess, importlib, urllib.request, socket, math, sympy, fast_autocomplete, numba, kingdon #numba_cuda
 from unreal_engine import FVector, FRotator, FTransform, FHitResult, CLASS_CONFIG, CLASS_DEFAULT_CONFIG, CPF_CONFIG, CPF_GLOBAL_CONFIG, CPF_EXPOSE_ON_SPAWN, CPF_NET, CPF_REP_NOTIFY
 from unreal_engine.classes import Actor, Character, PlayerController, StaticMeshActor, KismetMathLibrary, KismetSystemLibrary, Object, StrProperty, IntProperty, Material, Texture, LargeStringAsync, LargeStringRPCActor
 from unreal_engine.enums import EInputEvent, ETraceTypeQuery, EDrawDebugTrace
@@ -11,6 +10,7 @@ from constants import Constants, WorldSize, LargeStringAsyncStandalone
 import constants, windowtool
 from languages import *
 from cli import *
+from hotreload import *
 
 
 RPC_ACTOR = None
@@ -22,9 +22,12 @@ ue.log('Hello i am a Python module')
 
 global world
 world = get_world()
+# print(world)
+# py_actor = find_actor("BP_PyActor")
+# print(py_actor)
 
-
-# constants.rebuild_libraries()
+# constants.rebuild_generated_modules()
+# reload_all_modules()
 
 # windowtool.stop_all_background_hooks_systemwide()
 # windowtool.start_background_hook("notepad.exe", expand_to_screen=True,custom_rect=(-10, 0, 1940, 1085)) # , monitor_number=0)
@@ -53,72 +56,6 @@ world = get_world()
 # Lower Hemisphere is Solid Color = True
 # Lower Hemisphere Color = 0,0,0,1
 
-
-
-
-
-
-def apply_material(
-    actor_name=None,
-    component_name=None,
-    material_path="/Game/Materials/M_Color.M_Color",
-    color=None,                       # default None means don’t touch
-    material_index=0,
-    **scalar_params                     # pass any other scalar parameters explicitly
-):
-    """
-    Apply a material to a mesh component of an actor.
-
-    color: tuple (r,g,b) to set vector parameter "color"
-    scalar_params: pass any scalar parameters that exist in the material, e.g.
-                   Metallic=0.8, Roughness=0.2, Outline=5.0, EmissiveMultiplier=2.0
-    """
-    # --- find actor ---
-    actors = world.all_actors()
-    actor = None
-    for a in actors:
-        if actor_name is None or a.get_name() == actor_name:
-            actor = a
-            break
-    if not actor:
-        raise Exception(f"Actor not found: {actor_name or '(any)'}")
-
-    # --- find mesh component ---
-    target_comp = None
-    if component_name:
-        for comp in actor.get_components():
-            if comp.get_name() == component_name:
-                target_comp = comp
-                break
-    else:
-        for comp in actor.get_components():
-            if comp.get_class().get_name().endswith("MeshComponent"):
-                target_comp = comp
-                break
-
-    if not target_comp:
-        raise Exception(f"Mesh component not found on actor '{actor.get_name()}'")
-
-    # --- load material ---
-    mat = ue.load_object(Material, material_path)
-    if not mat:
-        raise Exception(f"Material not found: {material_path}")
-
-    # --- create dynamic material instance ---
-    mid = target_comp.create_material_instance_dynamic(mat)
-
-    # --- set vector parameter if provided ---
-    if color is not None:
-        mid.set_material_vector_parameter("color", ue.FVector(color[0], color[1], color[2]))
-
-    # --- set any scalar parameters that were explicitly passed ---
-    for param_name, value in scalar_params.items():
-        mid.set_material_scalar_parameter(param_name, value)
-
-    # --- assign to mesh ---
-    target_comp.set_material(material_index, mid)
-
-    return mid
 
 
 
@@ -283,24 +220,24 @@ class Main:
     def begin_play(self):
         ue.log('Begin Play on Main class')
 
-        apply_material(
-            actor_name="TestSphere",
-            color=(1, 0, 0, 1),
-            metallic=0.8,
-            specular=0.5,
-            roughness=0.2,
-            anisotropy=0.1,
-            emissive_multiplier=10.0,
-            ambient_occlusion=1.0
-        )
-
-        apply_material(
-            actor_name="ThirdPersonCharacter_C_0",  # runtime instance name (check via print)
-            component_name="SkeletalMeshOutline",
-            material_path="/Game/Materials/M_Outline.M_Outline",
-            outline=5.0,
-            color=(0, 1, 0, 1)
-        )
+        # apply_material(
+        #     actor_name="TestSphere",
+        #     color=(1, 0, 0, 1),
+        #     metallic=0.8,
+        #     specular=0.5,
+        #     roughness=0.2,
+        #     anisotropy=0.1,
+        #     emissive_multiplier=10.0,
+        #     ambient_occlusion=1.0
+        # )
+        #
+        # apply_material(
+        #     actor_name="ThirdPersonCharacter_C_0",  # runtime instance name (check via print)
+        #     component_name="SkeletalMeshOutline",
+        #     material_path="/Game/Materials/M_Outline.M_Outline",
+        #     outline=5.0,
+        #     color=(0, 1, 0, 1)
+        # )
 
         if KismetSystemLibrary.IsDedicatedServer():
             ue.log("BeginPlay on DEDICATED SERVER")
@@ -459,50 +396,54 @@ class Main:
     # ------------------------------------------------------------------------
     def you_pressed_K(self):
         ue.log_warning("=== YOU PRESSED K ===")
-        ue.log(f"World: {world}")
+        reset_pyactor()
 
-        global RPC_ACTOR, HELPER
-
-        # Spawn or get the RPC actor
-        if not RPC_ACTOR:
-            RPC_ACTOR = find_rpc_actor()
-            if not RPC_ACTOR:
-                ue.log_error("RPC_ACTOR not created, aborting test")
-                return
-
-        # Set up the helper if it doesn't exist
-        if not HELPER:
-            HELPER = LargeStringAsyncStandalone(
-                large_string_obj=RPC_ACTOR.LargeString,
-                rpc_actor=RPC_ACTOR,
-                on_received_callback=client_on_full_string_received,
-                on_server_received_callback=server_on_full_string_received,
-                on_progress_callback=progress_callback,
-                auto_send=True
-            )
-            ue.log("Created LargeStringAsyncStandalone helper")
-
-        # Test string
-        test_string = "Hello Unreal Async RPC! " * 100
-        ue.log_warning(f"Starting async build, length={len(test_string)}")
-
-        try:
-            RPC_ACTOR.LargeString.SetFromStringAsync(test_string)
-        except Exception as e:
-            ue.log_error(f"SetFromStringAsync failed: {e}")
-
-        # Client → Server only
-        HELPER.send_string(mode="server_only")
-
-        # Server → All clients (multicast)
-        HELPER.send_string(mode="multicast")
-
-        # Server → Specific client (replace `target_pc` with your player controller)
-        target_pc = self.uobject.get_player_controller()
-        HELPER.send_string(mode="client", target_client=target_pc)
-
-        # Server → Single client (server_to_client)
-        HELPER.send_string(mode="server_to_client", target_client=target_pc)
+        # <3
+        # ue.log(f"World: {world}")
+        #
+        # global RPC_ACTOR, HELPER
+        #
+        # # Spawn or get the RPC actor
+        # if not RPC_ACTOR:
+        #     RPC_ACTOR = find_rpc_actor()
+        #     if not RPC_ACTOR:
+        #         ue.log_error("RPC_ACTOR not created, aborting test")
+        #         return
+        #
+        # # Set up the helper if it doesn't exist
+        # if not HELPER:
+        #     HELPER = LargeStringAsyncStandalone(
+        #         large_string_obj=RPC_ACTOR.LargeString,
+        #         rpc_actor=RPC_ACTOR,
+        #         on_received_callback=client_on_full_string_received,
+        #         on_server_received_callback=server_on_full_string_received,
+        #         on_progress_callback=progress_callback,
+        #         auto_send=True
+        #     )
+        #     ue.log("Created LargeStringAsyncStandalone helper")
+        #
+        # # Test string
+        # test_string = "Hello Unreal Async RPC! " * 100
+        # ue.log_warning(f"Starting async build, length={len(test_string)}")
+        #
+        # try:
+        #     RPC_ACTOR.LargeString.SetFromStringAsync(test_string)
+        # except Exception as e:
+        #     ue.log_error(f"SetFromStringAsync failed: {e}")
+        #
+        # # Client → Server only
+        # HELPER.send_string(mode="server_only")
+        #
+        # # Server → All clients (multicast)
+        # HELPER.send_string(mode="multicast")
+        #
+        # # Server → Specific client (replace `target_pc` with your player controller)
+        # target_pc = self.uobject.get_player_controller()
+        # HELPER.send_string(mode="client", target_client=target_pc)
+        #
+        # # Server → Single client (server_to_client)
+        # HELPER.send_string(mode="server_to_client", target_client=target_pc)
+        # <3
     # def you_pressed_K(self):
     #     ue.log_warning("=== YOU PRESSED K ===")
     #
@@ -655,7 +596,3 @@ class Main:
 # if hasattr(helper.large_string, "Chunks") and len(helper.large_string.Chunks) > 0:
 #     print("Chunks exist, sending...")
 #     helper.send_string()
-
-
-
-
