@@ -1,16 +1,17 @@
-import hotreload
 import unreal_engine as ue
 from unreal_engine_tools import *
 import numpy as np
 import os, sys, subprocess, importlib, urllib.request, socket, math, sympy, fast_autocomplete, numba, kingdon #numba_cuda
 from unreal_engine import FVector, FRotator, FTransform, FHitResult, CLASS_CONFIG, CLASS_DEFAULT_CONFIG, CPF_CONFIG, CPF_GLOBAL_CONFIG, CPF_EXPOSE_ON_SPAWN, CPF_NET, CPF_REP_NOTIFY
-from unreal_engine.classes import Actor, Character, PlayerController, StaticMeshActor, KismetMathLibrary, KismetSystemLibrary, Object, StrProperty, IntProperty, Material, Texture, LargeStringAsync, LargeStringRPCActor
+from unreal_engine.classes import Actor, Character, PlayerController, StaticMeshActor, KismetMathLibrary, KismetSystemLibrary, Object, StrProperty, IntProperty, Blueprint, Material, Texture, LargeStringAsync, LargeStringRPCActor
 from unreal_engine.enums import EInputEvent, ETraceTypeQuery, EDrawDebugTrace
 from constants import Constants, WorldSize, LargeStringAsyncStandalone
 import constants, windowtool
 from languages import *
 from cli import *
 from hotreload import *
+import hotreload, unreal_engine_tools
+import asyncio, time
 
 
 RPC_ACTOR = None
@@ -23,43 +24,12 @@ ue.log('Hello i am a Python module')
 global world
 world = get_world()
 # print(world)
-# py_actor = find_actor("BP_PyActor")
-# print(py_actor)
 
-# constants.rebuild_generated_modules()
+# Use this if you want to rebuild the unreal_engine intellisense(.pyi, etc.) and cli
+# rebuild_generated_modules()
+
+# TODO: FBXFactory
 # reload_all_modules()
-
-# windowtool.stop_all_background_hooks_systemwide()
-# windowtool.start_background_hook("notepad.exe", expand_to_screen=True,custom_rect=(-10, 0, 1940, 1085)) # , monitor_number=0)
-
-
-
-# SkySpheres
-# BP_SkySphere: Rendering -> Actor Hidden in Game = True
-# SM_SkySphere: Materials -> Element 0: M_SkyBox. Rendering -> Visible = True
-# M_SkyBox Emissive Multiplier = 0.5
-# M_SkyBox With ParamCube Parameter Name = Texture. SkyBoxTexture = starmap_g8k
-# SM_SkySpherePureWhite Rendering -> Visible = False
-# SM_SkySpherePureWhiteManualExposure: M_SkyBoxWhiteForManualExposure
-
-# Fog
-# ExponentialHeightFogColor Visible = True. Exponential Height Fog Component -> Fog Inscattering Color: RGBA
-
-# Post Processing
-# PostProcessVolumeExposureCamera: Lens -> Exposure -> Metering Mode = False; (Auto Exposure Histogram, Auto Exposure Basic, Manual). Exposure Compensation = True; 9.5
-# PostProcessVolumeGray: Rendering Features: Abmient Cubemap -> Cubemap Texture: blacktexturecubehdr (Texture Cube: File Path -> Source File "whitetexturecubehdr.hdr"). Post Process Volume Settings -> Enabled = True
-# PostProcessVolumeRemoveBloom: Enabled = False
-
-# SkyLight:
-# Light ->
-# Intensity Scale = 3.0
-# Lower Hemisphere is Solid Color = True
-# Lower Hemisphere Color = 0,0,0,1
-
-
-
-
-#use instanced static meshes for the gridlines
 
 # # Client → Server only
 # helper.send_string(mode="client_to_server")
@@ -112,7 +82,7 @@ class Main:
         b = alg.bivector(name='b')
         ue.log(b)
 
-    def test_cylinder(self):
+    def test_cylinder(self): #use instanced static meshes for the gridlines
         point1 = FVector(0, 0, 0)
         point2 = FVector(100, 100, 100)
         direction_vector = point2 - point1
@@ -220,24 +190,56 @@ class Main:
     def begin_play(self):
         ue.log('Begin Play on Main class')
 
-        # apply_material(
-        #     actor_name="TestSphere",
-        #     color=(1, 0, 0, 1),
-        #     metallic=0.8,
-        #     specular=0.5,
-        #     roughness=0.2,
-        #     anisotropy=0.1,
-        #     emissive_multiplier=10.0,
-        #     ambient_occlusion=1.0
-        # )
+        apply_material(
+            actor_name="TestSphere", # M_Color is default
+            params = {
+                "Color": (0.95, 0.2, 0.1, 1),
+                "Metallic": 0.8,
+                "Specular": 0.5,
+                "Roughness": 0.2,
+                "Anisotropy": 0.1,
+                "Emissive Multiplier": 10.0,
+                "Ambient Occlusion": 1.0,
+            }
+        )
+
+        apply_material(
+            actor_name="StickManCharacter_C_0",  # runtime instance name (check via print)
+            component_name="SkeletalMeshOutline",
+            material_path="/Game/Materials/M_Outline.M_Outline",
+            params={
+                "Outline": 5.0,
+                "Color": (1, 1, 1, 1),
+            }
+        )
+
+        # bp_class = ue.load_object(Blueprint, '/Game/Blueprints/Assets/BP_TestSphere.BP_TestSphere')
+        # actor = world.actor_spawn(bp_class.GeneratedClass, FVector(0, 0, 0), FRotator(0, 0, 0))
         #
-        # apply_material(
-        #     actor_name="ThirdPersonCharacter_C_0",  # runtime instance name (check via print)
-        #     component_name="SkeletalMeshOutline",
-        #     material_path="/Game/Materials/M_Outline.M_Outline",
-        #     outline=5.0,
-        #     color=(0, 1, 0, 1)
-        # )
+        # print("Spawned actor:", actor)
+        # for comp in actor.get_components():
+        #     print(comp.get_name(), "is_registered =", comp.component_is_registered())
+
+        # print(ue.get_editor_world().all_actors())
+        #
+        # print_all_actors()
+        # for level in world.get_levels():  # iterate all levels in the world
+        #     print("Level:", level.get_name())
+        #     #
+        #     # for actor in level.all_actors():  # get actors from this level
+        #     #     print("  ", actor.get_name(), actor)
+        # print("UOBJECT STUFF")
+        # for a in self.uobject.all_actors():
+        #     print(a.get_name())
+        # for a in self.uobject.all_objects():
+        #     print(a.get_name())
+
+        # print("WORLD STUFF")
+        # for a in world.all_actors():
+        #     print(a.get_name())
+        # # for a in world.all_objects():
+        # #     print(a.get_name())
+        #
 
         if KismetSystemLibrary.IsDedicatedServer():
             ue.log("BeginPlay on DEDICATED SERVER")
@@ -257,6 +259,12 @@ class Main:
 
         else:
             ue.log("BeginPlay on CLIENT")
+            player_controller = self.uobject.get_player_controller()
+            pawn = player_controller.get_pawn()
+            print(player_controller)
+            print(pawn)
+            # pawn = player_controller.get_controlled_pawn()
+
             # Client → Server → Clients
             # ue.log("Calling server_manual_multicast() from client")
             # self.server_manual_multicast("hello via manual multicast")
@@ -394,9 +402,170 @@ class Main:
     # ------------------------------------------------------------------------
     # KEY PRESS EVENT
     # ------------------------------------------------------------------------
+    def get_cube(self, filepath):
+        self.uobject.call_function("ConvertImageToCubemap", filepath)
+        #while(bool_unfinished)
+        # then assign
+        # TODO: figure out some kind of async await
+        cube = self.uobject.call_function("GetCubemap")
+        return cube
+
     def you_pressed_K(self):
         ue.log_warning("=== YOU PRESSED K ===")
-        reset_pyactor()
+        def convert_image_to_cubemap(filepath):
+            if not filepath:
+                return None
+            cube = self.get_cube(filepath)
+            # cube = self.uobject.get_property('TextureCube')
+            print(cube)
+            if not cube:
+                ue.log_warning("Failed to convert Texture2D to TextureCube")
+                return None
+
+            return cube
+
+        def load_image_as_texture2d(path):
+            """
+            Load any image type from disk into a transient Texture2D
+            """
+            if not os.path.exists(path):
+                ue.log_warning(f"File not found: {path}")
+                return None
+
+            try:
+                img = Image.open(path).convert("RGBA")
+                width, height = img.size
+                img_np = np.array(img, dtype=np.uint8)
+
+                # force opaque alpha
+                if img_np.shape[2] == 4:
+                    img_np[:, :, 3] = 255
+
+                data = img_np.flatten().tobytes()
+
+                tex2d = ue.create_transient_texture(width, height, EPixelFormat.PF_R8G8B8A8)
+                tex2d.texture_set_data(data)
+                return tex2d
+
+            except Exception as e:
+                ue.log_warning(f"Failed to load texture: {e}")
+                return None
+
+
+        def change_background(mode="white"):
+            # --- grab actors ---
+            # SkySpheres
+            # BP_SkySphere: Rendering -> Actor Hidden in Game = True
+            # SM_SkySphere: Materials -> Element 0: M_SkyBox. Rendering -> Visible = True
+            # M_SkyBox Emissive Multiplier = 0.5
+            # M_SkyBox With ParamCube Parameter Name = Texture. SkyBoxTexture = starmap_g8k
+            # SM_SkySpherePureWhite Rendering -> Visible = False
+            # SM_SkySpherePureWhiteManualExposure: M_SkyBoxWhiteForManualExposure
+            background = find_actor("SM_SkySphere_2") #IDK why it got the name _2
+            sky_white = find_actor("SM_SkySpherePureWhiteManualExposure")
+            # sky_white_autoexposure = find_actor("SM_SkySpherePureWhite")
+            sky_sun_time = find_actor("BP_SkySphere")
+            sky_spheres = [background, sky_white] # , sky_white_autoexposure]
+
+            # Fog
+            fogblack = find_actor("ExponentialHeightFogBlack")
+            fogs = [fogblack]
+
+            # sky_light = find_actor("SkyLight") # Need to set Visible True in editor
+            # sky_light = find_actor("SkyLight5NoLowerHemisphere") # Need to set Visible True in editor
+            sky_light = find_actor("SkyLight5") # Lower Hemisphere is Solid Color = True # Lower Hemisphere Color = 0,0,0,1
+            sky_lights = [sky_light]
+
+            pp_camera = find_actor("PostProcessVolumeExposureCamera") # Manual Exposure Compensation = True, 9.5
+            pp_nobloom = find_actor("PostProcessVolumeRemoveBloom")  # BP_SkySphere needs to be disabled
+            pp_white = find_actor("PostProcessVolumeWhite") # TODO: Tune this for the dark backgrounds
+            pp_gray = find_actor("PostProcessVolumeGray")
+            pp_black = find_actor("PostProcessVolumeBlack")
+            post_processing_volumes = [pp_camera, pp_nobloom, pp_white, pp_gray, pp_black]
+
+            # Reset
+            sky_sun_time.SetActorHiddenInGame(True)  # Can't use Visible on this one unless targeting components
+            # iterate over tne background actors
+            for a in itertools.chain(sky_spheres, fogs, sky_lights, post_processing_volumes):
+                if a in sky_spheres:
+                    a.SetActorHiddenInGame(True)
+                elif a in fogs:
+                    a.SetActorHiddenInGame(True)
+                elif a in sky_lights:
+                    a.SetActorHiddenInGame(True)
+                elif a in post_processing_volumes:
+                    a.set_property("bEnabled", False)
+
+            #sky_light.set_property("IntensityScale", 5.0)
+            sky_light.SetActorHiddenInGame(False)
+            pp_camera.set_property("bEnabled", True)
+            pp_gray.set_property("bEnabled", True)
+            # mat = ue.load_object(Material, "/Game/Materials/M_SkyBoxWhiteForManualExposure")
+            # find_component(sky_white, "").set_material(0, mat)
+
+            # sky_light.set_property("bLowerHemisphereIsSolidColor", False)
+            # sky_light.set_property("LowerHemisphereColor", (0,0,0,1))
+            modes = ["white", "black", "white_no_bloom", "white_no_emissive", "stars", "sky"]
+            if mode in modes:
+                if mode == "white":
+                    sky_sun_time.SetActorHiddenInGame(False)
+                    sky_white.SetActorHiddenInGame(False)
+                elif mode == "black":
+                    # fog.set_property("FogInscatteringColor", (0, 0, 0, 1))
+                    # fogblack.SetActorHiddenInGame(False)
+                    apply_material(
+                        actor_name="SM_SkySphere_2",
+                        material_path="/Game/Materials/M_SkyBox.M_SkyBox",
+                        params={
+                            "Emissive Multiplier": 0.0,
+                        }
+                    )
+                    sky_sun_time.SetActorHiddenInGame(False)
+                    background.SetActorHiddenInGame(False)
+                    # pp_gray.set_property("bEnabled", False)
+                    # pp_white.set_property("bEnabled", True) # make this a little darker for the black case
+                elif mode == "white_no_bloom":
+                    sky_sun_time.SetActorHiddenInGame(False)
+                    sky_white.SetActorHiddenInGame(False)
+                    pp_nobloom.set_property("bEnabled", True)
+                elif mode == "white_no_emissive":
+                    mat = ue.load_object(Material, "/Game/Materials/M_SkyBoxWhiteNoEmissive")
+                    find_component(sky_white, "").set_material(0, mat)
+                    sky_sun_time.SetActorHiddenInGame(False)
+                    sky_white.SetActorHiddenInGame(False)
+                elif mode == "stars":
+                    mat = ue.load_object(Material, "/Game/Materials/M_SkyBox")
+                    find_component(background, "").set_material(0, mat)
+                    sky_sun_time.SetActorHiddenInGame(False)
+                    background.SetActorHiddenInGame(False)
+                    # pp_gray.set_property("bEnabled", False)
+                    # pp_white.set_property("bEnabled", True)
+                elif mode == "sky":
+                    sky_sun_time.SetActorHiddenInGame(False)
+            else:  # set image mode
+                if os.path.exists(mode):
+                    cubemap = convert_image_to_cubemap(mode)
+                    apply_material(
+                        actor_name="SM_SkySphere_2",
+                        material_path="/Game/Materials/M_SkyBox",
+                        params={
+                            "Emissive Multiplier": 1.0,
+                            "Texture": cubemap,
+                        }
+                    )
+                    sky_sun_time.SetActorHiddenInGame(False)
+                    background.SetActorHiddenInGame(False)
+                else:
+                    ue.log_warning("image mode requires working path")
+
+        # change_background("sky")
+        change_background(r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Images\duck.hdr")
+
+
+
+        # reset_pyactor()
+        # print(world)
+        # print_all_actors()
 
         # <3
         # ue.log(f"World: {world}")

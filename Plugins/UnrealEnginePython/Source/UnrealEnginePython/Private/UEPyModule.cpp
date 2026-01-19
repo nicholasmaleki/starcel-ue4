@@ -2494,25 +2494,54 @@ void unreal_engine_py_log_error()
 	PyErr_Clear();
 }
 
-// retrieve a UWorld from a generic UObject (if possible)
+
+static UWorld* GetGameWorldSafe()
+{
+	if (!GEngine)
+		return nullptr;
+
+	for (const FWorldContext& Context : GEngine->GetWorldContexts())
+	{
+		UWorld* World = Context.World();
+		if (!World)
+			continue;
+
+		// Only return actual runtime/game worlds
+		if (Context.WorldType == EWorldType::Game ||
+			Context.WorldType == EWorldType::PIE ||
+			Context.WorldType == EWorldType::GamePreview)
+		{
+			return World;
+		}
+	}
+
+	return nullptr;
+}
+
 UWorld* ue_get_uworld(ue_PyUObject* py_obj)
 {
+	if (!py_obj || !py_obj->ue_object)
+		return nullptr;
 
+	// If this is already a UWorld*, try runtime world first
 	if (py_obj->ue_object->IsA<UWorld>())
 	{
-		return (UWorld*)py_obj->ue_object;
+		UWorld* runtime_world = GetGameWorldSafe();
+		return runtime_world ? runtime_world : (UWorld*)py_obj->ue_object;
 	}
 
 	if (py_obj->ue_object->IsA<AActor>())
 	{
 		AActor* actor = (AActor*)py_obj->ue_object;
-		return actor->GetWorld();
+		UWorld* runtime_world = GetGameWorldSafe();
+		return runtime_world ? runtime_world : actor->GetWorld();
 	}
 
 	if (py_obj->ue_object->IsA<UActorComponent>())
 	{
-		UActorComponent* component = (UActorComponent*)py_obj->ue_object;
-		return component->GetWorld();
+		UActorComponent* comp = (UActorComponent*)py_obj->ue_object;
+		UWorld* runtime_world = GetGameWorldSafe();
+		return runtime_world ? runtime_world : comp->GetWorld();
 	}
 
 	return nullptr;

@@ -1,0 +1,14 @@
+numpy
+sympy
+cmdix
+fast-autocomplete
+fast-autocomplete[levenshtein]
+numba
+kingdon
+matplotlib
+scikit-image
+scikit-learn
+dill
+pystubgen
+requests
+pywin32

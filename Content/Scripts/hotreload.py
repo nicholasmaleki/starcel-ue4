@@ -84,9 +84,9 @@ def star_import(module_name, target_globals):
         return False
 
 
+# The goal was to use this when you want to edit any imports while using the editor, but it doesn't seem to do that
 def reload_all_modules():
     print("[HotReload] Reload start...")
-
     # --- Reload project modules ---
     for name, module in list(sys.modules.items()):
         try:
@@ -159,9 +159,9 @@ def load_session(session = 'session_backup.pkl'):
 
 
 def rebuild_generated_modules():
-    libraries_to_build = [
+    libraries_to_build = [ # languages.py self builds
         os.path.join(os.path.abspath(ue.get_content_dir()), "Scripts", "unreal_engine", "gen_autocomplete_stub.py"),
-        os.path.join(os.path.abspath(ue.get_content_dir()), "Scripts", "generate_cli.py")
+        os.path.join(os.path.abspath(ue.get_content_dir()), "Scripts", "gen_cli.py")
     ]
     print("Building libraries:", libraries_to_build)
     try:
@@ -176,6 +176,7 @@ def rebuild_generated_modules():
 
 
 def reset_pyactor(py_actor_name = "BP_PyActor"):
+    # TODO: maybe match old pyactors settings to new, like transform, module, and class
     print("World", world)
     print_all_actors()
     py_actor = find_actor(py_actor_name)
@@ -184,7 +185,7 @@ def reset_pyactor(py_actor_name = "BP_PyActor"):
     py_actor_class = py_actor.get_class().get_name()
     py_actor.actor_destroy()
     print("PyActor Destroyed", old_py_actor_name)
-    py_actor = world.actor_spawn(ue.find_class(py_actor_class), FVector(0,0,0), FRotator(0,0,0))# FTransform(location=FVector(0,0,0), rotation=FRotator(0,0,0), scale=FVector(1,1,1)))
+    py_actor = world.actor_spawn(ue.find_class(py_actor_class), FVector(0,0,0), FRotator(0,0,0)) # .set_actor_transform(FTransform(location=FVector(0,0,0), rotation=FRotator(0,0,0), scale=FVector(1,1,1)))
     py_actor.set_actor_label(old_py_actor_name)
     py_actor.set_property("PythonModule", "main")
     py_actor.set_property("PythonClass", "Main")

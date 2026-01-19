@@ -1,6 +1,10 @@
 import unreal_engine as ue
 from unreal_engine.classes import Material, Texture, Texture2D, TextureCube
-import os
+from unreal_engine.enums import EPixelFormat
+import os, itertools
+import windowtool
+from PIL import Image
+import numpy as np
 
 def get_world():
     scmaps = []
@@ -26,12 +30,40 @@ global world
 world = get_world()
 
 def find_actor(name):
+    actor = None
     for a in world.all_actors():
         if a.get_name() == name:
-            return a
-        if name in a.get_name():
-            return a
-    return None
+            actor = a
+    if actor is None:
+        for a in world.all_actors():
+            if name in a.get_name():
+                actor = a
+
+    # print(type(actor))
+    # print(actor.__class__.__name__)
+    if (actor is None) or (actor.__class__.__name__ == 'NoneType'):
+        ue.log_warning(f"Actor not found: {actor}")
+    return actor
+
+def find_component(actor, name):
+    if (actor is None) or (actor.__class__.__name__ == 'NoneType'):
+        ue.log_warning(f"Actor not found: {actor}")
+        return None
+    target_component = None
+    if name:
+        for component in actor.get_components():
+            if component.get_name() == name:
+                target_component = component
+    else:
+        for component in actor.get_components():
+            if component.get_class().get_name().endswith("MeshComponent"):
+                target_component = component
+
+    if not target_component:
+        print(f"Mesh component not found on actor '{actor.get_name()}'")
+        return None
+    else:
+        return target_component
 
 def print_all_actors():
     actors = world.all_actors()
@@ -48,53 +80,112 @@ def get_scripts_folder():
     return os.path.join(os.path.abspath(ue.get_content_dir()), "Scripts")
 
 
+def fullscreen():
+    py_actor = find_actor("BP_PyActor")
+    py_actor.call_function('SetFullscreen')
+
+def windowed():
+    py_actor = find_actor("BP_PyActor")
+    py_actor.call_function('SetWindowed')
+
+def windowed_fullscreen():
+    py_actor = find_actor("BP_PyActor")
+    py_actor.call_function('SetWindowedFullscreen')
+
+def set_starcel_as_desktop(disable_animations=None):
+    windowed_fullscreen()
+    windowtool.stop_all_background_hooks_systemwide()
+    windowtool.start_background_hook("../../../Starcel9Client.exe", expand_to_screen=True, custom_rect=(-10, 0, 1940, 1085))  # , monitor_number=0)
+    # OPTIONAL: Disable Windows animations so you don't have to wait for the window to maximize
+    if disable_animations is not None:
+        windowtool.set_global_window_animations(disable_animations)
 
 
-def set_actor_hidden_in_game(actor, hidden=True): # Certain blueprints like BP_SkySphere
-    if not actor:
+# def set_actor_hidden_in_game(actor, hidden=True): # Certain blueprints like BP_SkySphere
+#     if not actor:
+#         return None
+#
+#     out = actor.set_property("bActorHiddenInGame", hidden)
+#     return out
+#
+#
+# def set_actor_enabled(actor, enabled=True): # post process
+#     if not actor:
+#         return None
+#
+#     out = actor.set_property("bEnabled", enabled)
+#     return out
+#
+# def set_actor_visible(actor, visible=True):
+#     if not actor:
+#         return None
+#
+#     out = actor.set_property("bActorHiddenInGame", visible)
+#     return out
+
+# relevant editor access https://github.com/20tab/UnrealEnginePython/issues/655 https://github.com/20tab/UnrealEnginePython/issues/363
+# if not actor:
+#     return
+#
+# for c in actor.get_components():
+# for c in actor.get_components_by_type():
+# for c in actor.get_components_by_tag():
+#     try:
+#         c.set_property("Visible", visible)
+#     except Exception:
+#         pass
+
+
+def load_texture_any(path_or_obj):
+    """
+    Load a texture from:
+      - Unreal asset path: /Game/Textures/T_Example.T_Example
+      - Filesystem path: any image type (png, jpg, hdr, exr, webp)
+      - Already-loaded UE object (Texture, Texture2D, TextureCube)
+    Returns a Texture or Texture2D object usable in apply_material.
+    """
+    if not path_or_obj:
         return None
 
-    out = actor.set_property("bActorHiddenInGame", hidden)
-    return out
+    # Already a UE object
+    if type(path_or_obj).__name__ in ("Texture", "Texture2D", "TextureCube"):
+        return path_or_obj
 
+    # String paths
+    if isinstance(path_or_obj, str):
 
-def set_actor_enabled(actor, enabled=True): # post process
-    if not actor:
-        return None
+        # Unreal asset path
+        if path_or_obj.startswith("/Game"):
+            tex = ue.load_object(Texture, path_or_obj)
+            if not tex:
+                ue.log_warning(f"Failed to load Unreal asset texture: {path_or_obj}")
+            return tex
 
-    out = actor.set_property("bEnabled", enabled)
-    return out
+        # Filesystem image path
+        if os.path.exists(path_or_obj):
+            try:
+                # load image with PIL
+                img = Image.open(path_or_obj).convert("RGBA")
+                width, height = img.size
 
-def set_actor_visible(actor, visible=True):
-    if not actor:
-        return None
+                # convert to bytes
+                data = np.array(img, dtype=np.uint8).flatten().tobytes()
 
-    out = actor.set_property("bActorHiddenInGame", visible)
-    return out
-    # relevant editor access https://github.com/20tab/UnrealEnginePython/issues/655 https://github.com/20tab/UnrealEnginePython/issues/363
-    # if not actor:
-    #     return
-    #
-    # for c in actor.get_components():
-    #     try:
-    #         c.set_property("bVisible", visible)
-    #     except Exception:
-    #         pass
+                # create transient texture
+                texture = ue.create_transient_texture(width, height, EPixelFormat.PF_R8G8B8A8)
+                texture.texture_set_data(data)
+                return texture
 
+            except Exception as e:
+                ue.log_warning(f"Exception loading texture '{path_or_obj}': {e}")
+                return None
 
-def _load_texture_any(path):
-    if not path:
-        return None
+        else:
+            ue.log_warning(f"Path does not exist: {path_or_obj}")
+            return None
 
-    # Asset path
-    if isinstance(path, str) and path.startswith("/Game"):
-        return ue.load_object(Texture, path)
-
-    # File path (hdr, png, exr, etc)
-    if isinstance(path, str):
-        return ue.load_texture(path)
-
-    return path
+    ue.log_warning(f"Unsupported texture input: {path_or_obj} ({type(path_or_obj)})")
+    return None
 
 
 def apply_material(
@@ -105,53 +196,27 @@ def apply_material(
     params=None,
 ):
     """
-    Apply a material and set parameters by value type.
-
+    Apply a material and set parameters by type.
     params example:
         {
             "Emissive Multiplier": 1.0,
             "Color": (1,1,1),
-            "Texture": "C:/sky.hdr"
+            "Texture": "C:/sky.png"
         }
     """
 
     params = params or {}
 
-    # --- find actor ---
-    actor = None
-    for a in world.all_actors():
-        if actor_name is None or a.get_name() == actor_name:
-            actor = a
-            break
+    actor = find_actor(actor_name)
+    print("Setting Actor Material:", actor, actor_name)
+    target_comp = find_component(actor, component_name)
 
-    if not actor:
-        raise Exception(f"Actor not found: {actor_name or '(any)'}")
-
-    # --- find component ---
-    target_comp = None
-    if component_name:
-        for comp in actor.get_components():
-            if comp.get_name() == component_name:
-                target_comp = comp
-                break
-    else:
-        for comp in actor.get_components():
-            if comp.get_class().get_name().endswith("MeshComponent"):
-                target_comp = comp
-                break
-
-    if not target_comp:
-        raise Exception(f"Mesh component not found on actor '{actor.get_name()}'")
-
-    # --- load material ---
     mat = ue.load_object(Material, material_path)
     if not mat:
-        raise Exception(f"Material not found: {material_path}")
+        ue.log_warning(f"Material not found: {material_path}")
 
-    # --- create MID ---
     mid = target_comp.create_material_instance_dynamic(mat)
 
-    # --- set params ---
     for pname, v in params.items():
 
         # scalar
@@ -162,140 +227,16 @@ def apply_material(
         elif isinstance(v, (tuple, list)) and len(v) >= 3:
             mid.set_material_vector_parameter(pname, ue.FVector(v[0], v[1], v[2]))
 
-        # texture / cubemap / hdr
-        elif isinstance(v, (str, Texture, Texture2D, TextureCube)):
-            tex = _load_texture_any(v)
+        # texture / cubemap / HDR / filesystem image
+        elif isinstance(v, str) or type(v).__name__ in ("Texture", "Texture2D", "TextureCube"):
+            tex = load_texture_any(v)
             if tex:
                 mid.set_material_texture_parameter(pname, tex)
+            else:
+                ue.log_warning(f"Could not load texture for param: {pname}")
 
         else:
             ue.log_warning(f"Unsupported material param type: {pname} = {type(v)}")
 
-    # --- assign ---
     target_comp.set_material(material_index, mid)
-
     return mid
-
-
-def change_background(mode="white", image_path=None):
-    """
-    Background presets:
-        white
-        black
-        white_no_bloom
-        stars
-        sky
-        image
-    """
-
-    # --- grab actors ---
-    sky = find_actor("SM_SkySphere")
-    sky_white = find_actor("SM_SkySpherePureWhite")
-    sky_bp = find_actor("BP_SkySphere")
-
-    pp_bloom = find_actor("PostProcessVolumeRemoveBloom")
-
-    # --- reset ---
-    for a in (sky, sky_white):
-        set_actor_hidden(a, True)
-        set_actor_enabled(a, False)
-        set_components_visible(a, False)
-
-    if pp_bloom:
-        set_actor_hidden(pp_bloom.get_name(), True)
-
-    # ---------------- WHITE ----------------
-    if mode == "white":
-        set_actor_hidden("SM_SkySpherePureWhite", False)
-        set_actor_enabled("SM_SkySpherePureWhite", True)
-        set_components_visible(sky_white, True)
-
-        apply_material(
-            actor_name="SM_SkySpherePureWhite",
-            material_path="/Game/Materials/M_SkyBoxWhiteForManualExposure.M_SkyBoxWhiteForManualExposure",
-            params=dict(
-                emissive_multiplier=1.0,
-            )
-        )
-
-    # ---------------- BLACK ----------------
-    elif mode == "black":
-        set_actor_hidden("SM_SkySphere", False)
-        set_actor_enabled("SM_SkySphere", True)
-        set_components_visible(sky, True)
-
-        apply_material(
-            actor_name="SM_SkySphere",
-            material_path="/Game/Materials/M_SkyBox.M_SkyBox",
-            params=dict(
-                emissive_multiplier=0.05,
-                color=(0, 0, 0),
-            )
-        )
-
-    # ---------------- WHITE NO BLOOM ----------------
-    elif mode == "white_no_bloom":
-        set_actor_hidden("SM_SkySpherePureWhite", False)
-        set_actor_enabled("SM_SkySpherePureWhite", True)
-        set_components_visible(sky_white, True)
-
-        if pp_bloom:
-            set_actor_hidden(pp_bloom.get_name(), False)
-
-        apply_material(
-            actor_name="SM_SkySpherePureWhite",
-            material_path="/Game/Materials/M_SkyBoxWhiteForManualExposure.M_SkyBoxWhiteForManualExposure",
-            params=dict(
-                emissive_multiplier=1.0,
-            )
-        )
-
-    # ---------------- STARS ----------------
-    elif mode == "stars":
-        set_actor_hidden("SM_SkySphere", False)
-        set_actor_enabled("SM_SkySphere", True)
-        set_components_visible(sky, True)
-
-        apply_material(
-            actor_name="SM_SkySphere",
-            material_path="/Game/Materials/M_SkyBox.M_SkyBox",
-            params=dict(
-                emissive_multiplier=0.5,
-                texture="/Game/Textures/starmap_g8k.starmap_g8k",
-            )
-        )
-
-    # ---------------- SKY ----------------
-    elif mode == "sky":
-        set_actor_hidden("SM_SkySphere", False)
-        set_actor_enabled("SM_SkySphere", True)
-        set_components_visible(sky, True)
-
-        apply_material(
-            actor_name="SM_SkySphere",
-            material_path="/Game/Materials/M_SkyBox.M_SkyBox",
-            params=dict(
-                emissive_multiplier=1.0,
-            )
-        )
-
-    # ---------------- IMAGE ----------------
-    elif mode == "image":
-        if not image_path:
-            raise Exception("image mode requires image_path")
-
-        set_actor_hidden("SM_SkySphere", False)
-        set_actor_enabled("SM_SkySphere", True)
-        set_components_visible(sky, True)
-
-        apply_material(
-            actor_name="SM_SkySphere",
-            material_path="/Game/Materials/M_SkyBox.M_SkyBox",
-            params=dict(
-                emissive_multiplier=1.0,
-                texture=image_path,
-            )
-        )
-
-    else:
-        raise Exception(f"Unknown background mode: {mode}")

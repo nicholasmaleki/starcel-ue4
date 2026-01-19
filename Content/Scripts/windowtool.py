@@ -10,6 +10,7 @@ import sys
 import os
 import signal
 import time
+import struct
 
 # --------------------------
 # Constants
@@ -205,13 +206,9 @@ class AlwaysBottomHook:
         # Initial setup
         self._setup_existing_windows()
 
-        # Start event hook thread
+        # Start event hook thread (no polling thread needed - fully event-driven)
         self.hook_thread = threading.Thread(target=self._event_loop, daemon=True)
         self.hook_thread.start()
-
-        # Start monitoring thread for focus changes
-        self.monitor_thread = threading.Thread(target=self._monitor_focus, daemon=True)
-        self.monitor_thread.start()
 
     def _setup_existing_windows(self):
         """Find and configure existing windows"""
@@ -231,6 +228,31 @@ class AlwaysBottomHook:
 
         win32gui.EnumWindows(enum_cb, None)
 
+    def _is_alt_tab_active(self):
+        """Check if Alt+Tab switcher is active"""
+        try:
+            # Check if Alt key is pressed
+            VK_MENU = 0x12  # Alt key
+            alt_pressed = ctypes.windll.user32.GetAsyncKeyState(VK_MENU) & 0x8000
+
+            if alt_pressed:
+                return True
+
+            # Also check for the Task Switcher window class
+            foreground = win32gui.GetForegroundWindow()
+            if foreground:
+                try:
+                    class_name = win32gui.GetClassName(foreground)
+                    # Task switcher window classes
+                    if class_name in ['MultitaskingViewFrame', 'Windows.UI.Core.CoreWindow', 'TaskSwitcherWnd']:
+                        return True
+                except Exception:
+                    pass
+
+            return False
+        except Exception:
+            return False
+
     def _event_loop(self):
         """Event hook with message pump"""
         EVENT_SYSTEM_MINIMIZESTART = 0x0016
@@ -248,6 +270,30 @@ class AlwaysBottomHook:
             try:
                 exe = get_exe_name_from_hwnd(hwnd)
                 if exe != self.target_exe:
+                    # Handle global foreground changes for focus monitoring
+                    if event == EVENT_SYSTEM_FOREGROUND:
+                        # Check if Alt+Tab is active - if so, don't do anything
+                        alt_tab_active = self._is_alt_tab_active()
+                        if alt_tab_active:
+                            return  # Don't interfere during Alt+Tab
+
+                        # Process tracked windows when foreground changes (and not Alt+Tab)
+                        for tracked_hwnd in list(self.tracked_windows):
+                            if not win32gui.IsWindow(tracked_hwnd):
+                                self.tracked_windows.discard(tracked_hwnd)
+                                self.foreground_mode.pop(tracked_hwnd, None)
+                                self.window_positions.pop(tracked_hwnd, None)
+                                continue
+
+                            # If our window was in foreground mode but user switched away
+                            if self.foreground_mode.get(tracked_hwnd, False):
+                                if hwnd != tracked_hwnd:
+                                    # User switched to a different window
+                                    self.foreground_mode[tracked_hwnd] = False
+                                    move_to_bottom(tracked_hwnd)
+                            # Keep non-foreground windows at bottom
+                            else:
+                                move_to_bottom(tracked_hwnd)
                     return
 
                 # Window created or shown
@@ -281,19 +327,26 @@ class AlwaysBottomHook:
                 elif event == EVENT_SYSTEM_MINIMIZESTART:
                     # Schedule restoration in a separate thread to avoid blocking
                     def restore_async():
-                        time.sleep(0.05)
-                        try:
-                            if win32gui.IsWindow(hwnd):
-                                # Force restore
-                                win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
-                                time.sleep(0.01)
-                                if self.expand:
-                                    resize_to_full_screen(hwnd, self.custom_rect, self.monitor_number)
-                                    self.window_positions[hwnd] = get_window_rect_tuple(hwnd)
-                                if not self.foreground_mode.get(hwnd, False):
-                                    move_to_bottom(hwnd)
-                        except Exception:
-                            pass
+                        for attempt in range(3):  # Try up to 3 times
+                            time.sleep(0.05)
+                            try:
+                                if win32gui.IsWindow(hwnd):
+                                    # Check if window is minimized
+                                    if win32gui.IsIconic(hwnd):
+                                        # Force restore
+                                        win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+                                        time.sleep(0.01)
+                                        if self.expand:
+                                            resize_to_full_screen(hwnd, self.custom_rect, self.monitor_number)
+                                            self.window_positions[hwnd] = get_window_rect_tuple(hwnd)
+                                        if not self.foreground_mode.get(hwnd, False):
+                                            move_to_bottom(hwnd)
+                                        break  # Successfully restored, exit loop
+                                    else:
+                                        # Not minimized, we're done
+                                        break
+                            except Exception:
+                                pass  # Try again on next iteration
 
                     threading.Thread(target=restore_async, daemon=True).start()
 
@@ -306,7 +359,7 @@ class AlwaysBottomHook:
                         self.window_positions[hwnd] = get_window_rect_tuple(hwnd)
                     # Don't send to bottom - window should stay in foreground
 
-            except Exception:
+            except Exception as e:
                 pass
 
         # Create callback
@@ -323,7 +376,7 @@ class AlwaysBottomHook:
 
         self.callback_ref = WINEVENTPROC(event_callback)
 
-        # Install hooks
+        # Install hooks - note: we now listen to ALL foreground events, not just our window
         events = [
             EVENT_SYSTEM_MINIMIZESTART,
             EVENT_SYSTEM_FOREGROUND,
@@ -353,41 +406,6 @@ class AlwaysBottomHook:
         for hook in self.hooks:
             try:
                 ctypes.windll.user32.UnhookWinEvent(hook)
-            except Exception:
-                pass
-
-    def _monitor_focus(self):
-        """Monitor foreground changes to send window back when user switches away"""
-        last_foreground = None
-
-        while self.running:
-            try:
-                time.sleep(0.3)
-                foreground = win32gui.GetForegroundWindow()
-
-                # Only process if foreground changed
-                if foreground != last_foreground:
-                    last_foreground = foreground
-
-                    for hwnd in list(self.tracked_windows):
-                        # Check if window still exists
-                        if not win32gui.IsWindow(hwnd):
-                            self.tracked_windows.discard(hwnd)
-                            self.foreground_mode.pop(hwnd, None)
-                            self.window_positions.pop(hwnd, None)
-                            continue
-
-                        # If this is our window and it's in foreground mode
-                        if self.foreground_mode.get(hwnd, False):
-                            if foreground != hwnd:
-                                # User switched away - send to bottom
-                                self.foreground_mode[hwnd] = False
-                                move_to_bottom(hwnd)
-                        # If not in foreground mode and not currently foreground
-                        elif foreground != hwnd:
-                            # Keep at bottom
-                            move_to_bottom(hwnd)
-
             except Exception:
                 pass
 
@@ -577,3 +595,36 @@ if len(sys.argv) > 1 and sys.argv[1] == "--background":
             i += 1
 
     _run_as_background(target_exe, expand, custom_rect, monitor_number)
+
+
+
+# Enables or disables system-wide minimize/maximize animations.
+def set_global_window_animations(enable=True):
+    try:
+        # Define ANIMATIONINFO structure
+        class ANIMATIONINFO(ctypes.Structure):
+            _fields_ = [
+                ("cbSize", ctypes.c_uint),
+                ("iMinAnimate", ctypes.c_int)
+            ]
+
+        # Create and populate the structure
+        ai = ANIMATIONINFO()
+        ai.cbSize = ctypes.sizeof(ANIMATIONINFO)
+        ai.iMinAnimate = 1 if enable else 0
+
+        # Use ctypes to call SystemParametersInfoW directly
+        ctypes.windll.user32.SystemParametersInfoW(
+            win32con.SPI_SETANIMATION,
+            ctypes.sizeof(ANIMATIONINFO),
+            ctypes.byref(ai),
+            win32con.SPIF_SENDCHANGE | win32con.SPIF_UPDATEINIFILE
+        )
+
+        if enable:
+            print("Animations Enabled")
+        else:
+            print("Animations Disabled")
+
+    except Exception as e:
+        print(f"Error changing animation settings: {e}")
