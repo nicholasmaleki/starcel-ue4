@@ -1,5 +1,6 @@
 import ctypes
 import ctypes.wintypes
+import ctypes.wintypes as wintypes
 import win32gui
 import win32con
 import win32process
@@ -12,9 +13,11 @@ import signal
 import time
 import struct
 
-# --------------------------
+
+# TODO: Add move window behind icons so we can use Starcel as a live wallpaper. Tested for a couple hours with claude but couldn't get anything working.
+
+
 # Constants
-# --------------------------
 SPI_GETWORKAREA = 0x0030
 PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
 
@@ -23,9 +26,7 @@ _watchdog_thread = None
 _watchdog_running = False
 
 
-# --------------------------
 # Helpers
-# --------------------------
 def get_exe_name_from_hwnd(hwnd):
     try:
         _, pid = win32process.GetWindowThreadProcessId(hwnd)
@@ -180,9 +181,9 @@ def get_window_rect_tuple(hwnd):
         return None
 
 
-# --------------------------
+
 # Event-driven AlwaysBottomHook
-# --------------------------
+
 class AlwaysBottomHook:
     def __init__(self, target_exe, expand_to_screen=True, custom_rect=None, monitor_number=None):
         """
@@ -418,9 +419,9 @@ class AlwaysBottomHook:
             pass
 
 
-# --------------------------
+
 # Background process entry
-# --------------------------
+
 def _run_as_background(target_exe, expand_to_screen, custom_rect=None, monitor_number=None):
     hook = AlwaysBottomHook(target_exe, expand_to_screen, custom_rect, monitor_number)
     while True:
@@ -458,9 +459,9 @@ def _spawn_background(target_exe, expand_to_screen=True, custom_rect=None, monit
     return proc
 
 
-# --------------------------
+
 # Public API
-# --------------------------
+
 def start_background_hook(target_exe, expand_to_screen=True, custom_rect=None, monitor_number=None):
     """Start a background hook for the specified executable
 
@@ -560,9 +561,9 @@ def is_background_hook_running(target_exe):
     return proc and proc.poll() is None
 
 
-# --------------------------
+
 # Watchdog thread
-# --------------------------
+
 def _watchdog_loop():
     global _watchdog_running
     while _watchdog_running:
@@ -572,9 +573,9 @@ def _watchdog_loop():
         time.sleep(2)
 
 
-# --------------------------
+
 # Entry for background process
-# --------------------------
+
 if len(sys.argv) > 1 and sys.argv[1] == "--background":
     target_exe = sys.argv[2]
     expand = bool(int(sys.argv[3])) if len(sys.argv) > 3 else True
@@ -628,3 +629,5 @@ def set_global_window_animations(enable=True):
 
     except Exception as e:
         print(f"Error changing animation settings: {e}")
+
+

@@ -30,20 +30,25 @@ global world
 world = get_world()
 
 def find_actor(name):
-    actor = None
+    actor_list = []
     for a in world.all_actors():
         if a.get_name() == name:
-            actor = a
-    if actor is None:
+            actor_list.append(a)
+    if not actor_list:
+        print("Looking for actors with inputted name in the actor name")
         for a in world.all_actors():
             if name in a.get_name():
-                actor = a
+                actor_list.append(a)
 
     # print(type(actor))
     # print(actor.__class__.__name__)
-    if (actor is None) or (actor.__class__.__name__ == 'NoneType'):
-        ue.log_warning(f"Actor not found: {actor}")
-    return actor
+    if len(actor_list) > 1:
+        ue.log_warning(f"Found more than one actor: {actor_list}")
+
+    if (actor_list is None) or (actor_list[0].__class__.__name__ == 'NoneType'):
+        ue.log_warning(f"Actor not found: {actor_list}")
+
+    return actor_list[0]
 
 def find_component(actor, name):
     if (actor is None) or (actor.__class__.__name__ == 'NoneType'):

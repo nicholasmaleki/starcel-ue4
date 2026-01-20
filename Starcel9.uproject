@@ -12,10 +12,6 @@
 	],
 	"Plugins": [
 		{
-			"Name": "PythonScriptPlugin",
-			"Enabled": false
-		},
-		{
 			"Name": "UnrealEnginePython",
 			"Enabled": true
 		},
@@ -101,6 +97,14 @@
 			"Name": "LogViewer",
 			"Enabled": true,
 			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/content/4853cdc0a6a54d7b9c0712cbe72f6b68"
+		},
+		{
+			"Name": "ChaosEditor",
+			"Enabled": false
+		},
+		{
+			"Name": "ChaosNiagara",
+			"Enabled": false
 		}
 	]
 }

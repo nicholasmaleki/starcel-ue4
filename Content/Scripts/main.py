@@ -73,6 +73,21 @@ def find_rpc_actor():
     return None
 
 
+def on_cube_ready(cube):
+    print("Cube ready:", cube)
+    if not cube:
+        ue.log_warning("Failed to convert Texture2D to TextureCube")
+        return None
+    else:
+        apply_material(
+            actor_name="SM_SkySphere_2",
+            material_path="/Game/Materials/M_SkyBox",
+            params={
+                "Emissive Multiplier": 1.0,
+                "Texture": cube,
+            }
+        )
+
 
 class Main:
     def test_kingdon(self):
@@ -402,27 +417,28 @@ class Main:
     # ------------------------------------------------------------------------
     # KEY PRESS EVENT
     # ------------------------------------------------------------------------
-    def get_cube(self, filepath):
+    def get_cube(self, filepath, callback=None):
         self.uobject.call_function("ConvertImageToCubemap", filepath)
-        #while(bool_unfinished)
-        # then assign
-        # TODO: figure out some kind of async await
-        cube = self.uobject.call_function("GetCubemap")
-        return cube
+
+        def poll():
+            if self.uobject.CubemapFinished:
+                cube = self.uobject.call_function("GetCubemap")
+                self.uobject.CubemapFinished = False
+                if callback:
+                    callback(cube)
+                return False  # stop ticking
+            return True  # keep ticking
+
+        ue.add_ticker(poll)
+
 
     def you_pressed_K(self):
         ue.log_warning("=== YOU PRESSED K ===")
         def convert_image_to_cubemap(filepath):
             if not filepath:
                 return None
-            cube = self.get_cube(filepath)
+            self.get_cube(filepath, on_cube_ready)
             # cube = self.uobject.get_property('TextureCube')
-            print(cube)
-            if not cube:
-                ue.log_warning("Failed to convert Texture2D to TextureCube")
-                return None
-
-            return cube
 
         def load_image_as_texture2d(path):
             """
@@ -452,7 +468,8 @@ class Main:
                 return None
 
 
-        def change_background(mode="white"):
+        def change_background(background="white"):
+            # TODO: Add transparency and green screen defaults https://github.com/historia-Inc/WindowTransparency https://www.fab.com/listings/a967c271-f440-4bc2-93f8-3699122f0f7b https://forums.unrealengine.com/t/transparent-window/123446
             # --- grab actors ---
             # SkySpheres
             # BP_SkySphere: Rendering -> Actor Hidden in Game = True
@@ -461,11 +478,11 @@ class Main:
             # M_SkyBox With ParamCube Parameter Name = Texture. SkyBoxTexture = starmap_g8k
             # SM_SkySpherePureWhite Rendering -> Visible = False
             # SM_SkySpherePureWhiteManualExposure: M_SkyBoxWhiteForManualExposure
-            background = find_actor("SM_SkySphere_2") #IDK why it got the name _2
+            sky = find_actor("SM_SkySphere_2") #IDK why it got the name _2
             sky_white = find_actor("SM_SkySpherePureWhiteManualExposure")
             # sky_white_autoexposure = find_actor("SM_SkySpherePureWhite")
             sky_sun_time = find_actor("BP_SkySphere")
-            sky_spheres = [background, sky_white] # , sky_white_autoexposure]
+            sky_spheres = [sky, sky_white] # , sky_white_autoexposure]
 
             # Fog
             fogblack = find_actor("ExponentialHeightFogBlack")
@@ -506,11 +523,11 @@ class Main:
             # sky_light.set_property("bLowerHemisphereIsSolidColor", False)
             # sky_light.set_property("LowerHemisphereColor", (0,0,0,1))
             modes = ["white", "black", "white_no_bloom", "white_no_emissive", "stars", "sky"]
-            if mode in modes:
-                if mode == "white":
+            if background in modes:
+                if background == "white":
                     sky_sun_time.SetActorHiddenInGame(False)
                     sky_white.SetActorHiddenInGame(False)
-                elif mode == "black":
+                elif background == "black":
                     # fog.set_property("FogInscatteringColor", (0, 0, 0, 1))
                     # fogblack.SetActorHiddenInGame(False)
                     apply_material(
@@ -521,44 +538,36 @@ class Main:
                         }
                     )
                     sky_sun_time.SetActorHiddenInGame(False)
-                    background.SetActorHiddenInGame(False)
+                    sky.SetActorHiddenInGame(False)
                     # pp_gray.set_property("bEnabled", False)
                     # pp_white.set_property("bEnabled", True) # make this a little darker for the black case
-                elif mode == "white_no_bloom":
+                elif background == "white_no_bloom":
                     sky_sun_time.SetActorHiddenInGame(False)
                     sky_white.SetActorHiddenInGame(False)
                     pp_nobloom.set_property("bEnabled", True)
-                elif mode == "white_no_emissive":
+                elif background == "white_no_emissive":
                     mat = ue.load_object(Material, "/Game/Materials/M_SkyBoxWhiteNoEmissive")
                     find_component(sky_white, "").set_material(0, mat)
                     sky_sun_time.SetActorHiddenInGame(False)
                     sky_white.SetActorHiddenInGame(False)
-                elif mode == "stars":
+                elif background == "stars":
                     mat = ue.load_object(Material, "/Game/Materials/M_SkyBox")
-                    find_component(background, "").set_material(0, mat)
+                    find_component(sky, "").set_material(0, mat)
                     sky_sun_time.SetActorHiddenInGame(False)
-                    background.SetActorHiddenInGame(False)
+                    sky.SetActorHiddenInGame(False)
                     # pp_gray.set_property("bEnabled", False)
                     # pp_white.set_property("bEnabled", True)
-                elif mode == "sky":
+                elif background == "sky":
                     sky_sun_time.SetActorHiddenInGame(False)
             else:  # set image mode
-                if os.path.exists(mode):
-                    cubemap = convert_image_to_cubemap(mode)
-                    apply_material(
-                        actor_name="SM_SkySphere_2",
-                        material_path="/Game/Materials/M_SkyBox",
-                        params={
-                            "Emissive Multiplier": 1.0,
-                            "Texture": cubemap,
-                        }
-                    )
+                if os.path.exists(background):
+                    convert_image_to_cubemap(background)
                     sky_sun_time.SetActorHiddenInGame(False)
-                    background.SetActorHiddenInGame(False)
+                    sky.SetActorHiddenInGame(False)
                 else:
                     ue.log_warning("image mode requires working path")
 
-        # change_background("sky")
+        # change_background("white") # TODO: CHECK ORANGE
         change_background(r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Images\duck.hdr")
 
 

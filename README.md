@@ -19,7 +19,7 @@ The full Unreal Engine Starcel source project folder is quite a large download, 
 You need to use Visual Studio 2019 for compiling ([download community edition](https://aka.ms/vs/16/release/vs_community.exe)). I recommend [PyCharm Community](https://www.jetbrains.com/pycharm/download/?section=windows) for editing until IDE support is added.
 
 Compiled versions of Python 3.9 can be downloaded from here https://www.python.org/downloads/release/python-3913/, newer versions of Python 3.9 should work, but need to be compiled from Python source. The unreal_engine package is not installed to Python permanently, but it is installed at runtime, so it does not need to be pip-installed. The Content/Scripts/unreal_engine folder includes all necessary stubs and empty classes for intellisense. 
-You can manually install the necessary packages directly using python.exe -m pip install numpy sympy cmdix fast-autocomplete fast-autocomplete[levenshtein] numba kingdon matplotlib scikit-image scikit-learn dill pystubgen requests pywin32. If any of these fails, you may need to re-run the command. 
+You can manually install the necessary packages directly using python.exe -m pip install numpy sympy fast-autocomplete fast-autocomplete[levenshtein] numba kingdon matplotlib scikit-image scikit-learn dill pystubgen requests pywin32 psutil. If any of these fails, you may need to re-run the command. 
 The default Unreal Engine map contains a PyActor which loads main.py and the class Main when the map starts up. Both the server and the client will run this file separately. The line ``if KismetSystemLibrary.IsDedicatedServer():`` lets you define client and server specific code. You can create more PyActors or even use Python from the UE console by clicking ` and typing "py.". 
 Create a Text object by double clicking Enter. Once created, you can use =py() to run any Python command. 
 The state of the world is not saved in main.py or elsewhere, you will need to make changes there directly or copy your changes from the world elsewhere to save. This will be changed in the future.
@@ -104,6 +104,8 @@ The last Starcel release was written, at the time, in the newest Python, Python 
 - Advanced search and multiple histories with transactions and rollbacks. 
 - Google sheets/docs edit functionality. 
 - Academic hall and learning center: history, math, physics, particles, physical matter.
+- Add Starcel as a desktop environment for Debian Linux
+- Make a new OS by working backwards from what was necessary in this project
 
 
 ## Why Unreal? 
@@ -111,6 +113,10 @@ Unreal is great! It is industry-leading for developing games and in cinema. The 
 Unity has limited Python support with Unity-PythonNet. 
 Panda3D and RenderPipeline had issues with speed, server support, and windows. 
 Blender's UPBGE and NVIDIA Omniverse were not ready for a server capable game with the features I was looking for. 
+
+
+## Where did you get the idea? 
+
 
 
 ## Where does the name "Starcel" come from?

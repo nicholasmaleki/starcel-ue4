@@ -6,10 +6,11 @@ from datetime import datetime, timezone
 from typing import Dict, Any, List
 import unreal_engine as ue
 
-# -----------------------------
+
+# In order to use the cli.py you must install GitBash or change the directory to where you kee your GNU Tools.
+
 # Config
-# -----------------------------
-BIN_DIR = r"C:\Program Files\Git\usr\bin"
+BIN_DIR = r"C:\Program Files\Git\usr\bin" # GNU Tools directory
 OUTPUT_FILE = "cli.py"
 STUB_FILE = "cli.pyi"
 
@@ -37,9 +38,9 @@ COMMAND_GROUPS = {
     }
 }
 
-# -----------------------------
+
 # Helpers
-# -----------------------------
+
 def sanitize(name: str) -> str:
     name = name.replace("-", "_")
     name = re.sub(r"[^0-9a-zA-Z_]", "_", name)
@@ -52,9 +53,9 @@ def sanitize(name: str) -> str:
 def is_exe(name: str) -> bool:
     return name.lower().endswith(".exe")
 
-# -----------------------------
+
 # Discover commands
-# -----------------------------
+
 tools: Dict[str, Dict[str, Any]] = {}
 
 if os.path.isdir(BIN_DIR):
@@ -76,9 +77,9 @@ for alias, spec in ALIASES.items():
             "preset_args": spec.get("args", []),
         }
 
-# -----------------------------
+
 # Normalize groups
-# -----------------------------
+
 def normalize(node):
     if isinstance(node, dict):
         result = {}
@@ -109,9 +110,9 @@ for name, node in COMMAND_GROUPS.items():
 TOP_LEVEL_COMMANDS = tools
 generated_at = datetime.now(timezone.utc).isoformat()
 
-# -----------------------------
+
 # Write cli.py
-# -----------------------------
+
 with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
     f.write(f'''from __future__ import annotations
 # generated at {generated_at}
@@ -242,9 +243,9 @@ globals().update({{k: getattr(_default_cli, k) for k in dir(_default_cli) if not
 
 print(f"Generated {OUTPUT_FILE}")
 
-# -----------------------------
+
 # Generate cli.pyi
-# -----------------------------
+
 def write_stub_group(f, name: str, node: Dict[str, Any], indent: str = ""):
     f.write(f"{indent}class {name}:\n")
     if "_self" in node:

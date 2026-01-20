@@ -1,6 +1,5 @@
 numpy
 sympy
-cmdix
 fast-autocomplete
 fast-autocomplete[levenshtein]
 numba
@@ -12,3 +11,4 @@ dill
 pystubgen
 requests
 pywin32
+psutil
