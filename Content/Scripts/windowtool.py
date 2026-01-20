@@ -14,7 +14,7 @@ import time
 import struct
 
 
-# TODO: Add move window behind icons so we can use Starcel as a live wallpaper. Tested for a couple hours with claude but couldn't get anything working.
+# TODO: Add move window behind icons so we can use Starcel as a live wallpaper. Tested for a couple hours with claude but couldn't get anything with click-through working.
 
 
 # Constants

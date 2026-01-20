@@ -6,6 +6,9 @@ import windowtool
 from PIL import Image
 import numpy as np
 
+global tickers
+tickers = []
+
 def get_world():
     scmaps = []
     world = None
@@ -35,7 +38,7 @@ def find_actor(name):
         if a.get_name() == name:
             actor_list.append(a)
     if not actor_list:
-        print("Looking for actors with inputted name in the actor name")
+        print("Looking for any actor name that contains", name)
         for a in world.all_actors():
             if name in a.get_name():
                 actor_list.append(a)
@@ -54,21 +57,31 @@ def find_component(actor, name):
     if (actor is None) or (actor.__class__.__name__ == 'NoneType'):
         ue.log_warning(f"Actor not found: {actor}")
         return None
-    target_component = None
+    component_list = []
     if name:
         for component in actor.get_components():
             if component.get_name() == name:
-                target_component = component
+                component_list.append(component)
+        if not component_list:
+            print("Looking for any component name that contains", name)
+            for component in actor.get_components():
+                if name in component.get_name():
+                    component_list.append(component)
     else:
+        print("Defaulting to search for a MeshComponent")
         for component in actor.get_components():
             if component.get_class().get_name().endswith("MeshComponent"):
-                target_component = component
+                component_list.append(component)
 
-    if not target_component:
+    if len(component_list) > 1:
+        ue.log_warning(f"Found more than one actor: {component_list}")
+
+    if not component_list[0]:
         print(f"Mesh component not found on actor '{actor.get_name()}'")
         return None
     else:
-        return target_component
+        return component_list[0]
+
 
 def print_all_actors():
     actors = world.all_actors()
@@ -106,58 +119,86 @@ def set_starcel_as_desktop(disable_animations=None):
         windowtool.set_global_window_animations(disable_animations)
 
 
-# def set_actor_hidden_in_game(actor, hidden=True): # Certain blueprints like BP_SkySphere
-#     if not actor:
-#         return None
-#
-#     out = actor.set_property("bActorHiddenInGame", hidden)
-#     return out
-#
-#
-# def set_actor_enabled(actor, enabled=True): # post process
-#     if not actor:
-#         return None
-#
-#     out = actor.set_property("bEnabled", enabled)
-#     return out
-#
-# def set_actor_visible(actor, visible=True):
-#     if not actor:
-#         return None
-#
-#     out = actor.set_property("bActorHiddenInGame", visible)
-#     return out
-
 # relevant editor access https://github.com/20tab/UnrealEnginePython/issues/655 https://github.com/20tab/UnrealEnginePython/issues/363
-# if not actor:
-#     return
-#
 # for c in actor.get_components():
 # for c in actor.get_components_by_type():
 # for c in actor.get_components_by_tag():
-#     try:
-#         c.set_property("Visible", visible)
-#     except Exception:
-#         pass
+
+
+def convert_image_to_hdr(filepath, output_dir=None):
+    """
+    Converts any image (PNG/JPG/WebP/etc.) to HDR format (.hdr)
+    using Pillow. Returns path to HDR file.
+    """
+    if not os.path.exists(filepath):
+        ue.log_warning(f"File not found: {filepath}")
+        return None
+
+    img = Image.open(filepath).convert("RGB")
+    width, height = img.size
+
+    if output_dir is None:
+        output_dir = os.path.dirname(filepath)
+
+    base_name = os.path.splitext(os.path.basename(filepath))[0]
+    hdr_path = os.path.join(output_dir, base_name + ".hdr")
+
+    try:
+        img.save(hdr_path, format="HDR")
+        return hdr_path
+    except Exception as e:
+        ue.log_warning(f"Failed to convert {filepath} to HDR: {e}")
+        return None
+
+
+def convert_hdr_to_cubemap(bp_helper, hdr_path, callback):
+    """
+    Convert HDR file to TextureCube using BP_HDRToCubemap.
+    Calls `callback(cube)` when finished.
+    """
+    if not bp_helper or not hdr_path:
+        return
+
+    bp_helper.call_function("ConvertImageToCubemap", hdr_path)
+
+    def poll(delta_time):
+        if bp_helper.CubemapFinished:
+            cube = bp_helper.call_function("GetCubemap")
+            bp_helper.CubemapFinished = False
+            if callback:
+                callback(cube)
+            return False  # stop ticker
+        return True  # continue ticking
+
+    tickers.append(ue.add_ticker(poll)) # assignment required or gc will destroy
+
 
 
 def load_texture_any(path_or_obj):
     """
     Load a texture from:
       - Unreal asset path: /Game/Textures/T_Example.T_Example
-      - Filesystem path: any image type (png, jpg, hdr, exr, webp)
+      - Filesystem path: any image type (png, jpg, webp, exr, etc.)
       - Already-loaded UE object (Texture, Texture2D, TextureCube)
-    Returns a Texture or Texture2D object usable in apply_material.
+      - HDR file path (returned as string for cubemap conversion)
+    Returns a Texture, Texture2D, TextureCube, or HDR path usable in apply_material.
     """
     if not path_or_obj:
         return None
 
     # Already a UE object
-    if type(path_or_obj).__name__ in ("Texture", "Texture2D", "TextureCube"):
+    if hasattr(path_or_obj, "get_class") and "Texture" in path_or_obj.get_class().get_name():
         return path_or_obj
 
     # String paths
     if isinstance(path_or_obj, str):
+        # HDR file — just pass path
+        if path_or_obj.lower().endswith(".hdr"):
+            if os.path.exists(path_or_obj):
+                return path_or_obj
+            else:
+                ue.log_warning(f"HDR path does not exist: {path_or_obj}")
+                return None
 
         # Unreal asset path
         if path_or_obj.startswith("/Game"):
@@ -166,25 +207,18 @@ def load_texture_any(path_or_obj):
                 ue.log_warning(f"Failed to load Unreal asset texture: {path_or_obj}")
             return tex
 
-        # Filesystem image path
+        # Filesystem image path (PNG, JPG, WebP, EXR, etc.)
         if os.path.exists(path_or_obj):
             try:
-                # load image with PIL
                 img = Image.open(path_or_obj).convert("RGBA")
                 width, height = img.size
-
-                # convert to bytes
                 data = np.array(img, dtype=np.uint8).flatten().tobytes()
-
-                # create transient texture
                 texture = ue.create_transient_texture(width, height, EPixelFormat.PF_R8G8B8A8)
                 texture.texture_set_data(data)
                 return texture
-
             except Exception as e:
                 ue.log_warning(f"Exception loading texture '{path_or_obj}': {e}")
                 return None
-
         else:
             ue.log_warning(f"Path does not exist: {path_or_obj}")
             return None
@@ -193,12 +227,14 @@ def load_texture_any(path_or_obj):
     return None
 
 
+
 def apply_material(
     actor_name=None,
     component_name=None,
     material_path="/Game/Materials/M_Color.M_Color",
     material_index=0,
     params=None,
+    bp_helper=find_actor("BP_PyActor"),  # optional Blueprint actor for cubemap conversion
 ):
     """
     Apply a material and set parameters by type.
@@ -206,14 +242,13 @@ def apply_material(
         {
             "Emissive Multiplier": 1.0,
             "Color": (1,1,1),
-            "Texture": "C:/sky.png"
+            "Texture": "C:/sky.png"       # any image type
+            "Cube": "/Game/Textures/myCube"  # TextureCube asset
         }
     """
-
     params = params or {}
 
     actor = find_actor(actor_name)
-    print("Setting Actor Material:", actor, actor_name)
     target_comp = find_component(actor, component_name)
 
     mat = ue.load_object(Material, material_path)
@@ -222,26 +257,170 @@ def apply_material(
 
     mid = target_comp.create_material_instance_dynamic(mat)
 
-    for pname, v in params.items():
+    for pname, v in params.items(): # pname is parameter name, v is value
 
-        # scalar
+        # --- Scalar ---
         if isinstance(v, (int, float)):
             mid.set_material_scalar_parameter(pname, float(v))
 
-        # vector
+        # --- Vector ---
         elif isinstance(v, (tuple, list)) and len(v) >= 3:
             mid.set_material_vector_parameter(pname, ue.FVector(v[0], v[1], v[2]))
 
-        # texture / cubemap / HDR / filesystem image
-        elif isinstance(v, str) or type(v).__name__ in ("Texture", "Texture2D", "TextureCube"):
-            tex = load_texture_any(v)
-            if tex:
-                mid.set_material_texture_parameter(pname, tex)
+        # --- String path ---
+        elif isinstance(v, str):
+
+            # HDR → convert to TextureCube asynchronously
+            if v.lower().endswith(".hdr") and bp_helper:
+                def on_cube_ready(cube):
+                    if cube:
+                        print("Created cubemap, applying it to material")
+                        mid.set_material_texture_parameter(pname, cube[0])
+                        target_comp.set_material(material_index, mid)
+                    else:
+                        ue.log_warning(f"Failed to convert HDR to cubemap: {v}")
+
+                convert_hdr_to_cubemap(bp_helper, v, on_cube_ready)
+
             else:
-                ue.log_warning(f"Could not load texture for param: {pname}")
+                tex = load_texture_any(v)
+                if tex:
+                    mid.set_material_texture_parameter(pname, tex)
+                    target_comp.set_material(material_index, mid)  # assign immediately
+                else:
+                    ue.log_warning(f"Could not load texture for param: {pname}")
+
+        # --- Already-loaded UE texture ---
+        elif hasattr(v, "get_class") and "Texture" in v.get_class().get_name():
+            mid.set_material_texture_parameter(pname, v)
+            target_comp.set_material(material_index, mid)  # assign immediately
 
         else:
             ue.log_warning(f"Unsupported material param type: {pname} = {type(v)}")
 
-    target_comp.set_material(material_index, mid)
+    # Assign the MID if no HDR parameters (they handle assignment asynchronously)
+    if not any(isinstance(v, str) and v.lower().endswith(".hdr") for v in params.values()):
+        target_comp.set_material(material_index, mid)
+
     return mid
+
+
+def change_background(background="white"):
+    # TODO: Add transparency and green screen defaults https://github.com/historia-Inc/WindowTransparency https://www.fab.com/listings/a967c271-f440-4bc2-93f8-3699122f0f7b https://forums.unrealengine.com/t/transparent-window/123446
+    # --- grab actors ---
+    # SkySpheres
+    # BP_SkySphere: Rendering -> Actor Hidden in Game = True
+    # SM_SkySphere: Materials -> Element 0: M_SkyBox. Rendering -> Visible = True
+    # M_SkyBox Emissive Multiplier = 0.5
+    # M_SkyBox With ParamCube Parameter Name = Texture. SkyBoxTexture = starmap_g8k
+    # SM_SkySpherePureWhite Rendering -> Visible = False
+    # SM_SkySpherePureWhiteManualExposure: M_SkyBoxWhiteForManualExposure
+    sky = find_actor("SM_SkySphere_2")  # IDK why it got the name _2
+    sky_white = find_actor("SM_SkySpherePureWhiteManualExposure")
+    # sky_white_autoexposure = find_actor("SM_SkySpherePureWhite")
+    sky_sun_time = find_actor("BP_SkySphere")
+    sky_spheres = [sky, sky_white]  # , sky_white_autoexposure]
+
+    # Fog
+    fogblack = find_actor("ExponentialHeightFogBlack")
+    fogs = [fogblack]
+
+    # sky_light = find_actor("SkyLight") # Need to set Visible True in editor
+    # sky_light = find_actor("SkyLight5NoLowerHemisphere") # Need to set Visible True in editor
+    sky_light = find_actor("SkyLight5")  # Lower Hemisphere is Solid Color = True # Lower Hemisphere Color = 0,0,0,1
+    sky_lights = [sky_light]
+
+    pp_camera = find_actor("PostProcessVolumeExposureCamera")  # Manual Exposure Compensation = True, 9.5
+    pp_nobloom = find_actor("PostProcessVolumeRemoveBloom")  # BP_SkySphere needs to be disabled
+    pp_white = find_actor("PostProcessVolumeWhite")  # TODO: Tune this for the dark backgrounds
+    pp_gray = find_actor("PostProcessVolumeGray")
+    pp_black = find_actor("PostProcessVolumeBlack")
+    post_processing_volumes = [pp_camera, pp_nobloom, pp_white, pp_gray, pp_black]
+
+    # Reset
+    sky_sun_time.SetActorHiddenInGame(True)  # Can't use Visible on this one unless targeting components
+    # iterate over tne background actors
+    for a in itertools.chain(sky_spheres, fogs, sky_lights, post_processing_volumes):
+        if a in sky_spheres:
+            a.SetActorHiddenInGame(True)
+        elif a in fogs:
+            a.SetActorHiddenInGame(True)
+        elif a in sky_lights:
+            a.SetActorHiddenInGame(True)
+        elif a in post_processing_volumes:
+            a.set_property("bEnabled", False)
+
+    # sky_light.set_property("IntensityScale", 5.0)
+    sky_light.SetActorHiddenInGame(False)
+    pp_camera.set_property("bEnabled", True)
+    pp_gray.set_property("bEnabled", True)
+    # mat = ue.load_object(Material, "/Game/Materials/M_SkyBoxWhiteForManualExposure")
+    # find_component(sky_white, "").set_material(0, mat)
+
+    # sky_light.set_property("bLowerHemisphereIsSolidColor", False)
+    # sky_light.set_property("LowerHemisphereColor", (0,0,0,1))
+    modes = ["white", "black", "white_no_bloom", "white_no_emissive", "stars", "sky"]
+    if background in modes:
+        if background == "white":
+            mat = ue.load_object(Material, "/Game/Materials/M_SkyBoxWhiteForManualExposure")
+            find_component(sky_white, "").set_material(0, mat)
+            sky_sun_time.ManuallySetSunPosition = True
+            sky_sun_time.SetActorHiddenInGame(False)
+            sky_white.SetActorHiddenInGame(False)
+        elif background == "black":
+            # fog.set_property("FogInscatteringColor", (0, 0, 0, 1))
+            # fogblack.SetActorHiddenInGame(False)
+            apply_material(
+                actor_name="SM_SkySphere_2",
+                material_path="/Game/Materials/M_SkyBox.M_SkyBox",
+                params={
+                    "Emissive Multiplier": 0.0,
+                }
+            )
+            sky_sun_time.ManuallySetSunPosition = True
+            sky_sun_time.SetActorHiddenInGame(False)
+            sky.SetActorHiddenInGame(False)
+            # pp_gray.set_property("bEnabled", False)
+            # pp_white.set_property("bEnabled", True) # make this a little darker for the black case
+        elif background == "white_no_bloom":
+            mat = ue.load_object(Material, "/Game/Materials/M_SkyBoxWhiteForManualExposure")
+            find_component(sky_white, "").set_material(0, mat)
+            sky_sun_time.ManuallySetSunPosition = True
+            sky_sun_time.SetActorHiddenInGame(False)
+            sky_white.SetActorHiddenInGame(False)
+            pp_nobloom.set_property("bEnabled", True)
+        elif background == "white_no_emissive":
+            mat = ue.load_object(Material, "/Game/Materials/M_SkyBoxWhiteNoEmissive")
+            find_component(sky_white, "").set_material(0, mat)
+            sky_sun_time.ManuallySetSunPosition = True
+            sky_sun_time.SetActorHiddenInGame(False)
+            sky_white.SetActorHiddenInGame(False)
+        elif background == "stars":
+            mat = ue.load_object(Material, "/Game/Materials/M_SkyBox")
+            find_component(sky, "").set_material(0, mat)
+            sky_sun_time.ManuallySetSunPosition = True
+            sky_sun_time.SetActorHiddenInGame(False)
+            sky.SetActorHiddenInGame(False)
+            # pp_gray.set_property("bEnabled", False)
+            # pp_white.set_property("bEnabled", True)
+        elif background == "sky":
+            sky_sun_time.ManuallySetSunPosition = False
+            sky_sun_time.SetActorHiddenInGame(False)
+    else:  # set image mode
+        if os.path.exists(background):
+            py_actor = find_actor("BP_PyActor")
+            print(py_actor)
+            apply_material(
+                actor_name="SM_SkySphere_2",
+                material_path="/Game/Materials/M_SkyBox",
+                bp_helper=py_actor,
+                params={
+                    "Emissive Multiplier": 1.0,
+                    "Texture": background,
+                }
+            )
+            sky_sun_time.ManuallySetSunPosition = False
+            sky_sun_time.SetActorHiddenInGame(False)
+            sky.SetActorHiddenInGame(False)
+        else:
+            ue.log_warning("image mode requires working path")
