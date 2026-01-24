@@ -6,6 +6,23 @@ import windowtool
 from PIL import Image
 import numpy as np
 
+
+
+# Example client/server callbacks
+def client_on_full_string_received(full_string):
+    ue.log_warning("[CLIENT CALLBACK] Full string received!")
+    ue.log_warning(f"Length: {len(full_string)}")
+    ue.log_warning(f"Preview: {full_string[:200]}")
+
+def server_on_full_string_received(full_string):
+    ue.log_warning("[SERVER CALLBACK] Full string received!")
+    ue.log_warning(f"Length: {len(full_string)}")
+    ue.log_warning(f"Preview: {full_string[:200]}")
+
+def progress_callback(current, total):
+    ue.log(f"[PROGRESS] Chunk {current}/{total}")
+
+
 global tickers
 tickers = []
 
@@ -17,11 +34,15 @@ def get_world():
             if _world.get_name() == "StarcelExampleMap":
                 scmaps.append(_world)
 
+        if len(scmaps) > 1:
+            ue.log_warning("Found more than one StarcelExampleMap:")
+            print([w.get_name() for w in scmaps])
+
         if len(scmaps) == 1:
             world = scmaps[0]
         else:
+            ue.log_warning("Using the first world found")
             world = scmaps[0] # len(scmaps) - 1
-            ue.log_warning("There is more than one StarcelExampleMap world, using the first one found")
 
         if not world:
             world = ue.all_worlds()[0]
@@ -31,32 +52,68 @@ def get_world():
 
 global world
 world = get_world()
+print("ue tools world", world)
+
 
 def find_actor(name):
+    print("Finding actor by name", name)
     actor_list = []
     for a in world.all_actors():
         if a.get_name() == name:
             actor_list.append(a)
     if not actor_list:
-        print("Looking for any actor name that contains", name)
+        print("No exact match found, finding any actor with name that contains", name)
         for a in world.all_actors():
             if name in a.get_name():
                 actor_list.append(a)
 
     # print(type(actor))
     # print(actor.__class__.__name__)
-    if len(actor_list) > 1:
-        ue.log_warning(f"Found more than one actor: {actor_list}")
+    if not actor_list or actor_list.__class__.__name__ == 'NoneType':
+        ue.log_error(f"Actor not found: {name}: {[a.get_name() for a in actor_list]}")
+        return None
+    else:
+        if len(actor_list) > 1:
+            ue.log_warning(f"Found more than one actor: {[a.get_name() for a in actor_list]}")
 
-    if (actor_list is None) or (actor_list[0].__class__.__name__ == 'NoneType'):
-        ue.log_warning(f"Actor not found: {actor_list}")
+        return actor_list[0]
 
-    return actor_list[0]
+
+py_actor = find_actor("BP_PyActor")
+print("ue tools pyactor", world)
+
+
+def find_actors(name):
+    print("Finding actors by name", name)
+    actor_list = []
+    for a in world.all_actors():
+        if a.get_name() == name:
+            actor_list.append(a)
+    if not actor_list:
+        print("No exact matches found, finding any actors with name that contains", name)
+        for a in world.all_actors():
+            if name in a.get_name():
+                actor_list.append(a)
+    # print(type(actor))
+    # print(actor.__class__.__name__)
+    if not actor_list or actor_list.__class__.__name__ == 'NoneType': # (actor_list[0].__class__.__name__ == 'NoneType')
+        ue.log_warning(f"Actor not found: {name}: {[a.get_name() for a in actor_list]}")
+        return None
+    else:
+        print("Found actors:", actor_list)
+        return actor_list
+
+
 
 def find_component(actor, name):
-    if (actor is None) or (actor.__class__.__name__ == 'NoneType'):
+    print("Finding component by name", name, "in actor", actor)
+    if actor is None: # or (actor.__class__.__name__ == 'NoneType')
         ue.log_warning(f"Actor not found: {actor}")
         return None
+    elif actor.__class__.__name__ == 'NoneType':
+            ue.log_warning(f"Actor not found: {actor}")
+            return None
+
     component_list = []
     if name:
         for component in actor.get_components():
@@ -70,16 +127,16 @@ def find_component(actor, name):
     else:
         print("Defaulting to search for a MeshComponent")
         for component in actor.get_components():
-            if component.get_class().get_name().endswith("MeshComponent"):
+            if "MeshComponent" in component.get_class().get_name():
                 component_list.append(component)
 
-    if len(component_list) > 1:
-        ue.log_warning(f"Found more than one actor: {component_list}")
-
-    if not component_list[0]:
-        print(f"Mesh component not found on actor '{actor.get_name()}'")
+    if not component_list or component_list.__class__.__name__ == 'NoneType':
+        print(f"Component not found on actor {name}: {actor.get_name()}")
         return None
     else:
+        if len(component_list) > 1:
+            ue.log_warning(f"Found more than one actor: {[c.get_name() for c in component_list]}")
+
         return component_list[0]
 
 
@@ -98,16 +155,19 @@ def get_scripts_folder():
     return os.path.join(os.path.abspath(ue.get_content_dir()), "Scripts")
 
 
+def restore_from_desktop_background():
+    py_actor.call_function('RestoreFromDesktopBackground')
+
+def embed_as_desktop_background():
+    py_actor.call_function('SetWindowAsDesktopBackground')
+
 def fullscreen():
-    py_actor = find_actor("BP_PyActor")
     py_actor.call_function('SetFullscreen')
 
 def windowed():
-    py_actor = find_actor("BP_PyActor")
     py_actor.call_function('SetWindowed')
 
 def windowed_fullscreen():
-    py_actor = find_actor("BP_PyActor")
     py_actor.call_function('SetWindowedFullscreen')
 
 def set_starcel_as_desktop(disable_animations=None):
@@ -229,6 +289,7 @@ def load_texture_any(path_or_obj):
 
 
 def apply_material(
+    actor = None,
     actor_name=None,
     component_name=None,
     material_path="/Game/Materials/M_Color.M_Color",
@@ -248,7 +309,12 @@ def apply_material(
     """
     params = params or {}
 
-    actor = find_actor(actor_name)
+    if actor is None and (actor_name is None or not actor_name):
+        ue.log_warning("No actor or actor name set")
+
+    if actor is None:
+        actor = find_actor(actor_name)
+
     target_comp = find_component(actor, component_name)
 
     mat = ue.load_object(Material, material_path)
@@ -331,11 +397,12 @@ def change_background(background="white"):
     sky_lights = [sky_light]
 
     pp_camera = find_actor("PostProcessVolumeExposureCamera")  # Manual Exposure Compensation = True, 9.5
-    pp_nobloom = find_actor("PostProcessVolumeRemoveBloom")  # BP_SkySphere needs to be disabled
+    pp_nobloom = find_actor("PostProcessVolumeDisableBloom")  # BP_SkySphere needs to be disabled
+    pp_novignette = find_actor("PostProcessVolumeDisableVignette")
     pp_white = find_actor("PostProcessVolumeWhite")  # TODO: Tune this for the dark backgrounds
     pp_gray = find_actor("PostProcessVolumeGray")
     pp_black = find_actor("PostProcessVolumeBlack")
-    post_processing_volumes = [pp_camera, pp_nobloom, pp_white, pp_gray, pp_black]
+    post_processing_volumes = [pp_camera, pp_nobloom, pp_novignette, pp_white, pp_gray, pp_black]
 
     # Reset
     sky_sun_time.SetActorHiddenInGame(True)  # Can't use Visible on this one unless targeting components
@@ -359,7 +426,8 @@ def change_background(background="white"):
 
     # sky_light.set_property("bLowerHemisphereIsSolidColor", False)
     # sky_light.set_property("LowerHemisphereColor", (0,0,0,1))
-    modes = ["white", "black", "white_no_bloom", "white_no_emissive", "stars", "sky"]
+    py_actor.call_function("DisableWindowTransparent")
+    modes = ["white", "black", "white_no_bloom", "white_no_emissive", "stars", "sky", "transparent"]
     if background in modes:
         if background == "white":
             mat = ue.load_object(Material, "/Game/Materials/M_SkyBoxWhiteForManualExposure")
@@ -374,6 +442,7 @@ def change_background(background="white"):
                 actor_name="SM_SkySphere_2",
                 material_path="/Game/Materials/M_SkyBox.M_SkyBox",
                 params={
+                    "Color": (0,0,0,1),
                     "Emissive Multiplier": 0.0,
                 }
             )
@@ -389,6 +458,7 @@ def change_background(background="white"):
             sky_sun_time.SetActorHiddenInGame(False)
             sky_white.SetActorHiddenInGame(False)
             pp_nobloom.set_property("bEnabled", True)
+            pp_novignette.set_property("bEnabled", True)
         elif background == "white_no_emissive":
             mat = ue.load_object(Material, "/Game/Materials/M_SkyBoxWhiteNoEmissive")
             find_component(sky_white, "").set_material(0, mat)
@@ -406,6 +476,27 @@ def change_background(background="white"):
         elif background == "sky":
             sky_sun_time.ManuallySetSunPosition = False
             sky_sun_time.SetActorHiddenInGame(False)
+        elif background == "transparent":
+            # mat = ue.load_object(Material, "/Game/Materials/M_SkyBoxWhiteForManualExposure")
+            # find_component(sky_white, "").set_material(0, mat)
+            # sky_sun_time.ManuallySetSunPosition = True
+            # sky_sun_time.SetActorHiddenInGame(False)
+            # sky_white.SetActorHiddenInGame(False)
+            # apply_material(
+            #     actor_name="SM_SkySphere_2",
+            #     material_path="/Game/Materials/M_Color.M_Color",
+            #     params={
+            #         "Color": (0,1,0,1),
+            #         "Emissive Multiplier": 1.0,
+            #     }
+            # )
+            mat = ue.load_object(Material, "/Game/Materials/M_SkyBoxGreen")
+            find_component(sky, "").set_material(0, mat)
+            pp_novignette.set_property("bEnabled", True)
+            py_actor.call_function("SetWindowTransparent")
+            sky_sun_time.ManuallySetSunPosition = True
+            sky_sun_time.SetActorHiddenInGame(False)
+            sky.SetActorHiddenInGame(False)
     else:  # set image mode
         if os.path.exists(background):
             py_actor = find_actor("BP_PyActor")

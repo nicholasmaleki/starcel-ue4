@@ -13,7 +13,7 @@ Currently, free! In the future, as more features are added we will switch to a p
 
 
 ## Quickstart
-The current releases include the client, the server, and the no editor for Windows. Each compiled source is ~1GB each. 
+The current release includes the client, the server, and the no-editor for Windows. Each compiled source is ~1GB each. 
 The full Unreal Engine Starcel source project folder is quite a large download, ~50GB. The project files on github are ~200MB, check the .gitignore to see what is missing. 
 
 You need to use Visual Studio 2019 for compiling ([download community edition](https://aka.ms/vs/16/release/vs_community.exe)). I recommend [PyCharm Community](https://www.jetbrains.com/pycharm/download/?section=windows) for editing until IDE support is added.
@@ -27,28 +27,29 @@ The state of the world is not saved in main.py or elsewhere, you will need to ma
 
 ## Please Donate to keep this project running
 You can donate on [Paypal](https://www.paypal.com/paypalme/RecursionIs) or [Patreon](https://www.patreon.com/RecursionIs)
+I genuinely want to work on this full time!
 
 
 ## Questions, Issues, and Support
 Most everything you need will be covered in this readme. 
 Python support can be found at r/LearnPython, YouTube, other forums, and chats.
 Unreal Engine support can be found on YouTube, their Discord, and their forum. 
-UnrealEnginePython examples, Starcel examples, and the unreal_engine folder in Content/Scripts which has the class and function info should cover just about everything you can do with the plugin. If you are certain there is an issue with the https://github.com/20tab/UnrealEnginePython plugin you can post on their issues tab on GitHub. I will check this every so often. The UE4.27 port of the plugin can be found at https://github.com/HaiyiMei/UnrealEnginePython. I made minor changes to this source to make it work on my computer. Issues with the Starcel code and new features can be posted here. I will occasionally merge new features and fixes. Feel free to contribute. Anything else can be asked in our Discord. We are a community of volunteers so we may not have answers and may not get back to you, but we will try our best. 
+UnrealEnginePython examples, Starcel examples, and the unreal_engine folder (Content/Scripts/unreal_engine) which has the class and function info should cover just about everything you can do with the plugin. If you are certain there is an issue with the https://github.com/20tab/UnrealEnginePython plugin you can post on their issues tab on GitHub. I will check this every so often. The UE4.27 port of the plugin can be found at https://github.com/HaiyiMei/UnrealEnginePython. I made changes to this source to upgrade it to Python 3.9 and to make it work for my use case. Issues with the Starcel code and new features can be posted here. I will occasionally merge new features and fixes. Feel free to contribute. Anything else can be asked in our Discord. We are a community of volunteers so we may not have answers and may not get back to you, but we will try our best. 
 
 
 ## Are public Starcel servers safe? 
-Not yet. Local use is completely safe: as safe as local Python. 
+Not yet. Local use is safe, as safe as local Python. 
 
 Treat this project as if you were downloading and running unsigned code from the internet or as if you were giving someone remote desktop access to your computer. Utilize the whitelist system to stay safe. 
 
 
 ## How do I use a server? 
-You can connect to a server by running the client_travel()/connect() Python function or by changing the _StartClient.bat file. 
-If you want to run a local server, LAN, you can use ipconfig to find your IP, and the server console should also list an IP and port. You can share this IP and port with other users on your network. You can port forward this local port in your router to have it available online. You can share your public IP and port with whoever and they will be able to connect. Be very careful sharing your IP and use the whitelist system. Treat this project as downloading and running unsigned code from the internet or giving someone remote desktop access. 
+You can connect to a server by running the client_travel()/connect() Python function, by changing the _StartClient.bat file, or by opening the console with \` and typing `open <IP>`. 
+If you want to run a local server, LAN, the server console should list a port, local IP, and public IP, or you can use ipconfig. You can share this IP and port with other users on your network. You can port forward this local port in your router to have it available online. You can share your public IP and port with whoever and they will be able to connect. Be very careful sharing your IP and use the whitelist system. Treat this project as downloading and running unsigned code from the internet or giving someone remote desktop access. 
 
 Python functions can run on the client and server, this is clear from the Python code and can be easily changed. This opens up great possibilities of collaboration using tools like PyCharm's "Code With Me" or by sharing your folders in Windows Explorer's built in OneDrive implementations. 
 
-Unreal's replication system can be confusing. Clients cannot directly invoke functions on other clients, they must first invoke a call to the server and then the server can run a Multicast RPC. 
+Unreal's replication system can be confusing. Clients cannot directly invoke functions on other clients, they must first invoke a call to the server and then the server can run a Multicast RPC. For a replicated actor to exist across all clients in Unreal Engine, it must be spawned on the server.
 
 I recommend starting a fresh UE C++ project and getting familiar with Blueprints and maybe also C++ to get a feel for how to use Unreal and its editor. 
 
@@ -57,11 +58,11 @@ If you want to manually build the dedicated server source, you cannot use UE4.27
 [PlatformPaths]
 UnrealBuildTool=Engine/Binaries/DotNET/UnrealBuildTool.exe
 ```
-You will also need to cook the content from the editor or use the included .bat file.
+You can cook and package your project from the UE4Editor File tab.
 
 
 ## Linux and Mac? 
-Starcel is currently Windows only. It can be compiled on these Operating Systems. However, this is currently untested. To start, UE, Python, and the UnrealEnginePython plugin are supported in Linux and MacOS. If the project receives support and requests I will port it myself. Feel free to submit a pull request if you upgrade it yourself. 
+Starcel is currently Windows only. It can be compiled on other operating systems, however, this is currently untested. To start, UE, Python, and the UnrealEnginePython plugin are supported in Linux and MacOS. If the project receives support and requests I will port it myself. Feel free to submit a pull request if you upgrade it yourself. 70% of users are on Windows, 13% on Mac, 4% on Linux. 
 
 
 ## Is the program stable? 
@@ -69,15 +70,15 @@ Not currently, expect crashes and lost work. Eventually we will release a stable
 
 
 ## AR/VR integration? 
-[Starcel-Panda3D](https://github.com/nicholasmaleki/starcel-panda3d) had some [integration for AR glasses](https://github.com/nickmaleki/TCLRayneoAir2SDK). This functionality will return and there will be more functionality for VR soon. 
+[Starcel-Panda3D](https://github.com/nicholasmaleki/starcel-panda3d) had some [integration for AR glasses](https://github.com/nickmaleki/TCLRayneoAir2SDK). This functionality will return and there will be more functionality for VR soon. If you plan on setting the rotation of the player to a quaternion that comes from a AR/VR device, make sure your quaternion apis match and your coordinate systems match(UE uses left-handed Z-up). 
 
 
 ## Can I make a 2D UI? 
-It is not recommended to control any elements in Starcel with a 2D UI. You can build a UI out of 3D elements in the 3D space and make it always display flat on the screen. However, if you need, you could use Tkinter, QT, etc. to make a 2D UI outside the game window. UnrealEnginePython has built in support for QT in Engine using Slate. This would render directly on top of the existing Starcel viewport. 
+It is not recommended to control any elements in Starcel with a 2D UI. You can build a UI out of 3D elements in the 3D space and make it always display flat on the included screen which I have added as a component to each Pawn's camera. However, if you need, you could use Tkinter, QT, etc. to make a 2D UI outside the game window. UnrealEnginePython has built in support for QT in Engine using Slate. This would render directly on top of the existing Starcel viewport. 
 
 
 ## UE5 and Python upgrade? 
-The latest edition of Starcel is written in Python 3.9 and Unreal Engine 4.27Chaos. This likely will not change for a while as Python cannot be upgraded as its C++ bindings have been deprecated and changed in Python 3.10. This will take a month or few to upgrade. An Unreal Engine 5 upgrade of the UnrealEnginePython plugin will require header, module, and api changes. This could take a month to upgrade. If you plan on working on this, message me for some info that should help you begin. 
+You can use the included interop.py to help run newer Python versions with this version, but it will be slow and you will have to add workarounds for using functions like begin_play and tick. You will need to have both versions of Python installed. The latest edition of Starcel is written in Python 3.9 and Unreal Engine 4.27Chaos. This likely will not change for a while as Python's C++ bindings have been deprecated and changed in Python 3.10. This could take a month or few to upgrade. An Unreal Engine 5 upgrade of the UnrealEnginePython plugin will require header, module, and api changes. This could take a month to upgrade. If you plan on working on this, message me for some info that should help you begin. 
 I do not plan on upgrading the project myself unless this project receives a lot of support and use. 
 
 
@@ -86,37 +87,70 @@ The last Starcel release was written, at the time, in the newest Python, Python 
 
 
 ## What new features are planned
-- Tables and spreadsheet. 
-- Hotkey editor.
-- Multi-language IDE.
-- Symbols with varying sizes replacement, highlighting, and reduction: code translation. Rotating symbol replacement so you don't get used to random letters and symbols. https://github.com/codereport/jello.
-- File explorer and desktop environment.
-- CLI, SSH, and SCP. 
-- API for the Reals.
-- Units(convert on click) and text editing.
-- Math, algebra, calculus, LaTeX.
-- Geometric algebra rendering: PGA, VGA, CGA, STA.
-- Full Excel, Google Sheets, HDF5, and FOAM3 importer.
-- Multidimensional graphing.
-- Plotting, charts, digraphs, nodes. Most of what is available in OriginLab Pro. 
-- VRChat/Helios features.
-- Dynamic graphing and variables. With reverse order calculation engine support. 
-- Advanced search and multiple histories with transactions and rollbacks. 
-- Google sheets/docs edit functionality. 
-- Academic hall and learning center: history, math, physics, particles, physical matter.
+- Tables and homoiconic Python spreadsheets
+- Hotkey editor
+- File explorer, icons, and desktop environment
+- CLI, SSH, and SCP
+- Advanced function search with live searches and history
+- Multi-language IDE
+	- Syntax highlighting (CodeMirror, highlight.js, etc.) and LSP/intellisense starting with IntelliJ-PyCharm open source
+	- Debugger: step execution, breakpoints (line, conditional, memory, data), cli or environment at breakpoint, variable inspection, call stack, memory/register inspection, thread & concurrency debugging, reverse/time-travel debugging, inline variable values, hover tooltips
+	- Git DAG exploration https://github.com/mhutchie/vscode-git-graph https://gource.io/
+	- Automated refactoring and static analysis
+	- Dependency tracking and package management integration
+	- AST/IR and LLVM
+	- Container/VM integration (Docker, WASM sandboxes)
+	- CRDT Collaborative editing
+	- Project templates & scaffolding
+	- Symbol reduction: freely swap between like-symbols and functions https://github.com/codereport/hoogle-translate
+	- Symbols with varying sizes replacement
+	- Rotating symbol replacement so you don't get used to letters and symbols
+	- Bidirectional math code translation https://www.youtube.com/watch?v=gsv9Azpxt1I
+	- C to Assembly
+	- C to lambda calculus with function labels https://github.com/woodrush/lambda-8cc Lambda calculus to binary https://justine.lol/lambda/
+	- C to turing machine instructions https://youtu.be/2VF_wPkiBJY?&t=194 https://github.com/xoreaxeaxeax/movfuscator
+	- Monadic, diadic, triadic, and n-adic chains https://github.com/codereport/jello (extend to Applicatives and Functors)
+	- Combinatorial exploration: permutations of functions
+- LLLM code translation and live code explanation
+- Math, algebra, calculus
+- SVG and LaTeX rendering
+- API for the Reals
+- Units (convert on click) and text editing
+- Computer algebra system (symbolic math)
+- Numerical methods: ODE/PDE solvers, optimization
+- Statistical and probabilistic analysis tools
+- Tensor/array programming (einsum)
+- LEAN integration
+- Logic to type theory conversion https://www.youtube.com/watch?v=QRrcwahx-3s?&t=417
+- Sequent calculus for dialetheia https://github.com/samuelemarro/convergent-sequent-calculator
+- Geometric algebra rendering: PGA, VGA, CGA, STA
+- Interactive 3D visualization
+- Animation timeline editor
+- Excel, Google Sheets, HDF5, and FOAM3 importer
+- Multidimensional graphing
+- Plotting, charts, digraphs, nodes (OriginLab Pro features)
+- Network visualization, Wireshark
+- Dynamic graphing and variables with reverse order calculation engine
+- Performance profiling: flame graphs, memory profilers https://github.com/benfred/py-spy
+- Treesize-style system file graph
+- Interactive notebooks
+- Google Sheets/Docs/Slides edit functionality
+- Mode `<owner_name>Word<owner_name>` or the more complete and rigorous `<owner_name>L<owner_name>(L=Letter)` to account for ownership when using dialetheia in concurrent communication protocols
+- VRChat/Helios features
+- Physics simulation engine: chaos physics, hair, rigid body, particles, fluids, breaking, flex https://github.com/windystrife/UnrealEngine_NVIDIAGameWorks
 - Add Starcel as a desktop environment for Debian Linux
 - Make a new OS by working backwards from what was necessary in this project
+- Tutorial
+- Academic hall and learning center: history, math, geometric algebra, physics, particles, physical matter
 
 
 ## Why Unreal? 
 Unreal is great! It is industry-leading for developing games and in cinema. The Python bindings are the icing on the cake, making this a fully featured engine with quick scripting potential. The rendering system is unmatched, beautiful, and the engine itself is quite fast.
-Unity has limited Python support with Unity-PythonNet. 
-Panda3D and RenderPipeline had issues with speed, server support, and windows. 
-Blender's UPBGE and NVIDIA Omniverse were not ready for a server capable game with the features I was looking for. 
+Unity has limited Python support with Unity-PythonNet. Panda3D and RenderPipeline had issues with speed, server support, and windows. When I tested them Blender's UPBGE and NVIDIA Omniverse were not ready for a server capable game with the features I was looking for. 
 
 
 ## Where did you get the idea? 
-
+Originally, I wanted to build a system for multidimensional tables and multidimensional plotting of functions and data. For example, plotting multidimensional weights in LLMs (https://youtu.be/wjZofJX0v4M?&t=813, here the embedding space in GPT-3 is 12,228 dimensional, whereas Kingdon only allows up to 16 dimensions). I wanted to build the final form of computer interaction, by building in 3D we have allowed a space for representing just about any object you will encounter. Using a programming language designed to be human readable was paramount. I wanted something that is as close to the English language as possible while still being useful. Excel is the most used programming language by a large margin, with python being the next. It is very convenient to program in a table, as most data structures can be represented as a table. So, this is the hill I want to die on. 
 
 
 ## Where does the name "Starcel" come from?

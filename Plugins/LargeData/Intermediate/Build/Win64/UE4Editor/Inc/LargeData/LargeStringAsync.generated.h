@@ -33,6 +33,8 @@ static inline void FOnLargeStringAsyncReceived_DelegateWrapper(const FMulticastS
 	DECLARE_FUNCTION(execGetSerializedSize); \
 	DECLARE_FUNCTION(execToString); \
 	DECLARE_FUNCTION(execGetChunk); \
+	DECLARE_FUNCTION(execIsFullyReceived); \
+	DECLARE_FUNCTION(execGetExpectedChunkCount); \
 	DECLARE_FUNCTION(execGetChunkCount); \
 	DECLARE_FUNCTION(execReassembleFromChunksAsync); \
 	DECLARE_FUNCTION(execReceiveChunk); \
@@ -44,6 +46,8 @@ static inline void FOnLargeStringAsyncReceived_DelegateWrapper(const FMulticastS
 	DECLARE_FUNCTION(execGetSerializedSize); \
 	DECLARE_FUNCTION(execToString); \
 	DECLARE_FUNCTION(execGetChunk); \
+	DECLARE_FUNCTION(execIsFullyReceived); \
+	DECLARE_FUNCTION(execGetExpectedChunkCount); \
 	DECLARE_FUNCTION(execGetChunkCount); \
 	DECLARE_FUNCTION(execReassembleFromChunksAsync); \
 	DECLARE_FUNCTION(execReceiveChunk); \

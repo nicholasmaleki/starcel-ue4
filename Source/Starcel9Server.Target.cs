@@ -9,6 +9,12 @@ public class Starcel9ServerTarget : TargetRules
 	{
 		Type = TargetType.Server;
 		DefaultBuildSettings = BuildSettingsVersion.V2;
-		ExtraModuleNames.Add("Starcel9");
+		ExtraModuleNames.AddRange(new string[] { "Starcel9" }); //, "SlateCore", "Slate", "Text3D" });
+		bCompileAgainstEngine = true;
+    		//bCompileFreeType = true;
+    		//bCompileICU = true;
+    
+    		// Force link SlateCore
+    		bBuildDeveloperTools = true;
 	}
 }

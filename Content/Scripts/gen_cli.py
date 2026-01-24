@@ -35,6 +35,8 @@ COMMAND_GROUPS = {
         "pull": {"_cmd": "git", "_args": ["pull"]},
         "pullrebase": {"_cmd": "git", "_args": ["pull", "--rebase"]},
         "add": {"_cmd": "git", "_args": ["add"]},
+        "graph": {"_cmd": "git", "_args": ["log", "--all", "--graph"]},
+        "graphtopo": {"_cmd": "git", "_args": ["log", "--all", "--topo-order", "--graph"]},
     }
 }
 

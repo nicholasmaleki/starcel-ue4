@@ -10,5 +10,11 @@ public class Starcel9Target : TargetRules
 		Type = TargetType.Game;
 		DefaultBuildSettings = BuildSettingsVersion.V2;
 		ExtraModuleNames.Add("Starcel9");
+
+		bCompileAgainstEngine = true;
+
+		// Force enable FreeType and HarfBuzz for Text3D compatibility
+		// bCompileFreeType = true;
+		// bCompileICU = true;
 	}
 }

@@ -16,10 +16,6 @@
 			"Enabled": true
 		},
 		{
-			"Name": "Text3D",
-			"Enabled": true
-		},
-		{
 			"Name": "OculusVR",
 			"Enabled": false,
 			"SupportedTargetPlatforms": [
@@ -105,6 +101,20 @@
 		{
 			"Name": "ChaosNiagara",
 			"Enabled": false
+		},
+		{
+			"Name": "Text3D",
+			"Enabled": true,
+			"SupportedTargetPlatforms": [
+				"Win64",
+				"Linux",
+				"Mac"
+			],
+			"TargetAllowList": [
+				"Editor",
+				"Client",
+				"Server"
+			]
 		}
 	]
 }

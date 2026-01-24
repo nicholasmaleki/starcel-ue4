@@ -226,7 +226,7 @@ static void setup_stdout_stderr()
 		"\n"
 		"# Override built-in print to support multiple arguments\n"
 		"original_python_print = builtins.print\n"
-		"def custom_print(*args, sep=' ', end='\\n', **kwargs):\n"
+		"def custom_print(*args, sep=' ', end='', **kwargs):\n"
 		"    text = sep.join(str(a) for a in args) + end\n"
 		"    unreal_engine.log(text)\n"
 		"\n"
@@ -608,17 +608,17 @@ void FUnrealEnginePythonModule::StartupModule()
 		PyErr_Print();
 	}
 	else {
-		UE_LOG(LogPython, Log, TEXT("importlib OK\n"));
+		UE_LOG(LogPython, Log, TEXT("importlib OK"));
 		Py_DECREF(importlib);
 	}
 
 	PyObject* site = PyImport_ImportModule("site");
 	if (!site) {
-		UE_LOG(LogPython, Error, TEXT("Import site FAILED:\n"));
+		UE_LOG(LogPython, Error, TEXT("Import site FAILED:"));
 		PyErr_Print();
 	}
 	else {
-		UE_LOG(LogPython, Log, TEXT("site OK\n"));
+		UE_LOG(LogPython, Log, TEXT("site OK"));
 		Py_DECREF(site);
 	}
 	PyGILState_Release(g);

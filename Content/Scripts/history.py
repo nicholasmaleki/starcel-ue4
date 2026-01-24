@@ -348,3 +348,5 @@ class HistoryManager:
 
         self._keyboard_listener = keyboard.Listener(on_press=on_press)
         self._keyboard_listener.start()
+
+

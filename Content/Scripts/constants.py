@@ -21,14 +21,14 @@ class LargeStringAsyncStandalone:
     def __init__(
         self,
         large_string_obj,
-        rpc_actor,  # store the actor here
+        rpc_actor,  # store the actor reference here
         on_received_callback=None,       # client callback
         on_server_received_callback=None, # server callback
         on_progress_callback=None,
         auto_send=True
     ):
         self.large_string = large_string_obj
-        self.rpc_actor = rpc_actor       # store the actor instead of using global
+        self.rpc_actor = rpc_actor
         self.on_received_callback = on_received_callback
         self.on_server_received_callback = on_server_received_callback
         self.on_progress_callback = on_progress_callback
@@ -45,7 +45,7 @@ class LargeStringAsyncStandalone:
         ue.log_warning("[Standalone] Chunks built")
         self._chunks_ready = True
         if self.auto_send and not self._sending_started:
-            self.send_string()  # default mode
+            self.send_string()  # default send
 
     def _on_fully_received(self):
         ue.log_warning("[Standalone] Fully received")
@@ -69,6 +69,7 @@ class LargeStringAsyncStandalone:
         if not self._chunks_ready:
             ue.log_warning("send_string: chunks not ready")
             return
+
         self._sending_started = True
         total_chunks = self.large_string.GetChunkCount()
         ue.log(f"Sending {total_chunks} chunks (mode={mode})")
@@ -93,7 +94,7 @@ class LargeStringAsyncStandalone:
 
     def send_chunk(self, chunk, index, total_chunks, mode="server_only", target_client=None):
         """
-        Send a chunk with selectable network mode.
+        Send a chunk using the stored RPC actor.
         mode: "server_only" | "multicast" | "client" | "server_to_client"
         target_client: PlayerController for client-specific send
         """
@@ -126,6 +127,7 @@ class LargeStringAsyncStandalone:
 
         except Exception as e:
             ue.log_error(f"send_chunk RPC error: {e}")
+
 
 
 

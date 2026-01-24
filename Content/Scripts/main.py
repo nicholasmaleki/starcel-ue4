@@ -14,21 +14,15 @@ import hotreload, unreal_engine_tools
 import asyncio, time
 
 
-RPC_ACTOR = None
-HELPER = None
+ue.log('Hello i am a Python module.')
+# Code placed outside the Main class will not run when connecting to a server.
 
+# TODO: Cleanup 0,0,0
 
-ue.log('Hello i am a Python module')
+# # Keep track of the current index
+# current_bg_index = 0
 
-
-global world
-world = get_world()
-# print(world)
-global tickers
-tickers = []
-
-# Keep track of the current index
-current_bg_index = 0
+# change_background("transparent")
 
 # Stop the background music
 # find_actor("CellDriftLoop").SetActorHiddenInGame(True)
@@ -37,6 +31,8 @@ current_bg_index = 0
 # rebuild_generated_modules()
 
 # reload_all_modules()
+
+# reset_pyactor()
 
 # # Client → Server only
 # helper.send_string(mode="client_to_server")
@@ -49,52 +45,6 @@ current_bg_index = 0
 #
 # # Server → Client(s)
 # helper.send_string(mode="server_to_client", target_client=SomePlayerController)
-
-# ---- Helper callbacks ----
-def client_on_full_string_received(full_string):
-    ue.log_warning("[CLIENT CALLBACK] Full string received!")
-    ue.log_warning(f"Length: {len(full_string)}")
-    ue.log_warning(f"Preview: {full_string[:200]}")
-
-def server_on_full_string_received(full_string):
-    ue.log_warning("[SERVER CALLBACK] Full string received!")
-    ue.log_warning(f"Length: {len(full_string)}")
-    ue.log_warning(f"Preview: {full_string[:200]}")
-
-def progress_callback(current, total):
-    ue.log(f"[PROGRESS] Chunk {current}/{total}")
-
-
-# ---- Actor creation ----
-def find_rpc_actor():
-    ue.log("Making a LargeStringRPCActor...")
-    try:
-        actor = world.actor_spawn(LargeStringRPCActor)
-        actor.LargeString = ue.new_object(LargeStringAsync)  # Outer = actor
-        ue.log("Created new LargeStringAsync instance")
-        return actor
-    except Exception as e:
-        ue.log_warning(f"Actor creation error: {e}")
-
-    ue.log_error("LargeStringRPCActor NOT FOUND")
-    return None
-
-
-# def on_cube_ready(cube):
-#     print("Cube ready:", cube)
-#     if not cube:
-#         ue.log_warning("Failed to convert Texture2D to TextureCube")
-#         return None
-#     else:
-#         apply_material(
-#             actor_name="SM_SkySphere_2",
-#             material_path="/Game/Materials/M_SkyBox",
-#             params={
-#                 "Emissive Multiplier": 1.0,
-#                 "Texture": cube[0],
-#             }
-#         )
-
 
 class Main:
     def test_kingdon(self):
@@ -222,59 +172,54 @@ class Main:
     def begin_play(self):
         ue.log('Begin Play on Main class')
 
-        apply_material(
-            actor_name="TestSphere", # M_Color is default
-            params = {
-                "Color": (0.95, 0.2, 0.1, 1),
-                "Metallic": 0.8,
-                "Specular": 0.5,
-                "Roughness": 0.2,
-                "Anisotropy": 0.1,
-                "Emissive Multiplier": 10.0,
-                "Ambient Occlusion": 1.0,
-            }
-        )
+        global world
+        world = get_world()
+        print("begin_play found world", world)
+        unreal_engine_tools.world = world
+        # print(world)
+        global tickers
+        tickers = []
 
-        apply_material(
-            actor_name="StickManCharacter_C_0",  # runtime instance name (check via print)
-            component_name="SkeletalMeshOutline",
-            material_path="/Game/Materials/M_Outline.M_Outline",
-            params={
-                "Outline": 5.0,
-                "Color": (1, 1, 1, 1),
-            }
-        )
+        global RPC_ACTOR, HELPER
 
-        # bp_class = ue.load_object(Blueprint, '/Game/Blueprints/Assets/BP_TestSphere.BP_TestSphere')
-        # actor = world.actor_spawn(bp_class.GeneratedClass, FVector(0, 0, 0), FRotator(0, 0, 0))
-        #
-        # print("Spawned actor:", actor)
-        # for comp in actor.get_components():
-        #     print(comp.get_name(), "is_registered =", comp.component_is_registered())
-
-        # print(ue.get_editor_world().all_actors())
-        #
-        # print_all_actors()
-        # for level in world.get_levels():  # iterate all levels in the world
-        #     print("Level:", level.get_name())
-        #     #
-        #     # for actor in level.all_actors():  # get actors from this level
-        #     #     print("  ", actor.get_name(), actor)
-        # print("UOBJECT STUFF")
-        # for a in self.uobject.all_actors():
-        #     print(a.get_name())
-        # for a in self.uobject.all_objects():
-        #     print(a.get_name())
-
-        # print("WORLD STUFF")
-        # for a in world.all_actors():
-        #     print(a.get_name())
-        # # for a in world.all_objects():
-        # #     print(a.get_name())
-        #
+        RPC_ACTOR = None
+        HELPER = None
 
         if KismetSystemLibrary.IsDedicatedServer():
             ue.log("BeginPlay on DEDICATED SERVER")
+            print("using world", world.get_name())
+            # print(world.all_actors())
+            # for actor in world.all_actors():
+            #     print(actor.get_class().get_name())
+            gm = find_actor("StarcelGameMode")
+            print("Gamemode", gm)
+
+            def on_player_joined(player_controller):
+                ue.log_warning(f"[SERVER PY] Player joined: {player_controller}") # START HERE
+                global RPC_ACTOR
+                if not RPC_ACTOR:
+                    print("RPC_ACTOR not found, making one")
+                    try:
+                        ue.log("Server making a LargeStringRPCActor.")
+                        RPC_ACTOR = world.actor_spawn(LargeStringRPCActor)
+                        RPC_ACTOR.LargeString = ue.new_object(LargeStringAsync)  # attach ULargeStringAsync
+                        print("Created new LargeStringAsync instance", RPC_ACTOR, RPC_ACTOR.LargeString)
+                    except Exception as e:
+                        ue.log_error(f"Actor creation error: {e}")
+                        return
+                else:
+                    ue.log_warning(f"[SERVER PY] LargeStringRPCActor already created")
+
+                rpc_actors = find_actors("LargeStringRPCActor")
+                if rpc_actors:
+                    for rpc_actor in rpc_actors:
+                        print("Blueprint binding server_string_received event: ", rpc_actor)
+                        rpc_actor.bind_event('OnServerStringReceived', server_on_full_string_received)
+
+            if gm:
+                gm.bind_event("OnPlayerJoined", on_player_joined)
+                ue.log_warning("[SERVER] Bound OnPlayerJoined")
+
             hostname = socket.gethostname()
             local_ip = socket.gethostbyname(hostname)
             ue.log(f"Server LAN IP: {local_ip}")
@@ -284,17 +229,46 @@ class Main:
             except Exception as e:
                 ue.log(f"Could not fetch public IP: {e}")
             ue.log("If you correctly port forwarded the LAN IP, the server is on the public IP: " + public_ip)
-
             # # Server-originated multicast test
             # ue.log("Calling test_multicast_flag() from server")
             # self.test_multicast_flag("hello via multicast flag")
 
         else:
             ue.log("BeginPlay on CLIENT")
+            if world.AuthorityGameMode:
+                ue.log("SERVER (AuthorityGameMode exists). Client likely connected to internal server. ")
+            else:
+                ue.log("CLIENT (no AuthorityGameMode) Client likely connected to dedicated server. ")
+
+            self.uobject.enable_input()
+            self.uobject.bind_key('K', ue.IE_PRESSED, self.you_pressed_K)  # IE_AXIS, IE_DOUBLE_CLICK, IE_PRESSED, IE_RELEASED, IE_REPEAT
             player_controller = self.uobject.get_player_controller()
             pawn = player_controller.get_pawn()
             print(player_controller)
             print(pawn)
+            apply_material(
+                actor_name="TestSphere",  # M_Color is default
+                material_path="/Game/Materials/M_Color.M_Color",
+                params = {
+                    "Color": (0, 1, 0, 1),
+                    "Metallic": 0.5,
+                    "Specular": 0.5,
+                    "Roughness": 0.2,
+                    "Anisotropy": 0.1,
+                    "Emissive Multiplier": 10.0,
+                    "Ambient Occlusion": 1.0,
+                }
+            )
+
+            apply_material(
+                actor_name="StickManCharacter_C",  # runtime instance name (check via print)
+                component_name="SkeletalMeshOutline",
+                material_path="/Game/Materials/M_Outline.M_Outline",
+                params={
+                    "Outline": 5.0,
+                    "Color": (1, 1, 1, 1),
+                }
+            )
             # pawn = player_controller.get_controlled_pawn()
 
             # Client → Server → Clients
@@ -310,14 +284,14 @@ class Main:
 
         # self.uobject.get_player_controller().ClientTravel()
 
-        if KismetSystemLibrary.IsDedicatedServer():
-            ue.log("hello from server")
-            # print("hello from server" + self.uobject.get_uproperty('StringHelloWorldProperty'))
-            # print("hello from server" + self.uobject.get_uproperty('StringHelloWorldProperty2'))  # .set_metadata('Category', 'CategoryTest001')
-        else:
-            ue.log("hello from client")
-            self.uobject.enable_input()
-            self.uobject.bind_key('K', ue.IE_PRESSED, self.you_pressed_K)  # IE_AXIS, IE_DOUBLE_CLICK, IE_PRESSED, IE_RELEASED, IE_REPEAT
+        # if KismetSystemLibrary.IsDedicatedServer():
+        #     ue.log("hello from server")
+        #
+        #     # print("hello from server" + self.uobject.get_uproperty('StringHelloWorldProperty'))
+        #     # print("hello from server" + self.uobject.get_uproperty('StringHelloWorldProperty2'))  # .set_metadata('Category', 'CategoryTest001')
+        # else:
+        #     ue.log("hello from client")
+
             # self.uobject.StringHelloWorldProperty = StrProperty()
             # self.uobject.StringHelloWorldProperty2 = StrProperty()
             # KismetSystemLibrary.SetStringPropertyByName(self.uobject, 'StringHelloWorldProperty', 'Hello World 001')
@@ -337,77 +311,8 @@ class Main:
         # if is_hitting_something:
         #     ue.log(hit_result)x
 
-        # def get_world_from_uobject(obj):
-        #     # Walk up the outer chain to find a World
-        #     current = obj
-        #     while current:
-        #         if current.is_a(ue.find_class('World')):
-        #             return current
-        #         current = current.get_outer()
-        #     return None
-        #
-        # ActorClass = ue.find_class('Actor')
-        #
-        # def get_actor_from_uobject(obj):
-        #     current = obj
-        #     while current:
-        #         if current.is_a(ActorClass):
-        #             return current
-        #         current = current.get_outer()
-        #     return None
-        #
-        # world = get_world_from_uobject(self.uobject)
-        # actor = get_actor_from_uobject(self.uobject)
-
-        # ue.log(self.uobject.__getattribute__("server"))
-        # ue.log(self.uobject.__getattribute__("client"))
-
-        # if not world:
-        #     ue.log("No world found")
-        # if not actor:
-        #     ue.log("No actor found")
-        # else:
-        #     if actor.HasAuthority():
-        #         ue.log("hello from server")
-        #     else:
-        #         ue.log("hello from client")
-
-            # # UE4 NetMode numeric values
-            # NM_Standalone = 0
-            # NM_DedicatedServer = 1
-            # NM_ListenServer = 2
-            # NM_Client = 3
-            #
-            # if net_mode == NM_DedicatedServer:
-            #     ue.log("Running on a DEDICATED SERVER")
-            # elif net_mode == NM_ListenServer:
-            #     ue.log("Running on a LISTEN SERVER")
-            # elif net_mode == NM_Client:
-            #     ue.log("Running on a CLIENT")
-            # elif net_mode == NM_Standalone:
-            #     ue.log("Running in STANDALONE (no networking)")
-
-
         self.test_kingdon()
         self.test_cylinder()
-
-        # self.uobject.bind_event('OnActorBeginOverlap', self.manage_overlap)
-        # self.uobject.bind_action('Jump', ue.IE_PRESSED, self.uobject.jump)
-        # self.uobject.bind_axis('MoveForward', self.move_forward)
-        # text_render_component = ue.find_class('TextRenderComponent')
-        # spawn a new PyActor
-        # new_actor = self.uobject.actor_spawn(ue.find_class('PyActor'), Fvector(0, 0, 0),FRotator(0, 0, 90))
-        # # add a sphere component as the root one
-        # static_mesh = new_actor.add_actor_root_component(ue.find_class('StaticMeshComponent'), 'SphereMesh')
-        # # set the mesh as the Sphere asset
-        # static_mesh.call('SetStaticMesh /Engine/EngineMeshes/Sphere.Sphere')
-        # # set the python module
-        # new_actor.set_property('PythonModule', 'gameclasses')
-        # # set the python class
-        # new_actor.set_property('PythonClass', 'Vertical')
-        # world = ue.get_editor_world()
-        # actor000 = world.actor_spawn(Actor, FVector(0, 0, 0), FRotator(0, 0, 0))
-        # character000 = world.actor_spawn(Character, FVector(100, 100, 100), FRotator(0, 0, 0))
 
     # this is called at every 'tick'
     def tick(self, delta_time):
@@ -418,56 +323,79 @@ class Main:
         # set new location
         self.uobject.set_actor_location(location)
 
-    # def on_actor_begin_overlap(self, me, other_actor):
-    #     pass
-    #
-    # def on_actor_end_overlap(self, me, other_actor):
-    #     pass
-    #
-    # def on_actor_hit(self, me, other_actor, normal_impulse, hit_result):
-    #     pass
-    #
-    # def manage_overlap(self, me, other):
-    #     ue.print_string('overlapping ' + other.get_name())
-
-    # ------------------------------------------------------------------------
-    # KEY PRESS EVENT
-    # ------------------------------------------------------------------------
-    # def get_cube(self, filepath, callback=None):
-    #     self.uobject.call_function("ConvertImageToCubemap", filepath)
-    #     loop = asyncio.new_event_loop()
-    #     asyncio.set_event_loop(loop)
-    #     print("adding ticker")
-    #     def poll(delta_time):
-    #         print("poll")
-    #         if self.uobject.CubemapFinished:
-    #             print("finished")
-    #             cube = self.uobject.call_function("GetCubemap")
-    #             self.uobject.CubemapFinished = False
-    #             if callback:
-    #                 callback(cube)
-    #             return False  # stop ticking or use ue.remove_ticker(poll)
-    #         return True  # keep ticking
-    #
-    #     tickers.append(ue.add_ticker(poll))
-
-
 
     def you_pressed_K(self):
-        # Define the list of background types
-        backgrounds = ["white", "black", "white_no_bloom", "white_no_emissive", "stars", "sky", r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Images\duck.hdr"]
-
-        global current_bg_index  # needed to modify the variable outside the function
         ue.log_warning("=== YOU PRESSED K ===")
+        global RPC_ACTOR, HELPER
+        if not RPC_ACTOR:
+            print("Pressed k didn't have an rpc actor")
+            RPC_ACTOR = find_actor("LargeStringRPCActor")
+            print("pressed k found rpc actor", RPC_ACTOR)
+        else:
+            print("pressed k already has an rpc actor", RPC_ACTOR)
 
-        bg = backgrounds[current_bg_index]
-        print(bg)
-        change_background(bg)
+        # print("Found LargeStringRPCActors in pressed k", find_actors("LargeStringRPCActor"))
+        if not RPC_ACTOR.LargeString:
+            RPC_ACTOR.LargeString = ue.new_object(LargeStringAsync)
+            ue.log_warning("Created LargeString on client")
 
-        # Move to the next index, loop back to 0 if at the end
-        current_bg_index += 1
-        if current_bg_index >= len(backgrounds):
-            current_bg_index = 0
+        
+        # Create helper if not exists
+        if not HELPER:
+            HELPER = LargeStringAsyncStandalone(
+                large_string_obj=RPC_ACTOR.LargeString,
+                rpc_actor=RPC_ACTOR,
+                on_received_callback=client_on_full_string_received,
+                on_server_received_callback=server_on_full_string_received,
+                on_progress_callback=progress_callback,
+                auto_send=True
+            )
+            ue.log("Created LargeStringAsyncStandalone helper")
+        else:
+            print("pressed k already has a helper actor", HELPER)
+
+
+        # Prepare test string
+        test_string = "Hello Unreal Async RPC! " * 100
+        ue.log_warning(f"Starting async build, length={len(test_string)}")
+
+        # Build chunks asynchronously
+        try:
+            RPC_ACTOR.LargeString.SetFromStringAsync(test_string)
+        except Exception as e:
+            ue.log_error(f"SetFromStringAsync failed: {e}")
+
+
+
+        # Send the string through various modes
+
+        # Client → Server only
+        HELPER.send_string(mode="server_only")
+
+        # Server → All clients (multicast)
+        HELPER.send_string(mode="multicast")
+
+        # Server → Specific client (replace `target_pc` with your player controller)
+        target_pc = self.uobject.get_player_controller()
+        HELPER.send_string(mode="client", target_client=target_pc)
+
+        # Server → Single client (server_to_client)
+        HELPER.send_string(mode="server_to_client", target_client=target_pc)
+
+        # # Background swapping
+        # # Define the list of background types
+        # backgrounds = ["white", "black", "white_no_bloom", "white_no_emissive", "stars", "sky", "transparent", r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Images\duck.hdr"]
+        #
+        # global current_bg_index  # needed to modify the variable outside the function
+        #
+        # bg = backgrounds[current_bg_index]
+        # print(bg)
+        # change_background(bg)
+        #
+        # # Move to the next index, loop back to 0 if at the end
+        # current_bg_index += 1
+        # if current_bg_index >= len(backgrounds):
+        #     current_bg_index = 0
 
         # reset_pyactor()
         # print(world)
@@ -519,6 +447,7 @@ class Main:
         # # Server → Single client (server_to_client)
         # HELPER.send_string(mode="server_to_client", target_client=target_pc)
         # <3
+
     # def you_pressed_K(self):
     #     ue.log_warning("=== YOU PRESSED K ===")
     #
@@ -558,116 +487,3 @@ class Main:
 
     def move_forward(self, amount):
         ue.print_string('axis value: ' + str(amount))
-
-#
-# def on_string_received(full_string):
-#     print("Standalone helper received string!")
-#     print("Length:", len(full_string))
-#     print("Chunks received:", helper.large_string.GetChunkCount())
-#     print("Preview:", full_string[:200])
-#
-# # Create a standalone ULargeStringAsync
-# large_string = LargeStringAsync()
-#
-# # Example loopback send function
-# def send_chunk(chunk, index, total_chunks):
-#     helper.receive_chunk(chunk, index, total_chunks)
-#
-# # Create the helper (auto-waits for chunks)
-# helper = LargeStringAsyncStandalone(
-#     large_string_obj=large_string,
-#     send_chunk_callback=send_chunk,
-#     on_received_callback=on_string_received
-# )
-#
-# # Start async string build
-# large_string.SetFromStringAsync("Hello Unreal Standalone!" * 100000)
-#
-# # Now send all chunks
-# helper.send_string()
-
-
-# # 1GB String Test
-# large_string = LargeStringAsync()
-# N = 1_000_000_000 // len("X")  # Number of repeats to reach ~1GB
-# test_string = "X" * N
-#
-# large_string.SetFromStringAsync(test_string)
-#
-# def on_received(full_string):
-#     print("Received string!")
-#     print("Length (chars):", len(full_string))
-#     print("Chunk count:", helper.large_string.GetChunkCount())
-#     print("Preview:", full_string[:200])  # small preview
-#
-# helper = LargeStringAsyncStandalone(
-#     large_string_obj=large_string,
-#     send_chunk_callback=lambda c,i,t: helper.receive_chunk(c,i,t),
-#     on_received_callback=on_received
-# )
-#
-# helper.send_string()
-#
-# #AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-# # ------------------------------------------------------------------------
-# # CALLBACK: when full string is received
-# # ------------------------------------------------------------------------
-# def on_string_received(full_string):
-#     print("[Standalone] Received full string!")
-#     print("Length:", len(full_string))
-#     print("Chunks received:", helper.large_string.GetChunkCount())
-#     print("Preview:", full_string[:200])
-#
-#
-# # ------------------------------------------------------------------------
-# # CLIENT RPC: receive a chunk from server
-# # ------------------------------------------------------------------------
-# def client_receive_chunk(chunk, index, total_chunks):
-#     """Client-side RPC: forward chunk to helper"""
-#     helper.receive_chunk(chunk, index, total_chunks)
-#
-#
-# # ------------------------------------------------------------------------
-# # CREATE HELPER
-# # ------------------------------------------------------------------------
-# large_string = LargeStringAsync()
-#
-# helper = LargeStringAsyncStandalone(
-#     large_string_obj=large_string,
-#     send_chunk_callback=None,  # will be bound below
-#     on_received_callback=on_string_received
-# )
-#
-#
-# # ------------------------------------------------------------------------
-# # SEND CHUNK CALLBACK
-# # ------------------------------------------------------------------------
-# def send_chunk(chunk, index, total_chunks):
-#     """Called by helper when sending chunks"""
-#     if KismetSystemLibrary.IsDedicatedServer(None):
-#         # Server: manually multicast to all clients
-#         for pc in ue.get_editor_world().all_actors():
-#             if hasattr(pc, "Client_ReceiveChunk"):
-#                 pc.Client_ReceiveChunk(chunk, index, total_chunks)
-#     else:
-#         # Client: send to server RPC
-#         if hasattr(helper.large_string, "Server_ReceiveChunk"):
-#             helper.large_string.Server_ReceiveChunk(chunk, index, total_chunks)
-#
-# # Bind it
-# helper.send_chunk_callback = send_chunk
-#
-#
-# # ------------------------------------------------------------------------
-# # START ASYNC STRING BUILD
-# # ------------------------------------------------------------------------
-# print("Starting LargeStringAsyncStandalone test...")
-# large_string.SetFromStringAsync("Hello Unreal Standalone!" * 100)  # ~multi-MB
-#
-# # ------------------------------------------------------------------------
-# # MANUAL SEND TRIGGER (if chunks already built)
-# # ------------------------------------------------------------------------
-# # Only call send_string() after chunks exist
-# if hasattr(helper.large_string, "Chunks") and len(helper.large_string.Chunks) > 0:
-#     print("Chunks exist, sending...")
-#     helper.send_string()

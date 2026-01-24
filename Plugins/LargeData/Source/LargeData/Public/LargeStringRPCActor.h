@@ -5,6 +5,21 @@
 #include "LargeStringAsync.h"
 #include "LargeStringRPCActor.generated.h"
 
+
+/** Fired on server when full string arrives */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
+    FOnServerStringReceived,
+    const FString&,
+    FullString
+);
+
+/** Fired on clients when full string arrives */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
+    FOnClientStringReceived,
+    const FString&,
+    FullString
+);
+
 UCLASS()
 class LARGEDATA_API ALargeStringRPCActor : public AActor
 {
@@ -13,35 +28,59 @@ class LARGEDATA_API ALargeStringRPCActor : public AActor
 public:
     ALargeStringRPCActor();
 
-    /** The LargeStringAsync object attached to this actor */
+    /** BeginPlay override to bind events */
+    virtual void BeginPlay() override;
+
+    /** Replication setup */
+    virtual void GetLifetimeReplicatedProps(
+        TArray<FLifetimeProperty>& OutLifetimeProps
+    ) const override;
+
+public:
+
+    /** Large async string object */
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-        ULargeStringAsync* LargeString;
+    ULargeStringAsync* LargeString;
 
-    /** Called when the full string is received on the server */
-    UFUNCTION()
-        void Server_OnFullStringReceived();
+    /** Fired on server when full string arrives */
+    UPROPERTY(BlueprintAssignable)
+    FOnServerStringReceived OnServerStringReceived;
 
-    /** Client → Server: receive a chunk */
+    /** Fired on clients when full string arrives */
+    UPROPERTY(BlueprintAssignable)
+    FOnClientStringReceived OnClientStringReceived;
+
+    /** Client → Server */
     UFUNCTION(Server, Reliable)
-        void Server_ReceiveChunk(
-            const TArray<uint8>& Chunk,
-            int32 Index,
-            int32 TotalChunks
-        );
+    void Server_ReceiveChunk(
+        const TArray<uint8>& Chunk,
+        int32 Index,
+        int32 TotalChunks
+    );
 
-    /** Server → All clients: multicast a chunk */
+    /** Server → All Clients */
     UFUNCTION(NetMulticast, Reliable)
-        void Multicast_ReceiveChunk(
-            const TArray<uint8>& Chunk,
-            int32 Index,
-            int32 TotalChunks
-        );
+    void Multicast_ReceiveChunk(
+        const TArray<uint8>& Chunk,
+        int32 Index,
+        int32 TotalChunks
+    );
 
-    /** Server → specific client: send chunk to one client */
+    /** Server → One Client */
     UFUNCTION(Client, Reliable)
-        void Client_ReceiveChunk(
-            const TArray<uint8>& Chunk,
-            int32 Index,
-            int32 TotalChunks
-        );
+    void Client_ReceiveChunk(
+        const TArray<uint8>& Chunk,
+        int32 Index,
+        int32 TotalChunks
+    );
+
+    /** Server → All Clients (completion) */
+    UFUNCTION(NetMulticast, Reliable)
+    void Multicast_OnFullStringReceived(const FString& FullString);
+
+protected:
+
+    /** Called when the server receives the full string */
+    UFUNCTION()
+    void Server_OnFullStringReceived();
 };

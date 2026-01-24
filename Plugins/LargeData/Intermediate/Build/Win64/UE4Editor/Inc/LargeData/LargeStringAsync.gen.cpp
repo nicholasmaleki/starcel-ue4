@@ -86,6 +86,20 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringAsync() {}
 		*(TArray<uint8>*)Z_Param__Result=P_THIS->GetChunk(Z_Param_Index);
 		P_NATIVE_END;
 	}
+	DEFINE_FUNCTION(ULargeStringAsync::execIsFullyReceived)
+	{
+		P_FINISH;
+		P_NATIVE_BEGIN;
+		*(bool*)Z_Param__Result=P_THIS->IsFullyReceived();
+		P_NATIVE_END;
+	}
+	DEFINE_FUNCTION(ULargeStringAsync::execGetExpectedChunkCount)
+	{
+		P_FINISH;
+		P_NATIVE_BEGIN;
+		*(int32*)Z_Param__Result=P_THIS->GetExpectedChunkCount();
+		P_NATIVE_END;
+	}
 	DEFINE_FUNCTION(ULargeStringAsync::execGetChunkCount)
 	{
 		P_FINISH;
@@ -124,7 +138,9 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringAsync() {}
 		static const FNameNativePtrPair Funcs[] = {
 			{ "GetChunk", &ULargeStringAsync::execGetChunk },
 			{ "GetChunkCount", &ULargeStringAsync::execGetChunkCount },
+			{ "GetExpectedChunkCount", &ULargeStringAsync::execGetExpectedChunkCount },
 			{ "GetSerializedSize", &ULargeStringAsync::execGetSerializedSize },
+			{ "IsFullyReceived", &ULargeStringAsync::execIsFullyReceived },
 			{ "ReassembleFromChunksAsync", &ULargeStringAsync::execReassembleFromChunksAsync },
 			{ "ReceiveChunk", &ULargeStringAsync::execReceiveChunk },
 			{ "SetFromStringAsync", &ULargeStringAsync::execSetFromStringAsync },
@@ -203,6 +219,38 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringAsync() {}
 		}
 		return ReturnFunction;
 	}
+	struct Z_Construct_UFunction_ULargeStringAsync_GetExpectedChunkCount_Statics
+	{
+		struct LargeStringAsync_eventGetExpectedChunkCount_Parms
+		{
+			int32 ReturnValue;
+		};
+		static const UE4CodeGen_Private::FIntPropertyParams NewProp_ReturnValue;
+		static const UE4CodeGen_Private::FPropertyParamsBase* const PropPointers[];
+#if WITH_METADATA
+		static const UE4CodeGen_Private::FMetaDataPairParam Function_MetaDataParams[];
+#endif
+		static const UE4CodeGen_Private::FFunctionParams FuncParams;
+	};
+	const UE4CodeGen_Private::FIntPropertyParams Z_Construct_UFunction_ULargeStringAsync_GetExpectedChunkCount_Statics::NewProp_ReturnValue = { "ReturnValue", nullptr, (EPropertyFlags)0x0010000000000580, UE4CodeGen_Private::EPropertyGenFlags::Int, RF_Public|RF_Transient|RF_MarkAsNative, 1, STRUCT_OFFSET(LargeStringAsync_eventGetExpectedChunkCount_Parms, ReturnValue), METADATA_PARAMS(nullptr, 0) };
+	const UE4CodeGen_Private::FPropertyParamsBase* const Z_Construct_UFunction_ULargeStringAsync_GetExpectedChunkCount_Statics::PropPointers[] = {
+		(const UE4CodeGen_Private::FPropertyParamsBase*)&Z_Construct_UFunction_ULargeStringAsync_GetExpectedChunkCount_Statics::NewProp_ReturnValue,
+	};
+#if WITH_METADATA
+	const UE4CodeGen_Private::FMetaDataPairParam Z_Construct_UFunction_ULargeStringAsync_GetExpectedChunkCount_Statics::Function_MetaDataParams[] = {
+		{ "ModuleRelativePath", "Public/LargeStringAsync.h" },
+	};
+#endif
+	const UE4CodeGen_Private::FFunctionParams Z_Construct_UFunction_ULargeStringAsync_GetExpectedChunkCount_Statics::FuncParams = { (UObject*(*)())Z_Construct_UClass_ULargeStringAsync, nullptr, "GetExpectedChunkCount", nullptr, nullptr, sizeof(LargeStringAsync_eventGetExpectedChunkCount_Parms), Z_Construct_UFunction_ULargeStringAsync_GetExpectedChunkCount_Statics::PropPointers, UE_ARRAY_COUNT(Z_Construct_UFunction_ULargeStringAsync_GetExpectedChunkCount_Statics::PropPointers), RF_Public|RF_Transient|RF_MarkAsNative, (EFunctionFlags)0x54020401, 0, 0, METADATA_PARAMS(Z_Construct_UFunction_ULargeStringAsync_GetExpectedChunkCount_Statics::Function_MetaDataParams, UE_ARRAY_COUNT(Z_Construct_UFunction_ULargeStringAsync_GetExpectedChunkCount_Statics::Function_MetaDataParams)) };
+	UFunction* Z_Construct_UFunction_ULargeStringAsync_GetExpectedChunkCount()
+	{
+		static UFunction* ReturnFunction = nullptr;
+		if (!ReturnFunction)
+		{
+			UE4CodeGen_Private::ConstructUFunction(ReturnFunction, Z_Construct_UFunction_ULargeStringAsync_GetExpectedChunkCount_Statics::FuncParams);
+		}
+		return ReturnFunction;
+	}
 	struct Z_Construct_UFunction_ULargeStringAsync_GetSerializedSize_Statics
 	{
 		struct LargeStringAsync_eventGetSerializedSize_Parms
@@ -232,6 +280,43 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringAsync() {}
 		if (!ReturnFunction)
 		{
 			UE4CodeGen_Private::ConstructUFunction(ReturnFunction, Z_Construct_UFunction_ULargeStringAsync_GetSerializedSize_Statics::FuncParams);
+		}
+		return ReturnFunction;
+	}
+	struct Z_Construct_UFunction_ULargeStringAsync_IsFullyReceived_Statics
+	{
+		struct LargeStringAsync_eventIsFullyReceived_Parms
+		{
+			bool ReturnValue;
+		};
+		static void NewProp_ReturnValue_SetBit(void* Obj);
+		static const UE4CodeGen_Private::FBoolPropertyParams NewProp_ReturnValue;
+		static const UE4CodeGen_Private::FPropertyParamsBase* const PropPointers[];
+#if WITH_METADATA
+		static const UE4CodeGen_Private::FMetaDataPairParam Function_MetaDataParams[];
+#endif
+		static const UE4CodeGen_Private::FFunctionParams FuncParams;
+	};
+	void Z_Construct_UFunction_ULargeStringAsync_IsFullyReceived_Statics::NewProp_ReturnValue_SetBit(void* Obj)
+	{
+		((LargeStringAsync_eventIsFullyReceived_Parms*)Obj)->ReturnValue = 1;
+	}
+	const UE4CodeGen_Private::FBoolPropertyParams Z_Construct_UFunction_ULargeStringAsync_IsFullyReceived_Statics::NewProp_ReturnValue = { "ReturnValue", nullptr, (EPropertyFlags)0x0010000000000580, UE4CodeGen_Private::EPropertyGenFlags::Bool | UE4CodeGen_Private::EPropertyGenFlags::NativeBool, RF_Public|RF_Transient|RF_MarkAsNative, 1, sizeof(bool), sizeof(LargeStringAsync_eventIsFullyReceived_Parms), &Z_Construct_UFunction_ULargeStringAsync_IsFullyReceived_Statics::NewProp_ReturnValue_SetBit, METADATA_PARAMS(nullptr, 0) };
+	const UE4CodeGen_Private::FPropertyParamsBase* const Z_Construct_UFunction_ULargeStringAsync_IsFullyReceived_Statics::PropPointers[] = {
+		(const UE4CodeGen_Private::FPropertyParamsBase*)&Z_Construct_UFunction_ULargeStringAsync_IsFullyReceived_Statics::NewProp_ReturnValue,
+	};
+#if WITH_METADATA
+	const UE4CodeGen_Private::FMetaDataPairParam Z_Construct_UFunction_ULargeStringAsync_IsFullyReceived_Statics::Function_MetaDataParams[] = {
+		{ "ModuleRelativePath", "Public/LargeStringAsync.h" },
+	};
+#endif
+	const UE4CodeGen_Private::FFunctionParams Z_Construct_UFunction_ULargeStringAsync_IsFullyReceived_Statics::FuncParams = { (UObject*(*)())Z_Construct_UClass_ULargeStringAsync, nullptr, "IsFullyReceived", nullptr, nullptr, sizeof(LargeStringAsync_eventIsFullyReceived_Parms), Z_Construct_UFunction_ULargeStringAsync_IsFullyReceived_Statics::PropPointers, UE_ARRAY_COUNT(Z_Construct_UFunction_ULargeStringAsync_IsFullyReceived_Statics::PropPointers), RF_Public|RF_Transient|RF_MarkAsNative, (EFunctionFlags)0x54020401, 0, 0, METADATA_PARAMS(Z_Construct_UFunction_ULargeStringAsync_IsFullyReceived_Statics::Function_MetaDataParams, UE_ARRAY_COUNT(Z_Construct_UFunction_ULargeStringAsync_IsFullyReceived_Statics::Function_MetaDataParams)) };
+	UFunction* Z_Construct_UFunction_ULargeStringAsync_IsFullyReceived()
+	{
+		static UFunction* ReturnFunction = nullptr;
+		if (!ReturnFunction)
+		{
+			UE4CodeGen_Private::ConstructUFunction(ReturnFunction, Z_Construct_UFunction_ULargeStringAsync_IsFullyReceived_Statics::FuncParams);
 		}
 		return ReturnFunction;
 	}
@@ -416,7 +501,9 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringAsync() {}
 	const FClassFunctionLinkInfo Z_Construct_UClass_ULargeStringAsync_Statics::FuncInfo[] = {
 		{ &Z_Construct_UFunction_ULargeStringAsync_GetChunk, "GetChunk" }, // 2078071925
 		{ &Z_Construct_UFunction_ULargeStringAsync_GetChunkCount, "GetChunkCount" }, // 3154786892
+		{ &Z_Construct_UFunction_ULargeStringAsync_GetExpectedChunkCount, "GetExpectedChunkCount" }, // 2932690731
 		{ &Z_Construct_UFunction_ULargeStringAsync_GetSerializedSize, "GetSerializedSize" }, // 4133764479
+		{ &Z_Construct_UFunction_ULargeStringAsync_IsFullyReceived, "IsFullyReceived" }, // 391052158
 		{ &Z_Construct_UFunction_ULargeStringAsync_ReassembleFromChunksAsync, "ReassembleFromChunksAsync" }, // 1953374076
 		{ &Z_Construct_UFunction_ULargeStringAsync_ReceiveChunk, "ReceiveChunk" }, // 804026855
 		{ &Z_Construct_UFunction_ULargeStringAsync_SetFromStringAsync, "SetFromStringAsync" }, // 697932192
@@ -478,7 +565,7 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringAsync() {}
 		}
 		return OuterClass;
 	}
-	IMPLEMENT_CLASS(ULargeStringAsync, 1140165297);
+	IMPLEMENT_CLASS(ULargeStringAsync, 2661459740);
 	template<> LARGEDATA_API UClass* StaticClass<ULargeStringAsync>()
 	{
 		return ULargeStringAsync::StaticClass();
