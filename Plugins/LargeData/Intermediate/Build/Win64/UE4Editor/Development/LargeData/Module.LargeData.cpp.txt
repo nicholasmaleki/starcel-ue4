@@ -7,3 +7,9 @@ C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LargeData\Intermediate
 C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LargeData\Intermediate\Build\Win64\UE4Editor\Inc\LargeData\LargeByteDataObject.generated.h
 C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/LargeData/Source/LargeData/Private/LargeData.cpp
 C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/LargeData/Source/LargeData/Private/LargeDataObject.cpp
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/LargeData/Source/LargeData/Private/LargeStringAsync.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LargeData\Source\LargeData\Public\LargeStringAsync.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LargeData\Intermediate\Build\Win64\UE4Editor\Inc\LargeData\LargeStringAsync.generated.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/LargeData/Source/LargeData/Private/LargeStringRPCActor.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LargeData\Source\LargeData\Public\LargeStringRPCActor.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\LargeData\Intermediate\Build\Win64\UE4Editor\Inc\LargeData\LargeStringRPCActor.generated.h
