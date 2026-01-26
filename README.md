@@ -18,8 +18,8 @@ The full Unreal Engine Starcel source project folder is quite a large download, 
 
 You need to use Visual Studio 2019 for compiling ([download community edition](https://aka.ms/vs/16/release/vs_community.exe)). I recommend [PyCharm Community](https://www.jetbrains.com/pycharm/download/?section=windows) for editing until IDE support is added.
 
-Compiled versions of Python 3.9 can be downloaded from here https://www.python.org/downloads/release/python-3913/, newer versions of Python 3.9 should work, but need to be compiled from Python source. The unreal_engine package is not installed to Python permanently, but it is installed at runtime, so it does not need to be pip-installed. The Content/Scripts/unreal_engine folder includes all necessary stubs and empty classes for intellisense. 
-You can manually install the necessary packages directly using python.exe -m pip install numpy sympy fast-autocomplete fast-autocomplete[levenshtein] numba kingdon matplotlib scikit-image scikit-learn dill pystubgen requests pywin32 psutil. If any of these fails, you may need to re-run the command. 
+Compiled versions of Python 3.9 can be downloaded from here https://www.python.org/downloads/release/python-3913/, newer versions of specifically Python 3.9 should work, but need to be compiled from Python source. The unreal_engine package is not installed to Python permanently, but it is installed at runtime, so it does not need to be pip-installed. The `Content/Scripts/unreal_engine` folder includes all necessary stubs and empty classes for intellisense. 
+You can manually install the necessary packages directly using `pip install -r requirements.txt` or `python.exe -m pip install numpy sympy fast-autocomplete fast-autocomplete[levenshtein] numba kingdon matplotlib scikit-image scikit-learn dill pystubgen requests pywin32 psutil`. If any of these fails, you may need to re-run the command. 
 The default Unreal Engine map contains a PyActor which loads main.py and the class Main when the map starts up. Both the server and the client will run this file separately. The line ``if KismetSystemLibrary.IsDedicatedServer():`` lets you define client and server specific code. You can create more PyActors or even use Python from the UE console by clicking ` and typing "py.". 
 Create a Text object by double clicking Enter. Once created, you can use =py() to run any Python command. 
 The state of the world is not saved in main.py or elsewhere, you will need to make changes there directly or copy your changes from the world elsewhere to save. This will be changed in the future.
@@ -129,7 +129,7 @@ The last Starcel release was written, at the time, in the newest Python, Python 
 - Excel, Google Sheets, HDF5, and FOAM3 importer
 - Multidimensional graphing
 - Plotting, charts, digraphs, nodes (OriginLab Pro features)
-- Network visualization, Wireshark
+- Network visualization https://github.com/fortra/impacket https://github.com/KimiNewt/pyshark https://github.com/secdev/scapy
 - Dynamic graphing and variables with reverse order calculation engine
 - Performance profiling: flame graphs, memory profilers https://github.com/benfred/py-spy
 - Treesize-style system file graph
@@ -150,7 +150,7 @@ Unity has limited Python support with Unity-PythonNet. Panda3D and RenderPipelin
 
 
 ## Where did you get the idea? 
-Originally, I wanted to build a system for multidimensional tables and multidimensional plotting of functions and data. For example, plotting multidimensional weights in LLMs (https://youtu.be/wjZofJX0v4M?&t=813, here the embedding space in GPT-3 is 12,228 dimensional, whereas Kingdon only allows up to 16 dimensions). I wanted to build the final form of computer interaction, by building in 3D we have allowed a space for representing just about any object you will encounter. Using a programming language designed to be human readable was paramount. I wanted something that is as close to the English language as possible while still being useful. Excel is the most used programming language by a large margin, with python being the next. It is very convenient to program in a table, as most data structures can be represented as a table. So, this is the hill I want to die on. 
+Originally, I wanted to build a system for multidimensional tables and multidimensional plotting of functions and data. For example, plotting multidimensional weights in LLMs (https://youtu.be/wjZofJX0v4M?&t=813, here the embedding space in GPT-3 is 12,228 dimensional, whereas Kingdon only allows up to 16 dimensions). I wanted to build the final form of computer interaction, by building in 3D we have allowed a space for representing just about any object you will encounter. Using a programming language designed to be human readable was paramount. I wanted something that is as close to the English language as possible while still being useful. Excel is the most used programming language by a large margin, with python being the next. It is very convenient to program in a table, as most data structures can be represented as a table. 
 
 
 ## Where does the name "Starcel" come from?

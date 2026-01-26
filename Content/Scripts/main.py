@@ -5,7 +5,7 @@ import os, sys, subprocess, importlib, urllib.request, socket, math, sympy, fast
 from unreal_engine import FVector, FRotator, FTransform, FHitResult, CLASS_CONFIG, CLASS_DEFAULT_CONFIG, CPF_CONFIG, CPF_GLOBAL_CONFIG, CPF_EXPOSE_ON_SPAWN, CPF_NET, CPF_REP_NOTIFY
 from unreal_engine.classes import Actor, Character, PlayerController, StaticMeshActor, KismetMathLibrary, KismetSystemLibrary, Object, StrProperty, IntProperty, Blueprint, Material, Texture, LargeStringAsync, LargeStringRPCActor
 from unreal_engine.enums import EInputEvent, ETraceTypeQuery, EDrawDebugTrace
-from constants import Constants, WorldSize, LargeStringAsyncStandalone
+from constants import Constants, WorldSize
 import constants, windowtool
 from languages import *
 from cli import *
@@ -34,17 +34,11 @@ ue.log('Hello i am a Python module.')
 
 # reset_pyactor()
 
-# # Client → Server only
-# helper.send_string(mode="client_to_server")
-#
-# # Client → Server → Multicast to all clients
-# helper.send_string(mode="client_to_server_multicast")
-#
-# # Client → Server → Specific client
-# helper.send_string(mode="client_to_server_target", target_client=SomePlayerController)
-#
-# # Server → Client(s)
-# helper.send_string(mode="server_to_client", target_client=SomePlayerController)
+
+# Global Vars
+RPC_ACTOR = None
+SERVER_HELPER = None  # Server-side helper
+CLIENT_HELPER = None  # Client-side helper
 
 class Main:
     def test_kingdon(self):
@@ -180,10 +174,10 @@ class Main:
         global tickers
         tickers = []
 
-        global RPC_ACTOR, HELPER
+        global RPC_ACTOR, CLIENT_HELPER
 
         RPC_ACTOR = None
-        HELPER = None
+        CLIENT_HELPER = None
 
         if KismetSystemLibrary.IsDedicatedServer():
             ue.log("BeginPlay on DEDICATED SERVER")
@@ -196,25 +190,48 @@ class Main:
 
             def on_player_joined(player_controller):
                 ue.log_warning(f"[SERVER PY] Player joined: {player_controller}") # START HERE
-                global RPC_ACTOR
+                global RPC_ACTOR, SERVER_HELPER
+
                 if not RPC_ACTOR:
                     print("RPC_ACTOR not found, making one")
                     try:
                         ue.log("Server making a LargeStringRPCActor.")
                         RPC_ACTOR = world.actor_spawn(LargeStringRPCActor)
+                        RPC_ACTOR.SetOwner(player_controller)
                         RPC_ACTOR.LargeString = ue.new_object(LargeStringAsync)  # attach ULargeStringAsync
                         print("Created new LargeStringAsync instance", RPC_ACTOR, RPC_ACTOR.LargeString)
+
+                        # BIND THE C++ EVENT MANUALLY AFTER CREATING LARGESTRING
+                        try:
+                            RPC_ACTOR.LargeString.bind_event('OnFullyReceived', RPC_ACTOR.Server_OnFullStringReceived)
+                            ue.log_warning("[SERVER] Manually bound OnFullyReceived to Server_OnFullStringReceived")
+                        except Exception as e:
+                            ue.log_error(f"Failed to bind OnFullyReceived: {e}")
+
                     except Exception as e:
                         ue.log_error(f"Actor creation error: {e}")
                         return
                 else:
                     ue.log_warning(f"[SERVER PY] LargeStringRPCActor already created")
 
-                rpc_actors = find_actors("LargeStringRPCActor")
-                if rpc_actors:
-                    for rpc_actor in rpc_actors:
-                        print("Blueprint binding server_string_received event: ", rpc_actor)
-                        rpc_actor.bind_event('OnServerStringReceived', server_on_full_string_received)
+                # Create SERVER helper with SERVER callback
+                if not SERVER_HELPER:
+                    ue.log_warning("[SERVER] Creating SERVER helper")
+                    SERVER_HELPER = LargeStringAsyncStandalone(
+                        large_string_obj=RPC_ACTOR.LargeString,
+                        rpc_actor=RPC_ACTOR,
+                        on_received_callback=None,  # Server doesn't need client callback
+                        on_server_received_callback=server_on_full_string_received,  # THIS is the key
+                        on_progress_callback=None,
+                        auto_send=False  # Server doesn't auto-send from OnChunksBuilt
+                    )
+                    ue.log_warning("[SERVER] Server rpc helper created and bound")
+
+                # rpc_actors = find_actors("LargeStringRPCActor")
+                # if rpc_actors:
+                #     for rpc_actor in rpc_actors:
+                #         print("Blueprint binding server_string_received event: ", rpc_actor)
+                #         rpc_actor.bind_event('OnServerStringReceived', server_on_full_string_received)
 
             if gm:
                 gm.bind_event("OnPlayerJoined", on_player_joined)
@@ -326,7 +343,7 @@ class Main:
 
     def you_pressed_K(self):
         ue.log_warning("=== YOU PRESSED K ===")
-        global RPC_ACTOR, HELPER
+        global RPC_ACTOR, CLIENT_HELPER
         if not RPC_ACTOR:
             print("Pressed k didn't have an rpc actor")
             RPC_ACTOR = find_actor("LargeStringRPCActor")
@@ -334,29 +351,32 @@ class Main:
         else:
             print("pressed k already has an rpc actor", RPC_ACTOR)
 
-        # print("Found LargeStringRPCActors in pressed k", find_actors("LargeStringRPCActor"))
+        print("Found LargeStringRPCActors in pressed k", find_actors("LargeStringRPCActor"))
         if not RPC_ACTOR.LargeString:
+            ue.log_warning("Creating LargeString on client")
             RPC_ACTOR.LargeString = ue.new_object(LargeStringAsync)
             ue.log_warning("Created LargeString on client")
+        else:
+            ue.log_warning("LargeString already exists in RPC_ACTOR")
 
-        
+
         # Create helper if not exists
-        if not HELPER:
-            HELPER = LargeStringAsyncStandalone(
+        if not CLIENT_HELPER:
+            CLIENT_HELPER = LargeStringAsyncStandalone(
                 large_string_obj=RPC_ACTOR.LargeString,
                 rpc_actor=RPC_ACTOR,
                 on_received_callback=client_on_full_string_received,
-                on_server_received_callback=server_on_full_string_received,
+                on_server_received_callback=None, # Client doesn't need server callback
                 on_progress_callback=progress_callback,
                 auto_send=True
             )
             ue.log("Created LargeStringAsyncStandalone helper")
         else:
-            print("pressed k already has a helper actor", HELPER)
+            print("pressed k already has a helper actor", CLIENT_HELPER)
 
 
         # Prepare test string
-        test_string = "Hello Unreal Async RPC! " * 100
+        test_string = "U" * 1 * 1024 * 1024 # 100 * 1024 * 1024  # 100MB
         ue.log_warning(f"Starting async build, length={len(test_string)}")
 
         # Build chunks asynchronously
@@ -369,18 +389,22 @@ class Main:
 
         # Send the string through various modes
 
-        # Client → Server only
-        HELPER.send_string(mode="server_only")
+        # # Client → Server only
+        # CLIENT_HELPER.send_string(mode="server_only")
 
-        # Server → All clients (multicast)
-        HELPER.send_string(mode="multicast")
+        # # Server → Multicast to All clients
+        # CLIENT_HELPER.send_string(mode="multicast")
+        #
+        # # Server → Specific client
+        # target_pc = self.uobject.get_player_controller()
+        # CLIENT_HELPER.send_string(mode="client", target_client=target_pc)
+        #
+        # # Server → Single client (Explicit)
+        # CLIENT_HELPER.send_string(mode="server_to_client", target_client=target_pc)
+        #
+        # Client → Server → Multicast to All Clients
+        CLIENT_HELPER.send_string(mode="client_to_server_then_multicast")
 
-        # Server → Specific client (replace `target_pc` with your player controller)
-        target_pc = self.uobject.get_player_controller()
-        HELPER.send_string(mode="client", target_client=target_pc)
-
-        # Server → Single client (server_to_client)
-        HELPER.send_string(mode="server_to_client", target_client=target_pc)
 
         # # Background swapping
         # # Define the list of background types
@@ -397,85 +421,6 @@ class Main:
         # if current_bg_index >= len(backgrounds):
         #     current_bg_index = 0
 
-        # reset_pyactor()
-        # print(world)
-        # print_all_actors()
-
-        # <3
-        # ue.log(f"World: {world}")
-        #
-        # global RPC_ACTOR, HELPER
-        #
-        # # Spawn or get the RPC actor
-        # if not RPC_ACTOR:
-        #     RPC_ACTOR = find_rpc_actor()
-        #     if not RPC_ACTOR:
-        #         ue.log_error("RPC_ACTOR not created, aborting test")
-        #         return
-        #
-        # # Set up the helper if it doesn't exist
-        # if not HELPER:
-        #     HELPER = LargeStringAsyncStandalone(
-        #         large_string_obj=RPC_ACTOR.LargeString,
-        #         rpc_actor=RPC_ACTOR,
-        #         on_received_callback=client_on_full_string_received,
-        #         on_server_received_callback=server_on_full_string_received,
-        #         on_progress_callback=progress_callback,
-        #         auto_send=True
-        #     )
-        #     ue.log("Created LargeStringAsyncStandalone helper")
-        #
-        # # Test string
-        # test_string = "Hello Unreal Async RPC! " * 100
-        # ue.log_warning(f"Starting async build, length={len(test_string)}")
-        #
-        # try:
-        #     RPC_ACTOR.LargeString.SetFromStringAsync(test_string)
-        # except Exception as e:
-        #     ue.log_error(f"SetFromStringAsync failed: {e}")
-        #
-        # # Client → Server only
-        # HELPER.send_string(mode="server_only")
-        #
-        # # Server → All clients (multicast)
-        # HELPER.send_string(mode="multicast")
-        #
-        # # Server → Specific client (replace `target_pc` with your player controller)
-        # target_pc = self.uobject.get_player_controller()
-        # HELPER.send_string(mode="client", target_client=target_pc)
-        #
-        # # Server → Single client (server_to_client)
-        # HELPER.send_string(mode="server_to_client", target_client=target_pc)
-        # <3
-
-    # def you_pressed_K(self):
-    #     ue.log_warning("=== YOU PRESSED K ===")
-    #
-    #     world = ue.all_worlds()[0]
-    #     ue.log(f"World: {world}")
-    #
-    #     global RPC_ACTOR, HELPER
-    #
-    #     if not RPC_ACTOR:
-    #         RPC_ACTOR = find_rpc_actor()
-    #         if not RPC_ACTOR:
-    #             return
-    #
-    #     if not HELPER:
-    #         HELPER = setup_helper(RPC_ACTOR)
-    #         if not HELPER:
-    #             return
-    #
-    #     # TEST STRING (scale this to 1GB when ready)
-    #     test_string = "Hello Unreal Async RPC! " * 100
-    #     ue.log_warning(
-    #         f"Starting async build, length={len(test_string)}"
-    #     )
-    #
-    #     try:
-    #         RPC_ACTOR.LargeString.SetFromStringAsync(test_string)
-    #     except Exception as e:
-    #         ue.log_error(f"SetFromStringAsync failed: {e}")
 
         # self.uobject.get_player_controller().ClientTravel("10.10.1.123:7777", ue.ETravelType.TRAVEL_Absolute)
         # ue.log_warning('travel completed')

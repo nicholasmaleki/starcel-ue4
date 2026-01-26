@@ -105,11 +105,32 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringRPCActor() {}
 		}
 		return ReturnFunction;
 	}
+	DEFINE_FUNCTION(ALargeStringRPCActor::execClient_OnFullStringReceived)
+	{
+		P_FINISH;
+		P_NATIVE_BEGIN;
+		P_THIS->Client_OnFullStringReceived();
+		P_NATIVE_END;
+	}
 	DEFINE_FUNCTION(ALargeStringRPCActor::execServer_OnFullStringReceived)
 	{
 		P_FINISH;
 		P_NATIVE_BEGIN;
 		P_THIS->Server_OnFullStringReceived();
+		P_NATIVE_END;
+	}
+	DEFINE_FUNCTION(ALargeStringRPCActor::execTriggerMulticastChunks)
+	{
+		P_FINISH;
+		P_NATIVE_BEGIN;
+		P_THIS->TriggerMulticastChunks();
+		P_NATIVE_END;
+	}
+	DEFINE_FUNCTION(ALargeStringRPCActor::execMulticast_OnFullStringReceivedNotification)
+	{
+		P_FINISH;
+		P_NATIVE_BEGIN;
+		P_THIS->Multicast_OnFullStringReceivedNotification_Implementation();
 		P_NATIVE_END;
 	}
 	DEFINE_FUNCTION(ALargeStringRPCActor::execMulticast_OnFullStringReceived)
@@ -166,6 +187,11 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringRPCActor() {}
 		Parms.FullString=FullString;
 		ProcessEvent(FindFunctionChecked(NAME_ALargeStringRPCActor_Multicast_OnFullStringReceived),&Parms);
 	}
+	static FName NAME_ALargeStringRPCActor_Multicast_OnFullStringReceivedNotification = FName(TEXT("Multicast_OnFullStringReceivedNotification"));
+	void ALargeStringRPCActor::Multicast_OnFullStringReceivedNotification()
+	{
+		ProcessEvent(FindFunctionChecked(NAME_ALargeStringRPCActor_Multicast_OnFullStringReceivedNotification),NULL);
+	}
 	static FName NAME_ALargeStringRPCActor_Multicast_ReceiveChunk = FName(TEXT("Multicast_ReceiveChunk"));
 	void ALargeStringRPCActor::Multicast_ReceiveChunk(TArray<uint8> const& Chunk, int32 Index, int32 TotalChunks)
 	{
@@ -188,13 +214,40 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringRPCActor() {}
 	{
 		UClass* Class = ALargeStringRPCActor::StaticClass();
 		static const FNameNativePtrPair Funcs[] = {
+			{ "Client_OnFullStringReceived", &ALargeStringRPCActor::execClient_OnFullStringReceived },
 			{ "Client_ReceiveChunk", &ALargeStringRPCActor::execClient_ReceiveChunk },
 			{ "Multicast_OnFullStringReceived", &ALargeStringRPCActor::execMulticast_OnFullStringReceived },
+			{ "Multicast_OnFullStringReceivedNotification", &ALargeStringRPCActor::execMulticast_OnFullStringReceivedNotification },
 			{ "Multicast_ReceiveChunk", &ALargeStringRPCActor::execMulticast_ReceiveChunk },
 			{ "Server_OnFullStringReceived", &ALargeStringRPCActor::execServer_OnFullStringReceived },
 			{ "Server_ReceiveChunk", &ALargeStringRPCActor::execServer_ReceiveChunk },
+			{ "TriggerMulticastChunks", &ALargeStringRPCActor::execTriggerMulticastChunks },
 		};
 		FNativeFunctionRegistrar::RegisterFunctions(Class, Funcs, UE_ARRAY_COUNT(Funcs));
+	}
+	struct Z_Construct_UFunction_ALargeStringRPCActor_Client_OnFullStringReceived_Statics
+	{
+#if WITH_METADATA
+		static const UE4CodeGen_Private::FMetaDataPairParam Function_MetaDataParams[];
+#endif
+		static const UE4CodeGen_Private::FFunctionParams FuncParams;
+	};
+#if WITH_METADATA
+	const UE4CodeGen_Private::FMetaDataPairParam Z_Construct_UFunction_ALargeStringRPCActor_Client_OnFullStringReceived_Statics::Function_MetaDataParams[] = {
+		{ "Comment", "/** Called when the client receives the full string */" },
+		{ "ModuleRelativePath", "Public/LargeStringRPCActor.h" },
+		{ "ToolTip", "Called when the client receives the full string" },
+	};
+#endif
+	const UE4CodeGen_Private::FFunctionParams Z_Construct_UFunction_ALargeStringRPCActor_Client_OnFullStringReceived_Statics::FuncParams = { (UObject*(*)())Z_Construct_UClass_ALargeStringRPCActor, nullptr, "Client_OnFullStringReceived", nullptr, nullptr, 0, nullptr, 0, RF_Public|RF_Transient|RF_MarkAsNative, (EFunctionFlags)0x00080401, 0, 0, METADATA_PARAMS(Z_Construct_UFunction_ALargeStringRPCActor_Client_OnFullStringReceived_Statics::Function_MetaDataParams, UE_ARRAY_COUNT(Z_Construct_UFunction_ALargeStringRPCActor_Client_OnFullStringReceived_Statics::Function_MetaDataParams)) };
+	UFunction* Z_Construct_UFunction_ALargeStringRPCActor_Client_OnFullStringReceived()
+	{
+		static UFunction* ReturnFunction = nullptr;
+		if (!ReturnFunction)
+		{
+			UE4CodeGen_Private::ConstructUFunction(ReturnFunction, Z_Construct_UFunction_ALargeStringRPCActor_Client_OnFullStringReceived_Statics::FuncParams);
+		}
+		return ReturnFunction;
 	}
 	struct Z_Construct_UFunction_ALargeStringRPCActor_Client_ReceiveChunk_Statics
 	{
@@ -278,6 +331,30 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringRPCActor() {}
 		if (!ReturnFunction)
 		{
 			UE4CodeGen_Private::ConstructUFunction(ReturnFunction, Z_Construct_UFunction_ALargeStringRPCActor_Multicast_OnFullStringReceived_Statics::FuncParams);
+		}
+		return ReturnFunction;
+	}
+	struct Z_Construct_UFunction_ALargeStringRPCActor_Multicast_OnFullStringReceivedNotification_Statics
+	{
+#if WITH_METADATA
+		static const UE4CodeGen_Private::FMetaDataPairParam Function_MetaDataParams[];
+#endif
+		static const UE4CodeGen_Private::FFunctionParams FuncParams;
+	};
+#if WITH_METADATA
+	const UE4CodeGen_Private::FMetaDataPairParam Z_Construct_UFunction_ALargeStringRPCActor_Multicast_OnFullStringReceivedNotification_Statics::Function_MetaDataParams[] = {
+		{ "Comment", "/** Server \xe2\x86\x92 All Clients (completion notification ONLY, no data) */" },
+		{ "ModuleRelativePath", "Public/LargeStringRPCActor.h" },
+		{ "ToolTip", "Server \xe2\x86\x92 All Clients (completion notification ONLY, no data)" },
+	};
+#endif
+	const UE4CodeGen_Private::FFunctionParams Z_Construct_UFunction_ALargeStringRPCActor_Multicast_OnFullStringReceivedNotification_Statics::FuncParams = { (UObject*(*)())Z_Construct_UClass_ALargeStringRPCActor, nullptr, "Multicast_OnFullStringReceivedNotification", nullptr, nullptr, 0, nullptr, 0, RF_Public|RF_Transient|RF_MarkAsNative, (EFunctionFlags)0x00024CC0, 0, 0, METADATA_PARAMS(Z_Construct_UFunction_ALargeStringRPCActor_Multicast_OnFullStringReceivedNotification_Statics::Function_MetaDataParams, UE_ARRAY_COUNT(Z_Construct_UFunction_ALargeStringRPCActor_Multicast_OnFullStringReceivedNotification_Statics::Function_MetaDataParams)) };
+	UFunction* Z_Construct_UFunction_ALargeStringRPCActor_Multicast_OnFullStringReceivedNotification()
+	{
+		static UFunction* ReturnFunction = nullptr;
+		if (!ReturnFunction)
+		{
+			UE4CodeGen_Private::ConstructUFunction(ReturnFunction, Z_Construct_UFunction_ALargeStringRPCActor_Multicast_OnFullStringReceivedNotification_Statics::FuncParams);
 		}
 		return ReturnFunction;
 	}
@@ -399,6 +476,31 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringRPCActor() {}
 		}
 		return ReturnFunction;
 	}
+	struct Z_Construct_UFunction_ALargeStringRPCActor_TriggerMulticastChunks_Statics
+	{
+#if WITH_METADATA
+		static const UE4CodeGen_Private::FMetaDataPairParam Function_MetaDataParams[];
+#endif
+		static const UE4CodeGen_Private::FFunctionParams FuncParams;
+	};
+#if WITH_METADATA
+	const UE4CodeGen_Private::FMetaDataPairParam Z_Construct_UFunction_ALargeStringRPCActor_TriggerMulticastChunks_Statics::Function_MetaDataParams[] = {
+		{ "Category", "LargeString" },
+		{ "Comment", "/** Trigger multicast of all chunks (for client\xe2\x86\x92server\xe2\x86\x92multicast flow) */" },
+		{ "ModuleRelativePath", "Public/LargeStringRPCActor.h" },
+		{ "ToolTip", "Trigger multicast of all chunks (for client\xe2\x86\x92server\xe2\x86\x92multicast flow)" },
+	};
+#endif
+	const UE4CodeGen_Private::FFunctionParams Z_Construct_UFunction_ALargeStringRPCActor_TriggerMulticastChunks_Statics::FuncParams = { (UObject*(*)())Z_Construct_UClass_ALargeStringRPCActor, nullptr, "TriggerMulticastChunks", nullptr, nullptr, 0, nullptr, 0, RF_Public|RF_Transient|RF_MarkAsNative, (EFunctionFlags)0x04020401, 0, 0, METADATA_PARAMS(Z_Construct_UFunction_ALargeStringRPCActor_TriggerMulticastChunks_Statics::Function_MetaDataParams, UE_ARRAY_COUNT(Z_Construct_UFunction_ALargeStringRPCActor_TriggerMulticastChunks_Statics::Function_MetaDataParams)) };
+	UFunction* Z_Construct_UFunction_ALargeStringRPCActor_TriggerMulticastChunks()
+	{
+		static UFunction* ReturnFunction = nullptr;
+		if (!ReturnFunction)
+		{
+			UE4CodeGen_Private::ConstructUFunction(ReturnFunction, Z_Construct_UFunction_ALargeStringRPCActor_TriggerMulticastChunks_Statics::FuncParams);
+		}
+		return ReturnFunction;
+	}
 	UClass* Z_Construct_UClass_ALargeStringRPCActor_NoRegister()
 	{
 		return ALargeStringRPCActor::StaticClass();
@@ -422,6 +524,11 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringRPCActor() {}
 		static const UE4CodeGen_Private::FMetaDataPairParam NewProp_OnClientStringReceived_MetaData[];
 #endif
 		static const UE4CodeGen_Private::FMulticastDelegatePropertyParams NewProp_OnClientStringReceived;
+#if WITH_METADATA
+		static const UE4CodeGen_Private::FMetaDataPairParam NewProp_bAutoMulticastOnServerReceive_MetaData[];
+#endif
+		static void NewProp_bAutoMulticastOnServerReceive_SetBit(void* Obj);
+		static const UE4CodeGen_Private::FBoolPropertyParams NewProp_bAutoMulticastOnServerReceive;
 		static const UE4CodeGen_Private::FPropertyParamsBase* const PropPointers[];
 		static const FCppClassTypeInfoStatic StaticCppClassTypeInfo;
 		static const UE4CodeGen_Private::FClassParams ClassParams;
@@ -431,11 +538,14 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringRPCActor() {}
 		(UObject* (*)())Z_Construct_UPackage__Script_LargeData,
 	};
 	const FClassFunctionLinkInfo Z_Construct_UClass_ALargeStringRPCActor_Statics::FuncInfo[] = {
+		{ &Z_Construct_UFunction_ALargeStringRPCActor_Client_OnFullStringReceived, "Client_OnFullStringReceived" }, // 3552615508
 		{ &Z_Construct_UFunction_ALargeStringRPCActor_Client_ReceiveChunk, "Client_ReceiveChunk" }, // 2454134368
 		{ &Z_Construct_UFunction_ALargeStringRPCActor_Multicast_OnFullStringReceived, "Multicast_OnFullStringReceived" }, // 2182008198
+		{ &Z_Construct_UFunction_ALargeStringRPCActor_Multicast_OnFullStringReceivedNotification, "Multicast_OnFullStringReceivedNotification" }, // 475815762
 		{ &Z_Construct_UFunction_ALargeStringRPCActor_Multicast_ReceiveChunk, "Multicast_ReceiveChunk" }, // 1758026520
 		{ &Z_Construct_UFunction_ALargeStringRPCActor_Server_OnFullStringReceived, "Server_OnFullStringReceived" }, // 1976339924
 		{ &Z_Construct_UFunction_ALargeStringRPCActor_Server_ReceiveChunk, "Server_ReceiveChunk" }, // 4169655781
+		{ &Z_Construct_UFunction_ALargeStringRPCActor_TriggerMulticastChunks, "TriggerMulticastChunks" }, // 232927338
 	};
 #if WITH_METADATA
 	const UE4CodeGen_Private::FMetaDataPairParam Z_Construct_UClass_ALargeStringRPCActor_Statics::Class_MetaDataParams[] = {
@@ -468,10 +578,24 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringRPCActor() {}
 	};
 #endif
 	const UE4CodeGen_Private::FMulticastDelegatePropertyParams Z_Construct_UClass_ALargeStringRPCActor_Statics::NewProp_OnClientStringReceived = { "OnClientStringReceived", nullptr, (EPropertyFlags)0x0010000010080000, UE4CodeGen_Private::EPropertyGenFlags::InlineMulticastDelegate, RF_Public|RF_Transient|RF_MarkAsNative, 1, STRUCT_OFFSET(ALargeStringRPCActor, OnClientStringReceived), Z_Construct_UDelegateFunction_LargeData_OnClientStringReceived__DelegateSignature, METADATA_PARAMS(Z_Construct_UClass_ALargeStringRPCActor_Statics::NewProp_OnClientStringReceived_MetaData, UE_ARRAY_COUNT(Z_Construct_UClass_ALargeStringRPCActor_Statics::NewProp_OnClientStringReceived_MetaData)) };
+#if WITH_METADATA
+	const UE4CodeGen_Private::FMetaDataPairParam Z_Construct_UClass_ALargeStringRPCActor_Statics::NewProp_bAutoMulticastOnServerReceive_MetaData[] = {
+		{ "Category", "LargeString" },
+		{ "Comment", "/** Flag to enable auto-multicast after server receives string */" },
+		{ "ModuleRelativePath", "Public/LargeStringRPCActor.h" },
+		{ "ToolTip", "Flag to enable auto-multicast after server receives string" },
+	};
+#endif
+	void Z_Construct_UClass_ALargeStringRPCActor_Statics::NewProp_bAutoMulticastOnServerReceive_SetBit(void* Obj)
+	{
+		((ALargeStringRPCActor*)Obj)->bAutoMulticastOnServerReceive = 1;
+	}
+	const UE4CodeGen_Private::FBoolPropertyParams Z_Construct_UClass_ALargeStringRPCActor_Statics::NewProp_bAutoMulticastOnServerReceive = { "bAutoMulticastOnServerReceive", nullptr, (EPropertyFlags)0x0010000000000005, UE4CodeGen_Private::EPropertyGenFlags::Bool | UE4CodeGen_Private::EPropertyGenFlags::NativeBool, RF_Public|RF_Transient|RF_MarkAsNative, 1, sizeof(bool), sizeof(ALargeStringRPCActor), &Z_Construct_UClass_ALargeStringRPCActor_Statics::NewProp_bAutoMulticastOnServerReceive_SetBit, METADATA_PARAMS(Z_Construct_UClass_ALargeStringRPCActor_Statics::NewProp_bAutoMulticastOnServerReceive_MetaData, UE_ARRAY_COUNT(Z_Construct_UClass_ALargeStringRPCActor_Statics::NewProp_bAutoMulticastOnServerReceive_MetaData)) };
 	const UE4CodeGen_Private::FPropertyParamsBase* const Z_Construct_UClass_ALargeStringRPCActor_Statics::PropPointers[] = {
 		(const UE4CodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_ALargeStringRPCActor_Statics::NewProp_LargeString,
 		(const UE4CodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_ALargeStringRPCActor_Statics::NewProp_OnServerStringReceived,
 		(const UE4CodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_ALargeStringRPCActor_Statics::NewProp_OnClientStringReceived,
+		(const UE4CodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_ALargeStringRPCActor_Statics::NewProp_bAutoMulticastOnServerReceive,
 	};
 	const FCppClassTypeInfoStatic Z_Construct_UClass_ALargeStringRPCActor_Statics::StaticCppClassTypeInfo = {
 		TCppClassTypeTraits<ALargeStringRPCActor>::IsAbstract,
@@ -500,7 +624,7 @@ void EmptyLinkFunctionForGeneratedCodeLargeStringRPCActor() {}
 		}
 		return OuterClass;
 	}
-	IMPLEMENT_CLASS(ALargeStringRPCActor, 148027040);
+	IMPLEMENT_CLASS(ALargeStringRPCActor, 1381862436);
 	template<> LARGEDATA_API UClass* StaticClass<ALargeStringRPCActor>()
 	{
 		return ALargeStringRPCActor::StaticClass();

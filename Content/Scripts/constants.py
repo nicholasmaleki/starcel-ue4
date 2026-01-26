@@ -1,5 +1,4 @@
 import math
-
 import pickle, os
 import numpy as np
 import unreal_engine as ue
@@ -10,127 +9,11 @@ os_name = platform.system()
 # if os_name == "Windows":
 #     print("Running on Windows")
 # elif os_name == "Darwin":
-#     print("Running on Mac (macOS/OS X)")
+#     print("Running on Mac (macOS/OSX)")
 # elif os_name == "Linux":
 #     print("Running on Linux")
 # else:
 #     print(f"Running on an unknown or other OS: {os_name}")
-
-
-class LargeStringAsyncStandalone:
-    def __init__(
-        self,
-        large_string_obj,
-        rpc_actor,  # store the actor reference here
-        on_received_callback=None,       # client callback
-        on_server_received_callback=None, # server callback
-        on_progress_callback=None,
-        auto_send=True
-    ):
-        self.large_string = large_string_obj
-        self.rpc_actor = rpc_actor
-        self.on_received_callback = on_received_callback
-        self.on_server_received_callback = on_server_received_callback
-        self.on_progress_callback = on_progress_callback
-        self.auto_send = auto_send
-
-        self._chunks_ready = False
-        self._sending_started = False
-
-        # Bind C++ events
-        self.large_string.bind_event('OnFullyReceived', self._on_fully_received)
-        self.large_string.bind_event('OnChunksBuilt', self._on_chunks_built)
-
-    def _on_chunks_built(self):
-        ue.log_warning("[Standalone] Chunks built")
-        self._chunks_ready = True
-        if self.auto_send and not self._sending_started:
-            self.send_string()  # default send
-
-    def _on_fully_received(self):
-        ue.log_warning("[Standalone] Fully received")
-        full_string = self.large_string.ToString()
-
-        # Client-side callback
-        if self.on_received_callback:
-            try:
-                self.on_received_callback(full_string)
-            except Exception as e:
-                ue.log_error(f"on_received_callback error: {e}")
-
-        # Server-side callback
-        if self.on_server_received_callback:
-            try:
-                self.on_server_received_callback(full_string)
-            except Exception as e:
-                ue.log_error(f"on_server_received_callback error: {e}")
-
-    def send_string(self, mode="server_only", target_client=None):
-        if not self._chunks_ready:
-            ue.log_warning("send_string: chunks not ready")
-            return
-
-        self._sending_started = True
-        total_chunks = self.large_string.GetChunkCount()
-        ue.log(f"Sending {total_chunks} chunks (mode={mode})")
-
-        for i in range(total_chunks):
-            try:
-                chunk = self.large_string.GetChunk(i)
-                self.send_chunk(chunk, i, total_chunks, mode=mode, target_client=target_client)
-
-                if self.on_progress_callback:
-                    self.on_progress_callback(i + 1, total_chunks)
-
-            except Exception as e:
-                ue.log_error(f"Error sending chunk {i}: {e}")
-                break
-
-    def receive_chunk(self, chunk, index, total_chunks):
-        try:
-            self.large_string.ReceiveChunk(chunk, index, total_chunks)
-        except Exception as e:
-            ue.log_error(f"receive_chunk error: {e}")
-
-    def send_chunk(self, chunk, index, total_chunks, mode="server_only", target_client=None):
-        """
-        Send a chunk using the stored RPC actor.
-        mode: "server_only" | "multicast" | "client" | "server_to_client"
-        target_client: PlayerController for client-specific send
-        """
-        if not self.rpc_actor:
-            ue.log_error("send_chunk: rpc_actor is None")
-            return
-
-        try:
-            if mode == "server_only":
-                ue.log(f"send_chunk: CLIENT → SERVER ({index+1}/{total_chunks})")
-                self.rpc_actor.Server_ReceiveChunk(chunk, index, total_chunks)
-
-            elif mode == "multicast":
-                ue.log(f"send_chunk: SERVER → MULTICAST ({index+1}/{total_chunks})")
-                self.rpc_actor.Multicast_ReceiveChunk(chunk, index, total_chunks)
-
-            elif mode == "client":
-                if target_client:
-                    ue.log(f"send_chunk: SERVER → specific client ({index+1}/{total_chunks})")
-                    self.rpc_actor.Client_ReceiveChunk(chunk, index, total_chunks)
-                else:
-                    ue.log_warning("send_chunk: No target PlayerController provided for client mode")
-
-            elif mode == "server_to_client":
-                ue.log(f"send_chunk: SERVER → CLIENT ({index+1}/{total_chunks})")
-                self.rpc_actor.Client_ReceiveChunk(chunk, index, total_chunks)
-
-            else:
-                ue.log_warning(f"send_chunk: Unknown mode '{mode}'")
-
-        except Exception as e:
-            ue.log_error(f"send_chunk RPC error: {e}")
-
-
-
-
 
 
 class Constants:

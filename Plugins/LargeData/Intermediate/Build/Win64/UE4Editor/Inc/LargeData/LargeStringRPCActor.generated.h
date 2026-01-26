@@ -41,12 +41,16 @@ static inline void FOnServerStringReceived_DelegateWrapper(const FMulticastScrip
 
 #define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeStringRPCActor_h_26_SPARSE_DATA
 #define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeStringRPCActor_h_26_RPC_WRAPPERS \
+	virtual void Multicast_OnFullStringReceivedNotification_Implementation(); \
 	virtual void Multicast_OnFullStringReceived_Implementation(const FString& FullString); \
 	virtual void Client_ReceiveChunk_Implementation(TArray<uint8> const& Chunk, int32 Index, int32 TotalChunks); \
 	virtual void Multicast_ReceiveChunk_Implementation(TArray<uint8> const& Chunk, int32 Index, int32 TotalChunks); \
 	virtual void Server_ReceiveChunk_Implementation(TArray<uint8> const& Chunk, int32 Index, int32 TotalChunks); \
  \
+	DECLARE_FUNCTION(execClient_OnFullStringReceived); \
 	DECLARE_FUNCTION(execServer_OnFullStringReceived); \
+	DECLARE_FUNCTION(execTriggerMulticastChunks); \
+	DECLARE_FUNCTION(execMulticast_OnFullStringReceivedNotification); \
 	DECLARE_FUNCTION(execMulticast_OnFullStringReceived); \
 	DECLARE_FUNCTION(execClient_ReceiveChunk); \
 	DECLARE_FUNCTION(execMulticast_ReceiveChunk); \
@@ -54,12 +58,16 @@ static inline void FOnServerStringReceived_DelegateWrapper(const FMulticastScrip
 
 
 #define Starcel9_Plugins_LargeData_Source_LargeData_Public_LargeStringRPCActor_h_26_RPC_WRAPPERS_NO_PURE_DECLS \
+	virtual void Multicast_OnFullStringReceivedNotification_Implementation(); \
 	virtual void Multicast_OnFullStringReceived_Implementation(const FString& FullString); \
 	virtual void Client_ReceiveChunk_Implementation(TArray<uint8> const& Chunk, int32 Index, int32 TotalChunks); \
 	virtual void Multicast_ReceiveChunk_Implementation(TArray<uint8> const& Chunk, int32 Index, int32 TotalChunks); \
 	virtual void Server_ReceiveChunk_Implementation(TArray<uint8> const& Chunk, int32 Index, int32 TotalChunks); \
  \
+	DECLARE_FUNCTION(execClient_OnFullStringReceived); \
 	DECLARE_FUNCTION(execServer_OnFullStringReceived); \
+	DECLARE_FUNCTION(execTriggerMulticastChunks); \
+	DECLARE_FUNCTION(execMulticast_OnFullStringReceivedNotification); \
 	DECLARE_FUNCTION(execMulticast_OnFullStringReceived); \
 	DECLARE_FUNCTION(execClient_ReceiveChunk); \
 	DECLARE_FUNCTION(execMulticast_ReceiveChunk); \

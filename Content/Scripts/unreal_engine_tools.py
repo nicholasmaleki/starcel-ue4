@@ -1,10 +1,280 @@
 import unreal_engine as ue
 from unreal_engine.classes import Material, Texture, Texture2D, TextureCube
 from unreal_engine.enums import EPixelFormat
-import os, itertools
+import os, itertools, time
 import windowtool
 from PIL import Image
 import numpy as np
+
+
+class LargeStringAsyncStandalone: # The default settings will not work if your network is poor or your cpu is slow. If my laptop is unplugged, for example, I need less aggressive settings.
+    """
+    Standalone helper for LargeStringAsync with multiple send modes.
+    Uses ticker-based sending with conservative rate limiting.
+    Supports configurable chunk size.
+    """
+    def __init__(
+            self,
+            large_string_obj=None,
+            rpc_actor=None,
+            on_received_callback=None,
+            on_server_received_callback=None,
+            on_progress_callback=None,
+            auto_send=True,
+            chunks_per_tick=1,  # Send N chunks per tick
+            ticks_between_sends=2,  # Wait N ticks between sends
+            chunk_size=8*1024  # Chunk size in bytes (None = use default 63KB)
+    ):
+        self.large_string_obj = large_string_obj
+        self.rpc_actor = rpc_actor
+        self.on_received_callback = on_received_callback
+        self.on_server_received_callback = on_server_received_callback
+        self.on_progress_callback = on_progress_callback
+        self.auto_send = auto_send
+        self.pending_mode = None
+        self.pending_target_client = None
+        self.chunks_per_tick = chunks_per_tick
+        self.ticks_between_sends = ticks_between_sends
+
+        # Send state
+        self.current_chunk_index = 0
+        self.total_chunks = 0
+        self.current_send_mode = None
+        self.is_sending = False
+        self.ticker = None
+        self.tick_counter = 0
+
+        # Set chunk size if specified
+        if chunk_size is not None and self.large_string_obj:
+            self.large_string_obj.SetChunkSize(chunk_size)
+            ue.log(f"Set chunk size to {chunk_size} bytes")
+
+        # Bind to OnChunksBuilt if auto_send is enabled
+        if self.auto_send and self.large_string_obj:
+            try:
+                self.large_string_obj.bind_event('OnChunksBuilt', self._on_chunks_built)
+            except Exception as e:
+                ue.log_error(f"Failed to bind OnChunksBuilt: {e}")
+
+        # Bind to server and client received callbacks
+        if self.rpc_actor:
+            try:
+                self.rpc_actor.bind_event('OnServerStringReceived', self._on_server_string_received)
+            except Exception as e:
+                ue.log_error(f"Failed to bind OnServerStringReceived: {e}")
+
+            try:
+                self.rpc_actor.bind_event('OnClientStringReceived', self._on_client_string_received)
+            except Exception as e:
+                ue.log_error(f"Failed to bind OnClientStringReceived: {e}")
+
+    def _on_chunks_built(self):
+        """Called when chunks are ready"""
+        chunk_size = self.large_string_obj.GetChunkSize()
+        chunk_count = self.large_string_obj.GetChunkCount()
+        ue.log(f"Chunks built: {chunk_count} chunks @ {chunk_size} bytes each")
+
+        if self.auto_send and self.pending_mode:
+            self._execute_send()
+
+    def _on_server_string_received(self, full_string):
+        """Called when server receives the full string"""
+        ue.log_warning(f"[PYTHON SERVER CALLBACK] Received full string: {len(full_string)} chars")
+
+        # Call user's server callback
+        if self.on_server_received_callback:
+            self.on_server_received_callback(full_string)
+
+        # Handle client_to_server_then_multicast mode
+        if self.pending_mode == "client_to_server_then_multicast":
+            ue.log_warning("[PYTHON] Triggering multicast after server receipt")
+            self.pending_mode = None
+            self.pending_target_client = None
+            self._start_send("multicast")
+
+    def _on_client_string_received(self, full_string):
+        """Called when client receives the full string"""
+        ue.log_warning(f"[PYTHON CLIENT CALLBACK] Received full string: {len(full_string)} chars")
+
+        # Call user's received callback
+        if self.on_received_callback:
+            self.on_received_callback(full_string)
+
+    def _ticker_callback(self, delta_time):
+        """Ticker callback - sends chunks progressively"""
+        if not self.is_sending:
+            return False  # Stop ticker
+
+        # Increment tick counter
+        self.tick_counter += 1
+
+        # Only send every N ticks
+        if self.tick_counter < self.ticks_between_sends:
+            return True  # Continue ticking but don't send yet
+
+        # Reset tick counter
+        self.tick_counter = 0
+
+        # Send a batch of chunks this tick
+        end_index = min(self.current_chunk_index + self.chunks_per_tick, self.total_chunks)
+
+        for i in range(self.current_chunk_index, end_index):
+            chunk = self.large_string_obj.GetChunk(i)
+
+            # Verify chunk size is under 64KB
+            chunk_size = len(chunk)
+            if chunk_size > 65536:
+                ue.log_error(f"Chunk {i} is {chunk_size} bytes - exceeds 64KB RPC limit!")
+                continue
+
+            try:
+                if self.current_send_mode == "server":
+                    self.rpc_actor.Server_ReceiveChunk(chunk, i, self.total_chunks)
+                elif self.current_send_mode == "multicast":
+                    self.rpc_actor.Multicast_ReceiveChunk(chunk, i, self.total_chunks)
+                elif self.current_send_mode == "client":
+                    self.rpc_actor.Client_ReceiveChunk(chunk, i, self.total_chunks)
+            except Exception as e:
+                ue.log_error(f"Failed to send chunk {i}: {e}")
+                # On error, stop sending to avoid further issues
+                self.is_sending = False
+                return False
+
+        # Update progress
+        if self.on_progress_callback:
+            self.on_progress_callback(end_index, self.total_chunks)
+
+        # Log progress periodically
+        if end_index % 100 == 0 or end_index == self.total_chunks:
+            ue.log_warning(f"[PYTHON] Sent {end_index}/{self.total_chunks} chunks ({(end_index * 100.0 / self.total_chunks):.1f}%)")
+
+        self.current_chunk_index = end_index
+
+        # Check if done
+        if self.current_chunk_index >= self.total_chunks:
+            ue.log_warning(f"[PYTHON] Send complete: {self.total_chunks} chunks")
+            self.is_sending = False
+            self.current_send_mode = None
+            self.ticker = None
+            return False  # Stop ticker
+
+        return True  # Continue ticking
+
+    def send_string(self, mode="server_only", target_client=None):
+        """
+        Send the large string using specified mode
+
+        Args:
+            mode: Send mode - one of:
+                - "server_only": Client → Server
+                - "multicast": Server → All Clients
+                - "client": Server → Specific Client
+                - "server_to_client": Server → Single Client (explicit)
+                - "client_to_server_then_multicast": Client → Server → All Clients
+            target_client: Required for "client" and "server_to_client" modes
+        """
+        if not self.large_string_obj or not self.rpc_actor:
+            ue.log_error("LargeStringAsync or RPC Actor not set")
+            return
+
+        if self.is_sending:
+            ue.log_warning("Already sending chunks, ignoring new send request")
+            return
+
+        self.pending_mode = mode
+        self.pending_target_client = target_client
+
+        # Validate target_client for modes that need it
+        if mode in ["client", "server_to_client"] and not target_client:
+            ue.log_error(f"Mode '{mode}' requires target_client parameter")
+            return
+
+        # If chunks are already built, send immediately
+        if self.large_string_obj.GetChunkCount() > 0:
+            self._execute_send()
+        else:
+            ue.log("Waiting for chunks to be built...")
+
+    def _execute_send(self):
+        """Execute the actual send operation based on pending mode"""
+        mode = self.pending_mode
+        target_client = self.pending_target_client
+
+        ue.log_warning(f"[PYTHON] Executing send with mode: {mode}")
+
+        if mode == "server_only":
+            self._start_send("server")
+        elif mode == "multicast":
+            self._start_send("multicast")
+        elif mode in ["client", "server_to_client"]:
+            self._start_send("client")
+        elif mode == "client_to_server_then_multicast":
+            # First send to server, multicast will be triggered in callback
+            self._start_send("server")
+            # Don't clear pending_mode yet - we need it for the callback
+            return
+        else:
+            ue.log_error(f"Unknown send mode: {mode}")
+            return
+
+        # Clear pending mode (except for client_to_server_then_multicast)
+        if mode != "client_to_server_then_multicast":
+            self.pending_mode = None
+            self.pending_target_client = None
+
+    def _start_send(self, mode):
+        """Start sending chunks via ticker"""
+        self.current_chunk_index = 0
+        self.total_chunks = self.large_string_obj.GetChunkCount()
+        self.current_send_mode = mode
+        self.is_sending = True
+        self.tick_counter = 0
+
+        chunk_size = self.large_string_obj.GetChunkSize()
+        ue.log_warning(f"[PYTHON] Starting send: {self.total_chunks} chunks @ {chunk_size} bytes, mode={mode}, "
+                       f"{self.chunks_per_tick} chunks every {self.ticks_between_sends} ticks")
+
+        # Start ticker - IMPORTANT: store reference to prevent GC
+        self.ticker = ue.add_ticker(self._ticker_callback)
+        ue.log("Ticker started")
+
+    def stop_sending(self):
+        """Stop sending chunks"""
+        self.is_sending = False
+        self.current_send_mode = None
+        self.ticker = None
+        ue.log("Sending stopped")
+
+    def unbind_events(self):
+        """Unbind all events"""
+        # Stop any active sending
+        self.stop_sending()
+
+        if self.large_string_obj:
+            try:
+                self.large_string_obj.unbind_event('OnChunksBuilt', self._on_chunks_built)
+            except:
+                pass
+
+        if self.rpc_actor:
+            try:
+                self.rpc_actor.unbind_event('OnServerStringReceived', self._on_server_string_received)
+            except:
+                pass
+            try:
+                self.rpc_actor.unbind_event('OnClientStringReceived', self._on_client_string_received)
+            except:
+                pass
+
+    def reset(self):
+        """Reset the helper state"""
+        self.stop_sending()
+        self.pending_mode = None
+        self.pending_target_client = None
+        self.current_chunk_index = 0
+        self.total_chunks = 0
+        ue.log("LargeStringAsyncStandalone reset")
+
 
 
 
