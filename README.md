@@ -78,7 +78,7 @@ It is not recommended to control any elements in Starcel with a 2D UI. You can b
 
 
 ## UE5 and Python upgrade? 
-You can use the included interop.py to help run newer Python versions with this version, but it will be slow and you will have to add workarounds for using functions like begin_play and tick. You will need to have both versions of Python installed. The latest edition of Starcel is written in Python 3.9 and Unreal Engine 4.27Chaos. This likely will not change for a while as Python's C++ bindings have been deprecated and changed in Python 3.10. This could take a month or few to upgrade. An Unreal Engine 5 upgrade of the UnrealEnginePython plugin will require header, module, and api changes. This could take a month to upgrade. If you plan on working on this, message me for some info that should help you begin. 
+You can use the included interop.py to help run newer Python versions with this version, but it will be slow and you will have to add workarounds for using functions like begin_play and tick. You will need to have both versions of Python installed. The latest edition of Starcel is written in Python 3.9 and Unreal Engine 4.27Chaos. This likely will not change for a while as Python's C++ bindings have been deprecated and changed in Python 3.10. This could take a month or few to upgrade. An [Unreal Engine 5 upgrade of the UnrealEnginePython plugin](https://github.com/20tab/UnrealEnginePython/pull/880) will require header, module, and api changes. This could take a month to upgrade. If you plan on working on this, message me for some info that should help you begin. 
 I do not plan on upgrading the project myself unless this project receives a lot of support and use. 
 
 

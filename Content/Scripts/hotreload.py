@@ -178,7 +178,7 @@ def rebuild_generated_modules():
 def reset_pyactor(py_actor_name = "BP_PyActor"):
     # TODO: maybe match old pyactors settings to new, like transform, module, and class
     print("World", world)
-    print_all_actors()
+    # print_all_actors()
     py_actor = find_actor(py_actor_name)
     print("PyActor Found", py_actor)
     old_py_actor_name = py_actor.get_name()
@@ -190,4 +190,4 @@ def reset_pyactor(py_actor_name = "BP_PyActor"):
     py_actor.set_property("PythonModule", "main")
     py_actor.set_property("PythonClass", "Main")
     print("PyActor Spawned", py_actor)
-    print_all_actors()
+    # print_all_actors()

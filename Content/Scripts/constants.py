@@ -88,72 +88,7 @@ class Constants:
             print("Failed to unpickle quotes")
 
 
-class Axis:
-    def __init__(self, x, y, z):
-        self.x = x
-        self.y = y
-        self.z = z
 
-    def swap_axis(self, input):
-        input[0] = input[1]
-        # for i in range(input[0]):
-        #     input[0][i] = input[1][i]
-        return [input[1],input[0]]
-
-    def setup_axis(self):
-        default_16d_axis = ["x", "y", "z", "w", "v", "u", "t", "s", "r", "q", "p", "o", "n", "m", "l", "k"]
-
-        default_3d_axis = default_16d_axis[:3] # 48 possible orientations for the 3 axis and their negatives in orthogonal(90 degree) space. 3! * 2^3
-        default_0d_axis = 0 # or [] # 1 orientation in nD
-        default_1d_axis = default_16d_axis[:1] # 2 in 1d. 4 in 2d. 12 in 3D
-        default_2d_axis = default_16d_axis[:2] # 8 in 2d. 24 in 3D
-        default_4d_axis = default_16d_axis[:4] # 384 possible orientations for the 4 axis and their negatives in orthogonal(90 degree) space. 4! * 2^4
-
-        unreal_default_axis = default_3d_axis # on start, unreal has z up, y right, and x away from camera
-        unreal_default_walltable_axis = [unreal_default_axis[1], -unreal_default_axis[2], unreal_default_axis[0]] # best for 2D and 3D tables on screens
-        unreal_default_groundtable_axis = [unreal_default_axis[1], -unreal_default_axis[0], -unreal_default_axis[2]]
-        unreal_default_groundtable_axis_zup = [unreal_default_axis[1], -unreal_default_axis[0], unreal_default_axis[2]]
-        unreal_default_wallgraph_axis = [unreal_default_axis[1], unreal_default_axis[2], unreal_default_axis[0]] # usually used for 2D graphs on screens. not usually used in 3D
-        unreal_default_groundgraph_axis = [unreal_default_axis[1], unreal_default_axis[0], unreal_default_axis[2]]
-        self.swap_axis()
-
-
-class Table:
-    def __init__(self, table, axis=["x","y","z","w"]):
-        self.table = table
-        self.axis = axis
-
-
-    def create_letter_labels(self, default_letter_axis='x'): # or default_label_target_dimension
-        pass
-        # X(A1) -> default_letter_axis(A1) -> A1
-        # Y(A1)
-
-    def test_multidimensional_table(self):
-        def setup_lengths(lengths):
-            for i in range(len(lengths)):
-                (lengths[i][0], lengths[i][1])
-
-            xlen = lengths[0]
-            ylen = lengths[1]
-            zlen = lengths[2]
-            wlen = lengths[3]
-
-    def array_setup(self):
-        custom_table_labels = ["ha","haha","hahaha"]
-        custom_table_lettering = [["ha",["bla", "blablabla", "blablabla"]],["haha", ["ja","jaja","jajaja"]]]
-        nozero=["x", "y"]
-        letter_start_offset=[["x",1],["y",-1]]
-
-        # Create a 3D array of shape (2, 2, 3) - 2 "pages", each with 2 rows and 3 columns
-        arr_3d = np.array([
-            [[1, 2, 3], [4, 5, 6]],
-            [[7, 8, 9], [10, 11, 12]]
-        ])
-
-        print(arr_3d)
-        print(f"Shape: {arr_3d.shape}")
-        print(f"Dimensions (ndim): {arr_3d.ndim}")
 
 
 class WorldSize():

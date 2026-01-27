@@ -21,7 +21,7 @@ class Keyboard:
 
         self.LEGEND_TO_UE = {
             # letters
-            **{chr(i): chr(i).upper() for i in range(ord('a'), ord('z') + 1)},
+            **{chr(i): chr(i).upper() for i in range(ord('a'), ord('z') + 1)}, # TODO: Same as default_alphabet
             **{chr(i).upper(): chr(i).upper() for i in range(ord('a'), ord('z') + 1)},
 
             # numbers

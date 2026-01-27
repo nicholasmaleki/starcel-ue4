@@ -1,10 +1,16 @@
 import unreal_engine as ue
 from unreal_engine.classes import Material, Texture, Texture2D, TextureCube
 from unreal_engine.enums import EPixelFormat
-import os, itertools, time
+import os, itertools, time, json
 import windowtool
 from PIL import Image
 import numpy as np
+try:
+    from unreal_engine.enums import EWorldType
+except ImportError:
+    # Not implemented yet - for some reason EWorldType isn't a UENUM so the automagic importer can't work
+    class EWorldType:
+        NONE, Game, Editor, PIE, EditorPreview, GamePreview, Inactive = range(7)
 
 
 class LargeStringAsyncStandalone: # The default settings will not work if your network is poor or your cpu is slow. If my laptop is unplugged, for example, I need less aggressive settings.
@@ -320,6 +326,19 @@ def get_world():
 
     return world
 
+
+def _GetWorld(): # alternative from https://github.com/dfb/UnrealEnginePython/tree/modus
+    '''Returns the best guess of what the "current" world to use is'''
+    worlds = {} # worldType -> *first* world of that type
+    for w in ue.all_worlds():
+        t = w.get_world_type()
+        if worlds.get(t) is None:
+            worlds[t] = w
+        # print(w, w.get_world_type()) # seems to return number instead of enum
+
+    return worlds.get(EWorldType.Game) or worlds.get(EWorldType.PIE) or worlds.get(EWorldType.Editor)
+
+
 global world
 world = get_world()
 print("ue tools world", world)
@@ -349,6 +368,7 @@ def find_actor(name):
         return actor_list[0]
 
 
+global py_actor
 py_actor = find_actor("BP_PyActor")
 print("ue tools pyactor", world)
 
@@ -641,7 +661,9 @@ def apply_material(
     return mid
 
 
+
 def change_background(background="white"):
+    global py_actor
     # TODO: Add transparency and green screen defaults https://github.com/historia-Inc/WindowTransparency https://www.fab.com/listings/a967c271-f440-4bc2-93f8-3699122f0f7b https://forums.unrealengine.com/t/transparent-window/123446
     # --- grab actors ---
     # SkySpheres
