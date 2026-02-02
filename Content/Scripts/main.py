@@ -1,10 +1,11 @@
 import unreal_engine as ue
+import unreal_engine.classes
 from unreal_engine_tools import *
 import numpy as np
 import os, sys, subprocess, importlib, urllib.request, socket, math, sympy, fast_autocomplete, numba, kingdon #numba_cuda
 from unreal_engine import FVector, FRotator, FTransform, FHitResult, CLASS_CONFIG, CLASS_DEFAULT_CONFIG, CPF_CONFIG, CPF_GLOBAL_CONFIG, CPF_EXPOSE_ON_SPAWN, CPF_NET, CPF_REP_NOTIFY
-from unreal_engine.classes import Actor, Character, PlayerController, StaticMeshActor, KismetMathLibrary, KismetSystemLibrary, Object, StrProperty, IntProperty, Blueprint, Material, Texture, LargeStringAsync, LargeStringRPCActor
-from unreal_engine.enums import EInputEvent, ETraceTypeQuery, EDrawDebugTrace
+from unreal_engine.classes import Actor, Character, PlayerController, StaticMeshActor, KismetMathLibrary, KismetSystemLibrary, Object, StrProperty, IntProperty, Blueprint, Material, Texture, LargeStringAsync, LargeStringRPCActor, StaticMesh, StaticMeshActor
+from unreal_engine.enums import EInputEvent, ETraceTypeQuery, EDrawDebugTrace, EComponentMobility
 from constants import Constants, WorldSize
 import constants, windowtool
 from languages import *
@@ -23,7 +24,7 @@ ue.log('Hello i am a Python module.')
 # # Keep track of the current index
 # current_bg_index = 0
 
-# change_background("transparent")
+change_background("video", "C:/Users/nicho/Documents/Unreal Projects/Starcel9/Content/Movies/psychedelic.mp4")
 
 # Stop the background music
 # find_actor("CellDriftLoop").SetActorHiddenInGame(True)
@@ -31,7 +32,7 @@ ue.log('Hello i am a Python module.')
 # Use this if you want to rebuild the unreal_engine intellisense(.pyi, etc.) and cli
 # rebuild_generated_modules()
 
-# reload_all_modules()
+# reload_all_modules() # TODO: look into ue.load_package() or get_or_create()
 
 # reset_pyactor()
 
@@ -50,32 +51,44 @@ class Main:
         b = alg.bivector(name='b')
         ue.log(b)
 
-    def test_cylinder(self): #use instanced static meshes for the gridlines
+    def test_cylinder(self): # TODO: use instanced static meshes for the gridlines
         ue.log("testing cylinder:")
+        # new_actor = world.actor_spawn(Actor)
+        # new_actor.set_actor_label('Test Actor')
+        # new_actor.add_actor_root_component(InstancedStaticMeshComponent, 'Root')
+        # instanced_component = actor.get_component_by_type(InstancedStaticMeshComponent)
+        # instanced_component.StaticMesh = mesh
+        # instanced_component.PerInstanceSMData = [
+        #     InstancedStaticMeshInstanceData(Transform=FTransform(FVector(0, 0, 200), FRotator(90, 90, 0)).get_matrix()),
+        #     InstancedStaticMeshInstanceData(Transform=FTransform(FVector(0, 0, 0), FRotator(90, 90, 45)).get_matrix()),
+        # ]
+        # instanced_component = actor.get_component_by_type(InstancedStaticMeshComponent # if you need to access the component again, you need to retrieve it back as the old instance will be garbaged
+
         point1 = FVector(0, 0, 0)
         point2 = FVector(100, 100, 100)
-        direction_vector = point2 - point1
         midpoint = (point1 + point2) / 2
-        print(midpoint)
+        distance_between_points = KismetMathLibrary.Vector_Distance(point1, point2)
+        cylinder_rotation = KismetMathLibrary.FindLookAtRotation(point1, point2)  # returns FRotator
+        cylinder_rotation.pitch += 90
+        cylinder = world.actor_spawn(StaticMeshActor)
+        cylinder_mesh = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cylinder')
+        smc = cylinder.StaticMeshComponent
+        smc.SetStaticMesh(cylinder_mesh)
+        smc.Mobility = EComponentMobility.Movable
+        transform = FTransform(midpoint, cylinder_rotation, FVector(.1, .1, distance_between_points/100))
+        # print(transform)
+        cylinder.set_actor_transform(transform)
+        # FTransform().get_matrix() # if needed
 
-        normalized_direction_vector = direction_vector / direction_vector.length()
-        print(normalized_direction_vector)
-        normalized_direction_vector = direction_vector.normalized()
-        print(normalized_direction_vector)
+    def test_text(self):
+        ue.log("testing text:")
+        bp_cell = ue.load_object(Blueprint, '/Game/Blueprints/Assets/BP_Cell.BP_Cell')
+        cell_actor = world.actor_spawn(bp_cell.GeneratedClass)
+        transform = FTransform(FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1))
+        cell_actor.set_actor_transform(transform)
+        cell_actor.get_actor_component('Text3DComponent').Text = "HI"
 
-        default_axis = FVector(0, 0, 1)
 
-        rotation_axis = default_axis.cross(normalized_direction_vector)
-
-        print(rotation_axis)
-
-        rotation_angle = math.degrees(math.acos(default_axis.dot(normalized_direction_vector)))
-
-        print(rotation_angle)
-
-        print(KismetMathLibrary.RotatorFromAxisAndAngle(rotation_axis, rotation_angle))  # returns FRotator
-
-        print(KismetMathLibrary.FindLookAtRotation(point1, point2))  # returns FRotator
 
     # # this event will be run on the server and in reliable mode
     # def server_event(self):
@@ -330,7 +343,8 @@ class Main:
         #     ue.log(hit_result)x
 
         self.test_kingdon()
-        self.test_cylinder()
+        # self.test_cylinder()
+        # self.test_text()
 
     # this is called at every 'tick'
     def tick(self, delta_time):
@@ -437,278 +451,3 @@ class Main:
 
 # https://github.com/kprimo/UEPyTutorials/blob/main/Content/Scripts/Basic/DynamicTexture/dynamic_texture.py
 # https://github.com/kprimo/UEPyTutorials/blob/main/Content/Scripts/Advanced/StableDiffusion/RuntimeImage/runtime_image.py
-
-
-class Axis:
-    def __init__(self, x="x", y="y", z="z"):
-        self.x = x
-        self.y = y
-        self.z = z
-
-    def swap_axis(self, input):
-        # for i in range(input[0]):
-        #     input[0][i] = input[1][i]
-        return [input[1],input[0]]
-
-    def get_render_order(self, axis_list=None):
-        return axis_list or [self.x, self.y, self.z]
-
-    def setup_axis(self):
-        default_16d_axis = ["x", "y", "z", "w", "v", "u", "t", "s", "r", "q", "p", "o", "n", "m", "l", "k"]
-
-        default_3d_axis = default_16d_axis[:3] # 48 possible orientations for the 3 axis and their negatives in orthogonal(90 degree) space. 3! * 2^3
-        default_0d_axis = 0 # or [] # 1 orientation in nD
-        default_1d_axis = default_16d_axis[:1] # 2 in 1d. 4 in 2d. 12 in 3D
-        default_2d_axis = default_16d_axis[:2] # 8 in 2d. 24 in 3D
-        default_4d_axis = default_16d_axis[:4] # 384 possible orientations for the 4 axis and their negatives in orthogonal(90 degree) space. 4! * 2^4
-
-        unreal_default_axis = default_3d_axis # on start, unreal has z up, y right, and x away from camera
-        unreal_default_walltable_axis = [unreal_default_axis[1], -unreal_default_axis[2], unreal_default_axis[0]] # best for 2D and 3D tables on screens
-        unreal_default_groundtable_axis = [unreal_default_axis[1], -unreal_default_axis[0], -unreal_default_axis[2]]
-        unreal_default_groundtable_axis_zup = [unreal_default_axis[1], -unreal_default_axis[0], unreal_default_axis[2]]
-        unreal_default_wallgraph_axis = [unreal_default_axis[1], unreal_default_axis[2], unreal_default_axis[0]] # usually used for 2D graphs on screens. not usually used in 3D
-        unreal_default_groundgraph_axis = [unreal_default_axis[1], unreal_default_axis[0], unreal_default_axis[2]]
-        # self.swap_axis()
-
-
-class Table2:
-    def __init__(self, table, axis=["x","y","z","w"]):
-        self.table = table
-        self.axis = axis
-
-
-    def create_letter_labels(self, default_letter_axis='x'): # or default_label_target_dimension
-        pass
-        # X(A1) -> default_letter_axis(A1) -> A1
-        # Y(A1)
-
-    def test_multidimensional_table(self):
-        def setup_lengths(lengths):
-            for i in range(len(lengths)):
-                (lengths[i][0], lengths[i][1])
-
-            xlen = lengths[0]
-            ylen = lengths[1]
-            zlen = lengths[2]
-            wlen = lengths[3]
-
-    def array_setup(self):
-        custom_table_labels = ["ha","haha","hahaha"]
-        custom_table_lettering = [["ha",["bla", "blablabla", "blablabla"]],["haha", ["ja","jaja","jajaja"]]]
-        nozero=["x", "y"]
-        letter_start_offset=[["x",1],["y",-1]]
-
-        # Create a 3D array of shape (2, 2, 3) - 2 "pages", each with 2 rows and 3 columns
-        arr_3d = np.array([
-            [[1, 2, 3], [4, 5, 6]],
-            [[7, 8, 9], [10, 11, 12]]
-        ])
-
-        print(arr_3d)
-        print(f"Shape: {arr_3d.shape}")
-        print(f"Dimensions (ndim): {arr_3d.ndim}")
-
-
-class Table:
-    def __init__(self,
-                 axis_ranges: List[tuple],
-                 axis_labels: Optional[Dict[int,List[str]]]=None,
-                 skip_axes: Optional[List[int]]=None,
-                 skip_zero: bool=False,
-                 width:int=100, height:int=100, depth:int=100,
-                 axis_obj:Axis=None,
-                 mode:str='normal'):
-        self.axis_ranges = axis_ranges
-        self.ndim = len(axis_ranges)
-        self.skip_axes = skip_axes or []
-        self.skip_zero = skip_zero
-        self.axis_obj = axis_obj or Axis()
-        self.mode = mode
-
-        # General nD cell sizes
-        self.cell_size = [width, height, depth] + [100]*(self.ndim-3)
-
-        # PGA mode
-        self.pga_alg = None
-        if self.mode=='projective_geometric_algebra':
-            try:
-                from kingdon import Algebra
-                self.pga_alg = Algebra(3,0,1)
-                locals().update(self.pga_alg.blades)
-            except ImportError:
-                ue.log("Kingdon module not installed, using normal mode")
-                self.mode='normal'
-
-        # --------- Array initialization ---------
-        self.shape=[]
-        self.axis_indices=[]
-        for i,(min_v,max_v) in enumerate(axis_ranges):
-            if i in self.skip_axes:
-                self.shape.append(0)
-                self.axis_indices.append([])
-                continue
-            indices = list(range(min_v,max_v+1))
-            if skip_zero and 0 in indices:
-                indices.remove(0)
-            self.axis_indices.append(indices)
-            self.shape.append(len(indices))
-
-        final_shape = [s for i,s in enumerate(self.shape) if i not in self.skip_axes]
-        self.array = np.full(final_shape, None, dtype=object)
-
-        # --------- Axis labels ---------
-        self.axis_labels={}
-        for axis,indices in enumerate(self.axis_indices):
-            if axis in self.skip_axes: continue
-            if axis_labels and axis in axis_labels:
-                self.axis_labels[axis] = self._repeat_labels(axis_labels[axis], len(indices))
-            else:
-                self.axis_labels[axis] = self._spreadsheet_labels(len(indices))
-        self._update_locals_labels()
-
-        # --------- Render actors ---------
-        self.cylinders=[]
-        self.text_actors=[]
-
-    # --------- Label helpers ---------
-    def _spreadsheet_labels(self,length:int)->List[str]:
-        labels=[]
-        n = len(constants.default_alphabet_capital)
-        for i in range(length):
-            quotient,remainder = divmod(i,n)
-            if quotient==0:
-                labels.append(constants.default_alphabet_capital[remainder])
-            else:
-                prefix = constants.default_alphabet_capital[quotient-1]
-                labels.append(prefix + constants.default_alphabet_capital[remainder])
-        return labels
-
-    def _repeat_labels(self,custom_labels:List[str],length:int)->List[str]:
-        repeated=[]
-        n=len(custom_labels)
-        for i in range(length):
-            quotient,remainder=divmod(i,n)
-            repeated.append(custom_labels[remainder]*(quotient+1))
-        return repeated
-
-    def _update_locals_labels(self):
-        """Expose labels in locals() for scripting/autocomplete"""
-        for axis, labels in self.axis_labels.items():
-            for label, idx in zip(labels, self.axis_indices[axis]):
-                locals()[label] = idx
-
-    # --------- nD Index iteration ---------
-    def _iterate_nd_indices(self):
-        """Yield all combinations of indices for nD array"""
-        def recurse(current_axis, current_idx):
-            if current_axis >= self.ndim:
-                yield current_idx
-            else:
-                if current_axis in self.skip_axes:
-                    yield from recurse(current_axis+1, current_idx)
-                else:
-                    for idx in self.axis_indices[current_axis]:
-                        yield from recurse(current_axis+1, current_idx + [idx])
-        yield from recurse(0, [])
-
-    def _translate_index(self,idxs:Union[int,str,List[Union[int,str]]])->tuple:
-        """Translate label(s) or indices to internal array indices"""
-        if isinstance(idxs,int) or isinstance(idxs,str):
-            idxs=[idxs]
-        if len(idxs)<self.ndim:
-            idxs += [0]*(self.ndim-len(idxs))
-        translated=[]
-        for axis,idx in enumerate(idxs):
-            if axis in self.skip_axes: continue
-            indices=self.axis_indices[axis]
-            labels=self.axis_labels[axis]
-            if isinstance(idx,str):
-                if idx not in labels:
-                    raise KeyError(f"Label {idx} not found on axis {axis}")
-                idx=labels.index(idx)
-            else:
-                if idx not in indices:
-                    raise IndexError(f"Index {idx} not valid for axis {axis}")
-                idx=indices.index(idx)
-            translated.append(idx)
-        return tuple(translated)
-
-    def __getitem__(self,idxs):
-        return self.array[self._translate_index(idxs)]
-
-    def __setitem__(self,idxs,value):
-        self.array[self._translate_index(idxs)] = value
-
-    # --------- Compute positions ---------
-    def compute_point_position(self,indices:List[int])->FVector:
-        """Map first three axes to FVector for rendering; higher axes ignored"""
-        x = indices[0]*self.cell_size[0] if len(indices)>0 else 0
-        y = indices[1]*self.cell_size[1] if len(indices)>1 else 0
-        z = indices[2]*self.cell_size[2] if len(indices)>2 else 0
-        if self.mode=='projective_geometric_algebra' and self.pga_alg:
-            P = self.pga_alg.point(x,y,z)
-            return FVector(P.x,P.y,P.z)
-        return FVector(x,y,z)
-
-    # --------- Rendering ---------
-    def spawn_cylinder(self,point:FVector,target_point:FVector=None):
-        actor=ue.get_editor_world().actor_spawn(StaticMeshActor,point)
-        actor.set_actor_scale3d(FVector(self.cell_size[0]/50,
-                                        self.cell_size[1]/50,
-                                        self.cell_size[2]/100))
-        if target_point:
-            direction=target_point-point
-            midpoint=(point+target_point)/2
-            normalized=direction.normalized()
-            default_axis=FVector(0,0,1)
-            rot_axis=default_axis.cross(normalized)
-            if rot_axis.length()==0: rot_axis=FVector(1,0,0)
-            angle=math.degrees(math.acos(default_axis.dot(normalized)))
-            rotator=KismetMathLibrary.RotatorFromAxisAndAngle(rot_axis,angle)
-            actor.set_actor_location(midpoint)
-            actor.set_actor_rotation(rotator)
-        self.cylinders.append(actor)
-        return actor
-
-    def spawn_text3d(self,point:FVector,text:str):
-        pass
-        # actor=ue.get_editor_world().actor_spawn(TextRenderActor,point)
-        # actor.set_text(text)
-        # self.text_actors.append(actor)
-        # return actor
-
-    def render_grid(self,connect_lines=False,display_values=True,render_order=None):
-        render_order = render_order or self.axis_obj.get_render_order()
-        for idxs in self._iterate_nd_indices():
-            pos = self.compute_point_position(idxs)
-            target=None
-            if connect_lines:
-                # connect next index along first axis
-                next_idxs=idxs.copy()
-                next_axis = 0
-                if next_axis not in self.skip_axes and idxs[0]!=self.axis_indices[0][-1]:
-                    next_idxs[0] = self.axis_indices[0][self.axis_indices[0].index(idxs[0])+1]
-                    target=self.compute_point_position(next_idxs)
-            self.spawn_cylinder(pos,target_point=target)
-            if display_values:
-                val=self[idxs]
-                if val is not None:
-                    self.spawn_text3d(pos,str(val))
-
-    # --------- Spread ---------
-    def spread_table(self,directions:List[FVector],repeats:int):
-        """Spread nD table along multiple vector directions recursively"""
-        def recursive_spread(current_pos:FVector, dir_idx:int):
-            if dir_idx>=len(directions): return
-            dir_vec = directions[dir_idx]
-            for r in range(1,repeats+1):
-                offset = dir_vec*r
-                for idxs in self._iterate_nd_indices():
-                    base_pos = self.compute_point_position(idxs)
-                    pos = base_pos + offset + current_pos
-                    self.spawn_cylinder(pos)
-                    val = self[idxs]
-                    if val is not None:
-                        self.spawn_text3d(pos,str(val))
-                recursive_spread(current_pos+offset,dir_idx+1)
-        recursive_spread(FVector(0,0,0),0)

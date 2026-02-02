@@ -662,8 +662,16 @@ def apply_material(
 
 
 
-def change_background(background="white"):
+def change_background(background="white", path="file://"):
     global py_actor
+
+    try:
+        print(py_actor.is_valid())
+    except Exception as e:
+        print("Error with pyactor", e)
+        py_actor = find_actor("BP_PyActor")
+        print(py_actor)
+
     # TODO: Add transparency and green screen defaults https://github.com/historia-Inc/WindowTransparency https://www.fab.com/listings/a967c271-f440-4bc2-93f8-3699122f0f7b https://forums.unrealengine.com/t/transparent-window/123446
     # --- grab actors ---
     # SkySpheres
@@ -676,8 +684,9 @@ def change_background(background="white"):
     sky = find_actor("SM_SkySphere_2")  # IDK why it got the name _2
     sky_white = find_actor("SM_SkySpherePureWhiteManualExposure")
     # sky_white_autoexposure = find_actor("SM_SkySpherePureWhite")
+    sky_video = find_actor("BP_VideoSkySphere_8") # IDK why it got the name _8
     sky_sun_time = find_actor("BP_SkySphere")
-    sky_spheres = [sky, sky_white]  # , sky_white_autoexposure]
+    sky_spheres = [sky, sky_white, sky_video, sky_sun_time]  # , sky_white_autoexposure]
 
     # Fog
     fogblack = find_actor("ExponentialHeightFogBlack")
@@ -697,7 +706,7 @@ def change_background(background="white"):
     post_processing_volumes = [pp_camera, pp_nobloom, pp_novignette, pp_white, pp_gray, pp_black]
 
     # Reset
-    sky_sun_time.SetActorHiddenInGame(True)  # Can't use Visible on this one unless targeting components
+    # sky_sun_time.SetActorHiddenInGame(True)  # Can't use Visible on this one unless targeting components
     # iterate over tne background actors
     for a in itertools.chain(sky_spheres, fogs, sky_lights, post_processing_volumes):
         if a in sky_spheres:
@@ -719,7 +728,7 @@ def change_background(background="white"):
     # sky_light.set_property("bLowerHemisphereIsSolidColor", False)
     # sky_light.set_property("LowerHemisphereColor", (0,0,0,1))
     py_actor.call_function("DisableWindowTransparent")
-    modes = ["white", "black", "white_no_bloom", "white_no_emissive", "stars", "sky", "transparent"]
+    modes = ["white", "black", "white_no_bloom", "white_no_emissive", "stars", "sky", "image", "video", "transparent"]
     if background in modes:
         if background == "white":
             mat = ue.load_object(Material, "/Game/Materials/M_SkyBoxWhiteForManualExposure")
@@ -768,6 +777,30 @@ def change_background(background="white"):
         elif background == "sky":
             sky_sun_time.ManuallySetSunPosition = False
             sky_sun_time.SetActorHiddenInGame(False)
+        elif background == "image":  # TODO: Make video and image auto detect
+            if os.path.exists(path):
+                py_actor = find_actor("BP_PyActor")
+                print(py_actor)
+                apply_material(
+                    actor_name="SM_SkySphere_2",
+                    material_path="/Game/Materials/M_SkyBox",
+                    bp_helper=py_actor,
+                    params={
+                        "Emissive Multiplier": 1.0,
+                        "Texture": path,
+                    }
+                )
+                sky_sun_time.ManuallySetSunPosition = False
+                sky_sun_time.SetActorHiddenInGame(False)
+                sky.SetActorHiddenInGame(False)
+            else:
+                ue.log_warning("image mode requires working path")
+        elif background == "video":
+            if os.path.exists(path):
+                sky_video.SetActorHiddenInGame(False)
+                sky_video.call_function("SetVideoBackground", path)
+            else:
+                ue.log_warning("video mode requires working path")
         elif background == "transparent":
             # mat = ue.load_object(Material, "/Game/Materials/M_SkyBoxWhiteForManualExposure")
             # find_component(sky_white, "").set_material(0, mat)
@@ -789,21 +822,6 @@ def change_background(background="white"):
             sky_sun_time.ManuallySetSunPosition = True
             sky_sun_time.SetActorHiddenInGame(False)
             sky.SetActorHiddenInGame(False)
-    else:  # set image mode
-        if os.path.exists(background):
-            py_actor = find_actor("BP_PyActor")
-            print(py_actor)
-            apply_material(
-                actor_name="SM_SkySphere_2",
-                material_path="/Game/Materials/M_SkyBox",
-                bp_helper=py_actor,
-                params={
-                    "Emissive Multiplier": 1.0,
-                    "Texture": background,
-                }
-            )
-            sky_sun_time.ManuallySetSunPosition = False
-            sky_sun_time.SetActorHiddenInGame(False)
-            sky.SetActorHiddenInGame(False)
-        else:
-            ue.log_warning("image mode requires working path")
+
+    else:
+        print("mode not found")
