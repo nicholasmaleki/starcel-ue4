@@ -14,7 +14,7 @@ Currently, free! In the future, as more features are added we will switch to a p
 
 ## Quickstart
 The current release includes the client, the server, and the no-editor for Windows. Each compiled source is ~1GB each. 
-The full Unreal Engine Starcel source project folder is quite a large download, ~50GB. The project files on github are ~200MB, check the .gitignore to see what is missing. 
+The full Unreal Engine Starcel source project folder is quite a large download, ~50GB. The project files on github are ~1GB, check the .gitignore to see what is missing. 
 
 You need to use Visual Studio 2019 for compiling ([download community edition](https://aka.ms/vs/16/release/vs_community.exe)). I recommend [PyCharm Community](https://www.jetbrains.com/pycharm/download/?section=windows) for editing until IDE support is added.
 
@@ -27,6 +27,7 @@ The state of the world is not saved in main.py or elsewhere, you will need to ma
 
 ## Please Donate to keep this project running
 You can donate on [Paypal](https://www.paypal.com/paypalme/RecursionIs) or [Patreon](https://www.patreon.com/RecursionIs)
+
 I genuinely want to work on this full time!
 
 
