@@ -15,6 +15,8 @@ import hotreload, unreal_engine_tools
 import asyncio, time
 from typing import List, Dict, Union, Optional
 
+from nd_table.examples import example_unreal_rendering
+
 
 ue.log('Hello i am a Python module.')
 # Code placed outside the Main class will not run when connecting to a server.
@@ -24,7 +26,7 @@ ue.log('Hello i am a Python module.')
 # # Keep track of the current index
 # current_bg_index = 0
 
-change_background("video", "C:/Users/nicho/Documents/Unreal Projects/Starcel9/Content/Movies/psychedelic.mp4")
+change_background("image", r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Images\duck.hdr")
 
 # Stop the background music
 # find_actor("CellDriftLoop").SetActorHiddenInGame(True)
@@ -345,6 +347,8 @@ class Main:
         self.test_kingdon()
         # self.test_cylinder()
         # self.test_text()
+        print("Testing unreal rendering:")
+        # example_unreal_rendering()
 
     # this is called at every 'tick'
     def tick(self, delta_time):
