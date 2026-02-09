@@ -1,0 +1,13 @@
+/NOLOGO
+/errorReport:prompt
+/MACHINE:x64
+/SUBSYSTEM:WINDOWS
+/DEF
+/NAME:"UE4Editor-Text3D.dll"
+/IGNORE:4221
+/NODEFAULTLIB
+"C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Development\Engine\SharedPCH.Engine.ShadowErrors.h.obj"
+"C:\UE_4.27Chaos_Source\Engine\Plugins\Experimental\Text3D\Intermediate\Build\Win64\UE4Editor\Development\Text3D\Module.Text3D.cpp.obj"
+"C:\UE_4.27Chaos_Source\Engine\Plugins\Experimental\Text3D\Intermediate\Build\Win64\UE4Editor\Development\Text3D\Module.Text3D.gen.cpp.obj"
+"C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Development\Default.rc2.res"
+/OUT:"C:\UE_4.27Chaos_Source\Engine\Plugins\Experimental\Text3D\Intermediate\Build\Win64\UE4Editor\Development\Text3D\UE4Editor-Text3D.lib"

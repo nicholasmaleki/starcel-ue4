@@ -1,0 +1,8 @@
+{
+	"OutputFiles": [
+		"Module.Text3D.cppa7.o",
+		"Module.Text3D.cppa8.o",
+		"Module.Text3D.gen.cppa7.o",
+		"Module.Text3D.gen.cppa8.o"
+	]
+}

@@ -1,523 +1,352 @@
 """
-Comprehensive Examples for nD Table V2
-
-Demonstrates all major new features:
-- Variable syntax (A1 + A2)
-- Numpy backend mode
-- Undo/redo
-- Custom cell naming
-- Cross-table formulas
-- Enhanced spreading
-- PGA integration
-- Unreal rendering
+Comprehensive nD Table Examples
 """
 
+from .ndtable import Table, Axis
+from .unreal_integration import UnrealTableRenderer
+from unreal_engine import FVector
+from unreal_engine_tools import get_world
 import numpy as np
-from nd_table.ndtable import Table, Axis, create_cell_globals
-from nd_table.spread_engine import SpreadEngine, SpreadVisualizer
-from nd_table.pga_integration import PGATable, PGAPrimitives, PGAConverter, KINGDON_AVAILABLE
-from nd_table import A1, A2, B1, B2
-
-# Get cell references for formulas
-globals().update(create_cell_globals())
 
 
-# ============================================================================
-# EXAMPLE 1: Variable Syntax
-# ============================================================================
+GLOBAL_OFFSET = FVector(0, 100, 700)
 
-def example_variable_syntax():
-    """Use variables instead of string formulas"""
+
+def offset(x, y, z):
+    return FVector(
+        GLOBAL_OFFSET.x + x,
+        GLOBAL_OFFSET.y + y,
+        GLOBAL_OFFSET.z + z
+    )
+
+
+def example_text_sizing_test():
+    """Test tab and newline handling with cell sizing"""
     print("=" * 70)
-    print("EXAMPLE 1: Variable Syntax")
-    print("=" * 70)
-    
-    t = Table(shape=(5, 5), aggressive_aggressive_debug=True, aggressive_aggressive_aggressive_debug=True)
-    
-    # Traditional string formula
-    t['A1'] = 10
-    t['A2'] = 20
-    t['A3'] = "=A1 + A2"
-    
-    print(f"Traditional: A3 = {t['A3']}")
-    
-    # NEW: Variable syntax
-    from nd_table_v2 import A1, A2, B1, B2
-    
-    t['B1'] = 5
-    t['B2'] = 10
-    t['B3'] = A1 * B1  # Stores formula, not evaluated value!
-    
-    print(f"Variable syntax: B3 = {t['B3']}")
-    
-    # Complex expressions
-    t['C1'] = (A1 + B1) * A2 / B2
-    print(f"Complex: C1 = {t['C1']}")
-    
-    # Updates propagate
-    t['A1'] = 100
-    print(f"After A1=100: A3 = {t['A3']}, B3 = {t['B3']}")
-    
-    print()
-
-
-# ============================================================================
-# EXAMPLE 2: Numpy Backend Mode
-# ============================================================================
-
-def example_numpy_backend():
-    """High-performance numpy backend"""
-    print("=" * 70)
-    print("EXAMPLE 2: Numpy Backend Mode")
+    print("TEXT SIZING TEST - TABS, NEWLINES, AND LENGTH")
+    print(f"Global Offset: {GLOBAL_OFFSET}")
     print("=" * 70)
     
-    # Regular mode
-    t1 = Table(shape=(100, 100), use_numpy_backend=False)
-    print(f"Regular mode: {t1}")
+    world = get_world()
     
-    # Numpy backend mode
-    t2 = Table(shape=(100, 100), use_numpy_backend=True)
-    print(f"Numpy backend: {t2}")
-    
-    # Fill with data
-    for i in range(10):
-        for j in range(10):
-            t2[i, j] = i * j
-            
-    # Convert to numpy (fast in numpy backend mode)
-    arr = t2.to_numpy()
-    print(f"Array shape: {arr.shape}")
-    print(f"Sample values: {arr[:3, :3]}")
-    
-    # Create from numpy
-    data = np.random.rand(50, 50)
-    t3 = Table.from_numpy(data, use_numpy_backend=True)
-    print(f"From numpy: {t3}")
-    
-    print()
-
-
-# ============================================================================
-# EXAMPLE 3: Undo/Redo System
-# ============================================================================
-
-def example_undo_redo():
-    """Undo and redo operations"""
-    print("=" * 70)
-    print("EXAMPLE 3: Undo/Redo System")
-    print("=" * 70)
-    
-    t = Table(shape=(3, 3), enable_undo=True, aggressive_aggressive_debug=True)
-    
-    print("Setting values...")
-    t['A1'] = 10
-    t['A2'] = 20
-    t['A3'] = 30
-    
-    print(f"\nCurrent state: A1={t['A1']}, A2={t['A2']}, A3={t['A3']}")
-    
-    print("\nUndo last operation (A3=30)...")
-    t.undo()
-    print(f"After undo: A1={t['A1']}, A2={t['A2']}, A3={t['A3']}")
-    
-    print("\nUndo again (A2=20)...")
-    t.undo()
-    print(f"After undo: A1={t['A1']}, A2={t['A2']}, A3={t['A3']}")
-    
-    print("\nRedo...")
-    t.redo()
-    print(f"After redo: A1={t['A1']}, A2={t['A2']}, A3={t['A3']}")
-    
-    print()
-
-
-# ============================================================================
-# EXAMPLE 4: Custom Cell Naming
-# ============================================================================
-
-def example_custom_names():
-    """Name cells and reference by name"""
-    print("=" * 70)
-    print("EXAMPLE 4: Custom Cell Naming")
-    print("=" * 70)
-    
-    t = Table(shape=(5, 5), aggressive_aggressive_debug=True)
-    
-    # Name some cells
-    t['A1'] = 100
-    t.name_cell('A1', 'price')
-    
-    t['A2'] = 0.2
-    t.name_cell('A2', 'tax_rate')
-    
-    t['A3'] = 10
-    t.name_cell('A3', 'quantity')
-    
-    # Reference by name
-    print(f"\nPrice: {t.get_cell_by_name('price')}")
-    print(f"Tax rate: {t.get_cell_by_name('tax_rate')}")
-    print(f"Quantity: {t.get_cell_by_name('quantity')}")
-    
-    # Use names in formulas
-    # TODO: Implement name-based formula references
-    # t['B1'] = "=price * quantity"
-    # t['B2'] = "=B1 * tax_rate"
-    
-    print()
-
-
-# ============================================================================
-# EXAMPLE 5: Cross-Table Formulas
-# ============================================================================
-
-def example_cross_table():
-    """Reference cells across multiple tables"""
-    print("=" * 70)
-    print("EXAMPLE 5: Cross-Table Formulas")
-    print("=" * 70)
-    
-    # Create two tables
-    prices = Table(shape=(3, 3), aggressive_aggressive_aggressive_debug=True)
-    prices['A1'] = 100
-    prices['A2'] = 200
-    prices['A3'] = 300
-    
-    quantities = Table(shape=(3, 3), aggressive_aggressive_aggressive_debug=True)
-    quantities['A1'] = 10
-    quantities['A2'] = 20
-    quantities['A3'] = 30
-    
-    # Register globally
-    Table.set_global_table('prices', prices)
-    Table.set_global_table('quantities', quantities)
-    
-    # Create totals table with cross-table formulas
-    totals = Table(shape=(3, 3), aggressive_aggressive_debug=True)
-    totals['A1'] = "=prices.A1 * quantities.A1"
-    totals['A2'] = "=prices.A2 * quantities.A2"
-    totals['A3'] = "=prices.A3 * quantities.A3"
-    
-    print(f"Total A1: {totals['A1']}")  # Should be 1000
-    print(f"Total A2: {totals['A2']}")  # Should be 4000
-    print(f"Total A3: {totals['A3']}")  # Should be 9000
-    
-    # Update source table
-    print("\nUpdating prices.A1 to 500...")
-    prices['A1'] = 500
-    print(f"Total A1 now: {totals['A1']}")  # Should be 5000
-    
-    print()
-
-
-# ============================================================================
-# EXAMPLE 6: Enhanced Axis System
-# ============================================================================
-
-def example_enhanced_axes():
-    """16D axis labels and per-axis zero options"""
-    print("=" * 70)
-    print("EXAMPLE 6: Enhanced Axis System")
-    print("=" * 70)
-    
-    # Custom axes with zero options
-    axis1 = Axis(
-        start=-3, end=3,
-        name="rows",
-        include_zero=True,
-        include_negative_zero=True,
-        include_positive_zero=True
+    renderer = UnrealTableRenderer(
+        world=world,
+        cell_spacing=100.0,
+        orientation_preset='wall_table',
+        text_mode='3d',
+        debug=True,
+        aggressive_debug=True
     )
     
-    axis2 = Axis(
-        start=-2, end=2,
-        name="cols",
-        labels=["alpha", "beta", "gamma", "delta", "epsilon"],
-        spreadsheet_axis=True
-    )
+    # ===== TEST 1: VARYING TEXT LENGTHS WITH TABS AND NEWLINES =====
+    print("\n[TEST 1] 2D - Tabs and newlines...")
+    t_length = Table(shape=(3, 3), aggressive_debug=True)
     
-    t = Table(axes=[axis1, axis2], aggressive_aggressive_aggressive_debug=True)
+    # Row 0: Short, medium, long with tabs
+    t_length[0, 0] = "A"
+    t_length[0, 1] = "Hello"
+    t_length[0, 2] = "This is \ta very long\t\t text string"
     
-    print(f"Axis 0 indices: {axis1.indices}")
-    print(f"Axis 1 indices: {axis2.indices}")
-    print(f"Axis 1 labels: {[axis2.get_label(i) for i in axis2.indices]}")
+    # Row 1: Newlines  
+    t_length[1, 0] = "XY"
+    t_length[1, 1] = "Testing"
+    t_length[1, 2] = "Even longer text \nthat goes on and on"
     
-    # Access with custom labels
-    # t['alpha1'] = 100  # Would work with proper parsing
+    # Row 2: Multiple tabs and newlines
+    t_length[2, 0] = "123"
+    t_length[2, 1] = "hello\t\t\tworld!"
+    t_length[2, 2] = "The quick brown fox\n\n\njumps over the lazy dog"
     
+    renderer.render_table(t_length, world_location=offset(0, 0, 100))
+    print("✓ 2D tab/newline test rendered\n")
+    
+    # ===== TEST 2: TABS =====
+    print("\n[TEST 2] Tabs - should expand to 4 char widths...")
+    t_tabs = Table(shape=(5, 2), aggressive_debug=True)
+    t_tabs[0, 0] = "No tab"
+    t_tabs[0, 1] = "Has\ttab"          # 1 tab = 4 extra chars
+    
+    t_tabs[1, 0] = "Two\t\ttabs"       # 2 tabs = 8 extra chars
+    t_tabs[1, 1] = "Name\tValue\tQty"  # Multiple tabs
+    
+    t_tabs[2, 0] = "A\tB\tC\tD"        # Tab-separated
+    t_tabs[2, 1] = "\tLeading"         # Leading tab
+    
+    t_tabs[3, 0] = "Trail\t"           # Trailing tab
+    t_tabs[3, 1] = "\t\t\tMany"       # Multiple leading tabs
+    
+    t_tabs[4, 0] = "Col1\tCol2"
+    t_tabs[4, 1] = "Data\tMore"
+    
+    renderer.render_table(t_tabs, world_location=offset(1000, 0, 100))
+    print("✓ Tabs rendered\n")
+    
+    # ===== TEST 3: NEWLINES =====
+    print("\n[TEST 3] Newlines - should increase cell height...")
+    t_newlines = Table(shape=(5, 2), aggressive_debug=True)
+    t_newlines[0, 0] = "Single"
+    t_newlines[0, 1] = "Line1\nLine2"              # 2 lines
+    
+    t_newlines[1, 0] = "One\nTwo\nThree"           # 3 lines
+    t_newlines[1, 1] = "A\nB\nC\nD"                # 4 lines
+    
+    t_newlines[2, 0] = "Multi\nline\ntext\nhere\nnow"  # 5 lines
+    t_newlines[2, 1] = "Short"
+    
+    t_newlines[3, 0] = "X"
+    t_newlines[3, 1] = "Two\nLines"
+    
+    t_newlines[4, 0] = "List:\nItem1\nItem2\nItem3"
+    t_newlines[4, 1] = "Done"
+    
+    renderer.render_table(t_newlines, world_location=offset(2000, 0, 100))
+    print("✓ Newlines rendered\n")
+    
+    # ===== TEST 4: COMBINED TABS AND NEWLINES =====
+    print("\n[TEST 4] Combined tabs and newlines...")
+    t_combined = Table(shape=(4, 3), aggressive_debug=True)
+    
+    # Headers with tabs
+    t_combined[0, 0] = "Name\tAge\tCity"
+    t_combined[0, 1] = "Product\tPrice\tQty"
+    t_combined[0, 2] = "ID\tStatus"
+    
+    # Multi-line with tabs
+    t_combined[1, 0] = "Alice\t25\tNY\nBob\t30\tLA"
+    t_combined[1, 1] = "Widget\t$10\t5\nGadget\t$20\t3"
+    t_combined[1, 2] = "001\tActive\n002\tPending"
+    
+    # Indented multi-line
+    t_combined[2, 0] = "Header\n\tIndented\n\t\tDouble"
+    t_combined[2, 1] = "Data:\n\tValue1\n\tValue2\n\tValue3"
+    t_combined[2, 2] = "Note:\n\tImportant"
+    
+    # Table-like structure
+    t_combined[3, 0] = "R1:\tVal1\nR2:\tVal2\nR3:\tVal3"
+    t_combined[3, 1] = "C1\tC2\tC3\nD1\tD2\tD3"
+    t_combined[3, 2] = "Final\tCell"
+    
+    renderer.render_table(t_combined, world_location=offset(0, 1000, 100))
+    print("✓ Combined tabs/newlines rendered\n")
+    
+    # ===== TEST 5: EDGE CASES =====
+    print("\n[TEST 5] Edge cases...")
+    t_edge = Table(shape=(3, 3), aggressive_debug=True)
+    t_edge[0, 0] = ""              # Empty string
+    t_edge[0, 1] = " "             # Single space
+    t_edge[0, 2] = "Normal"
+    
+    t_edge[1, 0] = "\n"            # Just newline
+    t_edge[1, 1] = "\t"            # Just tab
+    t_edge[1, 2] = "\n\t"          # Both
+    
+    t_edge[2, 0] = "\n\n\n"        # Multiple newlines
+    t_edge[2, 1] = "\t\t\t"        # Multiple tabs
+    t_edge[2, 2] = "Regular"
+    
+    renderer.render_table(t_edge, world_location=offset(1000, 1000, 100))
+    print("✓ Edge cases rendered\n")
+    
+    print("=" * 70)
+    print("TEXT SIZING TESTS COMPLETE")
+    print(f"Total cells: {len(renderer.cell_actors)}")
+    print(f"Total gridlines: {len(renderer.gridline_actors)}")
+    print("=" * 70)
     print()
 
-
-# ============================================================================
-# EXAMPLE 7: Advanced Spreading
-# ============================================================================
-
-def example_advanced_spreading():
-    """Multi-axis and pattern-based spreading"""
-    print("=" * 70)
-    print("EXAMPLE 7: Advanced Spreading")
-    print("=" * 70)
-    
-    table = Table(shape=(3, 3))
-    table['A1'] = 42
-    
-    engine = SpreadEngine(aggressive_debug=True)
-    visualizer = SpreadVisualizer()
-    
-    # Grid spread
-    print("\n--- GRID SPREAD ---")
-    result = engine.spread(
-        source=table,
-        mode='replicate',
-        count=9,
-        spacing=100.0,
-        pattern='grid'
-    )
-    positions = [pos for _, pos in result]
-    visualizer.preview_positions(positions[:9], [f"T{i}" for i in range(9)])
-    
-    # Multi-axis spread
-    print("\n--- MULTI-AXIS SPREAD ---")
-    result = engine.spread_multi_axis(
-        table=table,
-        axes=[0, 1],
-        spacing=[150, 150],
-        counts=[3, 3]
-    )
-    print(f"Created {len(result)} table positions")
-    
-    # Curve spread
-    print("\n--- CURVE SPREAD ---")
-    result = engine.spread_along_curve(
-        table=table,
-        curve_function=lambda t: (t * 100, np.sin(t * np.pi) * 50, 0),
-        count=10
-    )
-    positions = [pos for _, pos in result]
-    print("Sine wave positions:")
-    for i, pos in enumerate(positions[:5]):
-        print(f"  {i}: {pos}")
-    
-    print()
-
-
-# ============================================================================
-# EXAMPLE 8: Always Reevaluate Mode
-# ============================================================================
-
-def example_always_reevaluate():
-    """Never cache formula results"""
-    print("=" * 70)
-    print("EXAMPLE 8: Always Reevaluate Mode")
-    print("=" * 70)
-    
-    # Regular lazy mode (caches)
-    t1 = Table(shape=(3, 3), lazy_eval=True, always_reevaluate=False)
-    t1['A1'] = 10
-    t1['A2'] = "=A1 * 2"
-    
-    print(f"Lazy mode: A2 = {t1['A2']}")
-    print("(cached after first access)")
-    
-    # Always reevaluate mode (never caches)
-    t2 = Table(shape=(3, 3), lazy_eval=True, always_reevaluate=True, aggressive_aggressive_debug=True)
-    t2['A1'] = 10
-    t2['A2'] = "=A1 * 2"
-    
-    print(f"\nAlways reevaluate: A2 = {t2['A2']}")
-    print("(evaluates every time)")
-    print(f"Access again: A2 = {t2['A2']}")
-    print("(evaluates again)")
-    
-    print()
-
-
-# ============================================================================
-# EXAMPLE 9: Aggressive Debug Mode
-# ============================================================================
-
-def example_aggressive_debug():
-    """Very detailed debug output"""
-    print("=" * 70)
-    print("EXAMPLE 9: Aggressive Debug Mode")
-    print("=" * 70)
-    
-    t = Table(shape=(3, 3), aggressive_aggressive_debug=True)
-    
-    print("\nSetting up dependency chain...")
-    t['A1'] = 100
-    t['A2'] = 200
-    t['A3'] = "=A1 + A2"
-    
-    print("\nAccessing A3...")
-    result = t['A3']
-    print(f"Result: {result}")
-    
-    print("\nChanging A1...")
-    t['A1'] = 500
-    
-    print("\nAccessing A3 again...")
-    result = t['A3']
-    print(f"Result: {result}")
-    
-    print("\nDependency graph visualization:")
-    print(t.visualize_dependencies())
-    
-    print()
-
-
-# ============================================================================
-# EXAMPLE 10: PGA Integration (if available)
-# ============================================================================
-
-def example_pga_integration():
-    """Geometric algebra operations"""
-    print("=" * 70)
-    print("EXAMPLE 10: PGA Integration")
-    print("=" * 70)
-    
-    if not KINGDON_AVAILABLE:
-        print("Install kingdon for PGA support:")
-        print("  pip install kingdon")
-        print()
-        return
-        
-    # Create PGA table
-    pga_table = PGATable(shape=(5, 5), pga_signature=(3, 0, 1), aggressive_debug=True)
-    
-    # Create geometric primitives
-    primitives = PGAPrimitives(pga_table.algebra)
-    
-    # Store points
-    p1 = primitives.point(0, 0, 0)
-    p2 = primitives.point(1, 0, 0)
-    p3 = primitives.point(0, 1, 0)
-    
-    pga_table[(0, 0)] = p1
-    pga_table[(0, 1)] = p2
-    pga_table[(0, 2)] = p3
-    
-    print("\nStored 3 points in table")
-    
-    # Create line
-    line = pga_table.wedge_product((0, 0), (0, 1))
-    print(f"Line through p1 and p2: {line}")
-    
-    # Create plane
-    p1_val = pga_table[(0, 0)]
-    p2_val = pga_table[(0, 1)]
-    p3_val = pga_table[(0, 2)]
-    plane = p1_val ^ p2_val ^ p3_val
-    print(f"Plane through 3 points: {plane}")
-    
-    print()
-
-
-# ============================================================================
-# EXAMPLE 11: Lists as Indices
-# ============================================================================
-
-def example_lists_as_indices():
-    """Use lists instead of tuples"""
-    print("=" * 70)
-    print("EXAMPLE 11: Lists as Indices")
-    print("=" * 70)
-    
-    t = Table(shape=(5, 5, 5))
-    
-    # Tuples work
-    t[(0, 0, 0)] = "tuple"
-    print(f"Tuple access: {t[(0, 0, 0)]}")
-    
-    # Lists also work!
-    t[[1, 1, 1]] = "list"
-    print(f"List access: {t[[1, 1, 1]]}")
-    
-    # Mixed
-    t[([2, 2, 2])] = "mixed"
-    print(f"Mixed: {t[[2, 2, 2]]}")
-    
-    print()
-
-
-
-
-# ============================================================================
-# EXAMPLE 12: Unreal Engine Rendering
-# ============================================================================
 
 def example_unreal_rendering():
-    """Render table in Unreal Engine"""
     print("=" * 70)
-    print("EXAMPLE 12: Unreal Engine Rendering")
+    print("COMPREHENSIVE UNREAL RENDERING TEST")
+    print(f"Global Offset: {GLOBAL_OFFSET}")
     print("=" * 70)
     
-    try:
-        from unreal_engine_tools import get_world
-        from nd_table.unreal_integration import UnrealTableRenderer
-        from nd_table.ndtable import Table
-        from nd_table import A1, A2
-        
-        # Get Unreal world
-        world = get_world()
-        
-        # Create table
-        t = Table(shape=(5, 5, 5), aggressive_debug=True)
-        t['A1'] = 100
-        t['A2'] = 200
-        t['A3'] = A1 + A2
-        t[[1,1,1]] = "yoo"
-        
-        print(f"\nTable created with {len(t.cells)} cells")
-        
-        # Create renderer
-        renderer = UnrealTableRenderer(
-            world=world,
-            cell_spacing=100.0,
-            orientation_preset='wall_table',
-            aggressive_debug=True
-        )
-        
-        # Render
-        from unreal_engine import FVector
-        origin = FVector(0, 0, 500)
-        renderer.render_table(t, origin=origin, render_gridlines=True)
-        
-        print("\nTable rendered successfully!")
-        print()
-    except ImportError as e:
-        print(f"Unreal imports not available: {e}")
-        print("This example requires running inside Unreal Engine")
-        print()
-
-# ============================================================================
-# RUN ALL EXAMPLES
-# ============================================================================
-
-if __name__ == "__main__":
-    examples = [
-        example_variable_syntax,
-        example_numpy_backend,
-        example_undo_redo,
-        example_custom_names,
-        example_cross_table,
-        example_enhanced_axes,
-        example_advanced_spreading,
-        example_always_reevaluate,
-        example_aggressive_debug,
-        example_pga_integration,
-        example_lists_as_indices,
-        example_unreal_rendering,
+    world = get_world()
+    
+    renderer = UnrealTableRenderer(
+        world=world,
+        cell_spacing=100.0,
+        orientation_preset='wall_table',
+        text_mode='3d',
+        debug=False,
+        aggressive_debug=True
+    )
+    
+    # ===== 2D TABLE =====
+    print("\n[2D TEST] Creating 5x5 table...")
+    t2d = Table(shape=(5, 5), aggressive_debug=True)
+    for i in range(5):
+        for j in range(5):
+            t2d[i, j] = f"({i},{j})"
+    
+    t2d[0, 0] = 100
+    t2d[1, 0] = 200
+    t2d[2, 0] = 300
+    
+    print(f"2D: {len(t2d.cells)} cells")
+    renderer.render_table(t2d, world_location=offset(0, 0, 100))
+    print("✓ 2D rendered\n")
+    
+    # ===== 2D WITH NEGATIVES =====
+    print("[2D NEGATIVE] Table with negative indices...")
+    t2d_neg = Table(shape=[(-2, 2), (-2, 2)], aggressive_debug=True)
+    for i in range(-2, 3):
+        for j in range(-2, 3):
+            t2d_neg[i, j] = 1 # f"[{i},{j}]"
+    
+    print(f"2D Negative: {len(t2d_neg.cells)} cells (should be 25)")
+    renderer.render_table(t2d_neg, world_location=offset(800, 0, 100))
+    print("✓ 2D negative rendered\n")
+    
+    # ===== 3D TABLE =====
+    print("[3D TEST] Creating 3x3x3 table...")
+    t3d = Table(shape=(3, 3, 3), aggressive_debug=True)
+    for i in range(3):
+        for j in range(3):
+            for k in range(3):
+                t3d[i, j, k] = f"{i}{j}{k}"
+    
+    print(f"3D: {len(t3d.cells)} cells (should be 27)")
+    renderer.render_table(t3d, world_location=offset(0, 800, 100))
+    print("✓ 3D rendered\n")
+    
+    # ===== 3D WITH TABS AND NEWLINES =====
+    print("[3D TAB/NEWLINE] Table with special characters...")
+    t3d_special = Table(shape=(2, 2, 2), aggressive_debug=True)
+    t3d_special[0, 0, 0] = "hello\n\n\nworld!"
+    t3d_special[0, 0, 1] = "tab\t\tseparated"
+    t3d_special[0, 1, 0] = "multi\nline\ntext"
+    t3d_special[0, 1, 1] = "A"
+    t3d_special[1, 0, 0] = "hello\t\t\tworld!"
+    t3d_special[1, 0, 1] = "B\nC\nD"
+    t3d_special[1, 1, 0] = "tabs:\t\t\there"
+    t3d_special[1, 1, 1] = "newlines:\n\n\nhere"
+    
+    print(f"3D Special: {len(t3d_special.cells)} cells")
+    renderer.render_table(t3d_special, world_location=offset(1200, 800, 100))
+    print("✓ 3D tab/newline rendered\n")
+    
+    # ===== 3D WITH NEGATIVES =====
+    print("[3D NEGATIVE] Table with negative indices...")
+    t3d_neg = Table(shape=[(-1, 1), (-1, 1), (-1, 1)], aggressive_debug=True)
+    for i in range(-1, 2):
+        for j in range(-1, 2):
+            for k in range(-1, 2):
+                t3d_neg[i, j, k] = f"[{i},{j},{k}]"
+    
+    print(f"3D Negative: {len(t3d_neg.cells)} cells (should be 27)")
+    renderer.render_table(t3d_neg, world_location=offset(1600, 0, 100))
+    print("✓ 3D negative rendered\n")
+    
+    # ===== 3D WITH FUNCTION =====
+    print("[3D FUNCTION] Table with callable function...")
+    t3d_func = Table(shape=(2, 2, 2), aggressive_debug=True)
+    for i in range(2):
+        for j in range(2):
+            for k in range(2):
+                t3d_func[i, j, k] = i * 100 + j * 10 + k
+    
+    def calc_sum():
+        return t3d_func[0,0,0] + t3d_func[1,1,1]
+    
+    t3d_func[0, 0, 1] = calc_sum
+    
+    print(f"3D Function: {len(t3d_func.cells)} cells")
+    renderer.render_table(t3d_func, world_location=offset(800, 800, 100))
+    print("✓ 3D function rendered\n")
+    
+    # ===== 4D TABLE =====
+    print("[4D TEST] Creating 2^4 table...")
+    t4d = Table(shape=(2, 2, 2, 2), aggressive_debug=True)
+    for i in range(2):
+        for j in range(2):
+            for k in range(2):
+                for w in range(2):
+                    t4d[i,j,k,w] = f"{i}{j}{k}{w}"
+    
+    print(f"4D: {len(t4d.cells)} cells")
+    renderer.render_table(t4d, world_location=offset(0, 1600, 100))
+    print("✓ 4D rendered\n")
+    
+    # ===== 4D WITH NEGATIVE - CREATE MANUALLY =====
+    print("[4D NEGATIVE] Table with negative 4th dimension...")
+    # Create axes manually to avoid shape parsing issue
+    axes_4d = [
+        Axis(start=0, end=1, name="dim0"),
+        Axis(start=0, end=1, name="dim1"),
+        Axis(start=0, end=1, name="dim2"),
+        Axis(start=-1, end=1, name="dim3")
     ]
+    t4d_neg = Table(axes=axes_4d, aggressive_debug=True)
+    for i in range(2):
+        for j in range(2):
+            for k in range(2):
+                for w in range(-1, 2):
+                    t4d_neg[i,j,k,w] = f"D4={w}"
     
-    for example_func in examples:
-        try:
-            example_func()
-        except Exception as e:
-            print(f"ERROR in {example_func.__name__}: {e}")
-            import traceback
-            traceback.print_exc()
-            print()
+    print(f"4D Negative: {len(t4d_neg.cells)} cells (should be 24)")
+    renderer.render_table(t4d_neg, world_location=offset(1600, 800, 100))
+    print("✓ 4D negative rendered\n")
+    
+    # ===== 5D TABLE =====
+    print("[5D TEST] Creating 2^5 table...")
+    t5d = Table(shape=(2, 2, 2, 2, 2), aggressive_debug=True)
+    for i in range(2):
+        for j in range(2):
+            for k in range(2):
+                for w in range(2):
+                    for v in range(2):
+                        t5d[i,j,k,w,v] = f"{i}{j}{k}{w}{v}"
+    
+    print(f"5D: {len(t5d.cells)} cells")
+    renderer.render_table(t5d, world_location=offset(800, 1600, 100))
+    print("✓ 5D rendered\n")
+    
+    # ===== 6D TABLE =====
+    print("[6D TEST] Creating 2^6 table...")
+    t6d = Table(shape=(2, 2, 2, 2, 2, 2), aggressive_debug=True)
+    count = 0
+    for i in range(2):
+        for j in range(2):
+            for k in range(2):
+                for w in range(2):
+                    for v in range(2):
+                        for u in range(2):
+                            t6d[i,j,k,w,v,u] = f"{count}"
+                            count += 1
+    
+    print(f"6D: {len(t6d.cells)} cells")
+    renderer.render_table(t6d, world_location=offset(0, 2400, 100))
+    print("✓ 6D rendered\n")
+    
+    # ===== 7D TABLE =====
+    print("[7D TEST] Creating 2^7 table...")
+    t7d = Table(shape=(2, 2, 2, 2, 2, 2, 2), aggressive_debug=True)
+    count = 0
+    for i in range(2):
+        for j in range(2):
+            for k in range(2):
+                for w in range(2):
+                    for v in range(2):
+                        for u in range(2):
+                            for t in range(2):
+                                t7d[i,j,k,w,v,u,t] = count
+                                count += 1
+    
+    print(f"7D: {len(t7d.cells)} cells")
+    renderer.render_table(t7d, world_location=offset(800, 2400, 100))
+    print("✓ 7D rendered\n")
     
     print("=" * 70)
-    print("ALL EXAMPLES COMPLETED")
+    print(f"ALL TESTS COMPLETE")
+    print(f"Cells: {len(renderer.cell_actors)}, Gridlines: {len(renderer.gridline_actors)}")
     print("=" * 70)
+
+
+if __name__ == '__main__':
+    # Run text sizing test first
+    example_text_sizing_test()
+    
+    # Then run full rendering tests
+    example_unreal_rendering()
+

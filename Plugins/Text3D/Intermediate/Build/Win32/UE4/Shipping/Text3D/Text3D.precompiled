@@ -1,0 +1,7 @@
+{
+	"OutputFiles": [
+		"..\\..\\..\\..\\..\\..\\..\\..\\..\\Intermediate\\Build\\Win32\\UE4\\Shipping\\Engine\\SharedPCH.Engine.Exceptions.ShadowErrors.h.obj",
+		"Module.Text3D.cpp.obj",
+		"Module.Text3D.gen.cpp.obj"
+	]
+}

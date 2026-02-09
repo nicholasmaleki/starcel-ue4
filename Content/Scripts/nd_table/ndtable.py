@@ -557,12 +557,6 @@ class Table:
         # Named cells
         self.named_cells = {}  # name -> idx mapping
         
-        # Callable formulas storage
-        self._callable_formulas = {}  # formula_id -> callable
-        
-        # Merged cells storage
-        self.merged_ranges = {}  # start_idx -> merge info
-        
         # Initialize axes
         if axes:
             self.axes = axes
@@ -855,15 +849,6 @@ class Table:
                         self.data_array[self._array_position(idx)] = value
                     else:
                         self.cells[idx] = Cell(raw_value=value)
-        elif callable(value):
-            # Callable formula support
-            formula_id = f"__callable_{id(value)}"
-            cell = Cell(formula=formula_id)
-            self._callable_formulas[formula_id] = value
-            self.cells[idx] = cell
-            
-            if self.aggressive_debug:
-                print(f"  └─ Stored callable function")
         else:
             if self.use_numpy_backend:
                 self.data_array[self._array_position(idx)] = value
@@ -1030,22 +1015,6 @@ class Table:
             
         formula = cell.formula
         
-        # Check if it's a callable
-        if formula in self._callable_formulas:
-            func = self._callable_formulas[formula]
-            try:
-                result = func()
-                if not self.always_reevaluate:
-                    cell._cached_value = result
-                    cell._evaluated = True
-                if self.aggressive_debug:
-                    print(f"  └─ Evaluated callable: {result}")
-                return result
-            except Exception as e:
-                if self.aggressive_debug:
-                    print(f"  └─ Callable error: {e}")
-                raise
-        
         if self.aggressive_debug:
             print(f"[FORMULA EVAL] {self._cell_id(idx)}: {formula}")
             
@@ -1134,26 +1103,9 @@ class Table:
     def _boolean_indexing(self, mask: np.ndarray, return_table: bool = True):
         """Boolean mask indexing"""
         if return_table:
-            # Create new table with only True cells
-            true_indices = np.argwhere(mask)
-            
-            if len(true_indices) == 0:
-                return Table(shape=(1, 1))
-            
-            # Create table with enough space
-            new_shape = tuple(np.max(true_indices, axis=0) + 1)
-            new_table = Table(shape=new_shape)
-            
-            # Copy selected cells
-            for idx in true_indices:
-                idx_tuple = tuple(idx)
-                if idx_tuple in self.cells:
-                    new_table.cells[idx_tuple] = self.cells[idx_tuple]
-            
-            if self.aggressive_debug:
-                print(f"[BOOLEAN MASK] Created table with {len(true_indices)} cells")
-            
-            return new_table
+            # Return Table with selected cells
+            # TODO: Implement
+            raise NotImplementedError("Boolean mask returning Table not implemented yet")
         else:
             arr = self.to_numpy()
             return arr[mask]
@@ -1332,138 +1284,6 @@ class Table:
             return f"Table({dims_str}, numpy backend)"
         else:
             return f"Table({dims_str}, {len(self.cells)} cells)"
-    def merge_cells(self, range_ref: Union[str, Tuple, List]):
-        """
-        Merge cells in a range
-        
-        Args:
-            range_ref: Range like "A1:C3" or [(0,0), (2,2)]
-        """
-        import itertools
-        
-        # Parse range
-        if isinstance(range_ref, str):
-            if ':' in range_ref:
-                start_ref, end_ref = range_ref.split(':')
-                start_idx = self._parse_cell_reference(start_ref)
-                end_idx = self._parse_cell_reference(end_ref)
-            else:
-                raise ValueError("String range must contain ':'")
-        elif isinstance(range_ref, (list, tuple)) and len(range_ref) == 2:
-            start_idx, end_idx = range_ref
-            if isinstance(start_idx, list):
-                start_idx = tuple(start_idx)
-            if isinstance(end_idx, list):
-                end_idx = tuple(end_idx)
-        else:
-            raise ValueError("Invalid range format")
-        
-        # Get all cells in range
-        ranges_per_dim = []
-        for dim in range(len(start_idx)):
-            start_pos = self.axes[dim].indices.index(start_idx[dim])
-            end_pos = self.axes[dim].indices.index(end_idx[dim])
-            indices = self.axes[dim].indices[start_pos:end_pos+1]
-            ranges_per_dim.append(indices)
-        
-        # Mark as merged
-        self.merged_ranges[start_idx] = {
-            'end': end_idx,
-            'cells': list(itertools.product(*ranges_per_dim))
-        }
-        
-        if self.aggressive_debug:
-            cell_count = len(self.merged_ranges[start_idx]['cells'])
-            print(f"[MERGE] Merged {cell_count} cells: {start_idx} to {end_idx}")
-    
-    def combine_tables(self, *others, position='right', offset=None):
-        """
-        Combine multiple tables
-        
-        Args:
-            *others: Other tables to combine
-            position: 'right', 'bottom', or 'custom'
-            offset: Custom offset tuple
-        
-        Returns:
-            New combined table
-        """
-        if not others:
-            return self
-        
-        # Calculate combined dimensions
-        if position == 'right':
-            new_width = sum(len(t.axes[1]) for t in [self] + list(others))
-            new_height = len(self.axes[0])
-            combined = Table(shape=(new_height, new_width))
-            
-            col_offset = 0
-            for table in [self] + list(others):
-                for idx, cell in table.cells.items():
-                    new_idx = (idx[0], idx[1] + col_offset)
-                    combined.cells[new_idx] = cell
-                col_offset += len(table.axes[1])
-                
-        elif position == 'bottom':
-            new_width = len(self.axes[1])
-            new_height = sum(len(t.axes[0]) for t in [self] + list(others))
-            combined = Table(shape=(new_height, new_width))
-            
-            row_offset = 0
-            for table in [self] + list(others):
-                for idx, cell in table.cells.items():
-                    new_idx = (idx[0] + row_offset, idx[1])
-                    combined.cells[new_idx] = cell
-                row_offset += len(table.axes[0])
-                
-        elif position == 'custom' and offset:
-            combined = Table(shape=self.shape)
-            for idx, cell in self.cells.items():
-                combined.cells[idx] = cell
-            
-            for table in others:
-                for idx, cell in table.cells.items():
-                    new_idx = tuple(i + o for i, o in zip(idx, offset))
-                    combined.cells[new_idx] = cell
-        else:
-            raise ValueError("Invalid position or missing offset")
-        
-        if self.aggressive_debug:
-            print(f"[COMBINE] Combined {len(others) + 1} tables, position={position}")
-        
-        return combined
-    
-    def generate_pyi(self, filename: str):
-        """
-        Generate .pyi type stub file for IDE autocomplete
-        
-        Args:
-            filename: Output .pyi file path
-        """
-        with open(filename, 'w') as f:
-            f.write("# Type stubs for nD Table\n")
-            f.write("# Auto-generated\n\n")
-            f.write("from typing import Any\n\n")
-            
-            if hasattr(self, 'spreadsheet_cols'):
-                for col_label in self.spreadsheet_cols:
-                    for i in range(len(self.axes[0])):
-                        row_num = i + 1
-                        ref = f"{col_label}{row_num}"
-                        f.write(f"{ref}: Any\n")
-            
-            for axis in self.axes:
-                if axis.custom_labels:
-                    for label in axis.custom_labels:
-                        for i in range(len(axis)):
-                            ref = f"{label}{i+1}"
-                            f.write(f"{ref}: Any\n")
-            
-            f.write("\n# End of type stubs\n")
-        
-        if self.aggressive_debug:
-            print(f"[PYI] Generated type stubs: {filename}")
-
 
 
 # Export cell references for convenient use

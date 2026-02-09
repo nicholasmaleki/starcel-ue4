@@ -631,6 +631,7 @@ def apply_material(
                 def on_cube_ready(cube):
                     if cube:
                         print("Created cubemap, applying it to material")
+                        print(cube)
                         mid.set_material_texture_parameter(pname, cube[0])
                         target_comp.set_material(material_index, mid)
                     else:
@@ -641,6 +642,12 @@ def apply_material(
             else:
                 tex = load_texture_any(v)
                 if tex:
+                    mat = ue.load_object(Material, "/Game/Materials/M_SkyBoxImage.M_SkyBoxImage")
+                    if not mat:
+                        ue.log_warning(f"Material not found: {material_path}")
+
+                    mid = target_comp.create_material_instance_dynamic(mat)
+
                     mid.set_material_texture_parameter(pname, tex)
                     target_comp.set_material(material_index, mid)  # assign immediately
                 else:
@@ -780,7 +787,7 @@ def change_background(background="white", path="file://"):
         elif background == "image":  # TODO: Make video and image auto detect
             if os.path.exists(path):
                 py_actor = find_actor("BP_PyActor")
-                print(py_actor)
+                # print(py_actor)
                 apply_material(
                     actor_name="SM_SkySphere_2",
                     material_path="/Game/Materials/M_SkyBox",
@@ -795,7 +802,7 @@ def change_background(background="white", path="file://"):
                 sky.SetActorHiddenInGame(False)
             else:
                 ue.log_warning("image mode requires working path")
-        elif background == "video":
+        elif background == "video":  # TODO: HISPlayer Unreal Engine plugin for faster playback
             if os.path.exists(path):
                 sky_video.SetActorHiddenInGame(False)
                 sky_video.call_function("SetVideoBackground", path)

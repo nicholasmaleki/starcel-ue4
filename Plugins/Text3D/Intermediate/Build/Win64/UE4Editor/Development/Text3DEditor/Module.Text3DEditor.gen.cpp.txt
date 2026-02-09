@@ -1,0 +1,9 @@
+C:\UE_4.27Chaos_Source\Engine\Plugins\Experimental\Text3D\Intermediate\Build\Win64\UE4Editor\Development\Text3DEditor\Definitions.Text3DEditor.h
+C:/UE_4.27Chaos_Source/Engine/Plugins/Experimental/Text3D/Intermediate/Build/Win64/UE4Editor/Inc/Text3DEditor/ActorFactoryText3D.gen.cpp
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/GeneratedCppIncludes.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/MetaData.h
+C:\UE_4.27Chaos_Source\Engine\Plugins\Experimental\Text3D\Source\Text3DEditor/Public/ActorFactoryText3D.h
+C:\UE_4.27Chaos_Source\Engine\Source\Editor\UnrealEd\Classes\ActorFactories/ActorFactory.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\UnrealEd\ActorFactory.generated.h
+C:\UE_4.27Chaos_Source\Engine\Plugins\Experimental\Text3D\Intermediate\Build\Win64\UE4Editor\Inc\Text3DEditor\ActorFactoryText3D.generated.h
+C:/UE_4.27Chaos_Source/Engine/Plugins/Experimental/Text3D/Intermediate/Build/Win64/UE4Editor/Inc/Text3DEditor/Text3DEditor.init.gen.cpp

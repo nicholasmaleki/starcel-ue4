@@ -26,7 +26,8 @@ ue.log('Hello i am a Python module.')
 # # Keep track of the current index
 # current_bg_index = 0
 
-change_background("image", r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Images\duck.hdr")
+# change_background("white")
+change_background("video", r"C:\Users\nicho\Videos\test2.mp4")
 
 # Stop the background music
 # find_actor("CellDriftLoop").SetActorHiddenInGame(True)
@@ -181,6 +182,7 @@ class Main:
     # this is called on game start
     def begin_play(self):
         ue.log('Begin Play on Main class')
+        self.uobject.show_mouse_cursor(False)
 
         global world
         world = get_world()
@@ -342,13 +344,13 @@ class Main:
 
         # is_hitting_something, hit_result = KismetSystemLibrary.LineTraceSingle_NEW(self.actor, self.actor.get_actor_location(),FVector(300, 300, 300), ETraceTypeQuery.TraceTypeQuery1,DrawDebugType=EDrawDebugTrace.ForOneFrame)
         # if is_hitting_something:
-        #     ue.log(hit_result)x
+        #     ue.log(hit_result)
 
         self.test_kingdon()
         # self.test_cylinder()
         # self.test_text()
         print("Testing unreal rendering:")
-        # example_unreal_rendering()
+        example_unreal_rendering()
 
     # this is called at every 'tick'
     def tick(self, delta_time):

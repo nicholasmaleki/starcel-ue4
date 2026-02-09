@@ -29,14 +29,8 @@ class PGATable:
     """
     Table operating in PGA mode
     
-    Supports algebras from (2,0,1) up to (16,0,1) for higher dimensions
-    
     Cells can store multivectors (scalars, vectors, bivectors, trivectors, etc.)
     Operations follow geometric algebra rules
-    
-    Examples:
-        PGATable(shape=(5,5), pga_signature=(3,0,1))   # 3D PGA
-        PGATable(shape=(5,5), pga_signature=(16,0,1))  # 16D PGA
     """
     
     def __init__(self,
