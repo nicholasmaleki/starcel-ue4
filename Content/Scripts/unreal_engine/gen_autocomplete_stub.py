@@ -272,7 +272,7 @@ def gen_intellisense_stubs_structs():
 
     print("Stub generation complete:", stubFilePath)
 
-# TODO: EBlendMode, EPixelFormat, etc.
+# TODO: EBlendMode, EPixelFormat, EMouseCursor etc.
 def gen_intellisense_stubs_enums():
     ENGINE_ENUMS = [
         # Collision / tracing

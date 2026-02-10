@@ -1,4 +1,6 @@
 import unreal_engine as ue
+from unreal_engine.enums import EMouseCursor, ECollisionChannel
+import time
 
 def _clean(s: str):
     return s.replace(" ", "").replace("_", "").lower()
@@ -191,13 +193,30 @@ class Keyboard:
             self.normalize_map[self._clean(k)] = v
 
     def normalize(self, token):
-        raw = str(token)
-        if len(raw) == 1 and raw.isalpha():
-            return raw.upper()
-        key = self._clean(raw)
-        return self.normalize_map.get(key, None)
+        if not token:
+            return None
+        t = token.strip().lower()
 
+        # check aliases first
+        if t in self.ALIASES:
+            return self.ALIASES[t]
 
+        # check LEGEND_TO_UE
+        if token in self.LEGEND_TO_UE:
+            return self.LEGEND_TO_UE[token]
+        for k, v in self.LEGEND_TO_UE.items():
+            if k.lower() == t:
+                return v
+
+        # fallback: UE native keys
+        if token in self.ue_keys:
+            return token
+        for k in self.ue_keys:
+            if k.lower() == t:
+                return k
+
+        ue.log_warning(f"Unknown input token: {token}")
+        return None
 
     def keyboard_to_ue_keyboard(self, keyboard_layout):
         ue_keyboard = []
@@ -219,10 +238,6 @@ class Keyboard:
             ue_keyboard.append(ue_row)
 
         return ue_keyboard
-
-
-
-
 
 
 class Mouse:
@@ -289,38 +304,120 @@ class Mouse:
             self.normalize_map[self._clean(k)] = v
 
     def normalize(self, token):
-        raw = str(token)
-        key = self._clean(raw)
-        return self.normalize_map.get(key, None)
+        if not token:
+            return None
+        t = token.strip().lower()
 
+        # check aliases first
+        if t in self.ALIASES:
+            return self.ALIASES[t]
+
+        # check LEGEND_TO_UE
+        if token in self.LEGEND_TO_UE:
+            return self.LEGEND_TO_UE[token]
+        for k, v in self.LEGEND_TO_UE.items():
+            if k.lower() == t:
+                return v
+
+        # fallback: UE native keys
+        if token in self.ue_keys:
+            return token
+        for k in self.ue_keys:
+            if k.lower() == t:
+                return k
+
+        ue.log_warning(f"Unknown input token: {token}")
+        return None
+
+
+class TraceHelper:
+    def __init__(self, uobject):
+        self.uobject = uobject
+        self.pc = uobject.get_player_controller()
+
+    def trace_forward(self, dist=1000):
+        start = self.pc.get_pawn().get_actor_location()
+        end = start + self.pc.get_control_rotation().get_forward_vector() * dist
+        hit = self.uobject.line_trace_single_by_channel(start, end, ue.TraceTypeQuery1)
+        return hit
+
+    def trace_cursor(self, channel=ECollisionChannel.ECC_Visibility):
+        # ECC_WorldStatic, ECC_WorldDynamic, ECC_Pawn, ECC_Visibility, ECC_Camera, ECC_PhysicsBody, ECC_Vehicle, ECC_Destructible, ECC_EngineTraceChannel1,
+        # ECC_EngineTraceChannel2, ECC_EngineTraceChannel3, ECC_EngineTraceChannel4, ECC_EngineTraceChannel5, ECC_EngineTraceChannel6, ECC_GameTraceChannel1,
+        # ECC_GameTraceChannel2, ECC_GameTraceChannel3, ECC_GameTraceChannel4, ECC_GameTraceChannel5, ECC_GameTraceChannel6, ECC_GameTraceChannel7,
+        # ECC_GameTraceChannel8, ECC_GameTraceChannel9, ECC_GameTraceChannel10, ECC_GameTraceChannel11, ECC_GameTraceChannel12, ECC_GameTraceChannel13,
+        # ECC_GameTraceChannel14, ECC_GameTraceChannel15, ECC_GameTraceChannel16, ECC_GameTraceChannel17, ECC_GameTraceChannel18, ECC_OverlapAll_Deprecated, ECC_MAX
+        return self.uobject.get_hit_result_under_cursor(channel)
+
+    def deproject_screen(self, x, y):
+        success, world_pos, world_dir = self.pc.DeprojectScreenPositionToWorld(x, y)
+        if success:
+            ue.log(f"Mouse world position: {world_pos}, direction: {world_dir}")
 
 class HotkeyManager:
-    def __init__(self, uobject, keyboard: Keyboard, mouse: Mouse):
+    def __init__(self, uobject, keyboard, mouse, poll_rate=0.02):
         self.uobject = uobject
         self.keyboard = keyboard
         self.mouse = mouse
+        self.sequence_bindings = []
+        self.sequence_progress = {}
+        self._axis_handlers = {}
+        self._last_axis_values = {}
+        self._cursor_visible = True
+        self.poll_rate = poll_rate
+        self._repeat_bindings = []
+        self._pollers = []
 
-        self.bindings = {}
-        self.active_chords = set()
+        self.player_controller = self.uobject.get_player_controller()
 
-    # ---------------------------
-    # Cursor
-    # ---------------------------
+
+    # ---------------- Cursor ----------------
+
+    def enable_mouse_events(self, click=True, over=True):
+        try:
+            self.player_controller.bEnableClickEvents = click
+            self.player_controller.bEnableMouseOverEvents = over
+        except:
+            ue.log_warning("Mouse event flags not supported")
+
+
     def show_cursor(self, visible=True):
         try:
-            self.uobject.show_mouse_cursor(visible)
-        except Exception:
-            ue.log_warning("show_mouse_cursor not supported")
+            self.player_controller.bShowMouseCursor = visible
+            self._cursor_visible = visible
+        except:
+            ue.log_warning("show cursor failed")
 
-    def capture_mouse(self):
-        self.show_cursor(False)
 
-    def release_mouse(self):
-        self.show_cursor(True)
+    def set_cursor(self, cursor_type=EMouseCursor.Default):
+        # None, Default, TextEditBeam, ResizeLeftRight, ResizeUpDown, ResizeSouthEast, ResizeSouthWest, CardinalCross, Crosshairs,
+        # Hand, GrabHand, GrabHandClosed, SlashedCircle, EyeDropper, Custom, TotalCursorCount
+        try:
+            self.player_controller.CurrentMouseCursor = cursor_type
+            ue.log(f"Mouse cursor set to: {cursor_type}")
+        except Exception as e:
+            ue.log_warning(f"Failed to set cursor: {e}")
 
-    # ---------------------------
-    # Normalize token using devices
-    # ---------------------------
+
+    def toggle_cursor(self):
+        self.show_cursor(not self._cursor_visible)
+
+
+    def set_cursor(self, cursor_name):
+        try:
+            self.player_controller.CurrentMouseCursor = cursor_name
+        except:
+            ue.log_warning("set cursor failed")
+
+
+    def print_cursor_info(self):
+        pc = self.player_controller
+        ue.log(f"ClickEventKeys = {getattr(pc, 'ClickEventKeys', None)}")
+        ue.log(f"DefaultMouseCursor = {getattr(pc, 'DefaultMouseCursor', None)}")
+        ue.log(f"CurrentMouseCursor = {getattr(pc, 'CurrentMouseCursor', None)}")
+
+
+    # ---------------- Normalize ----------------
     def normalize_input_token(self, token):
         k = self.keyboard.normalize(token)
         if k:
@@ -328,11 +425,9 @@ class HotkeyManager:
         m = self.mouse.normalize(token)
         if m:
             return m
-        raise ValueError(f"Unknown input token: {token}")
+        return token
 
-    # ---------------------------
-    # Parse chord
-    # ---------------------------
+
     def parse_chord(self, chord):
         if isinstance(chord, str):
             parts = chord.split("+")
@@ -340,91 +435,229 @@ class HotkeyManager:
             parts = chord
         return tuple(self.normalize_input_token(p) for p in parts)
 
-    # ---------------------------
-    # Conflict detection
-    # ---------------------------
-    def detect_conflict(self, chord):
-        return chord in self.bindings
 
-    # ---------------------------
-    # Modifier polling
-    # ---------------------------
-    def _modifiers_active(self, modifiers):
-        for m in modifiers:
-            if not self.uobject.is_input_key_down(m):
-                return False
-        return True
-
-    # ---------------------------
-    # Generic chord event
-    # ---------------------------
-    def bind_chord_event(self, chord, event_type, callback, override=False):
-        ue_chord = self.parse_chord(chord)
-        if self.detect_conflict(ue_chord) and not override:
-            raise RuntimeError(f"Hotkey conflict: {ue_chord}")
-
-        if ue_chord not in self.bindings:
-            self.bindings[ue_chord] = {}
-        self.bindings[ue_chord][event_type] = callback
-
-        primary = ue_chord[-1]
-        modifiers = set(ue_chord[:-1])
+    # ---------------- Chords ----------------
+    def bind_chord_event(self, chord, event_type, callback):
+        primary = chord[-1]
+        modifiers = set(chord[:-1])
 
         def _handler(method=None):
-            if not self._modifiers_active(modifiers):
-                return
-            if event_type == ue.IE_PRESSED:
-                if ue_chord in self.active_chords:
+            for m in modifiers:
+                if not self.uobject.is_input_key_down(m):
                     return
-                self.active_chords.add(ue_chord)
-            if event_type == ue.IE_RELEASED:
-                if ue_chord not in self.active_chords:
-                    return
-                self.active_chords.remove(ue_chord)
             callback()
 
         self.uobject.bind_key(primary, event_type, _handler)
 
-    # ---------------------------
-    # Wrappers
-    # ---------------------------
-    def bind_press(self, chord, callback, override=False):
-        self.bind_chord_event(chord, ue.IE_PRESSED, callback, override)
+    def bind_sequence(self, sequence, callback, timeout=1.0):
+        seq_parsed = []
 
-    def bind_release(self, chord, callback, override=False):
-        self.bind_chord_event(chord, ue.IE_RELEASED, callback, override)
+        for step in sequence:
+            if isinstance(step, dict) and "axis" in step:
+                seq_parsed.append(("AXIS", step["axis"], id(step), step["condition"]))
+            else:
+                release = False
+                if isinstance(step, str) and step.endswith(":release"):
+                    step = step.replace(":release", "")
+                    release = True
 
-    def bind_repeat(self, chord, callback, override=False):
-        self.bind_chord_event(chord, ue.IE_REPEAT, callback, override)
+                chord = self.parse_chord(step)
+                seq_parsed.append(("KEY", chord, release))
 
-    def bind_double_click(self, chord, callback, override=False):
-        self.bind_chord_event(chord, ue.IE_DOUBLE_CLICK, callback, override)
+        self.sequence_bindings.append({
+            "sequence": seq_parsed,
+            "callback": callback,
+            "timeout": timeout
+        })
 
-    # ---------------------------
-    # Axis binding with math / filters
-    # ---------------------------
-    def bind_axis(self, axis_name, callback,
-                  scale=1.0,
-                  deadzone=0.0,
-                  min_value=None,
-                  max_value=None,
-                  abs_value=False,
-                  condition=None):
-        ue_axis = self.normalize_input_token(axis_name)
+        self._bind_sequence_step(seq_parsed[0], seq_parsed, 0)
 
-        def _axis_handler(value):
-            v = value
+    def _bind_sequence_step(self, step, sequence, index):
+        kind = step[0]
+
+        if kind == "AXIS":
+            _, axis_name, step_id, condition_fn = step
+
+            def _axis_callback(v=None):
+                self._advance_sequence_dynamic(sequence, index)
+
+            self.bind_axis_for_sequence(axis_name, condition_fn, _axis_callback)
+
+        elif kind == "KEY":
+            _, chord, release = step
+
+            primary = chord[-1]
+            modifiers = set(chord[:-1])
+            event = ue.IE_RELEASED if release else ue.IE_PRESSED
+
+            def _chord_callback(method=None):
+                for m in modifiers:
+                    if not self.uobject.is_input_key_down(m):
+                        return
+                self._advance_sequence_dynamic(sequence, index)
+
+            self.uobject.bind_key(primary, event, _chord_callback)
+
+    def _advance_sequence_dynamic(self, sequence, index_triggered):
+        now = time.time()
+
+        key = tuple(
+            id(step) if step[0] == "AXIS" else (tuple(step[1]), step[2])
+            for step in sequence
+        )
+
+        progress = self.sequence_progress.get(key, {"index": 0, "last_time": 0})
+
+        timeout = 1.0
+        for seq in self.sequence_bindings:
+            if seq["sequence"] == sequence:
+                timeout = seq["timeout"]
+                break
+
+        if now - progress["last_time"] > timeout:
+            progress = {"index": 0, "last_time": 0}
+
+        expected = sequence[progress["index"]]
+
+        if expected == sequence[index_triggered]:
+            progress["index"] += 1
+            progress["last_time"] = now
+
+            if progress["index"] < len(sequence):
+                self._bind_sequence_step(sequence[progress["index"]], sequence, progress["index"])
+            else:
+                for seq in self.sequence_bindings:
+                    if seq["sequence"] == sequence:
+                        seq["callback"]()
+                        break
+
+                progress = {"index": 0, "last_time": 0}
+
+        else:
+            progress = {"index": 0, "last_time": 0}
+
+        self.sequence_progress[key] = progress
+
+
+
+    def bind_press(self, chord, cb):
+        self.bind_chord_event(self.parse_chord(chord), ue.IE_PRESSED, cb)
+
+    def bind_release(self, chord, cb):
+        self.bind_chord_event(self.parse_chord(chord), ue.IE_RELEASED, cb)
+
+    def bind_double_click(self, chord, callback):
+        self.bind_chord_event(self.parse_chord(chord), ue.IE_DOUBLE_CLICK, callback)
+
+    # ---------------- Repeat (poll based) ----------------
+    def bind_repeat(self, chord, callback):
+        chord = self.parse_chord(chord)
+
+        def poll(delta):
+            if not self.uobject or not self.uobject.is_valid():
+                return False  # stop ticker
+            primary = chord[-1]
+            mods = chord[:-1]
+            if self.uobject.is_input_key_down(primary):
+                for m in mods:
+                    if not self.uobject.is_input_key_down(m):
+                        return True
+                callback()
+            return True
+
+        self._repeat_bindings.append(ue.add_ticker(poll))
+
+
+    # ---------------- Axis ----------------
+    def bind_axis(self, axis_name, callback, deadzone=0.0, poll=True):
+        axis = self.normalize_input_token(axis_name)
+
+        def _handler(v):
             if abs(v) < deadzone:
+                v = 0.0
+            last = self._last_axis_values.get(axis)
+            if last == v:
                 return
-            if abs_value:
-                v = abs(v)
-            v *= scale
-            if min_value is not None and v < min_value:
-                return
-            if max_value is not None and v > max_value:
-                return
-            if condition and not condition(v):
-                return
+            self._last_axis_values[axis] = v
             callback(v)
 
-        self.uobject.bind_axis(ue_axis, _axis_handler)
+        self.uobject.bind_axis(axis, _handler)
+
+        if poll:
+            def poller(dt):
+                if not self.uobject or not self.uobject.is_valid():
+                    return False  # stop ticker
+                v = self.uobject.get_input_axis(axis)
+                _handler(v)
+                return True
+
+            self._pollers.append(ue.add_ticker(poller))
+
+
+    def get_input_axis(self, axis):
+        return self.uobject.get_input_axis(axis)
+
+
+    def bind_input_axis(self, axis, cb):
+        self.uobject.bind_input_axis(axis, cb)
+
+
+    # ---------------- Actions ----------------
+    def bind_action(self, name, pressed_cb=None, released_cb=None):
+        if pressed_cb:
+            self.uobject.bind_action(name, ue.IE_PRESSED, pressed_cb)
+        if released_cb:
+            self.uobject.bind_action(name, ue.IE_RELEASED, released_cb)
+
+
+    def is_action_pressed(self, name):
+        return self.uobject.is_action_pressed(name)
+
+
+    def is_action_released(self, name):
+        return self.uobject.is_action_released(name)
+
+
+    def get_engine_defined_action_mappings(self):
+        return ue.get_engine_defined_action_mappings()
+
+
+    # ---------------- Key State ----------------
+    def was_pressed(self, key):
+        return self.player_controller.WasInputKeyJustPressed(key)
+
+
+    def was_released(self, key):
+        return self.player_controller.WasInputKeyJustReleased(key)
+
+
+    # ---------------- Mouse ----------------
+    def get_mouse_position(self, deproject=False):
+        ok, x, y = self.player_controller.GetMousePosition()
+        if not ok:
+            return None
+
+        if deproject:
+            success, world, direction = self.player_controller.DeprojectScreenPositionToWorld(x, y)
+            if success:
+                return x, y, world, direction
+
+        return x, y
+
+
+    def set_mouse_position(self, x, y):
+        self.player_controller.SetMouseLocation(x, y)
+
+
+    def deproject_mouse(self):
+        return self.player_controller.DeprojectMousePositionToWorld()
+
+
+    # ---------------- Mouse Delta (Timer) ----------------
+    def log_mouse_delta_timer(self, rate=0.05):
+        def tick():
+            dx, dy = self.player_controller.GetInputMouseDelta()
+            if dx or dy:
+                ue.log(f"MouseDelta {dx:.3f}, {dy:.3f}")
+
+        self.uobject.set_timer(rate, tick, True)

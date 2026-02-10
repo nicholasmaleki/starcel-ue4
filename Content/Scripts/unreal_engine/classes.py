@@ -437253,7 +437253,7 @@ class SKEL_Stickman_AnimBlueprint_C:
 
     AnimGraphNode_StateMachine = "__unknown__"
 
-    IsInAir? = "__unknown__"
+    IsInAir = "__unknown__"
 
     Speed = "__unknown__"
 
@@ -437536,7 +437536,7 @@ class SKEL_SKEL_Stickman_AnimBlueprint_C:
 
     UberGraphFrame = "__unknown__"
 
-    IsInAir? = "__unknown__"
+    IsInAir = "__unknown__"
 
     Speed = "__unknown__"
 

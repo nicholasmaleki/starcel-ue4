@@ -5,7 +5,7 @@ import numpy as np
 import os, sys, subprocess, importlib, urllib.request, socket, math, sympy, fast_autocomplete, numba, kingdon #numba_cuda
 from unreal_engine import FVector, FRotator, FTransform, FHitResult, CLASS_CONFIG, CLASS_DEFAULT_CONFIG, CPF_CONFIG, CPF_GLOBAL_CONFIG, CPF_EXPOSE_ON_SPAWN, CPF_NET, CPF_REP_NOTIFY
 from unreal_engine.classes import Actor, Character, PlayerController, StaticMeshActor, KismetMathLibrary, KismetSystemLibrary, Object, StrProperty, IntProperty, Blueprint, Material, Texture, LargeStringAsync, LargeStringRPCActor, StaticMesh, StaticMeshActor
-from unreal_engine.enums import EInputEvent, ETraceTypeQuery, EDrawDebugTrace, EComponentMobility
+from unreal_engine.enums import EInputEvent, ETraceTypeQuery, EDrawDebugTrace, EComponentMobility, EMouseCursor
 from constants import Constants, WorldSize
 import constants, windowtool
 from languages import *
@@ -16,7 +16,7 @@ import asyncio, time
 from typing import List, Dict, Union, Optional
 
 from nd_table.examples import example_unreal_rendering
-
+from input_devices import Keyboard, Mouse, HotkeyManager, TraceHelper
 
 ue.log('Hello i am a Python module.')
 # Code placed outside the Main class will not run when connecting to a server.
@@ -26,8 +26,8 @@ ue.log('Hello i am a Python module.')
 # # Keep track of the current index
 # current_bg_index = 0
 
-# change_background("white")
-change_background("video", r"C:\Users\nicho\Videos\test2.mp4")
+change_background("white")
+#change_background("video", r"C:/Users/nicho/Videos/psych_ue4_4k_30m.mp4")
 
 # Stop the background music
 # find_actor("CellDriftLoop").SetActorHiddenInGame(True)
@@ -46,53 +46,6 @@ SERVER_HELPER = None  # Server-side helper
 CLIENT_HELPER = None  # Client-side helper
 
 class Main:
-    def test_kingdon(self):
-        ue.log("testing kingdon:")
-        from kingdon import Algebra
-        alg = Algebra(3, 0, 1)
-        locals().update(alg.blades)
-        b = alg.bivector(name='b')
-        ue.log(b)
-
-    def test_cylinder(self): # TODO: use instanced static meshes for the gridlines
-        ue.log("testing cylinder:")
-        # new_actor = world.actor_spawn(Actor)
-        # new_actor.set_actor_label('Test Actor')
-        # new_actor.add_actor_root_component(InstancedStaticMeshComponent, 'Root')
-        # instanced_component = actor.get_component_by_type(InstancedStaticMeshComponent)
-        # instanced_component.StaticMesh = mesh
-        # instanced_component.PerInstanceSMData = [
-        #     InstancedStaticMeshInstanceData(Transform=FTransform(FVector(0, 0, 200), FRotator(90, 90, 0)).get_matrix()),
-        #     InstancedStaticMeshInstanceData(Transform=FTransform(FVector(0, 0, 0), FRotator(90, 90, 45)).get_matrix()),
-        # ]
-        # instanced_component = actor.get_component_by_type(InstancedStaticMeshComponent # if you need to access the component again, you need to retrieve it back as the old instance will be garbaged
-
-        point1 = FVector(0, 0, 0)
-        point2 = FVector(100, 100, 100)
-        midpoint = (point1 + point2) / 2
-        distance_between_points = KismetMathLibrary.Vector_Distance(point1, point2)
-        cylinder_rotation = KismetMathLibrary.FindLookAtRotation(point1, point2)  # returns FRotator
-        cylinder_rotation.pitch += 90
-        cylinder = world.actor_spawn(StaticMeshActor)
-        cylinder_mesh = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cylinder')
-        smc = cylinder.StaticMeshComponent
-        smc.SetStaticMesh(cylinder_mesh)
-        smc.Mobility = EComponentMobility.Movable
-        transform = FTransform(midpoint, cylinder_rotation, FVector(.1, .1, distance_between_points/100))
-        # print(transform)
-        cylinder.set_actor_transform(transform)
-        # FTransform().get_matrix() # if needed
-
-    def test_text(self):
-        ue.log("testing text:")
-        bp_cell = ue.load_object(Blueprint, '/Game/Blueprints/Assets/BP_Cell.BP_Cell')
-        cell_actor = world.actor_spawn(bp_cell.GeneratedClass)
-        transform = FTransform(FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1))
-        cell_actor.set_actor_transform(transform)
-        cell_actor.get_actor_component('Text3DComponent').Text = "HI"
-
-
-
     # # this event will be run on the server and in reliable mode
     # def server_event(self):
     #     ue.log('server event called')
@@ -177,12 +130,34 @@ class Main:
             ue.remove_ticker(ticker)
             del tickers[i]
             print(ticker, "stopped.")
+            self.input.release_mouse()
 
+    def say_hi(self):
+        ue.log("Pressed G")
+
+    def ctrl_shift_b(self):
+        ue.log("Pressed Ctrl+Shift+B")
+
+    def left_click(self):
+        ue.log("Left mouse button")
+
+    def mouse_wheel(self, value):
+        ue.log("Wheel: {}".format(value))
+
+    def sequence_action(self):
+        ue.log("Sequence fired: Ctrl+K → MouseX → Click")
+
+    def print_mouse_world(self):
+        data = self.input.get_mouse_position(deproject=True)
+        if not data:
+            return
+        x, y, world, dir = data
+        ue.log(f"Mouse {x},{y}")
+        ue.log(f"World {world} Dir {dir}")
 
     # this is called on game start
     def begin_play(self):
         ue.log('Begin Play on Main class')
-        self.uobject.show_mouse_cursor(False)
 
         global world
         world = get_world()
@@ -196,6 +171,52 @@ class Main:
 
         RPC_ACTOR = None
         CLIENT_HELPER = None
+
+        self.uobject.enable_input()
+
+        self.keyboard = Keyboard()
+        self.mouse = Mouse()
+
+        self.input = HotkeyManager(self.uobject, self.keyboard, self.mouse)
+        self.trace = TraceHelper(self.uobject)
+
+        # Enable mouse features
+        self.input.enable_mouse_events(True, True)
+        # self.input.show_cursor(True)
+        # self.input.set_cursor(EMouseCursor.GrabHand)
+        print("CURSOR INFO:")
+        self.input.print_cursor_info()
+
+        pc = self.uobject.get_player_controller()
+        pc.bind_axis("TurnRate", lambda v: v != 0 and ue.log(f"TurnRate {v}"))
+        pc.bind_axis("LookUpRate", lambda v: v != 0 and ue.log(f"LookUpRate {v}"))
+
+        pc.bind_axis("MouseX", lambda v: v != 0 and ue.log(f"MouseX {v}"))
+        pc.bind_axis("MouseY", lambda v: v != 0 and ue.log(f"MouseY {v}"))
+        pc.bind_axis("MouseWheelAxis", lambda v: v != 0 and ue.log(f"MouseWheel {v}"))
+
+        # Mouse delta via timer
+        self.input.log_mouse_delta_timer()
+
+        # self.uobject.bind_key('K', ue.IE_PRESSED, self.you_pressed_K)
+
+        # Hotkeys
+        self.input.bind_press("Ctrl+Shift+B", lambda: ue.log("Ctrl+Shift+B"))
+        self.input.bind_press("M", self.input.toggle_cursor)
+
+        # Repeat
+        self.input.bind_repeat("W", lambda: ue.log("Holding W"))
+
+        # Actions
+        self.input.bind_action(
+            "Jump",
+            pressed_cb=lambda: ue.log("Jump pressed"),
+            released_cb=lambda: ue.log("Jump released")
+        )
+
+        # Mouse helpers
+        self.input.bind_press("G", self.print_mouse_world)
+        self.input.bind_press("H", lambda: self.input.set_mouse_position(200, 200))
 
         if KismetSystemLibrary.IsDedicatedServer():
             ue.log("BeginPlay on DEDICATED SERVER")
@@ -275,8 +296,8 @@ class Main:
             else:
                 ue.log("CLIENT (no AuthorityGameMode) Client likely connected to dedicated server. ")
 
-            self.uobject.enable_input()
-            self.uobject.bind_key('K', ue.IE_PRESSED, self.you_pressed_K)  # IE_AXIS, IE_DOUBLE_CLICK, IE_PRESSED, IE_RELEASED, IE_REPEAT
+
+
             player_controller = self.uobject.get_player_controller()
             pawn = player_controller.get_pawn()
             print(player_controller)
@@ -350,7 +371,7 @@ class Main:
         # self.test_cylinder()
         # self.test_text()
         print("Testing unreal rendering:")
-        example_unreal_rendering()
+        # example_unreal_rendering()
 
     # this is called at every 'tick'
     def tick(self, delta_time):
@@ -450,9 +471,50 @@ class Main:
         # print("hello from client" + self.uobject.get_uproperty('StringHelloWorldProperty'))
         # print("hello from client" + self.uobject.get_uproperty('StringHelloWorldProperty2'))  # .set_metadata('Category', 'CategoryTest001')
 
+    def test_kingdon(self):
+        ue.log("testing kingdon:")
+        from kingdon import Algebra
+        alg = Algebra(3, 0, 1)
+        locals().update(alg.blades)
+        b = alg.bivector(name='b')
+        ue.log(b)
 
-    def move_forward(self, amount):
-        ue.print_string('axis value: ' + str(amount))
+    def test_cylinder(self): # TODO: use instanced static meshes for the gridlines
+        ue.log("testing cylinder:")
+        # new_actor = world.actor_spawn(Actor)
+        # new_actor.set_actor_label('Test Actor')
+        # new_actor.add_actor_root_component(InstancedStaticMeshComponent, 'Root')
+        # instanced_component = actor.get_component_by_type(InstancedStaticMeshComponent)
+        # instanced_component.StaticMesh = mesh
+        # instanced_component.PerInstanceSMData = [
+        #     InstancedStaticMeshInstanceData(Transform=FTransform(FVector(0, 0, 200), FRotator(90, 90, 0)).get_matrix()),
+        #     InstancedStaticMeshInstanceData(Transform=FTransform(FVector(0, 0, 0), FRotator(90, 90, 45)).get_matrix()),
+        # ]
+        # instanced_component = actor.get_component_by_type(InstancedStaticMeshComponent # if you need to access the component again, you need to retrieve it back as the old instance will be garbaged
+
+        point1 = FVector(0, 0, 0)
+        point2 = FVector(100, 100, 100)
+        midpoint = (point1 + point2) / 2
+        distance_between_points = KismetMathLibrary.Vector_Distance(point1, point2)
+        cylinder_rotation = KismetMathLibrary.FindLookAtRotation(point1, point2)  # returns FRotator
+        cylinder_rotation.pitch += 90
+        cylinder = world.actor_spawn(StaticMeshActor)
+        cylinder_mesh = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cylinder')
+        smc = cylinder.StaticMeshComponent
+        smc.SetStaticMesh(cylinder_mesh)
+        smc.Mobility = EComponentMobility.Movable
+        transform = FTransform(midpoint, cylinder_rotation, FVector(.1, .1, distance_between_points/100))
+        # print(transform)
+        cylinder.set_actor_transform(transform)
+        # FTransform().get_matrix() # if needed
+
+    def test_text(self):
+        ue.log("testing text:")
+        bp_cell = ue.load_object(Blueprint, '/Game/Blueprints/Assets/BP_Cell.BP_Cell')
+        cell_actor = world.actor_spawn(bp_cell.GeneratedClass)
+        transform = FTransform(FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1))
+        cell_actor.set_actor_transform(transform)
+        cell_actor.get_actor_component('Text3DComponent').Text = "HI"
 
 
 # https://github.com/kprimo/UEPyTutorials/blob/main/Content/Scripts/Basic/DynamicTexture/dynamic_texture.py
