@@ -109,12 +109,19 @@
 				"Win64",
 				"Linux",
 				"Mac"
-			],
-			"TargetAllowList": [
-				"Editor",
-				"Client",
-				"Server"
 			]
+		},
+		{
+			"Name": "ElectraUtil",
+			"Enabled": true
+		},
+		{
+			"Name": "ElectraCDM",
+			"Enabled": true
+		},
+		{
+			"Name": "ElectraPlayer",
+			"Enabled": true
 		}
 	]
 }

@@ -3,13 +3,19 @@ Hi, I'm Nick Maleki. I'm the owner of Recursion Computing and the developer of S
 
 ## What is it? 
 A Python controlled 3D spreadsheet. A full Unreal Engine 4 instance with Chaos physics. Support for Client and Server. It can be used as a visualization or education tool.
+
 Currently, Starcel is an Unreal Engine 4.27Chaos Client and Server which can be controlled with Python 3.9. There is 3D spreadsheet functionality, a Python calculation engine, everything Unreal engine offers, and there are many more features planned. It is very powerful. 
 
-This project is intended for content creators, hobbyists, developers, spreadsheet users, gamers, and more. 
+This project is intended for content creators, hobbyists, developers, spreadsheet users, physicists, engineers, scientists, gamers, unreal engine prototypes, and more. 
 
 
 ## Price? 
 Currently, free! In the future, as more features are added we will switch to a paid model. 
+
+## Please Donate to keep this project running
+You can donate on [Paypal](https://www.paypal.com/paypalme/RecursionIs) or [Patreon](https://www.patreon.com/RecursionIs)
+
+I want to work on this full time!
 
 
 ## Quickstart
@@ -19,23 +25,32 @@ The full Unreal Engine Starcel source project folder is quite a large download, 
 You need to use Visual Studio 2019 for compiling ([download community edition](https://aka.ms/vs/16/release/vs_community.exe)). I recommend [PyCharm Community](https://www.jetbrains.com/pycharm/download/?section=windows) for editing until IDE support is added.
 
 Compiled versions of Python 3.9 can be downloaded from here https://www.python.org/downloads/release/python-3913/, newer versions of specifically Python 3.9 should work, but need to be compiled from Python source. The unreal_engine package is not installed to Python permanently, but it is installed at runtime, so it does not need to be pip-installed. The `Content/Scripts/unreal_engine` folder includes all necessary stubs and empty classes for intellisense. 
+
 You can manually install the necessary packages directly using `pip install -r requirements.txt` or `python.exe -m pip install numpy sympy fast-autocomplete fast-autocomplete[levenshtein] numba kingdon matplotlib scikit-image scikit-learn dill pystubgen requests pywin32 psutil`. If any of these fails, you may need to re-run the command. 
+
 The default Unreal Engine map contains a PyActor which loads main.py and the class Main when the map starts up. Both the server and the client will run this file separately. The line ``if KismetSystemLibrary.IsDedicatedServer():`` lets you define client and server specific code. You can create more PyActors or even use Python from the UE console by clicking ` and typing "py.". 
+
 Create a Text object by double clicking Enter. Once created, you can use =py() to run any Python command. 
+
 The state of the world is not saved in main.py or elsewhere, you will need to make changes there directly or copy your changes from the world elsewhere to save. This will be changed in the future.
-
-
-## Please Donate to keep this project running
-You can donate on [Paypal](https://www.paypal.com/paypalme/RecursionIs) or [Patreon](https://www.patreon.com/RecursionIs)
-
-I genuinely want to work on this full time!
 
 
 ## Questions, Issues, and Support
 Most everything you need will be covered in this readme. 
+
 Python support can be found at r/LearnPython, YouTube, other forums, and chats.
+
 Unreal Engine support can be found on YouTube, their Discord, and their forum. 
-UnrealEnginePython examples, Starcel examples, and the unreal_engine folder (Content/Scripts/unreal_engine) which has the class and function info should cover just about everything you can do with the plugin. If you are certain there is an issue with the https://github.com/20tab/UnrealEnginePython plugin you can post on their issues tab on GitHub. I will check this every so often. The UE4.27 port of the plugin can be found at https://github.com/HaiyiMei/UnrealEnginePython. I made changes to this source to upgrade it to Python 3.9 and to make it work for my use case. Issues with the Starcel code and new features can be posted here. I will occasionally merge new features and fixes. Feel free to contribute. Anything else can be asked in our Discord. We are a community of volunteers so we may not have answers and may not get back to you, but we will try our best. 
+
+UnrealEnginePython examples, Starcel examples, and the unreal_engine folder (Content/Scripts/unreal_engine) which has the class and function info should cover just about everything you can do with the plugin. If you are certain there is an issue with the https://github.com/20tab/UnrealEnginePython plugin you can post on their issues tab on GitHub. I will check this every so often. 
+
+The UE4.27 port of the plugin can be found at https://github.com/HaiyiMei/UnrealEnginePython. I made changes to this source to upgrade it to Python 3.9 and to make it work for my use case. 
+
+Issues with the Starcel code and new features can be posted here. 
+
+I will occasionally merge new features and fixes. Feel free to contribute. 
+
+Anything else can be asked in our Discord. We are a community of volunteers so we may not have answers and may not get back to you, but we will try our best. 
 
 
 ## Are public Starcel servers safe? 
@@ -46,6 +61,7 @@ Treat this project as if you were downloading and running unsigned code from the
 
 ## How do I use a server? 
 You can connect to a server by running the client_travel()/connect() Python function, by changing the _StartClient.bat file, or by opening the console with \` and typing `open <IP>`. 
+
 If you want to run a local server, LAN, the server console should list a port, local IP, and public IP, or you can use ipconfig. You can share this IP and port with other users on your network. You can port forward this local port in your router to have it available online. You can share your public IP and port with whoever and they will be able to connect. Be very careful sharing your IP and use the whitelist system. Treat this project as downloading and running unsigned code from the internet or giving someone remote desktop access. 
 
 Python functions can run on the client and server, this is clear from the Python code and can be easily changed. This opens up great possibilities of collaboration using tools like PyCharm's "Code With Me" or by sharing your folders in Windows Explorer's built in OneDrive implementations. 
@@ -75,7 +91,9 @@ Not currently, expect crashes and lost work. Eventually we will release a stable
 
 
 ## Can I make a 2D UI? 
-It is not recommended to control any elements in Starcel with a 2D UI. You can build a UI out of 3D elements in the 3D space and make it always display flat on the included screen which I have added as a component to each Pawn's camera. However, if you need, you could use Tkinter, QT, etc. to make a 2D UI outside the game window. UnrealEnginePython has built in support for QT in Engine using Slate. This would render directly on top of the existing Starcel viewport. 
+It is not recommended to control any elements in Starcel with a 2D UI. You can build a UI out of 3D elements in the 3D space and make it always display flat on the included screen which I have added as a component to each Pawn's camera. However, if you need, you could use Tkinter, QT, etc. to make a 2D UI outside the game window. UnrealEnginePython has built in support for QT in Engine using Slate. This would render directly on top of the existing Starcel viewport.
+
+In theory, any application made in 2D, which includes all websites, can be made to look exactly the same in 3D. 
 
 
 ## UE5 and Python upgrade? 
@@ -136,6 +154,7 @@ The last Starcel release was written, at the time, in the newest Python, Python 
 - Treesize-style system file graph
 - Interactive notebooks
 - Google Sheets/Docs/Slides edit functionality
+- A special character that is like space, tab, and return, but for depth. 
 - Mode `<owner_name>Word<owner_name>` or the more complete and rigorous `<owner_name>L<owner_name>(L=Letter)` to account for ownership when using dialetheia in concurrent communication protocols
 - VRChat/Helios features
 - Physics simulation engine: chaos physics, hair, rigid body, particles, fluids, breaking, flex https://github.com/windystrife/UnrealEngine_NVIDIAGameWorks
@@ -162,6 +181,13 @@ Originally, I wanted to build a system for multidimensional tables and multidime
 - We built a function that spawns basis of various dimensions within a spatial dimension. These basis look like stars.
 ![Commands and Features](/Images/StarcelUE5-old/DimSelectorOverride3.png)
 - You are a Star! *
+
+
+## Fun stats
+- Unreal Engine 4 has ~16,000,000 lines of code
+- 20tab/UnrealEnginePython is ~70,000 lines of code
+- starcel-ue4 is ~10,000 lines of Python code and ~2000 lines of C++ code, which is really reasonable, considered how many features are offered. I truly stand on the shoulders of giants.
+- starcel-ue4 was written in 4 months
 
 
 ## Need to contact me?

@@ -1,22 +1,22 @@
-C:\UE_4.27Chaos_Source\Engine\Plugins\Experimental\Text3D\Intermediate\Build\Win64\UE4Editor\Development\Text3D\Definitions.Text3D.h
-C:/UE_4.27Chaos_Source/Engine/Plugins/Experimental/Text3D/Intermediate/Build/Win64/UE4Editor/Inc/Text3D/BevelType.gen.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\Text3D\Intermediate\Build\Win64\UE4Editor\Development\Text3D\Definitions.Text3D.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/Text3D/Intermediate/Build/Win64/UE4Editor/Inc/Text3D/BevelType.gen.cpp
 C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/GeneratedCppIncludes.h
 C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/MetaData.h
-C:\UE_4.27Chaos_Source\Engine\Plugins\Experimental\Text3D\Source\Text3D/Public/BevelType.h
-C:/UE_4.27Chaos_Source/Engine/Plugins/Experimental/Text3D/Intermediate/Build/Win64/UE4Editor/Inc/Text3D/Text3D.init.gen.cpp
-C:/UE_4.27Chaos_Source/Engine/Plugins/Experimental/Text3D/Intermediate/Build/Win64/UE4Editor/Inc/Text3D/Text3DActor.gen.cpp
-C:\UE_4.27Chaos_Source\Engine\Plugins\Experimental\Text3D\Source\Text3D/Public/Text3DActor.h
-C:\UE_4.27Chaos_Source\Engine\Plugins\Experimental\Text3D\Intermediate\Build\Win64\UE4Editor\Inc\Text3D\Text3DActor.generated.h
-C:/UE_4.27Chaos_Source/Engine/Plugins/Experimental/Text3D/Intermediate/Build/Win64/UE4Editor/Inc/Text3D/Text3DCharacterTransform.gen.cpp
-C:\UE_4.27Chaos_Source\Engine\Plugins\Experimental\Text3D\Source\Text3D/Public/Text3DCharacterTransform.h
-C:\UE_4.27Chaos_Source\Engine\Plugins\Experimental\Text3D\Intermediate\Build\Win64\UE4Editor\Inc\Text3D\Text3DCharacterTransform.generated.h
-C:/UE_4.27Chaos_Source/Engine/Plugins/Experimental/Text3D/Intermediate/Build/Win64/UE4Editor/Inc/Text3D/Text3DComponent.gen.cpp
-C:\UE_4.27Chaos_Source\Engine\Plugins\Experimental\Text3D\Source\Text3D/Public/Text3DComponent.h
-C:\UE_4.27Chaos_Source\Engine\Plugins\Experimental\Text3D\Source\Text3D\Public\Mesh.h
-C:\UE_4.27Chaos_Source\Engine\Plugins\Experimental\Text3D\Intermediate\Build\Win64\UE4Editor\Inc\Text3D\Text3DComponent.generated.h
-C:/UE_4.27Chaos_Source/Engine/Plugins/Experimental/Text3D/Intermediate/Build/Win64/UE4Editor/Inc/Text3D/Text3DEngineSubsystem.gen.cpp
-C:\UE_4.27Chaos_Source\Engine\Plugins\Experimental\Text3D\Source\Text3D/Private/Text3DEngineSubsystem.h
-C:\UE_4.27Chaos_Source\Engine\Plugins\Experimental\Text3D\Source\Text3D\Private\Text3DPrivate.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\Text3D\Source\Text3D/Public/BevelType.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/Text3D/Intermediate/Build/Win64/UE4Editor/Inc/Text3D/Text3D.init.gen.cpp
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/Text3D/Intermediate/Build/Win64/UE4Editor/Inc/Text3D/Text3DActor.gen.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\Text3D\Source\Text3D/Public/Text3DActor.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\Text3D\Intermediate\Build\Win64\UE4Editor\Inc\Text3D\Text3DActor.generated.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/Text3D/Intermediate/Build/Win64/UE4Editor/Inc/Text3D/Text3DCharacterTransform.gen.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\Text3D\Source\Text3D/Public/Text3DCharacterTransform.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\Text3D\Intermediate\Build\Win64\UE4Editor\Inc\Text3D\Text3DCharacterTransform.generated.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/Text3D/Intermediate/Build/Win64/UE4Editor/Inc/Text3D/Text3DComponent.gen.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\Text3D\Source\Text3D/Public/Text3DComponent.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\Text3D\Source\Text3D\Public\Mesh.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\Text3D\Intermediate\Build\Win64\UE4Editor\Inc\Text3D\Text3DComponent.generated.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/Text3D/Intermediate/Build/Win64/UE4Editor/Inc/Text3D/Text3DEngineSubsystem.gen.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\Text3D\Source\Text3D/Private/Text3DEngineSubsystem.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\Text3D\Source\Text3D\Private\Text3DPrivate.h
 C:\UE_4.27Chaos_Source\Engine\Source\ThirdParty\FreeType2\FreeType2-2.10.0\include\ft2build.h
 C:\UE_4.27Chaos_Source\Engine\Source\ThirdParty\FreeType2\FreeType2-2.10.0\include\freetype/config/ftheader.h
 C:\UE_4.27Chaos_Source\Engine\Source\ThirdParty\FreeType2\FreeType2-2.10.0\include\freetype/freetype.h
@@ -30,7 +30,7 @@ C:\UE_4.27Chaos_Source\Engine\Source\ThirdParty\FreeType2\FreeType2-2.10.0\inclu
 C:\UE_4.27Chaos_Source\Engine\Source\ThirdParty\FreeType2\FreeType2-2.10.0\include\freetype/ftmoderr.h
 C:\UE_4.27Chaos_Source\Engine\Source\ThirdParty\FreeType2\FreeType2-2.10.0\include\freetype/fterrdef.h
 C:\UE_4.27Chaos_Source\Engine\Source\ThirdParty\FreeType2\FreeType2-2.10.0\include\freetype/ftadvanc.h
-C:\UE_4.27Chaos_Source\Engine\Plugins\Experimental\Text3D\Source\Text3D\Private\ContourNode.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\Text3D\Source\Text3D\Private\ContourNode.h
 C:\UE_4.27Chaos_Source\Engine\Plugins\Experimental\GeometryProcessing\Source\GeometricObjects\Public\Polygon2.h
 C:\UE_4.27Chaos_Source\Engine\Plugins\Experimental\GeometryProcessing\Source\GeometricObjects\Public\VectorTypes.h
 C:\UE_4.27Chaos_Source\Engine\Plugins\Experimental\GeometryProcessing\Source\GeometricObjects\Public\MathUtil.h
@@ -49,4 +49,4 @@ C:\UE_4.27Chaos_Source\Engine\Plugins\Experimental\GeometryProcessing\Source\Geo
 C:\UE_4.27Chaos_Source\Engine\Plugins\Experimental\GeometryProcessing\Source\GeometricObjects\Public\Intersection/IntersectionUtil.h
 C:\UE_4.27Chaos_Source\Engine\Plugins\Experimental\GeometryProcessing\Source\GeometricObjects\Public\Intersection/IntrLine2Line2.h
 C:\UE_4.27Chaos_Source\Engine\Plugins\Experimental\GeometryProcessing\Source\GeometricObjects\Public\Util/DynamicVector.h
-C:\UE_4.27Chaos_Source\Engine\Plugins\Experimental\Text3D\Intermediate\Build\Win64\UE4Editor\Inc\Text3D\Text3DEngineSubsystem.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\Text3D\Intermediate\Build\Win64\UE4Editor\Inc\Text3D\Text3DEngineSubsystem.generated.h
