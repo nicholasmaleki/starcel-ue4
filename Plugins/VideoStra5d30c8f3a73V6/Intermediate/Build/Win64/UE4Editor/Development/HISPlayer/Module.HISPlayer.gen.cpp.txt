@@ -1,0 +1,237 @@
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/VideoStra5d30c8f3a73V6/Intermediate/Build/Win64/UE4Editor/Inc/HISPlayer/DelegateManager.gen.cpp
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/GeneratedCppIncludes.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\CoreMinimal.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Templates/IntegralConstant.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Templates/IsClass.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/Compression.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/FrameNumber.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/Parse.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/Color.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/ColorList.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/IntVector.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/Vector2D.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/IntRect.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/ByteSwap.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Internationalization/CulturePointer.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Internationalization/TextLocalizationManager.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Containers/ArrayView.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Internationalization/TextKey.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Internationalization/LocTesting.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Internationalization/LocKeyFuncs.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Internationalization/LocalizedTextSourceTypes.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Internationalization/Text.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Internationalization/StringTableCoreFwd.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Internationalization/ITextData.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Internationalization/Internationalization.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/Vector.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/Axis.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/Vector4.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/VectorRegister.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/UnrealMathSSE.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/sse_mathfun.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/UnrealMathVectorConstants.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/UnrealMathVectorCommon.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/TwoVectors.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/Edge.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\UObject/ObjectVersion.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/Plane.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/Sphere.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/CapsuleShape.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/Rotator.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/DateTime.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/RangeBound.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/AutomationEvent.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/Guid.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Hash/CityHash.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/Range.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/RangeSet.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/Box.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/Box2D.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/BoxSphereBounds.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/OrientedBox.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/Matrix.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/Matrix.inl
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/RotationTranslationMatrix.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/RotationAboutPointMatrix.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/ScaleRotationTranslationMatrix.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/RotationMatrix.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/Quat.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/PerspectiveMatrix.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/OrthoMatrix.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/TranslationMatrix.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/QuatRotationTranslationMatrix.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/InverseRotationMatrix.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/ScaleMatrix.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/MirrorMatrix.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/ClipProjectionMatrix.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/InterpCurvePoint.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/InterpCurve.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/CurveEdInterface.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/Float32.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/Float16.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/Float16Color.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/Vector2DHalf.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/Transform.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/ScalarRegister.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/TransformVectorized.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/TransformNonVectorized.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/ConvexHull2d.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/UnrealMath.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/Ray.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/Object.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/Script.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Stats/Stats.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\HAL/PlatformTime.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Windows/WindowsPlatformTime.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\GenericPlatform/GenericPlatformTime.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Stats\StatsCommon.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Stats/Stats2.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\HAL/LowLevelMemTracker.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Containers/LockFreeList.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/NoopCounter.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\HAL/PlatformProcess.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Windows/WindowsPlatformProcess.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\GenericPlatform/GenericPlatformProcess.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Containers/ChunkedArray.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Containers/IndirectArray.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\ProfilingDebugging/MiscTrace.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Stats\StatsTrace.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/ObjectMacros.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/UObjectBaseUtility.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/UObjectBase.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/UObjectGlobals.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/PrimaryAssetId.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/LinkerInstancingContext.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/OutputDeviceRedirector.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\Serialization/ArchiveUObject.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/UObjectArray.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/UObjectMarks.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\ProfilingDebugging/ResourceSize.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/CoreNative.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/Class.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Concepts/GetTypeHashable.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/RandomStream.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/FallbackStruct.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/ScopeRWLock.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/GarbageCollection.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\HAL/ThreadSafeBool.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/FastReferenceCollectorOptions.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/ReflectedTypeAccessors.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/FieldPath.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/Field.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Templates/HasGetTypeHash.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/WeakObjectPtr.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/Package.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/PackageId.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/LinkerSave.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Serialization/FileRegions.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\PixelFormat.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/ObjectResource.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/Linker.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Internationalization/GatherableTextData.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Internationalization/InternationalizationMetadata.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/PackageFileSummary.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Serialization/CustomVersion.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/EngineVersion.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/SavePackage.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Templates/RefCounting.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/UObjectThreadContext.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\Misc/WorldCompositionUtility.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/OutputDeviceError.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/ObjectThumbnail.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/SecureHash.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Async/AsyncWork.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\HAL/Event.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/IQueuedWork.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/QueuedThreadPool.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\GenericPlatform/GenericPlatformAffinity.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Serialization/BufferReader.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\String/BytesToHex.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\String/HexToBytes.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Async/Future.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/ScopeLock.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/MetaData.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/UnrealType.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Containers/List.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\Serialization/SerializedPropertyScope.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Serialization/MemoryImage.h
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\INCLUDE\typeinfo
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\INCLUDE\vcruntime_typeinfo.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\Templates/Casts.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Templates/Greater.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/CoreNetTypes.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/LazyObjectPtr.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/PersistentObjectPtr.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\UObject/PropertyPortFlags.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/PropertyTag.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/ScriptInterface.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/SoftObjectPtr.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/SoftObjectPath.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/SparseDelegate.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/UndefineUPropertyMacros.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/DefineUPropertyMacros.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/EnumProperty.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/TextProperty.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/FieldPathProperty.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\VideoStra5d30c8f3a73V6\Source\HISPlayer/Public/DelegateManager.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/NoExportTypes.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/PropertyAccessUtil.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/UnitConversion.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Templates/ValueOrError.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc/TVariant.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Misc\TVariantMeta.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Math/UnitConversion.inl
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Internationalization/PolyglotTextData.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\AssetRegistry/ARFilter.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\AssetRegistry/AssetBundleData.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\AssetRegistry/AssetData.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/ObjectRedirector.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\Misc/PackageName.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/LinkerLoad.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\AssetRegistry/AssetDataTagMap.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Core\Public\Containers/SortedMap.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject\../../../ApplicationCore/Public/GenericPlatform/ICursor.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\VideoStra5d30c8f3a73V6\Source\HISPlayer\Public\HISPlayerTypes/HISPlayerStatus.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\VideoStra5d30c8f3a73V6\Intermediate\Build\Win64\UE4Editor\Inc\HISPlayer\HISPlayerStatus.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/ScriptMacros.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\CoreUObject\Public\UObject/Stack.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\VideoStra5d30c8f3a73V6\Source\HISPlayer\Public\HISPlayerTypes/HISTimedMetadata.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\VideoStra5d30c8f3a73V6\Source\HISPlayer\Public\HISPlayerTypes/HISID3Tag.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\VideoStra5d30c8f3a73V6\Intermediate\Build\Win64\UE4Editor\Inc\HISPlayer\HISID3Tag.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\VideoStra5d30c8f3a73V6\Intermediate\Build\Win64\UE4Editor\Inc\HISPlayer\HISTimedMetadata.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\VideoStra5d30c8f3a73V6\Source\HISPlayer\Private\HISPlayerLogs.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\VideoStra5d30c8f3a73V6\Source\HISPlayer\Public\HISPlayerTypes/HISPlayerLogLevel.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\VideoStra5d30c8f3a73V6\Intermediate\Build\Win64\UE4Editor\Inc\HISPlayer\HISPlayerLogLevel.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\VideoStra5d30c8f3a73V6\Intermediate\Build\Win64\UE4Editor\Inc\HISPlayer\DelegateManager.generated.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/VideoStra5d30c8f3a73V6/Intermediate/Build/Win64/UE4Editor/Inc/HISPlayer/HISID3Tag.gen.cpp
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/VideoStra5d30c8f3a73V6/Intermediate/Build/Win64/UE4Editor/Inc/HISPlayer/HISPlayer.init.gen.cpp
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/VideoStra5d30c8f3a73V6/Intermediate/Build/Win64/UE4Editor/Inc/HISPlayer/HISPlayerEvent.gen.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\VideoStra5d30c8f3a73V6\Source\HISPlayer/Public/HISPlayerTypes/HISPlayerEvent.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\VideoStra5d30c8f3a73V6\Intermediate\Build\Win64\UE4Editor\Inc\HISPlayer\HISPlayerEvent.generated.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/VideoStra5d30c8f3a73V6/Intermediate/Build/Win64/UE4Editor/Inc/HISPlayer/HISPlayerFunctions.gen.cpp
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\VideoStra5d30c8f3a73V6\Source\HISPlayer/Public/HISPlayerFunctions.h
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\INCLUDE\string
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\INCLUDE\xstring
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\INCLUDE\iosfwd
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\INCLUDE\cstdio
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\INCLUDE\cwchar
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\INCLUDE\xmemory
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\INCLUDE\limits
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\INCLUDE\cfloat
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\INCLUDE\intrin0.h
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\INCLUDE\isa_availability.h
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\INCLUDE\xatomic.h
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\INCLUDE\cctype
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\INCLUDE\vector
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\VideoStra5d30c8f3a73V6\Source\HISPlayer\Public\HISPlayerTypes/HISPlayerPlaybackProperties.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\VideoStra5d30c8f3a73V6\Intermediate\Build\Win64\UE4Editor\Inc\HISPlayer\HISPlayerPlaybackProperties.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\VideoStra5d30c8f3a73V6\Source\HISPlayer\Public\HISPlayerTypes/HISPlayerTrack.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\VideoStra5d30c8f3a73V6\Intermediate\Build\Win64\UE4Editor\Inc\HISPlayer\HISPlayerTrack.generated.h
+C:\UE_4.27Chaos_Source\Engine\Source\Runtime\Engine\Classes\Engine/LatentActionManager.h
+C:\UE_4.27Chaos_Source\Engine\Intermediate\Build\Win64\UE4Editor\Inc\Engine\LatentActionManager.generated.h
+C:\Users\nicho\Documents\Unreal Projects\Starcel9\Plugins\VideoStra5d30c8f3a73V6\Intermediate\Build\Win64\UE4Editor\Inc\HISPlayer\HISPlayerFunctions.generated.h
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/VideoStra5d30c8f3a73V6/Intermediate/Build/Win64/UE4Editor/Inc/HISPlayer/HISPlayerLogLevel.gen.cpp
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/VideoStra5d30c8f3a73V6/Intermediate/Build/Win64/UE4Editor/Inc/HISPlayer/HISPlayerPlaybackProperties.gen.cpp
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/VideoStra5d30c8f3a73V6/Intermediate/Build/Win64/UE4Editor/Inc/HISPlayer/HISPlayerStatus.gen.cpp
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/VideoStra5d30c8f3a73V6/Intermediate/Build/Win64/UE4Editor/Inc/HISPlayer/HISPlayerTrack.gen.cpp
+C:/Users/nicho/Documents/Unreal Projects/Starcel9/Plugins/VideoStra5d30c8f3a73V6/Intermediate/Build/Win64/UE4Editor/Inc/HISPlayer/HISTimedMetadata.gen.cpp

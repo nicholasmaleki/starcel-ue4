@@ -650,7 +650,8 @@ class HotkeyManager:
 
 
     def deproject_mouse(self):
-        return self.player_controller.DeprojectMousePositionToWorld()
+        success, world_pos, world_dir = self.player_controller.DeprojectMousePositionToWorld()
+        return success, world_pos, world_dir
 
 
     # ---------------- Mouse Delta (Timer) ----------------

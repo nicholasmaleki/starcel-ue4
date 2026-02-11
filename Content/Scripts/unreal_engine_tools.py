@@ -1,6 +1,6 @@
 import unreal_engine as ue
-from unreal_engine.classes import Material, Texture, Texture2D, TextureCube
-from unreal_engine.enums import EPixelFormat
+from unreal_engine.classes import Material, Texture, Texture2D, TextureCube, Blueprint
+from unreal_engine.enums import EPixelFormat, EComponentMobility
 import os, itertools, time, json
 import windowtool
 from PIL import Image
@@ -702,7 +702,8 @@ def change_background(background="white", path="file://"):
     # sky_light = find_actor("SkyLight") # Need to set Visible True in editor
     # sky_light = find_actor("SkyLight5NoLowerHemisphere") # Need to set Visible True in editor
     sky_light = find_actor("SkyLight5")  # Lower Hemisphere is Solid Color = True # Lower Hemisphere Color = 0,0,0,1
-    sky_lights = [sky_light]
+    sky_light_15 = find_actor("BP_SkyLight_2")
+    sky_lights = [sky_light, sky_light_15]
 
     pp_camera = find_actor("PostProcessVolumeExposureCamera")  # Manual Exposure Compensation = True, 9.5
     pp_nobloom = find_actor("PostProcessVolumeDisableBloom")  # BP_SkySphere needs to be disabled
@@ -804,8 +805,21 @@ def change_background(background="white", path="file://"):
                 ue.log_warning("image mode requires working path")
         elif background == "video":  # TODO: HISPlayer Unreal Engine plugin for faster playback
             if os.path.exists(path):
+                ue_path = "file://" + path
+                sky_light.SetActorHiddenInGame(True)
+                # light_bp = ue.load_object(Blueprint, '/Game/Blueprints/Assets/BP_SkyLight.BP_SkyLight')
+                # sky_light_15 = world.actor_spawn(light_bp.GeneratedClass)
+                sky_light_15.SetActorHiddenInGame(False)
+                sky_light_15.call_function("SetIntensity", 15) # required to actually get the light to activate
+                # location = sky_light_15.get_actor_location()
+                # location.z += 10
+                # sky_light_15.set_actor_location(location)
+                # sky_light_15.get_actor_component("SkyLightComponent0").Visible.Mobility = EComponentMobility.Movable
+                # sky_light_15.get_actor_component("SkyLightComponent0").Visible = True # sky_light_15.get_actor_component("SkyLightComponent0").Visible = False  force the light to reload
+                sky_sun_time.ManuallySetSunPosition = True
+                sky_sun_time.SetActorHiddenInGame(False)
                 sky_video.SetActorHiddenInGame(False)
-                sky_video.call_function("SetVideoBackground", path)
+                sky_video.call_function("SetVideoBackground", ue_path)
             else:
                 ue.log_warning("video mode requires working path")
         elif background == "transparent":

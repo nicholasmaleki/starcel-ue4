@@ -112,16 +112,46 @@
 			]
 		},
 		{
-			"Name": "ElectraUtil",
+			"Name": "HISPlayer",
 			"Enabled": true
 		},
 		{
-			"Name": "ElectraCDM",
+			"Name": "BinkMedia",
 			"Enabled": true
 		},
 		{
-			"Name": "ElectraPlayer",
+			"Name": "AvidDNxMedia",
 			"Enabled": true
+		},
+		{
+			"Name": "HAPMedia",
+			"Enabled": true,
+			"SupportedTargetPlatforms": [
+				"Win64"
+			]
+		},
+		{
+			"Name": "MfMedia",
+			"Enabled": true
+		},
+		{
+			"Name": "MediaFrameworkUtilities",
+			"Enabled": true
+		},
+		{
+			"Name": "MediaMovieStreamer",
+			"Enabled": true
+		},
+		{
+			"Name": "PixelStreaming",
+			"Enabled": true
+		},
+		{
+			"Name": "AppleProResMedia",
+			"Enabled": true,
+			"SupportedTargetPlatforms": [
+				"Win64"
+			]
 		}
 	]
 }

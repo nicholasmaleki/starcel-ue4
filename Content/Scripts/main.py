@@ -26,8 +26,8 @@ ue.log('Hello i am a Python module.')
 # # Keep track of the current index
 # current_bg_index = 0
 
-change_background("white")
-#change_background("video", r"C:/Users/nicho/Videos/psych_ue4_4k_30m.mp4")
+#change_background("white")
+
 
 # Stop the background music
 # find_actor("CellDriftLoop").SetActorHiddenInGame(True)
@@ -158,7 +158,7 @@ class Main:
     # this is called on game start
     def begin_play(self):
         ue.log('Begin Play on Main class')
-
+        change_background("video", os.path.join(os.path.abspath(ue.get_content_dir()),"Movies", "psychedelic.mp4"))
         global world
         world = get_world()
         print("begin_play found world", world)
