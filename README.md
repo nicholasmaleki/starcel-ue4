@@ -26,7 +26,7 @@ You need to use Visual Studio 2019 for compiling ([download community edition](h
 
 Compiled versions of Python 3.9 can be downloaded from here https://www.python.org/downloads/release/python-3913/, newer versions of specifically Python 3.9 should work, but need to be compiled from Python source. The unreal_engine package is not installed to Python permanently, but it is installed at runtime, so it does not need to be pip-installed. The `Content/Scripts/unreal_engine` folder includes all necessary stubs and empty classes for intellisense. 
 
-You can manually install the necessary packages directly using `pip install -r requirements.txt` or `python.exe -m pip install numpy sympy fast-autocomplete fast-autocomplete[levenshtein] numba kingdon matplotlib scikit-image scikit-learn dill pystubgen requests pywin32 psutil`. If any of these fails, you may need to re-run the command. 
+You can manually install the necessary packages directly using `pip install -r requirements.txt` or `python.exe -m pip install numpy sympy fast-autocomplete fast-autocomplete[levenshtein] numba kingdon matplotlib scikit-image scikit-learn dill pystubgen requests pywin32 psutil opencv-python imageio pymupdf`. If any of these fails, you may need to re-run the command. 
 
 The default Unreal Engine map contains a PyActor which loads main.py and the class Main when the map starts up. Both the server and the client will run this file separately. The line ``if KismetSystemLibrary.IsDedicatedServer():`` lets you define client and server specific code. You can create more PyActors or even use Python from the UE console by clicking ` and typing "py.". 
 
@@ -51,6 +51,10 @@ Issues with the Starcel code and new features can be posted here.
 I will occasionally merge new features and fixes. Feel free to contribute. 
 
 Anything else can be asked in our Discord. We are a community of volunteers so we may not have answers and may not get back to you, but we will try our best. 
+
+
+## Known Issues
+It seems that python code outside the main file being used by the pyactor will not be reloaded in the Editor when you stop and replay. You will need to fully restart the editor to get the changes to files outside main.py to reload. I will work on a fix for this later. 
 
 
 ## Are public Starcel servers safe? 
@@ -128,6 +132,7 @@ The last Starcel release was written, at the time, in the newest Python, Python 
 	- C to Assembly
 	- C to lambda calculus with function labels https://github.com/woodrush/lambda-8cc Lambda calculus to binary https://justine.lol/lambda/
 	- C to turing machine instructions https://youtu.be/2VF_wPkiBJY?&t=194 https://github.com/xoreaxeaxeax/movfuscator
+	- preview result/tree of selected: train trees, tacit functions. S-expressions
 	- Monadic, diadic, triadic, and n-adic chains https://github.com/codereport/jello (extend to Applicatives and Functors)
 	- Combinatorial exploration: permutations of functions
 - LLLM code translation and live code explanation

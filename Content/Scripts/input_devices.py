@@ -2,8 +2,10 @@ import unreal_engine as ue
 from unreal_engine.enums import EMouseCursor, ECollisionChannel
 import time
 
+
 def _clean(s: str):
     return s.replace(" ", "").replace("_", "").lower()
+
 
 class Keyboard:
     def __init__(self):
@@ -23,12 +25,12 @@ class Keyboard:
                         "ScrollLock",
                         "LeftShift", "RightShift", "LeftControl", "RightControl", "LeftAlt", "RightAlt", "LeftCommand", "RightCommand",
                         "Semicolon", "Equals", "Comma", "Underscore", "Hyphen", "Period", "Slash", "Tilde", "LeftBracket", "Backslash", "RightBracket", "Apostrophe",
-                        "Ampersand", "Asterix", "Caret", "Colon", "Dollar", "Exclamation", "LeftParantheses", "RightParantheses", "Quote"  # I think Parantheses is a typo
+                        "Ampersand", "Asterix", "Caret", "Colon", "Dollar", "Exclamation", "LeftParantheses", "RightParantheses", "Quote"
                         ]
 
         self.LEGEND_TO_UE = {
             # letters
-            **{chr(i): chr(i).upper() for i in range(ord('a'), ord('z') + 1)}, # TODO: Same as default_alphabet
+            **{chr(i): chr(i).upper() for i in range(ord('a'), ord('z') + 1)},
             **{chr(i).upper(): chr(i).upper() for i in range(ord('a'), ord('z') + 1)},
 
             # numbers
@@ -60,7 +62,7 @@ class Keyboard:
             "RightCtrl": "RightControl",
             "LeftAlt": "LeftAlt",
             "RightAlt": "RightAlt",
-            "Win": "Win",  # "LeftCommand",
+            "Win": "Win",
             "Menu": "Menu",
 
             # arrows
@@ -258,9 +260,8 @@ class Mouse:
                         "ScrollLock",
                         "LeftShift", "RightShift", "LeftControl", "RightControl", "LeftAlt", "RightAlt", "LeftCommand", "RightCommand",
                         "Semicolon", "Equals", "Comma", "Underscore", "Hyphen", "Period", "Slash", "Tilde", "LeftBracket", "Backslash", "RightBracket", "Apostrophe",
-                        "Ampersand", "Asterix", "Caret", "Colon", "Dollar", "Exclamation", "LeftParantheses", "RightParantheses", "Quote"  # I think Parantheses is a typo
+                        "Ampersand", "Asterix", "Caret", "Colon", "Dollar", "Exclamation", "LeftParantheses", "RightParantheses", "Quote"
                         ]
-
 
         self.mouse = ["Left", "Right", "Middle", "ThumbUp", "ThumbDown", "ScrollUp", "ScrollDown", "MouseX", "MouseY", "Mouse2D", "MouseWheelAxis"]
 
@@ -336,23 +337,29 @@ class TraceHelper:
         self.pc = uobject.get_player_controller()
 
     def trace_forward(self, dist=1000):
+        """Trace from camera forward direction"""
         start = self.pc.get_pawn().get_actor_location()
         end = start + self.pc.get_control_rotation().get_forward_vector() * dist
-        hit = self.uobject.line_trace_single_by_channel(start, end, ue.TraceTypeQuery1)
+        hit = self.uobject.line_trace_single_by_channel(start, end, ECollisionChannel.ECC_Visibility)
         return hit
 
     def trace_cursor(self, channel=ECollisionChannel.ECC_Visibility):
-        # ECC_WorldStatic, ECC_WorldDynamic, ECC_Pawn, ECC_Visibility, ECC_Camera, ECC_PhysicsBody, ECC_Vehicle, ECC_Destructible, ECC_EngineTraceChannel1,
-        # ECC_EngineTraceChannel2, ECC_EngineTraceChannel3, ECC_EngineTraceChannel4, ECC_EngineTraceChannel5, ECC_EngineTraceChannel6, ECC_GameTraceChannel1,
-        # ECC_GameTraceChannel2, ECC_GameTraceChannel3, ECC_GameTraceChannel4, ECC_GameTraceChannel5, ECC_GameTraceChannel6, ECC_GameTraceChannel7,
-        # ECC_GameTraceChannel8, ECC_GameTraceChannel9, ECC_GameTraceChannel10, ECC_GameTraceChannel11, ECC_GameTraceChannel12, ECC_GameTraceChannel13,
-        # ECC_GameTraceChannel14, ECC_GameTraceChannel15, ECC_GameTraceChannel16, ECC_GameTraceChannel17, ECC_GameTraceChannel18, ECC_OverlapAll_Deprecated, ECC_MAX
+        """Trace from cursor position into the world
+        Returns: dict with hit information or None if no hit
+        """
         return self.uobject.get_hit_result_under_cursor(channel)
 
+    def trace_line(self, start, end, channel=ECollisionChannel.ECC_Visibility):
+        """Generic line trace between two points"""
+        return self.uobject.line_trace_single_by_channel(start, end, channel)
+
     def deproject_screen(self, x, y):
+        """Convert screen coordinates to world position and direction"""
         success, world_pos, world_dir = self.pc.DeprojectScreenPositionToWorld(x, y)
         if success:
-            ue.log(f"Mouse world position: {world_pos}, direction: {world_dir}")
+            return world_pos, world_dir
+        return None, None
+
 
 class HotkeyManager:
     def __init__(self, uobject, keyboard, mouse, poll_rate=0.02):
@@ -367,58 +374,94 @@ class HotkeyManager:
         self.poll_rate = poll_rate
         self._repeat_bindings = []
         self._pollers = []
+        self._key_registry = {}  # For future keyboard visualization
+        self._is_shutting_down = False
 
         self.player_controller = self.uobject.get_player_controller()
 
+    # ---------------- Shutdown ----------------
+    def shutdown(self):
+        """Call this in uObject_EndPlay to clean up properly"""
+        self._is_shutting_down = True
+
+        # Stop all pollers
+        for ticker in self._pollers:
+            try:
+                if ticker and hasattr(ticker, 'is_valid') and ticker.is_valid():
+                    ue.remove_ticker(ticker)
+            except:
+                pass
+
+        for ticker in self._repeat_bindings:
+            try:
+                if ticker and hasattr(ticker, 'is_valid') and ticker.is_valid():
+                    ue.remove_ticker(ticker)
+            except:
+                pass
+
+        self._pollers.clear()
+        self._repeat_bindings.clear()
+        ue.log("HotkeyManager shutdown complete")
 
     # ---------------- Cursor ----------------
-
     def enable_mouse_events(self, click=True, over=True):
+        """Enable mouse click and mouse-over events"""
         try:
             self.player_controller.bEnableClickEvents = click
             self.player_controller.bEnableMouseOverEvents = over
         except:
             ue.log_warning("Mouse event flags not supported")
 
-
     def show_cursor(self, visible=True):
+        """Show or hide mouse cursor"""
         try:
             self.player_controller.bShowMouseCursor = visible
             self._cursor_visible = visible
         except:
             ue.log_warning("show cursor failed")
 
-
     def set_cursor(self, cursor_type=EMouseCursor.Default):
-        # None, Default, TextEditBeam, ResizeLeftRight, ResizeUpDown, ResizeSouthEast, ResizeSouthWest, CardinalCross, Crosshairs,
-        # Hand, GrabHand, GrabHandClosed, SlashedCircle, EyeDropper, Custom, TotalCursorCount
+        """Set cursor type
+        Options: None, Default, TextEditBeam, ResizeLeftRight, ResizeUpDown,
+                 ResizeSouthEast, ResizeSouthWest, CardinalCross, Crosshairs,
+                 Hand, GrabHand, GrabHandClosed, SlashedCircle, EyeDropper
+        """
         try:
             self.player_controller.CurrentMouseCursor = cursor_type
             ue.log(f"Mouse cursor set to: {cursor_type}")
         except Exception as e:
             ue.log_warning(f"Failed to set cursor: {e}")
 
-
     def toggle_cursor(self):
+        """Toggle cursor visibility"""
         self.show_cursor(not self._cursor_visible)
 
-
-    def set_cursor(self, cursor_name):
-        try:
-            self.player_controller.CurrentMouseCursor = cursor_name
-        except:
-            ue.log_warning("set cursor failed")
-
-
     def print_cursor_info(self):
+        """Print cursor configuration information"""
         pc = self.player_controller
         ue.log(f"ClickEventKeys = {getattr(pc, 'ClickEventKeys', None)}")
         ue.log(f"DefaultMouseCursor = {getattr(pc, 'DefaultMouseCursor', None)}")
         ue.log(f"CurrentMouseCursor = {getattr(pc, 'CurrentMouseCursor', None)}")
 
+    def get_cursor_info(self):
+        """Get cursor screen position, world position, and direction
+        Returns: dict with keys: 'screen_x', 'screen_y', 'world_pos', 'world_dir'
+        """
+        pos_data = self.get_mouse_position(deproject=True)
+        if not pos_data:
+            return None
+
+        x, y, world, direction = pos_data
+        return {
+            'screen_x': x,
+            'screen_y': y,
+            'world_pos': world,
+            'world_dir': direction
+        }
 
     # ---------------- Normalize ----------------
     def normalize_input_token(self, token):
+        """Normalize input token to UE format"""
         k = self.keyboard.normalize(token)
         if k:
             return k
@@ -427,17 +470,38 @@ class HotkeyManager:
             return m
         return token
 
-
     def parse_chord(self, chord):
+        """Parse chord string into tuple of normalized keys"""
         if isinstance(chord, str):
             parts = chord.split("+")
         else:
             parts = chord
         return tuple(self.normalize_input_token(p) for p in parts)
 
+    # ---------------- Key Registry (for future visualization) ----------------
+    def _register_binding(self, keys, binding_type, callback_name=None):
+        """Register a binding for future keyboard visualization"""
+        key_tuple = keys if isinstance(keys, tuple) else (keys,)
+
+        for key in key_tuple:
+            if key not in self._key_registry:
+                self._key_registry[key] = []
+
+            self._key_registry[key].append({
+                'type': binding_type,
+                'keys': key_tuple,
+                'callback': callback_name or str(callback_name)
+            })
+
+    def get_key_bindings(self, key=None):
+        """Get all bindings for a specific key, or all bindings if key is None"""
+        if key is None:
+            return self._key_registry
+        return self._key_registry.get(self.normalize_input_token(key), [])
 
     # ---------------- Chords ----------------
     def bind_chord_event(self, chord, event_type, callback):
+        """Bind a chord (key combination) to a callback"""
         primary = chord[-1]
         modifiers = set(chord[:-1])
 
@@ -448,8 +512,10 @@ class HotkeyManager:
             callback()
 
         self.uobject.bind_key(primary, event_type, _handler)
+        self._register_binding(chord, f"chord_{event_type}", callback.__name__ if hasattr(callback, '__name__') else None)
 
     def bind_sequence(self, sequence, callback, timeout=1.0):
+        """Bind a sequence of key presses to a callback"""
         seq_parsed = []
 
         for step in sequence:
@@ -473,6 +539,7 @@ class HotkeyManager:
         self._bind_sequence_step(seq_parsed[0], seq_parsed, 0)
 
     def _bind_sequence_step(self, step, sequence, index):
+        """Internal: bind a single step in a sequence"""
         kind = step[0]
 
         if kind == "AXIS":
@@ -499,6 +566,7 @@ class HotkeyManager:
             self.uobject.bind_key(primary, event, _chord_callback)
 
     def _advance_sequence_dynamic(self, sequence, index_triggered):
+        """Internal: advance through a sequence when a step is triggered"""
         now = time.time()
 
         key = tuple(
@@ -538,24 +606,32 @@ class HotkeyManager:
 
         self.sequence_progress[key] = progress
 
+    def bind_press(self, chord, callback):
+        """Bind key press event"""
+        parsed_chord = self.parse_chord(chord)
+        self.bind_chord_event(parsed_chord, ue.IE_PRESSED, callback)
 
-
-    def bind_press(self, chord, cb):
-        self.bind_chord_event(self.parse_chord(chord), ue.IE_PRESSED, cb)
-
-    def bind_release(self, chord, cb):
-        self.bind_chord_event(self.parse_chord(chord), ue.IE_RELEASED, cb)
+    def bind_release(self, chord, callback):
+        """Bind key release event"""
+        parsed_chord = self.parse_chord(chord)
+        self.bind_chord_event(parsed_chord, ue.IE_RELEASED, callback)
 
     def bind_double_click(self, chord, callback):
-        self.bind_chord_event(self.parse_chord(chord), ue.IE_DOUBLE_CLICK, callback)
+        """Bind double click event"""
+        parsed_chord = self.parse_chord(chord)
+        self.bind_chord_event(parsed_chord, ue.IE_DOUBLE_CLICK, callback)
 
     # ---------------- Repeat (poll based) ----------------
     def bind_repeat(self, chord, callback):
+        """Bind a key to repeat while held down (uses polling)"""
         chord = self.parse_chord(chord)
 
         def poll(delta):
+            if self._is_shutting_down:
+                return False
             if not self.uobject or not self.uobject.is_valid():
-                return False  # stop ticker
+                return False
+
             primary = chord[-1]
             mods = chord[:-1]
             if self.uobject.is_input_key_down(primary):
@@ -565,11 +641,62 @@ class HotkeyManager:
                 callback()
             return True
 
-        self._repeat_bindings.append(ue.add_ticker(poll))
+        ticker = ue.add_ticker(poll, self.poll_rate)
+        self._repeat_bindings.append(ticker)
+        self._register_binding(chord, "repeat", callback.__name__ if hasattr(callback, '__name__') else None)
 
+    # ---------------- Poll (non-binding check) ----------------
+    def bind_poll(self, chord, callback, rate=None):
+        """Poll a key state continuously without overriding engine bindings
+        This checks key state without binding, so it won't interfere with actions like Jump
+        """
+        chord = self.parse_chord(chord)
+        poll_rate = rate if rate is not None else self.poll_rate
+
+        def poll(delta):
+            if self._is_shutting_down:
+                return False
+            if not self.uobject or not self.uobject.is_valid():
+                return False
+
+            primary = chord[-1]
+            mods = chord[:-1]
+
+            # Check if all keys are down
+            all_down = self.uobject.is_input_key_down(primary)
+            if all_down:
+                for m in mods:
+                    if not self.uobject.is_input_key_down(m):
+                        all_down = False
+                        break
+
+            if all_down:
+                callback()
+
+            return True
+
+        ticker = ue.add_ticker(poll, poll_rate)
+        self._pollers.append(ticker)
+        self._register_binding(chord, "poll", callback.__name__ if hasattr(callback, '__name__') else None)
+
+    def is_key_down(self, key):
+        """Check if a key is currently pressed (non-binding check)"""
+        normalized = self.normalize_input_token(key)
+        return self.uobject.is_input_key_down(normalized)
+
+    def is_chord_down(self, chord):
+        """Check if all keys in a chord are currently pressed"""
+        parsed = self.parse_chord(chord)
+        for key in parsed:
+            if not self.uobject.is_input_key_down(key):
+                return False
+        return True
 
     # ---------------- Axis ----------------
     def bind_axis(self, axis_name, callback, deadzone=0.0, poll=True):
+        """Bind an axis input to a callback
+        Note: For MouseX/MouseY, use bind_axis_poll instead as bind_axis may not work reliably
+        """
         axis = self.normalize_input_token(axis_name)
 
         def _handler(v):
@@ -582,57 +709,105 @@ class HotkeyManager:
             callback(v)
 
         self.uobject.bind_axis(axis, _handler)
+        self._register_binding((axis,), "axis", callback.__name__ if hasattr(callback, '__name__') else None)
 
         if poll:
             def poller(dt):
+                if self._is_shutting_down:
+                    return False
                 if not self.uobject or not self.uobject.is_valid():
-                    return False  # stop ticker
+                    return False
                 v = self.uobject.get_input_axis(axis)
                 _handler(v)
                 return True
 
-            self._pollers.append(ue.add_ticker(poller))
+            ticker = ue.add_ticker(poller, self.poll_rate)
+            self._pollers.append(ticker)
 
+    def bind_axis_poll(self, axis_name, callback, deadzone=0.0, rate=None):
+        """Bind an axis using only polling (more reliable for MouseX/MouseY)
+        Use this for mouse movement tracking
+        """
+        axis = self.normalize_input_token(axis_name)
+        poll_rate = rate if rate is not None else self.poll_rate
+
+        def poller(dt):
+            if self._is_shutting_down:
+                return False
+            if not self.uobject or not self.uobject.is_valid():
+                return False
+
+            v = self.uobject.get_input_axis(axis)
+
+            if abs(v) < deadzone:
+                v = 0.0
+
+            last = self._last_axis_values.get(axis)
+            if last != v:
+                self._last_axis_values[axis] = v
+                if v != 0:  # Only callback if non-zero
+                    callback(v)
+
+            return True
+
+        ticker = ue.add_ticker(poller, poll_rate)
+        self._pollers.append(ticker)
+        self._register_binding((axis,), "axis_poll", callback.__name__ if hasattr(callback, '__name__') else None)
 
     def get_input_axis(self, axis):
+        """Get current value of an axis"""
         return self.uobject.get_input_axis(axis)
 
+    def bind_input_axis(self, axis, callback):
+        """Bind an input axis directly (alternative method)"""
+        self.uobject.bind_input_axis(axis, callback)
 
-    def bind_input_axis(self, axis, cb):
-        self.uobject.bind_input_axis(axis, cb)
+    def bind_axis_for_sequence(self, axis_name, condition_fn, callback):
+        """Internal: bind axis for sequence detection"""
+        axis = self.normalize_input_token(axis_name)
 
+        def _handler(v):
+            if condition_fn(v):
+                callback(v)
+
+        self.uobject.bind_axis(axis, _handler)
 
     # ---------------- Actions ----------------
     def bind_action(self, name, pressed_cb=None, released_cb=None):
+        """Bind an action defined in project input settings"""
         if pressed_cb:
             self.uobject.bind_action(name, ue.IE_PRESSED, pressed_cb)
         if released_cb:
             self.uobject.bind_action(name, ue.IE_RELEASED, released_cb)
-
+        self._register_binding((name,), "action", pressed_cb.__name__ if pressed_cb and hasattr(pressed_cb, '__name__') else None)
 
     def is_action_pressed(self, name):
+        """Check if action is currently pressed"""
         return self.uobject.is_action_pressed(name)
 
-
     def is_action_released(self, name):
+        """Check if action is currently released"""
         return self.uobject.is_action_released(name)
 
-
     def get_engine_defined_action_mappings(self):
+        """Get list of engine-defined action mappings"""
         return ue.get_engine_defined_action_mappings()
-
 
     # ---------------- Key State ----------------
     def was_pressed(self, key):
+        """Check if key was just pressed this frame"""
         return self.player_controller.WasInputKeyJustPressed(key)
 
-
     def was_released(self, key):
+        """Check if key was just released this frame"""
         return self.player_controller.WasInputKeyJustReleased(key)
-
 
     # ---------------- Mouse ----------------
     def get_mouse_position(self, deproject=False):
+        """Get mouse position in screen coordinates
+        If deproject=True, also returns world position and direction
+        Returns: (x, y) or (x, y, world_pos, world_dir) if deproject=True
+        """
         ok, x, y = self.player_controller.GetMousePosition()
         if not ok:
             return None
@@ -644,19 +819,24 @@ class HotkeyManager:
 
         return x, y
 
-
     def set_mouse_position(self, x, y):
+        """Set mouse position in screen coordinates"""
         self.player_controller.SetMouseLocation(x, y)
 
-
     def deproject_mouse(self):
+        """Get world position and direction from current mouse position
+        Returns: (success, world_pos, world_dir)
+        """
         success, world_pos, world_dir = self.player_controller.DeprojectMousePositionToWorld()
         return success, world_pos, world_dir
 
-
     # ---------------- Mouse Delta (Timer) ----------------
     def log_mouse_delta_timer(self, rate=0.05):
+        """Start logging mouse delta at specified rate"""
+
         def tick():
+            if self._is_shutting_down:
+                return
             dx, dy = self.player_controller.GetInputMouseDelta()
             if dx or dy:
                 ue.log(f"MouseDelta {dx:.3f}, {dy:.3f}")

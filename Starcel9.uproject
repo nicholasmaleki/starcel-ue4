@@ -112,10 +112,6 @@
 			]
 		},
 		{
-			"Name": "HISPlayer",
-			"Enabled": true
-		},
-		{
 			"Name": "BinkMedia",
 			"Enabled": true
 		},

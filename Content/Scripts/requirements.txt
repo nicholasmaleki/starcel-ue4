@@ -12,3 +12,14 @@ pystubgen
 requests
 pywin32
 psutil
+opencv-python
+imageio
+pymupdf
+
+# cairosvg
+# svglib 
+# reportlab
+# aggdraw
+
+# Inkscape installed
+# Blender installed
