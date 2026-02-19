@@ -668,10 +668,8 @@ def apply_material(
     return mid
 
 
-
-def change_background(background="white", path="file://"):
+def reset_backgrounds():
     global py_actor
-
     try:
         print(py_actor.is_valid())
     except Exception as e:
@@ -679,19 +677,11 @@ def change_background(background="white", path="file://"):
         py_actor = find_actor("BP_PyActor")
         print(py_actor)
 
-    # TODO: Add transparency and green screen defaults https://github.com/historia-Inc/WindowTransparency https://www.fab.com/listings/a967c271-f440-4bc2-93f8-3699122f0f7b https://forums.unrealengine.com/t/transparent-window/123446
-    # --- grab actors ---
-    # SkySpheres
-    # BP_SkySphere: Rendering -> Actor Hidden in Game = True
-    # SM_SkySphere: Materials -> Element 0: M_SkyBox. Rendering -> Visible = True
-    # M_SkyBox Emissive Multiplier = 0.5
-    # M_SkyBox With ParamCube Parameter Name = Texture. SkyBoxTexture = starmap_g8k
-    # SM_SkySpherePureWhite Rendering -> Visible = False
-    # SM_SkySpherePureWhiteManualExposure: M_SkyBoxWhiteForManualExposure
+    # grab actors for background
     sky = find_actor("SM_SkySphere_2")  # IDK why it got the name _2
     sky_white = find_actor("SM_SkySpherePureWhiteManualExposure")
     # sky_white_autoexposure = find_actor("SM_SkySpherePureWhite")
-    sky_video = find_actor("BP_VideoSkySphere_8") # IDK why it got the name _8
+    sky_video = find_actor("BP_VideoSkySphere_8")  # IDK why it got the name _8
     sky_sun_time = find_actor("BP_SkySphere")
     sky_spheres = [sky, sky_white, sky_video, sky_sun_time]  # , sky_white_autoexposure]
 
@@ -736,6 +726,68 @@ def change_background(background="white", path="file://"):
     # sky_light.set_property("bLowerHemisphereIsSolidColor", False)
     # sky_light.set_property("LowerHemisphereColor", (0,0,0,1))
     py_actor.call_function("DisableWindowTransparent")
+
+
+def change_background(background="white", path="file://"):
+    global py_actor
+    try:
+        print(py_actor.is_valid())
+    except Exception as e:
+        print("Error with pyactor", e)
+        py_actor = find_actor("BP_PyActor")
+        print(py_actor)
+
+    # grab actors for background
+    sky = find_actor("SM_SkySphere_2")  # IDK why it got the name _2
+    sky_white = find_actor("SM_SkySpherePureWhiteManualExposure")
+    # sky_white_autoexposure = find_actor("SM_SkySpherePureWhite")
+    sky_video = find_actor("BP_VideoSkySphere_8")  # IDK why it got the name _8
+    sky_sun_time = find_actor("BP_SkySphere")
+    sky_spheres = [sky, sky_white, sky_video, sky_sun_time]  # , sky_white_autoexposure]
+
+    # Fog
+    fogblack = find_actor("ExponentialHeightFogBlack")
+    fogs = [fogblack]
+
+    # sky_light = find_actor("SkyLight") # Need to set Visible True in editor
+    # sky_light = find_actor("SkyLight5NoLowerHemisphere") # Need to set Visible True in editor
+    sky_light = find_actor("SkyLight5")  # Lower Hemisphere is Solid Color = True # Lower Hemisphere Color = 0,0,0,1
+    sky_light_15 = find_actor("BP_SkyLight_2")
+    sky_lights = [sky_light, sky_light_15]
+
+    pp_camera = find_actor("PostProcessVolumeExposureCamera")  # Manual Exposure Compensation = True, 9.5
+    pp_nobloom = find_actor("PostProcessVolumeDisableBloom")  # BP_SkySphere needs to be disabled
+    pp_novignette = find_actor("PostProcessVolumeDisableVignette")
+    pp_white = find_actor("PostProcessVolumeWhite")  # TODO: Tune this for the dark backgrounds
+    pp_gray = find_actor("PostProcessVolumeGray")
+    pp_black = find_actor("PostProcessVolumeBlack")
+    post_processing_volumes = [pp_camera, pp_nobloom, pp_novignette, pp_white, pp_gray, pp_black]
+
+    # Reset
+    # sky_sun_time.SetActorHiddenInGame(True)  # Can't use Visible on this one unless targeting components
+    # iterate over tne background actors
+    for a in itertools.chain(sky_spheres, fogs, sky_lights, post_processing_volumes):
+        if a in sky_spheres:
+            a.SetActorHiddenInGame(True)
+        elif a in fogs:
+            a.SetActorHiddenInGame(True)
+        elif a in sky_lights:
+            a.SetActorHiddenInGame(True)
+        elif a in post_processing_volumes:
+            a.set_property("bEnabled", False)
+
+    # sky_light.set_property("IntensityScale", 5.0)
+    sky_light.SetActorHiddenInGame(False)
+    pp_camera.set_property("bEnabled", True)
+    pp_gray.set_property("bEnabled", True)
+    # mat = ue.load_object(Material, "/Game/Materials/M_SkyBoxWhiteForManualExposure")
+    # find_component(sky_white, "").set_material(0, mat)
+
+    # sky_light.set_property("bLowerHemisphereIsSolidColor", False)
+    # sky_light.set_property("LowerHemisphereColor", (0,0,0,1))
+    py_actor.call_function("DisableWindowTransparent")
+
+    # TODO: Add transparency and green screen defaults https://github.com/historia-Inc/WindowTransparency https://www.fab.com/listings/a967c271-f440-4bc2-93f8-3699122f0f7b https://forums.unrealengine.com/t/transparent-window/123446
     modes = ["white", "black", "white_no_bloom", "white_no_emissive", "stars", "sky", "image", "video", "transparent"]
     if background in modes:
         if background == "white":

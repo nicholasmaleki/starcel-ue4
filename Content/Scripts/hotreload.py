@@ -166,6 +166,7 @@ def rebuild_generated_modules():
     print("Building libraries:", libraries_to_build)
     try:
         for library in libraries_to_build:
+            print("Building library:", library)
             ue.py_exec(library)
         print("Finished building libraries")
     except Exception as e:

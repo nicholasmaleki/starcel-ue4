@@ -12,10 +12,8 @@ This project is intended for content creators, hobbyists, developers, spreadshee
 ## Price? 
 Currently, free! In the future, as more features are added we will switch to a paid model. 
 
-## Please Donate to keep this project running
+## Please donate to keep this project running!
 You can donate on [Paypal](https://www.paypal.com/paypalme/RecursionIs) or [Patreon](https://www.patreon.com/RecursionIs)
-
-I want to work on this full time!
 
 
 ## Quickstart
@@ -171,7 +169,7 @@ The last Starcel release was written, at the time, in the newest Python, Python 
 
 ## Why Unreal? 
 Unreal is great! It is industry-leading for developing games and in cinema. The Python bindings are the icing on the cake, making this a fully featured engine with quick scripting potential. The rendering system is unmatched, beautiful, and the engine itself is quite fast.
-Unity has limited Python support with Unity-PythonNet. Panda3D and RenderPipeline had issues with speed, server support, and windows. When I tested them Blender's UPBGE and NVIDIA Omniverse were not ready for a server capable game with the features I was looking for. 
+Unity has limited Python support with Unity-PythonNet. Panda3D and RenderPipeline had issues with speed, server support, and windows. When I tested them, Blender's UPBGE and NVIDIA Omniverse were not ready for a server capable game with the features I was looking for. 
 
 
 ## Where did you get the idea? 
@@ -193,6 +191,12 @@ Originally, I wanted to build a system for multidimensional tables and multidime
 - 20tab/UnrealEnginePython is ~70,000 lines of code
 - starcel-ue4 is ~10,000 lines of Python code and ~2000 lines of C++ code, which is really reasonable, considered how many features are offered. I truly stand on the shoulders of giants.
 - starcel-ue4 was written in 4 months
+
+
+## Donate
+You can donate on [Paypal](https://www.paypal.com/paypalme/RecursionIs) or [Patreon](https://www.patreon.com/RecursionIs)
+
+I want to work on this full time!
 
 
 ## Need to contact me?

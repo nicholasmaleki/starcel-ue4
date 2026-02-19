@@ -7,12 +7,16 @@ from typing import Dict, Any, List
 import unreal_engine as ue
 
 
-# In order to use the cli.py you must install GitBash or change the directory to where you kee your GNU Tools.
+# In order to use the cli.py you must install GitBash or change the directory to where you keep your GNU Tools.
 
 # Config
-BIN_DIR = r"C:\Program Files\Git\usr\bin" # GNU Tools directory
-OUTPUT_FILE = "cli.py"
-STUB_FILE = "cli.pyi"
+BIN_DIRS = [
+    r"C:\Program Files\Git\usr\bin",     # GNU Tools
+    r"C:\Program Files\Git\mingw64\bin", # MinGW-w64 Tools
+]
+OUTPUT_FILE = os.path.join(os.path.abspath(ue.get_content_dir()), "Scripts", "cli.py")
+STUB_FILE = os.path.join(os.path.abspath(ue.get_content_dir()), "Scripts", "cli.pyi")
+DEBUG = False  # Set to True to enable debug output in generated cli.py
 
 extra_exes = [
     r"C:\Program Files\Git\bin\git.exe",
@@ -24,6 +28,7 @@ extra_exes = [
 ALIASES = {
     "ps": {"target": "powershell", "args": []},
     "search_system": {"target": "es", "args": []},
+    "help_cmd": {"target": "curl", "args": ["-s"], "arg_prefix": "cheat.sh/", "arg_suffix": "?T&q=1", "no_window": True},
 }
 
 COMMAND_GROUPS = {
@@ -60,16 +65,18 @@ def is_exe(name: str) -> bool:
 
 tools: Dict[str, Dict[str, Any]] = {}
 
-if os.path.isdir(BIN_DIR):
-    for fname in os.listdir(BIN_DIR):
-        if is_exe(fname):
-            cmd = fname[:-4]
-            tools[sanitize(cmd)] = {"cmd": cmd, "preset_args": []}
-
 for path in extra_exes:
     if os.path.isfile(path):
         cmd = os.path.basename(path)[:-4]
-        tools[sanitize(cmd)] = {"cmd": path, "preset_args": []}
+        tools[sanitize(cmd)] = {"cmd": path, "preset_args": [], "arg_prefix": "", "arg_suffix": "", "no_window": False}
+
+for bin_dir in BIN_DIRS:
+    if os.path.isdir(bin_dir):
+        for fname in os.listdir(bin_dir):
+            if is_exe(fname):
+                cmd = fname[:-4]
+                full_path = os.path.join(bin_dir, fname)
+                tools[sanitize(cmd)] = {"cmd": full_path, "preset_args": [], "arg_prefix": "", "arg_suffix": "", "no_window": False}
 
 for alias, spec in ALIASES.items():
     t = sanitize(spec["target"])
@@ -77,6 +84,9 @@ for alias, spec in ALIASES.items():
         tools[sanitize(alias)] = {
             "cmd": tools[t]["cmd"],
             "preset_args": spec.get("args", []),
+            "arg_prefix": spec.get("arg_prefix", ""),
+            "arg_suffix": spec.get("arg_suffix", ""),
+            "no_window": spec.get("no_window", False),
         }
 
 
@@ -112,12 +122,22 @@ for name, node in COMMAND_GROUPS.items():
 TOP_LEVEL_COMMANDS = tools
 generated_at = datetime.now(timezone.utc).isoformat()
 
+debug_code = '''
+    def _debug(self, label, **kwargs):
+        print("[CLI DEBUG] " + label)
+        for k, v in kwargs.items():
+            print("  " + k + ": " + repr(v))
+''' if DEBUG else '''
+    def _debug(self, label, **kwargs):
+        pass
+'''
 
 # Write cli.py
 
 with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
     f.write(f'''from __future__ import annotations
 # generated at {generated_at}
+# debug mode: {DEBUG}
 
 import os
 import sys
@@ -186,24 +206,58 @@ class _Pipeline:
 
 
 class _CommandNode:
-    def __init__(self, cli, node=None, cmd=None, preset_args=None):
-        self._cli = cli
-        self._node = node
-        self._cmd = cmd
-        self._preset_args = preset_args or []
-
+    def __init__(self, cli, node=None, cmd=None, preset_args=None, arg_prefix="", arg_suffix="", no_window=False):
+        object.__setattr__(self, '_cli', cli)
+        object.__setattr__(self, '_node', node)
+        object.__setattr__(self, '_cmd', cmd)
+        object.__setattr__(self, '_preset_args', preset_args or [])
+        object.__setattr__(self, '_arg_prefix', arg_prefix)
+        object.__setattr__(self, '_arg_suffix', arg_suffix)
+        object.__setattr__(self, '_no_window', no_window)
+{debug_code}
     def __call__(self, *args):
         if self._node and "_self" in self._node:
             cmd = self._node["_self"]["cmd"]
             args_list = self._node["_self"].get("preset_args", []) + list(args)
+            self._debug("node call", cmd=cmd, preset_args=self._node["_self"].get("preset_args", []), user_args=list(args))
         elif self._cmd:
             cmd = self._cmd
             args_list = self._preset_args + list(args)
+            self._debug("cmd call", cmd=cmd, preset_args=self._preset_args, user_args=list(args))
         else:
             raise TypeError("This node is a group")
 
+        self._debug("args before prefix/suffix", args_list=args_list, arg_prefix=self._arg_prefix, arg_suffix=self._arg_suffix)
+
+        if self._arg_prefix or self._arg_suffix:
+            skip_next = False
+            prefix_idx = None
+            for i, a in enumerate(args_list):
+                if skip_next:
+                    skip_next = False
+                    continue
+                if a.startswith('--'):
+                    skip_next = True
+                    continue
+                if a.startswith('-') and len(a) == 2:
+                    continue
+                if a.startswith('-'):
+                    skip_next = True
+                    continue
+                prefix_idx = i
+                break
+            if prefix_idx is not None:
+                target = args_list[prefix_idx]
+                args_list = args_list[:prefix_idx] + [self._arg_prefix + target + self._arg_suffix] + args_list[prefix_idx+1:]
+            else:
+                args_list = args_list + [self._arg_prefix + self._arg_suffix]
+
+        self._debug("final command", full_cmd=[cmd] + list(args_list), no_window=self._no_window)
+
         start = time.perf_counter()
         exe_name = os.path.basename(cmd).lower()
+        flags = subprocess.CREATE_NO_WINDOW if self._no_window else 0
+
         # Interactive commands run directly in console
         if exe_name in INTERACTIVE_COMMANDS:
             return_code = subprocess.run([cmd] + list(args_list)).returncode
@@ -211,8 +265,9 @@ class _CommandNode:
             print(f"Time: {{elapsed:.6f}}s")
             return CommandResult("", "", return_code)
         else:
-            p = subprocess.run([cmd] + list(args_list), text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            p = subprocess.run([cmd] + list(args_list), text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=flags)
             elapsed = time.perf_counter() - start
+            self._debug("result", returncode=p.returncode, elapsed=elapsed, stdout_len=len(p.stdout or ""), stderr_len=len(p.stderr or ""))
             if p.stdout:
                 print(p.stdout, end="")
             if p.stderr:
@@ -234,7 +289,7 @@ class _CommandNode:
 class CLI:
     def __init__(self):
         for name, t in {TOP_LEVEL_COMMANDS!r}.items():
-            setattr(self, name, _CommandNode(self, cmd=t["cmd"], preset_args=t.get("preset_args", [])))
+            setattr(self, name, _CommandNode(self, cmd=t["cmd"], preset_args=t.get("preset_args", []), arg_prefix=t.get("arg_prefix", ""), arg_suffix=t.get("arg_suffix", ""), no_window=t.get("no_window", False)))
         for name, node in {GROUP_TREE!r}.items():
             setattr(self, name, _CommandNode(self, node=node))
 

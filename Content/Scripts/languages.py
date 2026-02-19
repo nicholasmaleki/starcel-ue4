@@ -3,6 +3,7 @@ import sys
 import requests
 import inspect
 from typing import Any, Dict, List, Optional
+import unreal_engine as ue
 
 PISTON_URL = "https://emkc.org/api/v2/piston"
 __all__ = ["langs"]
@@ -59,7 +60,7 @@ def _rebuild_language_functions(langs_instance):
             __all__.append(alias)
 
 def _generate_pyi(langs_instance):
-    path = os.path.join(os.path.dirname(__file__), "languages.pyi")
+    path = os.path.join(os.path.abspath(ue.get_content_dir()), "Scripts", "languages.pyi")
     lines = [
         "from typing import Any, Dict, List",
         "",

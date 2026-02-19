@@ -35,7 +35,7 @@ change_background("white")
 # Use this if you want to rebuild the unreal_engine intellisense(.pyi, etc.) and cli
 # rebuild_generated_modules()
 
-# reload_all_modules() # TODO: look into ue.load_package() or get_or_create()
+# reload_all_modules() # TODO: Unstable. look into ue.load_package() or get_or_create()
 
 # reset_pyactor()
 
@@ -44,6 +44,8 @@ change_background("white")
 # if ret == ue.APP_RETURN_TYPE_YES:
 #     ue.log('You choose "YES"')
 
+
+# help_cmd("ls")
 
 
 # Global Vars
@@ -334,12 +336,12 @@ class Main:
         self.trace = TraceHelper(self.uobject)
 
         # Analog movement with deadzone
-        self.input.bind_axis_poll(
-            "MoveForward",
-            self.on_move_forward,
-            deadzone=0.1,
-            rate=0.016  # ~60 FPS
-        )
+        # self.input.bind_axis_poll(
+        #     "MoveForward",
+        #     self.on_move_forward,
+        #     deadzone=0.1,
+        #     rate=0.016  # ~60 FPS
+        # )
 
         # Multiple keys to same action
         self.input.bind_press("F", self.interact)
@@ -364,17 +366,17 @@ class Main:
         # ============== MOUSE AXIS TRACKING ==============
         # IMPORTANT: Use bind_axis_poll for MouseX/MouseY as bind_axis may not work reliably
         # These will now properly track mouse movement
-        self.input.bind_axis_poll("MouseX", lambda v: ue.log(f"MouseX: {v:.3f}"))
-        self.input.bind_axis_poll("MouseY", lambda v: ue.log(f"MouseY: {v:.3f}"))
-        self.input.bind_axis_poll("MouseWheelAxis", lambda v: ue.log(f"MouseWheel: {v:.3f}"))
-
-        # These might work depending on your project's input settings
-        # If you have TurnRate and LookUpRate defined in your Input Settings, these should work
-        try:
-            self.input.bind_axis_poll("TurnRate", lambda v: ue.log(f"TurnRate: {v:.3f}"))
-            self.input.bind_axis_poll("LookUpRate", lambda v: ue.log(f"LookUpRate: {v:.3f}"))
-        except:
-            ue.log_warning("TurnRate/LookUpRate axes not available in project settings")
+        # self.input.bind_axis_poll("MouseX", lambda v: ue.log(f"MouseX: {v:.3f}"))
+        # self.input.bind_axis_poll("MouseY", lambda v: ue.log(f"MouseY: {v:.3f}"))
+        # self.input.bind_axis_poll("MouseWheelAxis", lambda v: ue.log(f"MouseWheel: {v:.3f}"))
+        #
+        # # These might work depending on your project's input settings
+        # # If you have TurnRate and LookUpRate defined in your Input Settings, these should work
+        # try:
+        #     self.input.bind_axis_poll("TurnRate", lambda v: ue.log(f"TurnRate: {v:.3f}"))
+        #     self.input.bind_axis_poll("LookUpRate", lambda v: ue.log(f"LookUpRate: {v:.3f}"))
+        # except:
+        #     ue.log_warning("TurnRate/LookUpRate axes not available in project settings")
 
         # Mouse delta logging (uses timer)
         self.input.log_mouse_delta_timer(rate=0.1)
