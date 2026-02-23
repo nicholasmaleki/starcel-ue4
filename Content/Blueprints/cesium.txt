@@ -1,0 +1,10 @@
+https://tile.googleapis.com/v1/3dtiles/root.json?key=AIzaSyDIxmHVJK2UJjKuZr8urwTWUBmnXfRIKI4
+520x89
+BP_CesiumEarth
+CesiumIonRasterOverlay
+Ion Asset ID is a number with the following presets: 
+
+2: Satellite
+3: Satellite with Labels
+4: Map
+3812: Night

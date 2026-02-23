@@ -196,8 +196,6 @@ Originally, I wanted to build a system for multidimensional tables and multidime
 ## Donate
 You can donate on [Paypal](https://www.paypal.com/paypalme/RecursionIs) or [Patreon](https://www.patreon.com/RecursionIs)
 
-I want to work on this full time!
-
 
 ## Need to contact me?
 I prefer to be reached via Discord, but if you need or if you are looking to donate or sponsor the project, you can contact me by email, nick@recursion.is. 

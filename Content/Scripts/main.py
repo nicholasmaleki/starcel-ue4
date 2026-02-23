@@ -457,6 +457,13 @@ class Main:
 
             def on_player_joined(player_controller):
                 ue.log_warning(f"[SERVER PY] Player joined: {player_controller}") # START HERE
+                # Spawn drone pawn and possess it
+                bp_drone = ue.load_object(Blueprint, '/Game/Blueprints/Assets/BP_DroneCharacter.BP_DroneCharacter')
+                player = world.actor_spawn(bp_drone.GeneratedClass)
+                transform = FTransform(FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1))
+                player.set_actor_transform(transform)
+                # player.get_actor_component('Text3DComponent').Text = "HI"
+
                 global RPC_ACTOR, SERVER_HELPER
 
                 if not RPC_ACTOR:
