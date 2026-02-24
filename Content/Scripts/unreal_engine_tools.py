@@ -5,6 +5,8 @@ import os, itertools, time, json
 import windowtool
 from PIL import Image
 import numpy as np
+from pathlib import Path
+import sys
 try:
     from unreal_engine.enums import EWorldType
 except ImportError:
@@ -299,6 +301,9 @@ def progress_callback(current, total):
     ue.log(f"[PROGRESS] Chunk {current}/{total}")
 
 
+def get_python_root():
+    return Path(sys.prefix)
+
 global tickers
 tickers = []
 
@@ -577,6 +582,33 @@ def load_texture_any(path_or_obj):
     return None
 
 
+def pil_image_to_texture(pil_img):
+    """
+    Convert a PIL Image (any mode) to a UE4 transient texture (PF_R8G8B8A8).
+    """
+
+    if not isinstance(pil_img, Image.Image):
+        raise TypeError("Expected a PIL.Image.Image")
+
+    # Ensure RGBA
+    img = pil_img.convert("RGBA")
+
+    width, height = img.size
+
+    # Convert to raw bytes
+    data = np.array(img, dtype=np.uint8).flatten().tobytes()
+
+    # Create transient texture
+    texture = ue.create_transient_texture(
+        width,
+        height,
+        EPixelFormat.PF_R8G8B8A8
+    )
+
+    texture.texture_set_data(data)
+
+    return texture
+
 
 def apply_material(
     actor = None,
@@ -788,7 +820,7 @@ def change_background(background="white", path="file://"):
     py_actor.call_function("DisableWindowTransparent")
 
     # TODO: Add transparency and green screen defaults https://github.com/historia-Inc/WindowTransparency https://www.fab.com/listings/a967c271-f440-4bc2-93f8-3699122f0f7b https://forums.unrealengine.com/t/transparent-window/123446
-    modes = ["white", "black", "white_no_bloom", "white_no_emissive", "stars", "sky", "image", "video", "transparent"]
+    modes = ["white", "black", "white_no_bloom", "white_less_emissive", "stars", "sky", "image", "video", "transparent"]
     if background in modes:
         if background == "white":
             mat = ue.load_object(Material, "/Game/Materials/M_SkyBoxWhiteForManualExposure")
@@ -820,7 +852,7 @@ def change_background(background="white", path="file://"):
             sky_white.SetActorHiddenInGame(False)
             pp_nobloom.set_property("bEnabled", True)
             pp_novignette.set_property("bEnabled", True)
-        elif background == "white_no_emissive":
+        elif background == "white_less_emissive":
             mat = ue.load_object(Material, "/Game/Materials/M_SkyBoxWhiteNoEmissive")
             find_component(sky_white, "").set_material(0, mat)
             sky_sun_time.ManuallySetSunPosition = True

@@ -25,12 +25,16 @@ Blueprint requirements:
 import os
 import subprocess
 import tempfile
+from PIL import Image
+import numpy as np
 import unreal_engine as ue
 from unreal_engine import FVector, FRotator, FTransform
 from unreal_engine.classes import (
     StaticMeshActor, StaticMesh, Material, Blueprint,
 )
-from unreal_engine.enums import EComponentMobility
+from unreal_engine.enums import EComponentMobility, EPixelFormat
+from unreal_engine_tools import pil_image_to_texture, get_world, find_component
+from icon_to_image import extract_icon, get_folder_icons
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -38,9 +42,9 @@ from unreal_engine.enums import EComponentMobility
 
 def _get_world():
     try:
-        return ue.get_world()
-    except Exception:
-        return ue.get_editor_world()
+        return get_world()
+    except Exception as e:
+        print("Can't find world", e)
 
 
 def _set_transform(actor, location, rotation, scale):
@@ -797,9 +801,10 @@ def spawn_earth(location=None, rotation=None, scale=None,
 
 
 def spawn_icon(pil_image, location=None, rotation=None, scale=None,
-               material_path='/Game/Materials/M_Icon',
-               param_name='Param2D',
-               bp_path='/Game/Blueprints/BP_Icon'):
+               material_path='/Game/Materials/M_Icon.M_Icon',
+               param_name='Texture',
+               bp_path='/Game/Blueprints/Assets/BP_Icon.BP_Icon',
+               component_name = 'Sphere'):
     """
     Spawn a BP_Icon actor and apply *pil_image* as *param_name* texture.
 
@@ -816,116 +821,62 @@ def spawn_icon(pil_image, location=None, rotation=None, scale=None,
     """
     world = _get_world()
 
-    tmp_path = os.path.join(tempfile.gettempdir(), 'ue_icon_tmp.png')
-    pil_image.save(tmp_path)
-
-    texture = None
-    try:
-        from unreal_engine.classes import TextureFactory
-        tex_name = 'IconTex_' + str(abs(hash(tmp_path)))[:8]
-        texture = TextureFactory().factory_import_object(
-            tmp_path, f'/Game/IconTextures/{tex_name}')
-    except Exception as e:
-        ue.log_warning(f'spawn_icon: texture import failed: {e}')
-
     # Spawn BP_Icon (hover effect comes from its Python component)
     try:
         bp = ue.load_object(Blueprint, bp_path)
         actor = world.actor_spawn(bp.GeneratedClass)
+        target_comp = find_component(actor, component_name)
     except Exception as e:
         ue.log_warning(f'spawn_icon: could not load BP_Icon at "{bp_path}": {e}. '
                        'Make sure BP_Icon exists in your project.')
         return None
 
+
+    try:
+        tex = pil_image_to_texture(pil_image)
+    except Exception as e:
+        ue.log_warning(f'spawn_icon: could not convert that pil_image to texture: {e}')
+        return None
+
+
+    if tex:
+        mat = ue.load_object(Material, "/Game/Materials/M_Icon.M_Icon")
+        if not mat:
+            ue.log_warning(f"Material not found: {material_path}")
+
+        mid = target_comp.create_material_instance_dynamic(mat)
+
+        mid.set_material_texture_parameter(param_name, tex)
+        target_comp.set_material(0, mid)
+    else:
+        ue.log_warning(f"Could not load texture for param: {param_name}")
+
+
+    # tmp_path = os.path.join(tempfile.gettempdir(), 'ue_icon_tmp.png')
+    # pil_image.save(tmp_path)
+    #
+    # texture = None
+    # try:
+    #     from unreal_engine.classes import TextureFactory
+    #     tex_name = 'IconTex_' + str(abs(hash(tmp_path)))[:8]
+    #     texture = TextureFactory().factory_import_object(
+    #         tmp_path, f'/Game/IconTextures/{tex_name}')
+    # except Exception as e:
+    #     ue.log_warning(f'spawn_icon: texture import failed: {e}')
+
+
+
     # Apply material + texture via dynamic material instance
-    mat = ue.load_object(Material, material_path)
-    if mat and texture:
-        try:
-            smc = actor.StaticMeshComponent
-            dmi = smc.CreateAndSetMaterialInstanceDynamic(0)
-            dmi.SetTextureParameterValue(param_name, texture)
-        except Exception as e:
-            ue.log_warning(f'spawn_icon: texture param failed: {e}')
-
-    scl = scale if scale is not None else FVector(1, 1, 1)
-    _set_transform(actor, location, rotation, scl)
+    # mat = ue.load_object(Material, material_path)
+    # if mat and texture:
+    #     try:
+    #         smc = actor.StaticMeshComponent
+    #         dmi = smc.CreateAndSetMaterialInstanceDynamic(0)
+    #         dmi.SetTextureParameterValue(param_name, texture)
+    #     except Exception as e:
+    #         ue.log_warning(f'spawn_icon: texture param failed: {e}')
+    _set_transform(actor, location, rotation, scale)
     return actor
-
-
-# ---------------------------------------------------------------------------
-# Python component: hover-shrink for spawn_icon
-# ---------------------------------------------------------------------------
-
-class IconHoverComponent:
-    """
-    Mouse-hover shrink animation for a StaticMeshActor.
-    Requires 'Enable Mouse over Events' in Project Settings > Input.
-    """
-    HOVER_DELTA = 0.1
-    LERP_SPEED  = 8.0
-
-    def begin_play(self):
-        self.base_scale   = self.uobject.get_actor_scale()
-        self.target_scale = self.base_scale
-        try:
-            smc = self.uobject.StaticMeshComponent
-            smc.bind_event('OnBeginCursorOver', self.on_hover_begin)
-            smc.bind_event('OnEndCursorOver',   self.on_hover_end)
-        except Exception as e:
-            ue.log_warning(f'IconHoverComponent: cursor events unavailable: {e}')
-
-    def on_hover_begin(self, mesh):
-        d  = self.HOVER_DELTA
-        bs = self.base_scale
-        self.target_scale = FVector(bs.x - d, bs.y - d, bs.z - d)
-
-    def on_hover_end(self, mesh):
-        self.target_scale = self.base_scale
-
-    def tick(self, dt):
-        cur = self.uobject.get_actor_scale()
-        tgt = self.target_scale
-        a   = min(1.0, self.LERP_SPEED * dt)
-        self.uobject.set_actor_scale(FVector(
-            cur.x + (tgt.x - cur.x) * a,
-            cur.y + (tgt.y - cur.y) * a,
-            cur.z + (tgt.z - cur.z) * a,
-        ))
-
-
-# ---------------------------------------------------------------------------
-# Python component: clickable sound sphere
-# ---------------------------------------------------------------------------
-
-class SoundSphereActor:
-    """
-    Attach to BP_SoundSphere.
-    Blueprint needs StaticMeshComponent (sphere) + public Sound (SoundBase).
-    """
-    def begin_play(self):
-        self.sound = getattr(self.uobject, 'Sound', None)
-        try:
-            smc = self.uobject.StaticMeshComponent
-            smc.bind_event('OnClicked', self.on_clicked)
-            smc.bind_event('OnComponentBeginOverlap', self.on_overlap)
-        except Exception as e:
-            ue.log_warning(f'SoundSphereActor: could not bind events: {e}')
-
-    def on_clicked(self, mesh, button):
-        self._play()
-
-    def on_overlap(self, *args):
-        self._play()
-
-    def _play(self):
-        if self.sound is None:
-            self.sound = getattr(self.uobject, 'Sound', None)
-        if self.sound:
-            self.uobject.play_sound_at_location(
-                self.sound, self.uobject.get_actor_location())
-        else:
-            ue.log_warning('SoundSphereActor: no Sound asset assigned.')
-
 
 # ---------------------------------------------------------------------------
 # File-type detection

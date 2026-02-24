@@ -116,10 +116,6 @@
 			"Enabled": true
 		},
 		{
-			"Name": "AvidDNxMedia",
-			"Enabled": true
-		},
-		{
 			"Name": "HAPMedia",
 			"Enabled": true,
 			"SupportedTargetPlatforms": [
@@ -143,10 +139,15 @@
 			"Enabled": true
 		},
 		{
-			"Name": "AppleProResMedia",
-			"Enabled": true,
+			"Name": "CesiumForUnreal",
+			"Enabled": false,
+			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/content/87b0d05800a545d49bf858ef3458c4f7",
 			"SupportedTargetPlatforms": [
-				"Win64"
+				"Win64",
+				"Mac",
+				"Linux",
+				"Android",
+				"IOS"
 			]
 		}
 	]

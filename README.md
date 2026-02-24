@@ -17,14 +17,14 @@ You can donate on [Paypal](https://www.paypal.com/paypalme/RecursionIs) or [Patr
 
 
 ## Quickstart
-The current release includes the client, the server, and the no-editor for Windows. Each compiled source is ~1GB each. 
+The current release includes the client, the server, and the no-editor for Windows. Each compiled source is ~1GB. 
 The full Unreal Engine Starcel source project folder is quite a large download, ~50GB. The project files on github are ~1GB, check the .gitignore to see what is missing. 
 
 You need to use Visual Studio 2019 for compiling ([download community edition](https://aka.ms/vs/16/release/vs_community.exe)). I recommend [PyCharm Community](https://www.jetbrains.com/pycharm/download/?section=windows) for editing until IDE support is added.
 
 Compiled versions of Python 3.9 can be downloaded from here https://www.python.org/downloads/release/python-3913/, newer versions of specifically Python 3.9 should work, but need to be compiled from Python source. The unreal_engine package is not installed to Python permanently, but it is installed at runtime, so it does not need to be pip-installed. The `Content/Scripts/unreal_engine` folder includes all necessary stubs and empty classes for intellisense. 
 
-You can manually install the necessary packages directly using `pip install -r requirements.txt` or `python.exe -m pip install numpy sympy fast-autocomplete fast-autocomplete[levenshtein] numba kingdon matplotlib scikit-image scikit-learn dill pystubgen requests pywin32 psutil opencv-python imageio pymupdf`. If any of these fails, you may need to re-run the command. 
+You can manually install the necessary packages directly using `pip install -r requirements.txt` or `python.exe -m pip install numpy sympy fast-autocomplete fast-autocomplete[levenshtein] numba kingdon matplotlib scikit-image scikit-learn dill pystubgen requests pywin32 psutil opencv-python imageio pymupdf mpmath reals`. If any of these fails, you may need to re-run the command. 
 
 The default Unreal Engine map contains a PyActor which loads main.py and the class Main when the map starts up. Both the server and the client will run this file separately. The line ``if KismetSystemLibrary.IsDedicatedServer():`` lets you define client and server specific code. You can create more PyActors or even use Python from the UE console by clicking ` and typing "py.". 
 
@@ -40,7 +40,7 @@ Python support can be found at r/LearnPython, YouTube, other forums, and chats.
 
 Unreal Engine support can be found on YouTube, their Discord, and their forum. 
 
-UnrealEnginePython examples, Starcel examples, and the unreal_engine folder (Content/Scripts/unreal_engine) which has the class and function info should cover just about everything you can do with the plugin. If you are certain there is an issue with the https://github.com/20tab/UnrealEnginePython plugin you can post on their issues tab on GitHub. I will check this every so often. 
+UnrealEnginePython examples, Starcel examples, and the unreal_engine folder (Content/Scripts/unreal_engine, which has the class and function info) should cover just about everything you can do with the plugin. If you are certain there is an issue with the https://github.com/20tab/UnrealEnginePython plugin you can post on the issues tab on GitHub. I will check this every so often. 
 
 The UE4.27 port of the plugin can be found at https://github.com/HaiyiMei/UnrealEnginePython. I made changes to this source to upgrade it to Python 3.9 and to make it work for my use case. 
 
@@ -53,6 +53,8 @@ Anything else can be asked in our Discord. We are a community of volunteers so w
 
 ## Known Issues
 It seems that python code outside the main file being used by the pyactor will not be reloaded in the Editor when you stop and replay. You will need to fully restart the editor to get the changes to files outside main.py to reload. I will work on a fix for this later. 
+
+Unfortunately, I wasn't able to get the Python Editor Script Plugin to work alongside UnrealEnginePython, as the script plugin loads python37.dll which conflicts with UEPython's python39.dll. Unfortunately, this means we won't be able to have Cesium's 3D Earth until a later update.  
 
 
 ## Are public Starcel servers safe? 

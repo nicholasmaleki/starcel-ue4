@@ -5,15 +5,63 @@ Extract Windows file/folder icons and thumbnails as PIL RGBA images.
 
 Public API
 ----------
-    img = get_icon(input_path, preview=True, debug=False)  -> PIL Image
+    # ── Single file ────────────────────────────────────────────────────────
+    img  = get_icon(input_path, preview=True, debug=False)
+            -> PIL.Image.Image  (256x256 RGBA)
+
+    info = get_icon_info(input_path, preview=True, debug=False)
+            -> dict  (see _ICON_INFO_FIELDS below; 'image' key holds PIL Image)
+
+    # No output_path → returns info dict; with output_path → saves PNG (+ optionally dict)
     extract_icon(input_path, output_path, preview=True, debug=False)  -> None
+    extract_icon(input_path,              preview=True, debug=False)   -> dict
+    extract_icon(input_path, output_path, preview=True, debug=False,
+                 return_info=True)                                     -> dict
+
+    # ── Folder scan ────────────────────────────────────────────────────────
+    # return_info=False (default) → {path: PIL Image}   or saves PNGs
+    # return_info=True            → {path: info dict}   (never saves, output_dir ignored)
+    get_folder_icons(folder_path, preview=True, debug=False,
+                     recursive=False, output_dir=None,
+                     return_info=False)
+            -> dict
+
+    # ── Priority queue ─────────────────────────────────────────────────────
+    q = IconQueue()
+    q.add(path, priority=0)
+    q.add_many(paths, priority=0)
+
+    # return_info=False → yields (path, PIL Image)
+    # return_info=True  → yields (path, info dict)
+    for path, result in q.process(preview=True, debug=False, return_info=False):
+        ...
+
+    # return_info=False → saves PNGs, returns list of output paths
+    # return_info=True  → saves PNGs AND returns {path: info dict}
+    q.process_to_dir(output_dir, preview=True, debug=False, return_info=False)
+
+_ICON_INFO_FIELDS
+-----------------
+    full_path      str                 absolute path as given
+    name           str                 filename with extension  (or raw token)
+    stem           str                 filename without extension
+    extension      str                 lower-case extension incl. dot, e.g. ".pdf"
+    is_dir         bool
+    size_bytes     int | None
+    size           str | None          human-readable, e.g. "22.51 MB"
+    date_modified  datetime | None
+    date_created   datetime | None     (st_ctime on Windows = creation time)
+    date_accessed  datetime | None
+    is_preview     bool                True = content thumbnail, False = type icon
+    cost_tier      str                 "icon" | "image" | "video" | "render"
+    image          PIL.Image.Image     256×256 RGBA
 
 input_path can be:
-  - Real file path  (.exe, .dll, .lnk, .pdf, .py, .ini, any type ...)
+  - Real file path  (.exe, .dll, .lnk, .pdf, .py, .ini, any type …)
   - Real folder path  (special folders like Downloads get unique icons)
-  - Extension string  (".pdf", ".mp3", "docx" ...)
-  - "<folder>"        -> generic folder icon
-  - ""                -> generic unknown-file icon
+  - Extension string  (".pdf", ".mp3", "docx" …)
+  - "<folder>"        → generic folder icon
+  - ""                → generic unknown-file icon
 
 PDF preview:    pip install pymupdf
 SVG preview:    Inkscape at C:\\Program Files\\Inkscape (already installed)
@@ -26,16 +74,18 @@ Notes
   Shell image list icons report small HICON bitmap dimensions even when drawn at
   256px — the size is in the LIST, not the HICON header.
 - All unknown/unregistered extensions fall through to _imagelist_icon which asks
-  the shell for whatever icon it would show in Explorer. This handles any new
-  file type automatically without needing entries in ASSOCIATED_EXTENSIONS.
+  the shell for whatever icon it would show in Explorer.
 """
 
+import datetime
 import os
+import sys
 import ctypes
 import ctypes.wintypes
 import win32ui
 import win32gui
 import win32con
+from pathlib import Path
 from PIL import Image
 
 # ── Constants ─────────────────────────────────────────────────────────────────
@@ -47,9 +97,9 @@ SHGFI_USEFILEATTRIBUTES = 0x0000_0010
 FILE_ATTRIBUTE_NORMAL   = 0x80
 FILE_ATTRIBUTE_DIRECTORY= 0x10
 
-SHIL_LARGE      = 0x0   # 32x32
-SHIL_EXTRALARGE = 0x2   # 48x48
-SHIL_JUMBO      = 0x4   # 256x256
+SHIL_LARGE      = 0x0   # 32×32
+SHIL_EXTRALARGE = 0x2   # 48×48
+SHIL_JUMBO      = 0x4   # 256×256
 
 PREVIEW_EXTENSIONS = {
     ".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tiff", ".tif", ".webp",
@@ -65,11 +115,6 @@ PIL_EXTENSIONS = {
     ".webp", ".ico", ".tga", ".psd", ".heic", ".heif", ".avif",
 }
 
-# Extensions whose icon lives in a registered app, not the file itself.
-# We always route these through the registry even when given a real file path.
-# Note: ANY extension not in this set that has no embedded resources will still
-# fall through to _imagelist_icon automatically via _best_file_icon, so this
-# list just ensures we skip the pointless PrivateExtractIcons attempt first.
 ASSOCIATED_EXTENSIONS = {
     ".py", ".pyi", ".pyw",
     ".md", ".markdown", ".rst",
@@ -88,8 +133,8 @@ ASSOCIATED_EXTENSIONS = {
 # ── Globals ───────────────────────────────────────────────────────────────────
 
 _DEBUG         = False
-_INKSCAPE_PATH = None   # cached after first find
-_comctl32      = None   # cached comctl32 handle
+_INKSCAPE_PATH = None
+_comctl32      = None
 
 def _dbg(*args):
     if _DEBUG:
@@ -104,7 +149,7 @@ def _ensure_com():
     global _COM_INITIALISED
     if _COM_INITIALISED:
         return
-    hr = ctypes.windll.ole32.CoInitializeEx(None, 0x2)  # COINIT_APARTMENTTHREADED
+    hr = ctypes.windll.ole32.CoInitializeEx(None, 0x2)
     _dbg("CoInitializeEx hr={}".format(hr))
     _COM_INITIALISED = True
 
@@ -139,29 +184,119 @@ class _GUID(ctypes.Structure):
         ("Data4", ctypes.c_ubyte * 8),
     ]
 
-# IID_IImageList {46EB5926-582E-4017-9FDF-E8998DAA0950}
 _IID_IImageList = _GUID(
     0x46EB5926, 0x582E, 0x4017,
     (ctypes.c_ubyte * 8)(0x9F, 0xDF, 0xE8, 0x99, 0x8D, 0xAA, 0x09, 0x50),
 )
 
 
+# ── Filesystem metadata helper ────────────────────────────────────────────────
+
+def _human_size(n):
+    """Return a human-readable size string, e.g. '22.51 MB'."""
+    if n is None:
+        return None
+    if n == 0:
+        return "0 B"
+    val = float(n)
+    for unit in ("B", "KB", "MB", "GB", "TB"):
+        if val < 1024 or unit == "TB":
+            return "{:.2f} {}".format(val, unit) if unit != "B" else "{} B".format(int(val))
+        val /= 1024
+
+
+def _stat_info(input_path):
+    """
+    Return a dict of filesystem fields for *input_path*.
+    All date/size fields are None for tokens like ".pdf" or "<folder>".
+
+    Keys: full_path, name, stem, extension, is_dir,
+          size_bytes, size, date_modified, date_created, date_accessed.
+    """
+    full_path = input_path
+    is_real   = os.path.exists(input_path)
+
+    if is_real:
+        name      = os.path.basename(input_path.rstrip("/\\")) or input_path
+        stem, ext = os.path.splitext(name)
+        is_dir    = os.path.isdir(input_path)
+    elif input_path == "<folder>":
+        name, stem, ext, is_dir = "<folder>", "<folder>", "", True
+    else:
+        # bare extension or unrecognised token
+        _, ext = os.path.splitext(input_path)
+        ext    = (ext or ("." + input_path.lstrip("."))).lower()
+        name   = input_path
+        stem   = os.path.splitext(input_path)[0]
+        is_dir = False
+
+    size_bytes = date_modified = date_created = date_accessed = None
+    if is_real and not is_dir:
+        try:
+            st             = os.stat(input_path)
+            size_bytes     = st.st_size
+            date_modified  = datetime.datetime.fromtimestamp(st.st_mtime)
+            date_created   = datetime.datetime.fromtimestamp(st.st_ctime)   # creation on Windows
+            date_accessed  = datetime.datetime.fromtimestamp(st.st_atime)
+        except OSError:
+            pass
+    elif is_real and is_dir:
+        try:
+            st            = os.stat(input_path)
+            date_modified = datetime.datetime.fromtimestamp(st.st_mtime)
+            date_created  = datetime.datetime.fromtimestamp(st.st_ctime)
+            date_accessed = datetime.datetime.fromtimestamp(st.st_atime)
+        except OSError:
+            pass
+
+    return {
+        "full_path":     full_path,
+        "name":          name,
+        "stem":          stem,
+        "extension":     ext.lower(),
+        "is_dir":        is_dir,
+        "size_bytes":    size_bytes,
+        "size":          _human_size(size_bytes),
+        "date_modified": date_modified,
+        "date_created":  date_created,
+        "date_accessed": date_accessed,
+    }
+
+# ── Batch / folder / priority-queue helpers ───────────────────────────────────
+
+_COST = {
+    "icon":   0,
+    "image":  1,
+    "video":  2,
+    "render": 3,
+}
+
+_COST_NAMES = {v: k for k, v in _COST.items()}   # 0->"icon", 1->"image", etc.
+
+def _build_info_dict(input_path, img, is_pil):
+    """
+    Combine _stat_info() with the extracted PIL image and derived fields.
+    Returns the complete info dict described in _ICON_INFO_FIELDS.
+    """
+    info              = _stat_info(input_path)
+    info["image"]     = img
+    info["is_preview"]= bool(is_pil)
+    info["cost_tier"] = _COST_NAMES.get(_path_cost(input_path), "icon")
+    return info
+
+
 # ── Public API ────────────────────────────────────────────────────────────────
 
 def get_icon(input_path, preview=True, debug=False):
     """
-    Extract the icon/thumbnail for *input_path* and return as a 256x256 PIL RGBA Image.
+    Extract the icon/thumbnail for *input_path* and return as a 256×256 PIL RGBA Image.
 
-    input_path can be:
-      - Real file path  (.exe, .dll, .lnk, .pdf, .py, .ini, any type ...)
-      - Real folder path  (special folders like Downloads get unique icons)
-      - Extension string  (".pdf", ".mp3", "docx" ...)
-      - "<folder>"        -> generic folder icon
-      - ""                -> generic unknown-file icon
+    input_path can be a real file, real folder, extension string (".pdf"),
+    "<folder>" for a generic folder icon, or "" for a generic unknown-file icon.
 
-    preview=True (default): image/video/svg/pdf files return a thumbnail.
-    preview=False: always return the file type icon.
-    debug=True: print detailed trace of every resolution attempt.
+    preview=True  : image/video/svg/pdf files return a content thumbnail.
+    preview=False : always return the file-type icon.
+    debug=True    : print detailed trace of every resolution attempt.
     """
     global _DEBUG
     _DEBUG = debug
@@ -171,8 +306,8 @@ def get_icon(input_path, preview=True, debug=False):
     hicon, size, is_pil = _resolve(input_path, preview)
     try:
         if is_pil:
-            _dbg("result: PIL Image 256x256")
-            return hicon
+            _dbg("result: PIL Image 256×256")
+            return hicon                        # already a PIL Image from preview path
         _dbg("result: HICON={} size={}px -> rendering".format(hicon, size))
         img = _hicon_to_pil(hicon, size)
         win32gui.DestroyIcon(hicon)
@@ -186,11 +321,106 @@ def get_icon(input_path, preview=True, debug=False):
         raise
 
 
-def extract_icon(input_path, output_path, preview=True, debug=False):
+def get_icon_info(input_path, preview=True, debug=False):
     """
-    Extract the icon/thumbnail for *input_path* and save as PNG to *output_path*.
+    Extract the icon/thumbnail for *input_path* and return a rich info dict.
+
+    The dict contains all filesystem metadata plus the image — see the module
+    docstring (_ICON_INFO_FIELDS) for the full list of keys.  The 'image' key
+    holds a 256×256 PIL RGBA Image; no files are written.
+
+    Parameters
+    ----------
+    input_path : str
+        Anything accepted by get_icon().
+    preview : bool
+        True (default) returns content thumbnails for image/video/pdf/svg.
+    debug : bool
+        Print detailed resolution trace.
+
+    Returns
+    -------
+    dict
     """
-    get_icon(input_path, preview=preview, debug=debug).save(output_path, "PNG")
+    global _DEBUG
+    _DEBUG = debug
+    _ensure_com()
+    _dbg("get_icon_info({!r}, preview={})".format(input_path, preview))
+
+    hicon, size, is_pil = _resolve(input_path, preview)
+    try:
+        if is_pil:
+            img = hicon   # already PIL from preview path
+        else:
+            img = _hicon_to_pil(hicon, size)
+            win32gui.DestroyIcon(hicon)
+    except Exception:
+        if not is_pil:
+            try:
+                win32gui.DestroyIcon(hicon)
+            except Exception:
+                pass
+        raise
+
+    return _build_info_dict(input_path, img, is_pil)
+
+
+def extract_icon(input_path, output_path=None, preview=True, debug=False,
+                 return_info=False):
+    """
+    Extract the icon/thumbnail for *input_path*.
+
+    Behaviour depends on *output_path* and *return_info*:
+
+    output_path=None (omitted)
+        → Returns an info dict (see _ICON_INFO_FIELDS).  No file is written.
+          Equivalent to get_icon_info().
+
+    output_path given, return_info=False (default)
+        → Saves PNG to *output_path*.  Returns None.
+          Original behaviour, fully backwards-compatible.
+
+    output_path given, return_info=True
+        → Saves PNG to *output_path* AND returns the info dict.
+
+    Parameters
+    ----------
+    input_path  : str
+    output_path : str or None
+    preview     : bool
+    debug       : bool
+    return_info : bool
+        Force dict return even when output_path is provided.
+
+    Returns
+    -------
+    None | dict
+    """
+    global _DEBUG
+    _DEBUG = debug
+    _ensure_com()
+
+    hicon, size, is_pil = _resolve(input_path, preview)
+    try:
+        if is_pil:
+            img = hicon
+        else:
+            img = _hicon_to_pil(hicon, size)
+            win32gui.DestroyIcon(hicon)
+    except Exception:
+        if not is_pil:
+            try:
+                win32gui.DestroyIcon(hicon)
+            except Exception:
+                pass
+        raise
+
+    if output_path is not None:
+        img.save(output_path, "PNG")
+
+    if output_path is None or return_info:
+        return _build_info_dict(input_path, img, is_pil)
+    return None
 
 
 # ── Dispatcher ────────────────────────────────────────────────────────────────
@@ -234,7 +464,7 @@ def _resolve(input_path, preview):
         hicon, size = _best_file_icon(input_path)
         return hicon, size, False
 
-    # Bare extension or unrecognised path — always try extension lookup
+    # Bare extension or unrecognised path
     _, ext = os.path.splitext(input_path)
     candidate = (ext or input_path).strip()
     if candidate and not candidate.startswith("."):
@@ -265,6 +495,12 @@ def _get_preview(path, ext):
                ".m4v", ".mpg", ".mpeg", ".3gp", ".ts", ".mts", ".m2ts"}:
         _dbg("  preview: trying video frame grab")
         try:
+            # fix for cv2 dlls
+            python_root = Path(sys.prefix)
+            os.add_dll_directory(str(python_root))
+            os.add_dll_directory(str(python_root / "DLLs"))
+            os.add_dll_directory(str(python_root / "Lib" / "site-packages" / "cv2"))
+
             import cv2
             cap = cv2.VideoCapture(path, cv2.CAP_FFMPEG)
             cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
@@ -305,7 +541,6 @@ def _get_preview(path, ext):
 
 
 def _pdf_preview(path):
-    # Shell thumbnail provider first (PowerToys PDF, Adobe, etc.)
     _dbg("    pdf: trying shell thumbnail provider")
     img = _shell_thumbnail(path, require_thumbnail=True)
     if img is not None:
@@ -313,7 +548,7 @@ def _pdf_preview(path):
         return img
     _dbg("    pdf: shell thumbnail failed, falling back to pymupdf")
     try:
-        import fitz  # pip install pymupdf
+        import fitz
         _dbg("    pdf: using pymupdf")
         doc  = fitz.open(path)
         page = doc[0]
@@ -325,7 +560,7 @@ def _pdf_preview(path):
         _dbg("    pdf: pymupdf failed:", e)
 
     try:
-        from pdf2image import convert_from_path  # pip install pdf2image + poppler
+        from pdf2image import convert_from_path
         _dbg("    pdf: using pdf2image")
         pages = convert_from_path(path, dpi=72, first_page=1, last_page=1)
         if pages:
@@ -356,18 +591,6 @@ def _find_inkscape():
 
 
 def _svg_preview(path):
-    """
-    SVG renderer priority:
-    1. Shell thumbnail provider (IShellItemImageFactory) — uses whatever Windows
-       Explorer uses, e.g. PowerToys SVG Viewer if installed. Same quality/speed
-       as Explorer thumbnails. Requires COM STA (already initialised by _ensure_com).
-    2. Inkscape CLI  (path cached after first call; startup cost ~0.5-1s per call,
-       which is an OS-level fixed cost of spawning the process — unavoidable)
-    3. svglib + reportlab
-    4. cairosvg
-    5. aggdraw pure-Python rasteriser
-    """
-    # ── Shell thumbnail provider (PowerToys SVG Viewer, etc.) ─────────────────
     img = _shell_thumbnail(path, require_thumbnail=False)
     if img is not None:
         _dbg("    svg: shell thumbnail provider succeeded")
@@ -431,7 +654,6 @@ def _svg_preview(path):
 
 
 def _svg_via_aggdraw(path):
-    """Minimal SVG rasteriser using aggdraw — pip install aggdraw"""
     import aggdraw
     import xml.etree.ElementTree as ET
     import re
@@ -526,18 +748,8 @@ def _svg_via_aggdraw(path):
 
 
 def _shell_thumbnail(path, require_thumbnail=True):
-    """
-    IShellItemImageFactory::GetImage — the same API Explorer uses for thumbnails.
-    If PowerToys SVG Viewer (or any other thumbnail provider) is installed, this
-    will use it automatically for the appropriate file types.
-
-    require_thumbnail=True:  only succeed if a real thumbnail exists (SIIGBF_THUMBNAILONLY=0x2)
-    require_thumbnail=False: fall back to type icon if no thumbnail (SIIGBF_RESIZETOFIT=0x0)
-    """
     _dbg("  shell_thumbnail path={!r} require={}".format(path, require_thumbnail))
     try:
-        # IID_IShellItemImageFactory {BCC18B79-BA16-442F-80C4-8A59C30C463B}
-        # Little-endian: Data1 BCC18B79->79 8B C1 BC, Data2 BA16->16 BA, Data3 442F->2F 44
         IID_SIIF = (ctypes.c_byte * 16)(
             0x79, 0x8B, 0xC1, 0xBC, 0x16, 0xBA, 0x2F, 0x44,
             0x80, 0xC4, 0x8A, 0x59, 0xC3, 0x0C, 0x46, 0x3B,
@@ -555,21 +767,19 @@ def _shell_thumbnail(path, require_thumbnail=True):
 
         flags = 0x2 if require_thumbnail else 0x0
         sz    = SIZE(256, 256)
-        hbmp  = ctypes.c_size_t()  # pointer-sized; wintypes.HANDLE would truncate on 64-bit
+        hbmp  = ctypes.c_size_t()
 
         vtbl = ctypes.cast(factory, ctypes.POINTER(ctypes.c_void_p)).contents.value
         vptr = ctypes.cast(ctypes.c_void_p(vtbl), ctypes.POINTER(ctypes.c_void_p))
 
-        # vtable slot 3 = GetImage (after QI=0, AddRef=1, Release=2)
         GetImage = ctypes.WINFUNCTYPE(
             ctypes.HRESULT, ctypes.c_void_p, SIZE, ctypes.c_uint,
-            ctypes.POINTER(ctypes.c_size_t),  # HBITMAP* — c_size_t not HANDLE
+            ctypes.POINTER(ctypes.c_size_t),
         )(ctypes.cast(ctypes.c_void_p(vptr[3]), ctypes.c_void_p).value)
 
         hr = GetImage(factory, sz, flags, ctypes.byref(hbmp))
         _dbg("    GetImage hr={} hbmp={}".format(hr, hbmp.value))
 
-        # Release the factory
         Release = ctypes.WINFUNCTYPE(ctypes.c_ulong, ctypes.c_void_p)(
             ctypes.cast(ctypes.c_void_p(vptr[2]), ctypes.c_void_p).value
         )
@@ -578,11 +788,8 @@ def _shell_thumbnail(path, require_thumbnail=True):
         if hr != 0 or not hbmp.value:
             return None
 
-        # Convert HBITMAP -> PIL Image via GetDIBits (preserves alpha channel).
-        # BitBlt+SRCCOPY loses alpha; GetDIBits with BI_RGB on a 32bpp DIB
-        # gives us the raw BGRA bytes including the alpha plane.
         hbmp_int = int(hbmp.value)
-        w, h = 256, 256  # we requested 256x256 above
+        w, h = 256, 256
 
         class BITMAPINFOHEADER(ctypes.Structure):
             _fields_ = [
@@ -602,17 +809,17 @@ def _shell_thumbnail(path, require_thumbnail=True):
         bih = BITMAPINFOHEADER()
         bih.biSize        = ctypes.sizeof(BITMAPINFOHEADER)
         bih.biWidth       = w
-        bih.biHeight      = -h   # negative = top-down
+        bih.biHeight      = -h
         bih.biPlanes      = 1
         bih.biBitCount    = 32
-        bih.biCompression = 0    # BI_RGB
+        bih.biCompression = 0
 
-        buf = (ctypes.c_byte * (w * h * 4))()
+        buf   = (ctypes.c_byte * (w * h * 4))()
         hdc_s = win32gui.GetDC(0)
         hdc   = win32ui.CreateDCFromHandle(hdc_s)
         rows  = ctypes.windll.gdi32.GetDIBits(
             hdc.GetSafeHdc(), hbmp_int, 0, h, buf,
-            ctypes.byref(bih), 0,  # DIB_RGB_COLORS
+            ctypes.byref(bih), 0,
         )
         hdc.DeleteDC()
         win32gui.ReleaseDC(0, hdc_s)
@@ -623,40 +830,28 @@ def _shell_thumbnail(path, require_thumbnail=True):
             return None
 
         import numpy as np
-        arr = np.frombuffer(bytes(buf), dtype=np.uint8).reshape(h, w, 4).copy()
-        # arr is BGRA. Shell thumbnail HBITMAPs come in two flavours:
-        #   A) Premultiplied BGRA (PBGRA) — alpha channel has real values
-        #   B) BI_RGB 32bpp — alpha byte is always 0, RGB is opaque
-        # Detect case B: if every alpha byte is 0 but RGB has non-zero data,
-        # treat as fully opaque (set alpha=255, no un-premultiply needed).
+        arr           = np.frombuffer(bytes(buf), dtype=np.uint8).reshape(h, w, 4).copy()
         alpha_channel = arr[:, :, 3]
         rgb_channel   = arr[:, :, :3]
         _dbg("    bitmap alpha min={} max={} rgb_max={}".format(
             int(alpha_channel.min()), int(alpha_channel.max()), int(rgb_channel.max())))
         if alpha_channel.max() == 0:
             if rgb_channel.max() > 0:
-                # Case B: opaque RGB, zero alpha byte — force alpha=255
                 _dbg("    bitmap: zero-alpha detected, treating as opaque RGB")
                 arr[:, :, 3] = 255
-            # else: all zeros = blank image, just pass through
         else:
-            # Case A: premultiplied alpha — un-premultiply
-            a = alpha_channel.astype(np.float32) / 255.0
+            a    = alpha_channel.astype(np.float32) / 255.0
             mask = a > 0
             for c in range(3):
-                channel = arr[:, :, c].astype(np.float32)
+                channel       = arr[:, :, c].astype(np.float32)
                 channel[mask] = np.clip(channel[mask] / a[mask], 0, 255)
-                arr[:, :, c] = channel.astype(np.uint8)
-        # reorder BGRA -> RGBA
+                arr[:, :, c]  = channel.astype(np.uint8)
         arr = arr[:, :, [2, 1, 0, 3]]
         img = Image.fromarray(arr.astype(np.uint8))
 
-        # Sanity check: if the result is almost entirely black+opaque, the thumbnail
-        # provider returned garbage (seen with PowerToys SVG on some files).
-        # Detect by checking if >98% of opaque pixels have RGB < 8.
         opaque = arr[:, :, 3] > 128
         if opaque.sum() > 0:
-            dark = ((arr[:, :, 0] < 8) & (arr[:, :, 1] < 8) & (arr[:, :, 2] < 8) & opaque)
+            dark       = ((arr[:, :, 0] < 8) & (arr[:, :, 1] < 8) & (arr[:, :, 2] < 8) & opaque)
             dark_ratio = dark.sum() / opaque.sum()
             _dbg("    bitmap dark_ratio={:.3f}".format(float(dark_ratio)))
             if dark_ratio > 0.98:
@@ -844,12 +1039,6 @@ def _parse_lnk_binary(lnk_path):
 # ── Core icon extraction ──────────────────────────────────────────────────────
 
 def _best_file_icon(path, index=0):
-    """
-    Extract the best available icon from a real file path.
-    Tries PrivateExtractIcons first (works for exe/dll/ico with embedded resources),
-    then falls back to the shell image list (works for everything else — the shell
-    knows the icon for every registered file type).
-    """
     _dbg("  _best_file_icon: {} idx={}".format(path, index))
     h1, s1 = _private_extract(path, index)
     _dbg("    PrivateExtract: h={} s={}".format(h1, s1))
@@ -886,20 +1075,11 @@ def _best_file_icon(path, index=0):
 
 
 def _extension_icon(ext):
-    """
-    Get the icon for a file extension without needing a real file.
-    Works for any extension — known or unknown — by asking the shell.
-    Priority: registry source binary > shell image list > SHGetFileInfo.
-    """
     _dbg("  _extension_icon: {}".format(ext))
 
-    # 1. Registry: find the actual source binary and extract from it directly.
-    #    This gives us the app's own high-res icon rather than the shell's cached copy.
     h1, s1 = _registry_icon(ext)
     _dbg("    registry result: h={} s={}".format(h1, s1))
 
-    # 2. Shell image list: ask the shell what icon it shows for this extension.
-    #    Uses USEFILEATTRIBUTES so no real file needed. Works for ANY extension.
     fake   = "C:\\fakefile{}".format(ext)
     h2, s2 = _imagelist_icon(fake, FILE_ATTRIBUTE_NORMAL, use_attrs=True)
     _dbg("    imagelist (fake) result: h={} s={}".format(h2, s2))
@@ -915,18 +1095,12 @@ def _extension_icon(ext):
     if h2:
         return h2, s2
 
-    # 3. Last resort: SHGetFileInfo direct icon (always 32px but never fails)
     hicon = _shgetfileinfo_icon(fake, FILE_ATTRIBUTE_NORMAL, use_attrs=True)
     _dbg("    shgetfileinfo fallback: h={}".format(hicon))
     return (hicon, 32) if hicon else (0, 0)
 
 
 def _registry_icon(ext):
-    """
-    Walk HKCR to find the registered app's icon source binary for this extension.
-    Skips UWP/ms-resource:// strings (not real file paths).
-    Returns (hicon, size) or (0, 0).
-    """
     import winreg
 
     def rget(subkey, value_name=""):
@@ -1047,35 +1221,16 @@ def _get_comctl32():
     global _comctl32
     if _comctl32 is None:
         _comctl32 = ctypes.windll.comctl32
-        # Set argtypes once so the HANDLE return is always correct width
-        # c_size_t is pointer-sized; wintypes.HANDLE is always 32-bit and
-        # truncates 64-bit HICONs on 64-bit Windows.
         _comctl32.ImageList_GetIcon.restype  = ctypes.c_size_t
         _comctl32.ImageList_GetIcon.argtypes = [
-            ctypes.c_void_p,  # himl
-            ctypes.c_int,     # i
-            ctypes.c_uint,    # flags
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_uint,
         ]
     return _comctl32
 
 
 def _imagelist_icon(path, file_attributes, use_attrs=False):
-    """
-    Get icon via SHGetFileInfo (icon index) + SHGetImageList + ImageList_GetIcon.
-
-    KEY DESIGN NOTE — size reporting
-    ---------------------------------
-    Icons from the shell image list report their size as the LIST's nominal size,
-    NOT as the HICON bitmap dimensions. This is because ImageList_GetIcon returns
-    a handle to a shell-managed icon object whose embedded bitmap header may still
-    say 32x32 even when the list is a 256px JUMBO list. We therefore return the
-    NOMINAL size (256/48/32) directly rather than calling _icon_size() on the handle.
-
-    This is why .vbs and other shell-only icons previously appeared as 32x32 in the
-    top-left corner: _icon_size() measured the HICON header and returned 32, which
-    was then used as the DrawIconEx target size, scaling the 256px icon down to 32px
-    and leaving it stranded in the top-left of the 256x256 canvas.
-    """
     try:
         shfi  = SHFILEINFO()
         flags = SHGFI_SYSICONINDEX | SHGFI_LARGEICON
@@ -1093,7 +1248,6 @@ def _imagelist_icon(path, file_attributes, use_attrs=False):
         icon_index = shfi.iIcon
         comctl32   = _get_comctl32()
 
-        # Try largest lists first; return NOMINAL size, not measured HICON size.
         for shil, nominal_px in [(SHIL_JUMBO, 256), (SHIL_EXTRALARGE, 48), (SHIL_LARGE, 32)]:
             jumbo_himl = ctypes.c_void_p()
             hr = ctypes.windll.shell32.SHGetImageList(
@@ -1105,13 +1259,9 @@ def _imagelist_icon(path, file_attributes, use_attrs=False):
                 hicon = comctl32.ImageList_GetIcon(jumbo_himl.value, icon_index, 0x1)
                 _dbg("    ImageList_GetIcon({}px) -> {}".format(nominal_px, hicon))
                 if hicon:
-                    # Return nominal_px, NOT _icon_size(hicon).
-                    # Shell image list icons have small HICON headers regardless
-                    # of the list size — the full-res image is only realised when drawn.
                     _dbg("    returning nominal size {}px".format(nominal_px))
                     return hicon, nominal_px
 
-        # Last resort: use the HIML from SHGetFileInfo itself (32px large icon list)
         hicon = comctl32.ImageList_GetIcon(himl, icon_index, 0x1)
         _dbg("    ImageList_GetIcon(shfi himl) -> {}".format(hicon))
         if hicon:
@@ -1125,11 +1275,6 @@ def _imagelist_icon(path, file_attributes, use_attrs=False):
 # ── PrivateExtractIcons ───────────────────────────────────────────────────────
 
 def _private_extract(path, index):
-    """
-    Extract icon directly from a file's embedded resources via PrivateExtractIcons.
-    Works for .exe, .dll, .ico files. Returns (hicon, actual_size) or (0, 0).
-    For these handles _icon_size() IS reliable because the bitmap is ours.
-    """
     for size in [256, 128, 64, 48, 32]:
         hicon  = ctypes.wintypes.HANDLE(0)
         hidx   = ctypes.wintypes.UINT(0)
@@ -1145,11 +1290,6 @@ def _private_extract(path, index):
 
 
 def _icon_size(hicon):
-    """
-    Measure the actual bitmap width of an HICON.
-    Reliable for PrivateExtractIcons handles.
-    NOT reliable for ImageList_GetIcon handles (always returns 32 regardless of list size).
-    """
     try:
         info = win32gui.GetIconInfo(hicon)
         hbm  = info[4] or info[3]
@@ -1181,12 +1321,6 @@ def _hicon_to_pil(hicon, size):
     ):
         raise RuntimeError("Invalid icon handle: {}".format(hicon))
 
-    # Always draw at 256 into a 256x256 canvas.
-    # For icons that only exist at 32px (e.g. .vbs), the JUMBO imagelist stores
-    # the 32px image in the top-left corner of a 256px slot — DrawIconEx draws
-    # it at (0,0) at its native 32px size and leaves the rest transparent.
-    # We detect this by finding the non-transparent content bounding box after
-    # rendering, then crop to it and nearest-neighbour upscale to 256x256.
     draw_size = 256
     _dbg("  _hicon_to_pil: nominal={} draw={}".format(size, draw_size))
 
@@ -1207,15 +1341,9 @@ def _hicon_to_pil(hicon, size):
     win32gui.ReleaseDC(0, hdc_s)
     win32gui.DeleteObject(bmp.GetHandle())
 
-    # Detect small-icon-in-corner.
-    # GetBitmapBits on a DC-compatible bitmap gives BGR with alpha=0 for all pixels,
-    # so getbbox() (which checks alpha) always returns None. Instead we detect
-    # non-black content by looking at the RGB channels directly.
-    # Split into R,G,B,A and find the bounding box of pixels where any RGB > 8.
     import numpy as np
     arr = np.frombuffer(raw, dtype=np.uint8).reshape(draw_size, draw_size, 4)
-    # BGRA layout from GetBitmapBits
-    rgb_max = arr[:, :, :3].max(axis=2)  # max of B,G,R per pixel
+    rgb_max = arr[:, :, :3].max(axis=2)
     rows_with_content = np.any(rgb_max > 8, axis=1)
     cols_with_content = np.any(rgb_max > 8, axis=0)
     if rows_with_content.any():
@@ -1227,23 +1355,19 @@ def _hicon_to_pil(hicon, size):
         content_h = bottom - top
         _dbg("  _hicon_to_pil: content box=({},{},{},{}) size={}x{}".format(
             left, top, right, bottom, content_w, content_h))
-        # If content is small and starts at the top-left, it is a 32px icon
-        # drawn into the top-left corner of a 256px imagelist slot.
-        # Crop it out and nearest-neighbour upscale to 256x256.
         if content_w <= 56 and content_h <= 56 and left <= 8 and top <= 8:
-            # Crop to a square region so NEAREST resize doesn't stretch.
-            # Expand the shorter dimension symmetrically around the content centre.
             sq = max(content_w, content_h)
             cx = (left + right) // 2
             cy = (top + bottom) // 2
-            half = (sq + 1) // 2
+            half      = (sq + 1) // 2
             sq_left   = max(0, cx - half)
             sq_top    = max(0, cy - half)
             sq_right  = min(draw_size, sq_left + sq)
             sq_bottom = min(draw_size, sq_top  + sq)
-            _dbg("  _hicon_to_pil: upscaling {}x{} stamp (sq crop {},{},{},{}) -> 256x256".format(
-                content_w, content_h, sq_left, sq_top, sq_right, sq_bottom))
-            img = img.crop((sq_left, sq_top, sq_right, sq_bottom)).resize((256, 256), Image.NEAREST)
+            _dbg("  _hicon_to_pil: upscaling {}x{} stamp -> 256x256".format(
+                content_w, content_h))
+            img = img.crop((sq_left, sq_top, sq_right, sq_bottom)).resize(
+                (256, 256), Image.NEAREST)
     else:
         _dbg("  _hicon_to_pil: no content detected (blank icon)")
 
@@ -1251,26 +1375,8 @@ def _hicon_to_pil(hicon, size):
 
 
 
-# ── Batch / folder / priority-queue helpers ───────────────────────────────────
-
-# Cost tiers — lower number = faster/cheaper.
-# Used to sort work items so the cheapest extractions run first.
-_COST = {
-    # Tier 0: pure registry/imagelist lookup — instant, no I/O beyond shell
-    "icon":    0,
-    # Tier 1: single-file read (PIL, ico, registry icon binary)
-    "image":   1,
-    # Tier 2: video frame grab (cv2, needs file seek)
-    "video":   2,
-    # Tier 3: heavy render (PDF, SVG via Inkscape, HDR/EXR)
-    "render":  3,
-}
 
 def _path_cost(path):
-    """
-    Estimate the extraction cost tier for a given path.
-    Cheaper paths sort earlier (lower number).
-    """
     if not path or path == "<folder>":
         return _COST["icon"]
     if os.path.isdir(path):
@@ -1283,36 +1389,39 @@ def _path_cost(path):
         return _COST["video"]
     if ext in {".pdf", ".svg", ".hdr", ".exr"}:
         return _COST["render"]
-    # Extension-only lookup or associated extension — shell imagelist, cheap
     return _COST["icon"]
 
 
 def get_folder_icons(folder_path, preview=True, debug=False,
-                     recursive=False, output_dir=None):
+                     recursive=False, output_dir=None,
+                     return_info=False):
     """
     Extract icons/thumbnails for every item directly inside *folder_path*.
-
-    Items are processed cheapest-first (shell icon lookups before heavy
-    renders like PDF/SVG/video).
+    Items are processed cheapest-first.
 
     Parameters
     ----------
     folder_path : str
-        Directory to scan.
-    preview : bool
-        Passed through to get_icon().
-    debug : bool
-        Passed through to get_icon().
-    recursive : bool
-        If True, also scan subdirectories (non-recursively one level deep —
-        subdirs themselves are included as folder icons, not expanded further).
-    output_dir : str or None
-        If given, each icon is saved as <output_dir>/<item_name>.png.
-        If None, returns a dict of {path: PIL Image}.
+    preview     : bool
+    debug       : bool
+    recursive   : bool
+        Subdirectories are included as folder icons (not expanded).
+    output_dir  : str or None
+        If given and *return_info* is False, PNGs are saved here.
+        Ignored when *return_info* is True.
+    return_info : bool
+        False (default): values in the returned dict are PIL Images.
+            If *output_dir* is also given, images are saved as PNGs and
+            the dict is empty (original behaviour).
+        True: values are info dicts (see _ICON_INFO_FIELDS).
+            *output_dir* is ignored — no files are written.
 
     Returns
     -------
-    dict {str: PIL.Image.Image}  (empty if output_dir is given and save succeeds)
+    dict
+        return_info=False, no output_dir : {path: PIL.Image.Image}
+        return_info=False, output_dir    : {}  (files saved, dict empty)
+        return_info=True                 : {path: info_dict}
     """
     global _DEBUG
     _DEBUG = debug
@@ -1321,24 +1430,35 @@ def get_folder_icons(folder_path, preview=True, debug=False,
     if not os.path.isdir(folder_path):
         raise ValueError("Not a directory: {!r}".format(folder_path))
 
-    entries = []
-    for name in os.listdir(folder_path):
-        full = os.path.join(folder_path, name)
-        entries.append(full)
-
-    # Sort cheapest first
-    entries.sort(key=_path_cost)
+    entries = sorted(os.listdir(folder_path), key=lambda n: _path_cost(
+        os.path.join(folder_path, n)))
+    entries = [os.path.join(folder_path, n) for n in entries]
 
     results = {}
     for path in entries:
         try:
-            img = get_icon(path, preview=preview, debug=debug)
-            if output_dir:
+            hicon, size, is_pil = _resolve(path, preview)
+            try:
+                img = hicon if is_pil else _hicon_to_pil(hicon, size)
+                if not is_pil:
+                    win32gui.DestroyIcon(hicon)
+            except Exception:
+                if not is_pil:
+                    try:
+                        win32gui.DestroyIcon(hicon)
+                    except Exception:
+                        pass
+                raise
+
+            if return_info:
+                results[path] = _build_info_dict(path, img, is_pil)
+            elif output_dir:
                 os.makedirs(output_dir, exist_ok=True)
                 out = os.path.join(output_dir, os.path.basename(path) + ".png")
                 img.save(out, "PNG")
             else:
                 results[path] = img
+
         except Exception as e:
             _dbg("get_folder_icons: SKIP {!r}: {}".format(path, e))
 
@@ -1347,18 +1467,7 @@ def get_folder_icons(folder_path, preview=True, debug=False,
 
 def sort_by_cost(paths):
     """
-    Given a list of file/folder paths (or extension strings like ".pdf"),
-    return a new list sorted from least intensive to most intensive extraction.
-
-    Useful for planning batch work before calling extract_icon() on each item.
-
-    Parameters
-    ----------
-    paths : list[str]
-
-    Returns
-    -------
-    list[str]  — same paths, sorted cheapest-first
+    Return *paths* sorted from least-intensive to most-intensive extraction.
     """
     return sorted(paths, key=_path_cost)
 
@@ -1372,17 +1481,25 @@ class IconQueue:
     Higher *priority* values within the same cost tier are processed first.
 
     Usage
+    -----
     q = IconQueue()
     q.add(r"C:\folder\file.py")
-    q.add(r"C:\folder\movie.mp4")   # will be processed after .py
-    q.add(r"C:\folder\logo.svg")    # most expensive, runs last
-    q.add(r"C:\folder\urgent.ini", priority=10)  # bumped up
+    q.add(r"C:\folder\movie.mp4")         # processed after .py
+    q.add(r"C:\folder\logo.svg")          # most expensive, last
+    q.add(r"C:\folder\urgent.ini", priority=10)
 
-    for path, img in q.process(preview=True, debug=False):
+    # Yields (path, PIL Image):
+    for path, img in q.process(preview=True):
         print(path, img.size)
+
+    # Yields (path, info dict):
+    for path, info in q.process(preview=True, return_info=True):
+        print(info["name"], info["size"], info["date_modified"])
+        info["image"].show()
     """
+
     def __init__(self):
-        self._items = []   # list of (cost, -priority, insertion_order, path)
+        self._items   = []
         self._counter = 0
 
     def add(self, path, priority=0):
@@ -1391,43 +1508,47 @@ class IconQueue:
 
         Parameters
         ----------
-        path : str
-            File, folder, or extension string accepted by get_icon().
-        priority : int
-            Higher values are processed first within the same cost tier.
-            Default 0.
+        path     : str   file, folder, or extension string
+        priority : int   higher values run first within the same cost tier
         """
-        cost = _path_cost(path)
-        # heapq is a min-heap: use -priority so higher priority sorts first,
-        # and insertion order as tiebreaker for stable ordering.
         import heapq
+        cost = _path_cost(path)
         heapq.heappush(self._items, (cost, -priority, self._counter, path))
         self._counter += 1
 
     def add_many(self, paths, priority=0):
-        """Add multiple paths at once with the same priority."""
+        """Add multiple paths with the same priority."""
         for p in paths:
             self.add(p, priority=priority)
 
     def peek_order(self):
         """
-        Return the current processing order as a list of (path, cost, priority)
+        Return the planned processing order as a list of (path, cost, priority)
         without consuming any items.
         """
-        return [
-            (item[3], item[0], -item[1])
-            for item in sorted(self._items)
-        ]
+        return [(item[3], item[0], -item[1]) for item in sorted(self._items)]
 
     def __len__(self):
         return len(self._items)
 
-    def process(self, preview=True, debug=False):
+    def process(self, preview=True, debug=False, return_info=False):
         """
         Process all queued items cheapest/highest-priority first.
 
-        Yields (path, PIL.Image.Image) for each successful extraction.
-        Failed items are skipped with a debug log.
+        Parameters
+        ----------
+        preview     : bool
+        debug       : bool
+        return_info : bool
+            False (default): yields (path, PIL.Image.Image)
+            True:            yields (path, info_dict)
+                             info_dict contains all filesystem metadata plus
+                             the PIL image under the 'image' key.
+
+        Yields
+        ------
+        (str, PIL.Image.Image)   if return_info=False
+        (str, dict)              if return_info=True
 
         The queue is empty after this call.
         """
@@ -1436,66 +1557,163 @@ class IconQueue:
         while self._items:
             cost, neg_pri, _order, path = heapq.heappop(self._items)
             try:
-                img = get_icon(path, preview=preview, debug=debug)
-                yield path, img
+                hicon, size, is_pil = _resolve(path, preview)
+                try:
+                    img = hicon if is_pil else _hicon_to_pil(hicon, size)
+                    if not is_pil:
+                        win32gui.DestroyIcon(hicon)
+                except Exception:
+                    if not is_pil:
+                        try:
+                            win32gui.DestroyIcon(hicon)
+                        except Exception:
+                            pass
+                    raise
+
+                if return_info:
+                    yield path, _build_info_dict(path, img, is_pil)
+                else:
+                    yield path, img
+
             except Exception as e:
                 _dbg("IconQueue.process: SKIP {!r}: {}".format(path, e))
 
-    def process_to_dir(self, output_dir, preview=True, debug=False):
+    def process_to_dir(self, output_dir, preview=True, debug=False,
+                       return_info=False):
         """
         Process all queued items and save PNGs to *output_dir*.
-        Returns a list of output paths for successfully saved files.
+
+        Parameters
+        ----------
+        output_dir  : str
+        preview     : bool
+        debug       : bool
+        return_info : bool
+            False (default): saves PNGs, returns list[str] of saved paths.
+            True:            saves PNGs AND returns {path: info_dict}.
+                             The info dict includes the PIL image in 'image'.
+
+        Returns
+        -------
+        list[str]               if return_info=False
+        dict {str: info_dict}   if return_info=True
         """
         os.makedirs(output_dir, exist_ok=True)
-        saved = []
-        for path, img in self.process(preview=preview, debug=debug):
-            name = os.path.basename(path) or path.strip(".\/") or "icon"
-            out = os.path.join(output_dir, name + ".png")
+        saved   = []
+        infos   = {}
+        for path, result in self.process(preview=preview, debug=debug,
+                                         return_info=return_info):
+            if return_info:
+                img  = result["image"]
+                info = result
+            else:
+                img  = result
+
+            name = os.path.basename(path) or path.strip(".\\/") or "icon"
+            out  = os.path.join(output_dir, name + ".png")
             img.save(out, "PNG")
             saved.append(out)
-        return saved
+            if return_info:
+                infos[path] = info
+
+        return infos if return_info else saved
 
 
-if __name__ == "__main__":
-    tests = [
-        (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\CLITools\Everything-1.4.1.1030.x64", "Everything-1.4.1.1030.x64.png"),
-        (r"C:\Users\nicho\Downloads\Library\weapons\firearms\manuals\thompson_tommy_full_auto_1927.pdf", "thompson_tommy_full_auto_1927.png"),
-        (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\Movies\psychedelic.mp4", "psychedelic.png"),
-        (r"C:\Users\nicho\Downloads", "Downloads.png"),
-        (r"C:\Windows\system32\notepad.exe", "notepad.png"),
-        (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\Scripts\input_devices.py", "input_devices.png"),
-        (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\Scripts\cli.pyi", "cli.png"),
-        (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Starcel9.sln", "Starcel9.png"),
-        (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\README.md", "README.png"),
-        (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Images\duck.png", "duck.png"),
-        (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Images\duck.hdr", "duck_hdr.png"),
-        (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Images\StarcelUE5-old\favicon.ico", "favicon.png"),
-        (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Images\StarcelUE5-old\pbr.gif", "pbr.png"),
-        (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Images\branding\logo.svg", "logo.png"),
-        (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\CLITools\Everything-1.4.1.1030.x64\everything.exe", "everything.png"),
-        (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\CLITools\Everything-1.4.1.1030.x64\everything-startup.vbs", "everything-startup.png"),
-        (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\CLITools\Everything-1.4.1.1030.x64\Everything.lng", "Everything_lng.png"),
-        (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\CLITools\Everything-1.4.1.1030.x64\Everything.ini", "Everything_ini.png"),
-        (r"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\everything.lnk", "everything_lnk.png"),
-        (r"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\WSL.lnk", "WSL.png"),
-        (r"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Visual Studio Installer.lnk", "Visual_Studio_Installer.png"),
-        (r"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Immersive Control Panel.lnk", "Immersive_Control_Panel.png"),
-        (r"C:\Users\nicho\Downloads\projectMSDL-Windows-x64-2.0-pre3\projectMSDL\textures\sunrise.jpg", "sunrise.png"),
-        (r"C:\Users\nicho\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\everything-startup.lnk", "branding.png"),
-    ]
-    # for path, out in tests:
-    #     try:
-    #         extract_icon(path, out, debug=True)
-    #         print("OK:", out)
-    #     except Exception as e:
-    #         print("FAIL:", out, "->", e)
+# ── __main__ demo ─────────────────────────────────────────────────────────────
+#
+# if __name__ == "__main__":
+#     tests = [
+#         (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\CLITools\Everything-1.4.1.1030.x64", "Everything-1.4.1.1030.x64.png"),
+#         (r"C:\Users\nicho\Downloads\Library\weapons\firearms\manuals\thompson_tommy_full_auto_1927.pdf", "thompson_tommy_full_auto_1927.png"),
+#         (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\Movies\psychedelic.mp4", "psychedelic.png"),
+#         (r"C:\Users\nicho\Downloads", "Downloads.png"),
+#         (r"C:\Windows\system32\notepad.exe", "notepad.png"),
+#         (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\Scripts\input_devices.py", "input_devices.png"),
+#         (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\Scripts\cli.pyi", "cli.png"),
+#         (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Starcel9.sln", "Starcel9.png"),
+#         (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\README.md", "README.png"),
+#         (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Images\duck.png", "duck.png"),
+#         (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Images\duck.hdr", "duck_hdr.png"),
+#         (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Images\StarcelUE5-old\favicon.ico", "favicon.png"),
+#         (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Images\StarcelUE5-old\pbr.gif", "pbr.png"),
+#         (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Images\branding\logo.svg", "logo.png"),
+#         (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\CLITools\Everything-1.4.1.1030.x64\everything.exe", "everything.png"),
+#         (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\CLITools\Everything-1.4.1.1030.x64\everything-startup.vbs", "everything-startup.png"),
+#         (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\CLITools\Everything-1.4.1.1030.x64\Everything.lng", "Everything_lng.png"),
+#         (r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\CLITools\Everything-1.4.1.1030.x64\Everything.ini", "Everything_ini.png"),
+#         (r"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\everything.lnk", "everything_lnk.png"),
+#         (r"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\WSL.lnk", "WSL.png"),
+#         (r"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Visual Studio Installer.lnk", "Visual_Studio_Installer.png"),
+#         (r"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Immersive Control Panel.lnk", "Immersive_Control_Panel.png"),
+#         (r"C:\Users\nicho\Downloads\projectMSDL-Windows-x64-2.0-pre3\projectMSDL\textures\sunrise.jpg", "sunrise.png"),
+#         (r"C:\Users\nicho\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\everything-startup.lnk", "branding.png"),
+#     ]
+#
+#     # ── Original save-to-disk mode (unchanged) ────────────────────────────────
+#     for path, out in tests:
+#         try:
+#             extract_icon(path, out, debug=False)
+#             print("OK (save):", out)
+#         except Exception as e:
+#             print("FAIL:", out, "->", e)
+#
+#     print()
+#
+#     # ── Dict-return mode via get_icon_info() ──────────────────────────────────
+#     path = r"C:\Users\nicho\Downloads\Library\weapons\firearms\manuals\thompson_tommy_full_auto_1927.pdf"
+#     info = get_icon_info(path, preview=True)
+#     print("get_icon_info():")
+#     for k, v in info.items():
+#         if k == "image":
+#             print(f"  image       : {v.size} {v.mode}")
+#         else:
+#             print(f"  {k:<15}: {v}")
+#
+#     print()
+#
+#     # ── Dict-return mode via extract_icon(output_path=None) ───────────────────
+#     info2 = extract_icon(path, preview=True)
+#     assert info2["full_path"] == path
+#     print("extract_icon(no output_path) -> dict, keys:", list(info2))
+#
+#     print()
+#
+#     # ── Dict-return mode via extract_icon(output_path=..., return_info=True) ──
+#     info3 = extract_icon(path, "thompson_preview.png", return_info=True)
+#     print("extract_icon(output_path, return_info=True) -> saved + dict")
+#     print("  size:", info3["size"])
+#
+#     print()
+#
+#     # ── IconQueue.process(return_info=True) ───────────────────────────────────
+#     q = IconQueue()
+#     q.add_many([p for p, _ in tests[:4]])
+#     print("Queue process(return_info=True):")
+#     for path, info in q.process(preview=True, return_info=True):
+#         img = info["image"]
+#         print(f"  {info['name']:<40}  {info['size'] or 'dir':<12}  "
+#               f"{'preview' if info['is_preview'] else 'icon':<8}  "
+#               f"{img.size}")
+#
+#     print()
+#
+#     # ── IconQueue.process_to_dir(return_info=True) ────────────────────────────
+#     q2 = IconQueue()
+#     q2.add_many([p for p, _ in tests[:4]])
+#     infos = q2.process_to_dir("icons_out", return_info=True)
+#     print("process_to_dir(return_info=True) -> saved + dict, count:", len(infos))
+#     for path, info in infos.items():
+#         print(f"  {info['name']}  modified={info['date_modified']}")
+#
+#     print()
+#
+#     # ── get_folder_icons(return_info=True) ────────────────────────────────────
+#     folder = r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\CLITools\Everything-1.4.1.1030.x64"
+#     folder_infos = get_folder_icons(folder, preview=False, return_info=True)
+#     print("get_folder_icons(return_info=True), count:", len(folder_infos))
+#     for path, info in folder_infos.items():
+#         print(f"  {info['name']:<40}  {info['extension']:<8}  "
+#               f"{info['size'] or 'dir':<12}  {info['cost_tier']}")
 
-    # q = IconQueue()
-    # q.add(r"C:\folder\logo.svg")  # expensive, runs last
-    # q.add(r"C:\folder\script.py")  # cheap, runs early
-    # q.add(r"C:\folder\urgent.pdf", priority=10)  # expensive but bumped up
-    #
-    # for path, img in q.process(preview=True):
-    #     print(path)
 
-    # get_folder_icons(r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\CLITools", output_dir=r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\Scripts")
+# extract_icon(r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\Movies\psychedelic.mp4", preview=True, return_info=True)["image"].show()

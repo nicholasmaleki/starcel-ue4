@@ -150,7 +150,26 @@ class WorldSize():
 
 
 
-class FiniteRepetitionSelector():
+class FiniteRepetitionSelector:
+    """
+    Hierarchical operator selector.
+
+    Operators (index → symbol → effect on increase_value):
+      0  C/S   successor  (+1 always, ignores operand)
+      1  +     addition
+      2  *     multiplication
+      3  ^     exponentiation
+      4  ↑     tetration   (iterated exponentiation)
+      5  ↑↑    pentation   (iterated tetration)
+
+    decrease_value is the inverse of increase_value where an inverse exists.
+
+    Optional constructive-real backend: pass use_reals=True.
+    Requires the `reals` package  (pip install reals)
+    and `mpmath`  (pip install mpmath).
+    When enabled every intermediate value is a constructive Real; the result
+    is converted back to a Python float via float().
+
     # +1
     # 1     2     3     4     5     6
     # +2
@@ -172,49 +191,147 @@ class FiniteRepetitionSelector():
     #
     # 2↑↑↑↑2 = 2↑↑↑2 = 2↑↑2
     #
-    # auto(negate/direction)?
+    # auto(negate/direction) True/False
     # auto(negate/direction) threshold: 1
-    def __init__(self, current_operator="+", current_operand=2):
-        self.operators = ["C/S", "+", "*", "^", "↑", "↑↑"]  # Counting/Successor
-        self.current_operator = current_operator
-        self.current_operand = current_operand
-        self.autonegate_threshold = 0.0
-        self.autonegate = False
+    """
 
-    def autonegate_value(self, value):
-        if self.autonegate:
-            if self.autonegate_threshold > value > -1 * self.autonegate_threshold:
-                return -1 * value
+    OPERATORS = ["C/S", "+", "*", "^", "↑", "↑↑"]
+
+    def __init__(
+        self,
+        current_operator: str = "+",
+        current_operand: float = 2.0,
+        autonegate: bool = False,
+        autonegate_threshold: float = 0.0,
+        use_reals: bool = False,
+    ):
+        if current_operator not in self.OPERATORS:
+            raise ValueError(f"Unknown operator '{current_operator}'. Choose from {self.OPERATORS}")
+
+        self.current_operator      = current_operator
+        self.current_operand       = current_operand
+        self.autonegate            = autonegate
+        self.autonegate_threshold  = autonegate_threshold
+        self.use_reals             = use_reals
+
+        self._real = None
+        if use_reals:
+            try:
+                import reals as _reals
+                self._real = _reals.Real
+            except ImportError:
+                ue.log_warning("FiniteRepetitionSelector: 'reals' package not found – falling back to Python floats.")
+                self.use_reals = False
+
+    # ── helpers ──────────────────────────────────────────────────────────────
+
+    def _to_r(self, v):
+        """Wrap v in a constructive Real if the backend is active."""
+        return self._real(v) if self.use_reals and self._real is not None else v
+
+    def _to_f(self, v) -> float:
+        """Convert back to Python float."""
+        return float(v)
+
+    def _op(self) -> int:
+        return self.OPERATORS.index(self.current_operator)
+
+    def autonegate_value(self, value: float) -> float:
+        if self.autonegate and abs(value) < self.autonegate_threshold:
+            return -value
         return value
 
-    def basic_tetration(self, a, b):
-        # a is the first input value and b is the second input value
-        total = a
-        for i in range(1, round(b)):
-            total = a ^ total
-        return total
+    # ── tetration helpers ─────────────────────────────────────────────────────
 
-    def decrease_value(self, value):
+    def _tetrate(self, base: float, height: int) -> float:
+        """base ↑↑ height  (right-associative tower)."""
+        height = max(1, round(height))
+        result = self._to_r(base)
+        for _ in range(height - 1):
+            result = self._to_r(base) ** result
+        return self._to_f(result)
+
+    def _tetrate_inverse(self, value: float, height: int) -> float:
+        """Approximate inverse of tetration by iterated logarithm."""
+        import math
+        height = max(1, round(height))
+        result = float(value)
+        for _ in range(height):
+            if result <= 0:
+                return float("nan")
+            result = math.log(result)
+        return result
+
+    def _pentate(self, base: float, height: int) -> float:
+        """base ↑↑↑ height  (iterated tetration)."""
+        height = max(1, round(height))
+        result = float(base)
+        for _ in range(height - 1):
+            result = self._tetrate(base, round(result))
+        return result
+
+    # ── public API ────────────────────────────────────────────────────────────
+
+    def increase_value(self, value: float) -> float:
         value = self.autonegate_value(value)
-        if self.current_operator == self.operators[1]:
-            return value - self.current_operand
-        if self.current_operator == self.operators[2]:
-            return value / self.current_operand
-        if self.current_operator == self.operators[3]:
-            return pow(value, (1 / self.current_operand))
-        if self.current_operator == self.operators[4]:
-            return self.basic_tetration(value, self.current_operand)
+        op    = self._op()
+        b     = self.current_operand
+
+        if op == 0:   # C/S  (successor)
+            return self._to_f(self._to_r(value) + 1)
+        if op == 1:   # +
+            return self._to_f(self._to_r(value) + self._to_r(b))
+        if op == 2:   # *
+            return self._to_f(self._to_r(value) * self._to_r(b))
+        if op == 3:   # ^
+            return self._to_f(self._to_r(value) ** self._to_r(b))
+        if op == 4:   # ↑  tetration
+            return self._tetrate(value, round(b))
+        if op == 5:   # ↑↑ pentation
+            return self._pentate(value, round(b))
         return value
 
-    def increase_value(self, value):
+    def decrease_value(self, value: float) -> float:
         value = self.autonegate_value(value)
-        if self.current_operator == self.operators[1]:
-            return value + self.current_operand
-        if self.current_operator == self.operators[2]:
-            return value * self.current_operand
-        if self.current_operator == self.operators[3]:
-            return pow(value, self.current_operand)
+        op    = self._op()
+        b     = self.current_operand
+
+        if op == 0:   # C/S  (predecessor)
+            return self._to_f(self._to_r(value) - 1)
+        if op == 1:   # -
+            return self._to_f(self._to_r(value) - self._to_r(b))
+        if op == 2:   # /
+            if b == 0:
+                raise ZeroDivisionError("Operand is zero for division.")
+            return self._to_f(self._to_r(value) / self._to_r(b))
+        if op == 3:   # root  (inverse power)
+            if b == 0:
+                raise ZeroDivisionError("Operand is zero for root.")
+            return self._to_f(self._to_r(value) ** self._to_r(1.0 / b))
+        if op == 4:   # inverse tetration (iterated log)
+            return self._tetrate_inverse(value, round(b))
+        if op == 5:   # no clean inverse for pentation; return as-is with warning
+            ue.log_warning("FiniteRepetitionSelector: no analytic inverse for pentation; value unchanged.")
+            return value
         return value
+
+    def cycle_operator_up(self):
+        """Move to the next (more powerful) operator."""
+        idx = self._op()
+        self.current_operator = self.OPERATORS[min(idx + 1, len(self.OPERATORS) - 1)]
+
+    def cycle_operator_down(self):
+        """Move to the previous (less powerful) operator."""
+        idx = self._op()
+        self.current_operator = self.OPERATORS[max(idx - 1, 0)]
+
+    def __repr__(self):
+        return (
+            f"FiniteRepetitionSelector(op='{self.current_operator}', "
+            f"operand={self.current_operand}, "
+            f"autonegate={self.autonegate}, "
+            f"use_reals={self.use_reals})"
+        )
 
 
 class SpatialDimensionSelector():

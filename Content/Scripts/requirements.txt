@@ -15,6 +15,9 @@ psutil
 opencv-python
 imageio
 pymupdf
+mpmath # (should work or be installed as a dependency of the previous packages)
+
+# reals (extract the folder and navigate inside it, then run python -m pip install .)
 
 # cairosvg
 # svglib 
