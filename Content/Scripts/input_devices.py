@@ -217,7 +217,7 @@ class Keyboard:
             if k.lower() == t:
                 return k
 
-        ue.log_warning(f"Unknown input token: {token}")
+        print(f"{token} not registered in input_devices")
         return None
 
     def keyboard_to_ue_keyboard(self, keyboard_layout):
@@ -309,26 +309,20 @@ class Mouse:
             return None
         t = token.strip().lower()
 
-        # check aliases first
         if t in self.ALIASES:
             return self.ALIASES[t]
-
-        # check LEGEND_TO_UE
         if token in self.LEGEND_TO_UE:
             return self.LEGEND_TO_UE[token]
         for k, v in self.LEGEND_TO_UE.items():
             if k.lower() == t:
                 return v
-
-        # fallback: UE native keys
         if token in self.ue_keys:
             return token
         for k in self.ue_keys:
             if k.lower() == t:
                 return k
 
-        ue.log_warning(f"Unknown input token: {token}")
-        return None
+        return None  # just return None, no warning
 
 
 class TraceHelper:

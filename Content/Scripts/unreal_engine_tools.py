@@ -375,7 +375,7 @@ def find_actor(name):
 
 global py_actor
 py_actor = find_actor("BP_PyActor")
-print("ue tools pyactor", world)
+print("ue tools world", world)
 
 
 def find_actors(name):

@@ -14,6 +14,7 @@ from hotreload import *
 import hotreload, unreal_engine_tools
 import asyncio, time
 from typing import List, Dict, Union, Optional
+import random
 
 from nd_table.examples import example_unreal_rendering
 from input_devices import Keyboard, Mouse, HotkeyManager, TraceHelper
@@ -31,8 +32,93 @@ ue.log('Hello i am a Python module.')
 
 change_background("white_less_emissive")
 
-info = extract_icon(r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\Movies\psychedelic.mp4", preview=True, return_info=True)
-spawn_icon(info["image"], FVector(310,0,100))
+def spawn_icon2(pil_image, location=FVector(0, 0, 0), rotation=FRotator(0, 0, 0), scale=FVector(1, 1, 1),
+                material_path='/Game/Materials/M_Icon.M_Icon',
+                param_name='Texture',
+                bp_path='/Game/Blueprints/Assets/BP_Icon.BP_Icon',
+                component_name='Sphere'):
+    """
+    Spawn a BP_Icon actor and apply *pil_image* as *param_name* texture.
+
+    BP_Icon should have:
+      • A StaticMeshComponent (sphere or any mesh)
+      • A Python component pointing to ue_components.IconHoverComponent
+        (hover-shrink effect is handled there)
+
+    The IconHoverComponent class is kept in ue_components.py but is also
+    defined below for reference — do not attach it again here.
+
+    Requires Pillow and a material at *material_path* with a
+    TextureSampleParameter2D named *param_name*.
+    """
+    world = get_world()
+    # print("ue_spawn.py world", world)
+
+    actor = None
+
+    # Spawn BP_Icon (hover effect comes from its Python component)
+    try:
+        bp = ue.load_object(Blueprint, bp_path)
+        actor = world.actor_spawn(bp.GeneratedClass)  # , location)
+        print("PRINTING ACTOR", actor)
+        actor.set_actor_transform(FTransform(location, rotation, scale))
+        target_comp = find_component(actor, component_name)
+    except Exception as e:
+        ue.log_warning(f'spawn_icon: could not load BP_Icon at "{bp_path}": {e}. '
+                       'Make sure BP_Icon exists in your project.')
+        return None
+
+    try:
+        tex = pil_image_to_texture(pil_image)
+    except Exception as e:
+        ue.log_warning(f'spawn_icon: could not convert that pil_image to texture: {e}')
+        return None
+
+    if tex:
+        mat = ue.load_object(Material, "/Game/Materials/M_Icon.M_Icon")
+        if not mat:
+            ue.log_warning(f"Material not found: {material_path}")
+
+        mid = target_comp.create_material_instance_dynamic(mat)
+
+        mid.set_material_texture_parameter(param_name, tex)
+        target_comp.set_material(0, mid)
+    else:
+        ue.log_warning(f"Could not load texture for param: {param_name}")
+
+    # tmp_path = os.path.join(tempfile.gettempdir(), 'ue_icon_tmp.png')
+    # pil_image.save(tmp_path)
+    #
+    # texture = None
+    # try:
+    #     from unreal_engine.classes import TextureFactory
+    #     tex_name = 'IconTex_' + str(abs(hash(tmp_path)))[:8]
+    #     texture = TextureFactory().factory_import_object(
+    #         tmp_path, f'/Game/IconTextures/{tex_name}')
+    # except Exception as e:
+    #     ue.log_warning(f'spawn_icon: texture import failed: {e}')
+
+    # Apply material + texture via dynamic material instance
+    # mat = ue.load_object(Material, material_path)
+    # if mat and texture:
+    #     try:
+    #         smc = actor.StaticMeshComponent
+    #         dmi = smc.CreateAndSetMaterialInstanceDynamic(0)
+    #         dmi.SetTextureParameterValue(param_name, texture)
+    #     except Exception as e:
+    #         ue.log_warning(f'spawn_icon: texture param failed: {e}')
+
+    # loc = location if location is not None else FVector(0, 0, 0)
+    # rot = rotation if rotation is not None else FRotator(0, 0, 0)
+    # scl = scale if scale is not None else FVector(1, 1, 1)
+    # actor.set_actor_location(loc)
+    # actor.set_actor_rotation(rot)
+    # actor.set_actor_scale(scl)
+
+    # _set_transform(actor, location, rotation, scale)
+    return actor
+
+
 
 
 # Stop the background music
@@ -270,6 +356,12 @@ class Main:
         for binding in bindings:
             ue.log(f"  Type: {binding['type']}, Keys: {binding['keys']}, Callback: {binding['callback']}")
 
+    def move_icon(self):
+        # self.icon.get_actor_component('PhysicsHandle').SetTargetLocation(FVector(random.randint(1, 100), random.randint(1, 100), random.randint(1, 100)))
+        # self.icon.get_actor_component('Sphere').SetSimulatePhysics(False)
+        self.icon.set_actor_transform(FTransform(FVector(random.randint(1, 100), random.randint(1, 100), random.randint(1, 100)), FRotator(0, 0, 0), FVector(1, 1, 1)))
+        # self.icon.get_actor_component('Sphere').SetSimulatePhysics(True)
+
     # this is called on game start
     def begin_play(self):
         ue.log('Begin Play on Main class')
@@ -287,13 +379,13 @@ class Main:
         RPC_ACTOR = None
         CLIENT_HELPER = None
 
-        # self.uobject.enable_input()
-        #
-        # self.keyboard = Keyboard()
-        # self.mouse = Mouse()
-        #
-        # self.input = HotkeyManager(self.uobject, self.keyboard, self.mouse)
-        # self.trace = TraceHelper(self.uobject)
+        self.uobject.enable_input()
+
+        self.keyboard = Keyboard()
+        self.mouse = Mouse()
+
+        self.input = HotkeyManager(self.uobject, self.keyboard, self.mouse)
+        self.trace = TraceHelper(self.uobject)
         #
         # # Enable mouse features
         # self.input.enable_mouse_events(True, True)
@@ -334,126 +426,129 @@ class Main:
         # # Mouse helpers
         # self.input.bind_press("G", self.print_mouse_world)
         # self.input.bind_press("H", lambda: self.input.set_mouse_position(200, 200))
-        self.uobject.enable_input()
-
-        self.keyboard = Keyboard()
-        self.mouse = Mouse()
-        self.input = HotkeyManager(self.uobject, self.keyboard, self.mouse)
-        self.trace = TraceHelper(self.uobject)
-
-        # Analog movement with deadzone
-        # self.input.bind_axis_poll(
-        #     "MoveForward",
-        #     self.on_move_forward,
-        #     deadzone=0.1,
-        #     rate=0.016  # ~60 FPS
-        # )
-
-        # Multiple keys to same action
-        self.input.bind_press("F", self.interact)
-        self.input.bind_press("E", self.interact)
-
-        # Complex chord
-        self.input.bind_press("Ctrl+Alt+Delete", lambda: ue.log("The forbidden combo!"))
-
-        self.input.bind_press("Ctrl+MouseScrollUp", lambda: ue.log("The forbidden combB!"))
-        self.input.bind_press("Shift+MouseScrollUp", lambda: ue.log("The forbidden combA!"))
-
-        # Mouse button combinations
-        self.input.bind_press("Shift+LeftMouseButton", self.shift_click)
 
 
 
-        # ============== CURSOR SETUP ==============
-        self.input.enable_mouse_events(True, True)
-        # self.input.show_cursor(True)
-        # self.input.set_cursor(EMouseCursor.GrabHand)
-
-        print("=== CURSOR INFO ===")
-        self.input.print_cursor_info()
-
-        # ============== MOUSE AXIS TRACKING ==============
-        # IMPORTANT: Use bind_axis_poll for MouseX/MouseY as bind_axis may not work reliably
-        # These will now properly track mouse movement
-        # self.input.bind_axis_poll("MouseX", lambda v: ue.log(f"MouseX: {v:.3f}"))
-        # self.input.bind_axis_poll("MouseY", lambda v: ue.log(f"MouseY: {v:.3f}"))
-        # self.input.bind_axis_poll("MouseWheelAxis", lambda v: ue.log(f"MouseWheel: {v:.3f}"))
+        # self.uobject.enable_input()
         #
-        # # These might work depending on your project's input settings
-        # # If you have TurnRate and LookUpRate defined in your Input Settings, these should work
-        # try:
-        #     self.input.bind_axis_poll("TurnRate", lambda v: ue.log(f"TurnRate: {v:.3f}"))
-        #     self.input.bind_axis_poll("LookUpRate", lambda v: ue.log(f"LookUpRate: {v:.3f}"))
-        # except:
-        #     ue.log_warning("TurnRate/LookUpRate axes not available in project settings")
-
-        # Mouse delta logging (uses timer)
-        self.input.log_mouse_delta_timer(rate=0.1)
-
-        # ============== BASIC KEY BINDINGS ==============
-        # Simple press bindings
-        # self.input.bind_press("K", self.on_key_k_pressed)
-        self.input.bind_press("L", lambda: ue.log("Pressed L"))
-
-        # Chord bindings (key combinations)
-        self.input.bind_press("Ctrl+Shift+B", self.on_ctrl_shift_b)
-        self.input.bind_press("Ctrl+G", self.print_mouse_world)
-
-        # Toggle cursor with M key
-        self.input.bind_press("M", self.input.toggle_cursor)
-
-        # ============== MOUSE BINDINGS ==============
-        self.input.bind_press("LeftMouseButton", self.on_left_click)
-        self.input.bind_press("RightMouseButton", lambda: ue.log("Right click"))
-        self.input.bind_double_click("LeftMouseButton", lambda: ue.log("Double click!"))
-
-        # ============== REPEAT BINDINGS ==============
-        # These fire repeatedly while key is held
-        self.input.bind_repeat("W", lambda: ue.log("Holding W"))
-        self.input.bind_repeat("Ctrl+R", lambda: ue.log("Ctrl+R held"))
-
-        # ============== POLL-BASED CHECKING ==============
-        # IMPORTANT: Use bind_poll for keys that have engine actions (like SpaceBar for Jump)
-        # This checks key state without binding, so it won't override Jump
-        self.input.bind_poll("SpaceBar", lambda: ue.log("Space is down (non-binding)"), rate=0.1)
-
-        # You can also manually check key states
-        self.input.bind_press("P", self.check_key_states)
-
-        # ============== ENGINE ACTIONS ==============
-        # Bind to actions defined in your project's Input Settings
-        # This WON'T override the Jump action
-        self.input.bind_action(
-            "Jump",
-            pressed_cb=lambda: ue.log("Jump action pressed"),
-            released_cb=lambda: ue.log("Jump action released")
-        )
-
-        # ============== MOUSE POSITION BINDINGS ==============
-        # Get cursor info with world projection
-        self.input.bind_press("G", self.print_cursor_and_trace)
-
-        # Set mouse position
-        self.input.bind_press("H", lambda: self.input.set_mouse_position(960, 540))
-
-        # ============== TRACE EXAMPLES ==============
-        # Trace from cursor
-        self.input.bind_press("T", self.trace_from_cursor)
-
-        # Trace forward from camera
-        self.input.bind_press("F", self.trace_from_camera)
-
-        # ============== SEQUENCE BINDINGS ==============
-        # Execute callback after a sequence of keys
-        # self.input.bind_sequence(
-        #     ["Ctrl+K", "C"],
-        #     lambda: ue.log("Sequence completed: Ctrl+K then C"),
-        #     timeout=2.0
+        # self.keyboard = Keyboard()
+        # self.mouse = Mouse()
+        # self.input = HotkeyManager(self.uobject, self.keyboard, self.mouse)
+        # self.trace = TraceHelper(self.uobject)
+        #
+        # # Analog movement with deadzone
+        # # self.input.bind_axis_poll(
+        # #     "MoveForward",
+        # #     self.on_move_forward,
+        # #     deadzone=0.1,
+        # #     rate=0.016  # ~60 FPS
+        # # )
+        #
+        # # Multiple keys to same action
+        # self.input.bind_press("F", self.interact)
+        self.input.bind_press("L", self.move_icon)
+        #
+        # # Complex chord
+        # self.input.bind_press("Ctrl+Alt+Delete", lambda: ue.log("The forbidden combo!"))
+        #
+        # self.input.bind_press("Ctrl+MouseScrollUp", lambda: ue.log("The forbidden combB!"))
+        # self.input.bind_press("Shift+MouseScrollUp", lambda: ue.log("The forbidden combA!"))
+        #
+        # # Mouse button combinations
+        # self.input.bind_press("Shift+LeftMouseButton", self.shift_click)
+        #
+        #
+        #
+        # # ============== CURSOR SETUP ==============
+        # self.input.enable_mouse_events(True, True)
+        # # self.input.show_cursor(True)
+        # # self.input.set_cursor(EMouseCursor.GrabHand)
+        #
+        # print("=== CURSOR INFO ===")
+        # self.input.print_cursor_info()
+        #
+        # # ============== MOUSE AXIS TRACKING ==============
+        # # IMPORTANT: Use bind_axis_poll for MouseX/MouseY as bind_axis may not work reliably
+        # # These will now properly track mouse movement
+        # # self.input.bind_axis_poll("MouseX", lambda v: ue.log(f"MouseX: {v:.3f}"))
+        # # self.input.bind_axis_poll("MouseY", lambda v: ue.log(f"MouseY: {v:.3f}"))
+        # # self.input.bind_axis_poll("MouseWheelAxis", lambda v: ue.log(f"MouseWheel: {v:.3f}"))
+        # #
+        # # # These might work depending on your project's input settings
+        # # # If you have TurnRate and LookUpRate defined in your Input Settings, these should work
+        # # try:
+        # #     self.input.bind_axis_poll("TurnRate", lambda v: ue.log(f"TurnRate: {v:.3f}"))
+        # #     self.input.bind_axis_poll("LookUpRate", lambda v: ue.log(f"LookUpRate: {v:.3f}"))
+        # # except:
+        # #     ue.log_warning("TurnRate/LookUpRate axes not available in project settings")
+        #
+        # # Mouse delta logging (uses timer)
+        # self.input.log_mouse_delta_timer(rate=0.1)
+        #
+        # # ============== BASIC KEY BINDINGS ==============
+        # # Simple press bindings
+        # # self.input.bind_press("K", self.on_key_k_pressed)
+        # self.input.bind_press("L", lambda: ue.log("Pressed L"))
+        #
+        # # Chord bindings (key combinations)
+        # self.input.bind_press("Ctrl+Shift+B", self.on_ctrl_shift_b)
+        # self.input.bind_press("Ctrl+G", self.print_mouse_world)
+        #
+        # # Toggle cursor with M key
+        # self.input.bind_press("M", self.input.toggle_cursor)
+        #
+        # # ============== MOUSE BINDINGS ==============
+        # self.input.bind_press("LeftMouseButton", self.on_left_click)
+        # self.input.bind_press("RightMouseButton", lambda: ue.log("Right click"))
+        # self.input.bind_double_click("LeftMouseButton", lambda: ue.log("Double click!"))
+        #
+        # # ============== REPEAT BINDINGS ==============
+        # # These fire repeatedly while key is held
+        # self.input.bind_repeat("W", lambda: ue.log("Holding W"))
+        # self.input.bind_repeat("Ctrl+R", lambda: ue.log("Ctrl+R held"))
+        #
+        # # ============== POLL-BASED CHECKING ==============
+        # # IMPORTANT: Use bind_poll for keys that have engine actions (like SpaceBar for Jump)
+        # # This checks key state without binding, so it won't override Jump
+        # self.input.bind_poll("SpaceBar", lambda: ue.log("Space is down (non-binding)"), rate=0.1)
+        #
+        # # You can also manually check key states
+        # self.input.bind_press("P", self.check_key_states)
+        #
+        # # ============== ENGINE ACTIONS ==============
+        # # Bind to actions defined in your project's Input Settings
+        # # This WON'T override the Jump action
+        # self.input.bind_action(
+        #     "Jump",
+        #     pressed_cb=lambda: ue.log("Jump action pressed"),
+        #     released_cb=lambda: ue.log("Jump action released")
         # )
-
-        # ============== KEY REGISTRY ==============
-        # Print all registered bindings for a specific key
-        self.input.bind_press("F1", lambda: self.print_key_registry("W"))
+        #
+        # # ============== MOUSE POSITION BINDINGS ==============
+        # # Get cursor info with world projection
+        # self.input.bind_press("G", self.print_cursor_and_trace)
+        #
+        # # Set mouse position
+        # self.input.bind_press("H", lambda: self.input.set_mouse_position(960, 540))
+        #
+        # # ============== TRACE EXAMPLES ==============
+        # # Trace from cursor
+        # self.input.bind_press("T", self.trace_from_cursor)
+        #
+        # # Trace forward from camera
+        # self.input.bind_press("F", self.trace_from_camera)
+        #
+        # # ============== SEQUENCE BINDINGS ==============
+        # # Execute callback after a sequence of keys
+        # # self.input.bind_sequence(
+        # #     ["Ctrl+K", "C"],
+        # #     lambda: ue.log("Sequence completed: Ctrl+K then C"),
+        # #     timeout=2.0
+        # # )
+        #
+        # # ============== KEY REGISTRY ==============
+        # # Print all registered bindings for a specific key
+        # self.input.bind_press("F1", lambda: self.print_key_registry("W"))
 
         if KismetSystemLibrary.IsDedicatedServer():
             ue.log("BeginPlay on DEDICATED SERVER")
@@ -473,6 +568,11 @@ class Main:
                 player.set_actor_transform(transform)
                 # player.get_actor_component('Text3DComponent').Text = "HI"
                 player_controller.Possess(player)
+                py_player = player.get_py_proxy()
+                print(py_player.get_yo())
+                py_player._setup_input()
+
+
 
                 global RPC_ACTOR, SERVER_HELPER
 
@@ -541,6 +641,41 @@ class Main:
             else:
                 ue.log("CLIENT (no AuthorityGameMode) Client likely connected to dedicated server. ")
 
+            # Testing icon
+            print("Testing icon")
+            self.info = extract_icon(r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\Movies\psychedelic.mp4", preview=True, return_info=True)
+            self.icon = spawn_icon(self.info["image"], location=FVector(310, 50, 400))
+            self.icon.get_actor_component('Sphere').SetSimulatePhysics(True)
+
+            # some kind of movability problem
+            # self.monk = 0
+            # def ticke():
+            #     print("ticked")
+            #     self.monk += 1
+            #     if self.monk > 3:
+            #         print("monk bigger than one")
+            #         self.icon.set_actor_transform(FTransform(FVector(310, 50, 400), FRotator(0,0,0), FVector(1,1,1)))
+            #
+            #
+            # self.yuh = self.uobject.set_timer(0.5, ticke, True) # required to keep timer from being collected by gc
+            # print(self.yuh)
+            # yuh.start()
+            # try:
+            #     yuh.start()
+            # except Exception as e:
+            #     print(e)
+
+            # print("PRINTING RETURNED ACTOR", icon)
+            # print("main.py world", world)
+            # find_actor("BP_Icon").set_actor_transform(FTransform(FVector(310, 50, 400), FRotator(0,0,0), FVector(1,1,1)))
+            # if not icon:
+            #     print("not icon", icon)
+            # print("checked", icon.check())
+            # if not icon.is_valid():
+            #     print("Not valid", icon)
+            # # icon_transform = FTransform(FVector(310, 50, 400), FRotator(0,0,0), FVector(1,1,1))
+            # # icon.set_actor_transform(icon_transform)
+
             # TESTING POSSESSION
             print("TESTING POSSESSION")
             bp_drone = ue.load_object(Blueprint, '/Game/Blueprints/Assets/DroneCharacter/BP_PyDroneCharacter.BP_PyDroneCharacter')
@@ -549,6 +684,8 @@ class Main:
             player.set_actor_transform(transform)
             # player.get_actor_component('Text3DComponent').Text = "HI"
             self.uobject.get_player_controller().Possess(player)
+            py_player = player.get_py_proxy()
+            py_player._setup_input()
 
             player_controller = self.uobject.get_player_controller()
             pawn = player_controller.get_pawn()
@@ -769,7 +906,12 @@ class Main:
         transform = FTransform(FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1))
         cell_actor.set_actor_transform(transform)
         cell_actor.get_actor_component('Text3DComponent').Text = "HI"
+        # print(cell_actor.get_actor_rotation().quaternion())
+
+
 
 
 # https://github.com/kprimo/UEPyTutorials/blob/main/Content/Scripts/Basic/DynamicTexture/dynamic_texture.py
 # https://github.com/kprimo/UEPyTutorials/blob/main/Content/Scripts/Advanced/StableDiffusion/RuntimeImage/runtime_image.py
+
+

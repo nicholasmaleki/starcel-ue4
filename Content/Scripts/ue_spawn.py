@@ -51,7 +51,11 @@ def _set_transform(actor, location, rotation, scale):
     loc = location if location is not None else FVector(0, 0, 0)
     rot = rotation if rotation is not None else FRotator(0, 0, 0)
     scl = scale    if scale    is not None else FVector(1, 1, 1)
-    actor.set_actor_transform(FTransform(loc, rot, scl))
+    # actor.set_actor_location(loc)
+    # actor.set_actor_rotation(rot)
+    # actor.set_actor_scale(scl)
+    transform = FTransform(loc, rot, scl)
+    actor.set_actor_transform(transform)
 
 
 def _exec_console(cmd):
@@ -548,7 +552,7 @@ CAMERA_PRESETS = {
     },
 }
 
-
+# TODO: SetProjectionMode ECameraProjectionMode::Perspective/Orthographic
 def spawn_camera(location=None, rotation=None,
                  camera_type='cine',
                  preset=None,
@@ -800,7 +804,7 @@ def spawn_earth(location=None, rotation=None, scale=None,
 
 
 
-def spawn_icon(pil_image, location=None, rotation=None, scale=None,
+def spawn_icon(pil_image, location=FVector(0,0,0), rotation=FRotator(0,0,0), scale=FVector(1,1,1),
                material_path='/Game/Materials/M_Icon.M_Icon',
                param_name='Texture',
                bp_path='/Game/Blueprints/Assets/BP_Icon.BP_Icon',
@@ -820,11 +824,16 @@ def spawn_icon(pil_image, location=None, rotation=None, scale=None,
     TextureSampleParameter2D named *param_name*.
     """
     world = _get_world()
+    # print("ue_spawn.py world", world)
+
+    actor = None # TODO: Almost certainly needs to be a class variable to stop GC from collecting it
 
     # Spawn BP_Icon (hover effect comes from its Python component)
     try:
         bp = ue.load_object(Blueprint, bp_path)
-        actor = world.actor_spawn(bp.GeneratedClass)
+        actor = world.actor_spawn(bp.GeneratedClass) # , location)
+        print("PRINTING ACTOR", actor)
+        actor.set_actor_transform(FTransform(location, rotation, scale))
         target_comp = find_component(actor, component_name)
     except Exception as e:
         ue.log_warning(f'spawn_icon: could not load BP_Icon at "{bp_path}": {e}. '
@@ -851,7 +860,6 @@ def spawn_icon(pil_image, location=None, rotation=None, scale=None,
     else:
         ue.log_warning(f"Could not load texture for param: {param_name}")
 
-
     # tmp_path = os.path.join(tempfile.gettempdir(), 'ue_icon_tmp.png')
     # pil_image.save(tmp_path)
     #
@@ -863,8 +871,6 @@ def spawn_icon(pil_image, location=None, rotation=None, scale=None,
     #         tmp_path, f'/Game/IconTextures/{tex_name}')
     # except Exception as e:
     #     ue.log_warning(f'spawn_icon: texture import failed: {e}')
-
-
 
     # Apply material + texture via dynamic material instance
     # mat = ue.load_object(Material, material_path)

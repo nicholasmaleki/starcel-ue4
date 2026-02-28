@@ -1,177 +1,412 @@
 import unreal_engine as ue
 from unreal_engine.classes import KismetMathLibrary
-from unreal_engine import FVector, FRotator
+from unreal_engine import FVector, FRotator, FQuat
 from constants import FiniteRepetitionSelector
 from input_devices import Keyboard, Mouse, HotkeyManager, TraceHelper
+import math
+
+# TYPING REFERENCE (never changes):
+#   FVector  -> .x  .y  .z
+#   FRotator -> .roll  .pitch  .yaw   (constructor order: roll, pitch, yaw)
+
 
 class PyPawnDrone:
     """
     Drone controller for UnrealEnginePython.
 
-    Movement  : W/A/S/D  (forward/left/back/right)  +  E/Q  (up/down)
-    Rotation  : Mouse X → yaw (or roll when roll-mode active)
-                Mouse Y → pitch
-    Roll-mode : Hold Middle Mouse Button to toggle roll (horizontal mouse = roll delta)
-    Size      : Ctrl + ScrollUp / ScrollDown
-    Speed     : Shift + ScrollUp / ScrollDown
-                (speed is applied as direct position delta, not physics velocity)
-
-    The FiniteRepetitionSelector is used to compute the size / speed increments.
+    Movement       : W/A/S/D (forward/left/back/right) + E/Q (up/down)
+    Rotation       : Mouse X -> yaw (or roll when MMB held)
+                     Mouse Y -> pitch
+    Roll-mode      : Hold MMB -> horizontal = roll, vertical = pitch
+    Size           : Ctrl + Scroll  (x2 / /2, lerped)   [Ctrl beats Alt]
+    Speed          : Shift + Scroll (x2 / /2)
+    Spring arm     : Alt + Scroll   (scroll up = shorter, scroll down = longer, lerped)
+    Free look      : Hold Alt (without Ctrl) -> FreeLookCamera active
+                     Release -> FirstPersonCameraCenter active
+    continuous_tilt: True  -> full local rotation (default)
+                     False -> screen-space: world yaw + clamped world pitch,
+                              mouse-up always moves camera up regardless of roll
     """
 
-    # ── tunables ──────────────────────────────────────────────────────────────
-    DEFAULT_MOVE_SPEED     : float = 10.0   # uu per tick (direct position change)
-    DEFAULT_ROTATION_SPEED : float = 1.0    # degrees per mouse-unit
-    SCROLL_SENSITIVITY     : float = 1.0    # multiplier applied before selector
+    DEFAULT_MOVE_SPEED = 10.0
+    DEFAULT_ROTATION_SPEED = 1.0
+    SCALE_LERP_SPEED = 20.0
+    DEBUG = False
+
+    # ------------------------------------------------------------------ #
+    #  Lifecycle                                                           #
+    # ------------------------------------------------------------------ #
 
     def begin_play(self):
-        # uobject IS the pawn when the script is attached directly to the Pawn actor
         self.pawn = self.uobject
-
-        # movement / rotation state
-        self.move_speed     = self.DEFAULT_MOVE_SPEED
+        self.move_speed = self.DEFAULT_MOVE_SPEED
         self.rotation_speed = self.DEFAULT_ROTATION_SPEED
-        self.roll_mode      = False   # toggled by middle-mouse hold
+        self.roll_mode = False
+        self.continuous_tilt = True # keep true as gimbal lock/traditional mode is broken
+        self.legacy_mode = True # keep true as quat mode is broken
 
-        # axis accumulators filled each tick by bind_axis callbacks
-        self._axis_forward  = 0.0
-        self._axis_right    = 0.0
-        self._axis_up       = 0.0
-        self._axis_mouse_x  = 0.0
-        self._axis_mouse_y  = 0.0
+        rot = self.uobject.get_actor_rotation()   # FRotator
+        self._yaw   = rot.yaw
+        self._pitch = rot.pitch
+        self._roll  = rot.roll
 
-        # selectors for size & speed scaling
-        self.size_selector  = FiniteRepetitionSelector(current_operator="+", current_operand=10.0)
-        self.speed_selector = FiniteRepetitionSelector(current_operator="+", current_operand=1.0)
+        self._axis_forward = 0.0
+        self._axis_right   = 0.0
+        self._axis_up      = 0.0
+        self._axis_mouse_x = 0.0
+        self._axis_mouse_y = 0.0
 
-        # HotkeyManager setup (same pattern as your existing code)
-        self.uobject.get_player_controller().enable_input()
+        self._target_scale      = self.uobject.get_actor_scale()  # FVector
+        self._target_arm_length = None   # init from component on first tick
+
+        self.size_selector  = FiniteRepetitionSelector(current_operator="*", current_operand=2.0)
+        self.speed_selector = FiniteRepetitionSelector(current_operator="*", current_operand=2.0)
+        self.arm_selector   = FiniteRepetitionSelector(current_operator="*", current_operand=2.0)
+
         self.keyboard = Keyboard()
-        self.mouse = Mouse()
-        self.input = HotkeyManager(self.uobject, self.keyboard, self.mouse)
+        self.mouse    = Mouse()
+        self.input    = HotkeyManager(self.uobject, self.keyboard, self.mouse)
+        self._dbg("PyPawnDrone: begin_play OK")
 
-        self._setup_input()
-        ue.log("PyPawnDrone: begin_play OK")
+    def end_play(self, reason):
+        if hasattr(self, 'input') and self.input:
+            self.input.shutdown()
 
-    # ── input setup ───────────────────────────────────────────────────────────
+    # ------------------------------------------------------------------ #
+    #  Input setup                                                         #
+    # ------------------------------------------------------------------ #
 
     def _setup_input(self):
-        # ── WASD + EQ movement (polled each tick) ────────────────────────────
+        self._dbg("PyPawnDrone: _setup_input")
         self.input.bind_axis("MoveForward", self._on_axis_forward)
-        self.input.bind_axis("MoveRight", self._on_axis_right)
-        self.input.bind_axis("MoveUp", self._on_axis_up)
-
-        # ── mouse look ───────────────────────────────────────────────────────
-        self.input.bind_axis("MouseX", self._on_mouse_x)
-        self.input.bind_axis("MouseY", self._on_mouse_y)
-
-        # ── middle mouse button → roll mode ──────────────────────────────────
-        self.input.bind_press(  "MiddleMouseButton", self._on_mmb_pressed)
+        self.input.bind_axis("MoveRight",   self._on_axis_right)
+        self.input.bind_axis("MoveUp",      self._on_axis_up)
+        self.input.bind_axis("MouseX",      self._on_mouse_x)
+        self.input.bind_axis("MouseY",      self._on_mouse_y)
+        self.input.bind_press("MiddleMouseButton",   self._on_mmb_pressed)
         self.input.bind_release("MiddleMouseButton", self._on_mmb_released)
+        self.input.bind_press("LeftAlt",    self._on_alt_pressed)
+        self.input.bind_release("LeftAlt",  self._on_alt_released)
+        self.input.bind_press("MouseScrollUp",   self._on_scroll_up)
+        self.input.bind_press("MouseScrollDown", self._on_scroll_down)
 
-        # ── Ctrl + scroll → size ─────────────────────────────────────────────
-        self.input.bind_press("Ctrl+MouseScrollUp", self._on_ctrl_scroll_up)
-        self.input.bind_press("Ctrl+MouseScrollDown", self._on_ctrl_scroll_down)
+    # ------------------------------------------------------------------ #
+    #  Helpers                                                             #
+    # ------------------------------------------------------------------ #
 
-        # ── Shift + scroll → speed ───────────────────────────────────────────
-        self.input.bind_press("Shift+MouseScrollUp", self._on_shift_scroll_up)
-        self.input.bind_press("Shift+MouseScrollDown", self._on_shift_scroll_down)
+    def _get_component(self, name):
+        try:
+            return self.uobject.get_actor_component(name)
+        except Exception as e:
+            ue.log_warning(f"PyPawnDrone: could not find component '{name}': {e}")
+            return None
 
-    # ── axis callbacks ────────────────────────────────────────────────────────
+    def _set_mesh_owner_no_see(self, enabled):
+        try:
+            self._get_component('SkeletalMesh').bOwnerNoSee = enabled
+            self._get_component('SkeletalMeshOutline').bOwnerNoSee = enabled
+            # mesh.MarkRenderStateDirty()
+            self._dbg(f"PyPawnDrone: Mesh bOwnerNoSee -> {enabled}")
+        except Exception as e:
+            ue.log_warning(f"PyPawnDrone: could not set bOwnerNoSee: {e}")
+
+    def toggle_continuous_tilt(self):
+        self.continuous_tilt = not self.continuous_tilt
+        if not self.continuous_tilt:
+            rot = self.uobject.get_actor_rotation()
+            self._yaw   = rot.yaw
+            self._pitch = rot.pitch
+            self._roll  = rot.roll
+        self._dbg(f"PyPawnDrone: continuous_tilt={'ON' if self.continuous_tilt else 'OFF'}")
+
+    def toggle_debug(self):
+        self.DEBUG = not self.DEBUG
+        ue.log(f"PyPawnDrone: debug={'ON' if self.DEBUG else 'OFF'}")
+
+    def _dbg(self, msg):
+        if self.DEBUG:
+            ue.log(f"[DBG] {msg}")
+
+    # ------------------------------------------------------------------ #
+    #  Axis handlers                                                       #
+    # ------------------------------------------------------------------ #
 
     def _on_axis_forward(self, v): self._axis_forward = v
-    def _on_axis_right(self,   v): self._axis_right   = v
-    def _on_axis_up(self,      v): self._axis_up      = v
-    def _on_mouse_x(self,      v): self._axis_mouse_x = v
-    def _on_mouse_y(self,      v): self._axis_mouse_y = v
-
-    # ── middle mouse ──────────────────────────────────────────────────────────
+    def _on_axis_right(self, v):   self._axis_right   = v
+    def _on_axis_up(self, v):      self._axis_up      = v
+    def _on_mouse_x(self, v):      self._axis_mouse_x = v
+    def _on_mouse_y(self, v):      self._axis_mouse_y = v
 
     def _on_mmb_pressed(self):
         self.roll_mode = True
-        ue.log("PyPawnDrone: roll mode ON")
+        self._dbg("PyPawnDrone: roll mode ON")
 
     def _on_mmb_released(self):
         self.roll_mode = False
-        ue.log("PyPawnDrone: roll mode OFF")
+        self._dbg("PyPawnDrone: roll mode OFF")
 
-    # ── ctrl scroll → size ───────────────────────────────────────────────────
+    # ------------------------------------------------------------------ #
+    #  Alt (free-look) -- only fires when Ctrl is NOT held                #
+    # ------------------------------------------------------------------ #
+
+    def _on_alt_pressed(self):
+        if self.input.is_key_down("Ctrl"):
+            self._dbg("PyPawnDrone: alt+ctrl pressed -> size mode, no freelook")
+            return
+        try:
+            self._set_mesh_owner_no_see(False)
+            flc = self._get_component('FreeLookCamera')
+            fpc = self._get_component('FirstPersonCameraCenter')
+            self._dbg(f"PyPawnDrone: alt pressed -> FreeLook ON  (flc={flc}, fpc={fpc})")
+            if flc:
+                flc.SetActive(True, False)
+                self._dbg(f"  FreeLookCamera.bIsActive after SetActive(True)  = {getattr(flc, 'bIsActive', '?')}")
+            if fpc:
+                fpc.SetActive(False, False)
+                self._dbg(f"  FirstPersonCameraCenter.bIsActive after SetActive(False) = {getattr(fpc, 'bIsActive', '?')}")
+        except Exception as e:
+            ue.log_warning(f"PyPawnDrone: alt pressed error: {e}")
+
+    def _on_alt_released(self):
+        try:
+            self._set_mesh_owner_no_see(True)
+            flc = self._get_component('FreeLookCamera')
+            fpc = self._get_component('FirstPersonCameraCenter')
+            self._dbg(f"PyPawnDrone: alt released -> FirstPerson ON (flc={flc}, fpc={fpc})")
+            if flc:
+                flc.SetActive(False, False)
+                self._dbg(f"  FreeLookCamera.bIsActive after SetActive(False) = {getattr(flc, 'bIsActive', '?')}")
+            if fpc:
+                fpc.SetActive(True, False)
+                self._dbg(f"  FirstPersonCameraCenter.bIsActive after SetActive(True)  = {getattr(fpc, 'bIsActive', '?')}")
+        except Exception as e:
+            ue.log_warning(f"PyPawnDrone: alt released error: {e}")
+
+    # ------------------------------------------------------------------ #
+    #  Scroll -- Ctrl > Alt > Shift priority                              #
+    # ------------------------------------------------------------------ #
+
+    def _on_scroll_up(self):
+        if self.input.is_key_down("Ctrl"):
+            self._on_ctrl_scroll_up()
+        elif self.input.is_key_down("LeftAlt"):
+            self._on_alt_scroll_up()
+        elif self.input.is_key_down("Shift"):
+            self._on_shift_scroll_up()
+
+    def _on_scroll_down(self):
+        if self.input.is_key_down("Ctrl"):
+            self._on_ctrl_scroll_down()
+        elif self.input.is_key_down("LeftAlt"):
+            self._on_alt_scroll_down()
+        elif self.input.is_key_down("Shift"):
+            self._on_shift_scroll_down()
 
     def _on_ctrl_scroll_up(self):
-        s   = self.uobject.get_actor_scale()
-        new = self.size_selector.increase_value(s.x)
-        self.uobject.set_actor_scale(FVector(new, new, new))
-        ue.log(f"PyPawnDrone: scale → {new:.3f}")
+        new = max(0.0, self.size_selector.increase_value(self._target_scale.x))
+        self._target_scale = FVector(new, new, new)
+        self._dbg(f"PyPawnDrone: size target -> {new:.3f}")
 
     def _on_ctrl_scroll_down(self):
-        s   = self.uobject.get_actor_scale()
-        new = max(0.01, self.size_selector.decrease_value(s.x))
-        self.uobject.set_actor_scale(FVector(new, new, new))
-        ue.log(f"PyPawnDrone: scale → {new:.3f}")
-
-    # ── shift scroll → speed ─────────────────────────────────────────────────
+        new = max(0.0, self.size_selector.decrease_value(self._target_scale.x))
+        self._target_scale = FVector(new, new, new)
+        self._dbg(f"PyPawnDrone: size target -> {new:.3f}")
 
     def _on_shift_scroll_up(self):
-        self.move_speed = max(0.01, self.speed_selector.increase_value(self.move_speed))
-        ue.log(f"PyPawnDrone: move_speed → {self.move_speed:.3f}")
+        self.move_speed = max(0.0, self.speed_selector.increase_value(self.move_speed))
+        self._dbg(f"PyPawnDrone: move_speed -> {self.move_speed:.3f}")
 
     def _on_shift_scroll_down(self):
-        self.move_speed = max(0.01, self.speed_selector.decrease_value(self.move_speed))
-        ue.log(f"PyPawnDrone: move_speed → {self.move_speed:.3f}")
+        self.move_speed = max(0.0, self.speed_selector.decrease_value(self.move_speed))
+        self._dbg(f"PyPawnDrone: move_speed -> {self.move_speed:.3f}")
 
-    # ── tick ─────────────────────────────────────────────────────────────────
+    # Scroll UP = shorter arm (decrease), scroll DOWN = longer arm (increase)
+    def _on_alt_scroll_up(self):
+        sa = self._get_component('FreeLookSpringArm')
+        if not sa:
+            return
+        try:
+            base = self._target_arm_length if self._target_arm_length is not None else sa.TargetArmLength
+            self._target_arm_length = max(0.0, self.arm_selector.decrease_value(base))
+            self._dbg(f"PyPawnDrone: arm target -> {self._target_arm_length:.3f}")
+        except Exception as e:
+            ue.log_warning(f"PyPawnDrone: arm scroll error: {e}")
 
-    def tick(self, dt: float):
+    def _on_alt_scroll_down(self):
+        sa = self._get_component('FreeLookSpringArm')
+        if not sa:
+            return
+        try:
+            base = self._target_arm_length if self._target_arm_length is not None else sa.TargetArmLength
+            self._target_arm_length = max(0.0, self.arm_selector.increase_value(base))
+            self._dbg(f"PyPawnDrone: arm target -> {self._target_arm_length:.3f}")
+        except Exception as e:
+            ue.log_warning(f"PyPawnDrone: arm scroll error: {e}")
+
+    # ------------------------------------------------------------------ #
+    #  Tick                                                                #
+    # ------------------------------------------------------------------ #
+
+    def tick(self, dt):
         if not hasattr(self, "_axis_forward"):
-            return   # begin_play didn't complete cleanly; skip until ready
+            return
         self._apply_movement(dt)
         self._apply_rotation(dt)
+        self._apply_scale_lerp(dt)
+        self._apply_arm_lerp(dt)
 
-    def _apply_movement(self, dt: float):
-        """Direct-position drone movement along local axes."""
+    # ------------------------------------------------------------------ #
+    #  Scale lerp -- FVector uses .x .y .z                               #
+    # ------------------------------------------------------------------ #
+
+    def _apply_scale_lerp(self, dt):
+        cur = self.uobject.get_actor_scale()   # FVector: .x .y .z
+        tgt = self._target_scale               # FVector: .x .y .z
+        a   = min(1.0, self.SCALE_LERP_SPEED * dt)
+        self.uobject.set_actor_scale(FVector(
+            cur.x + (tgt.x - cur.x) * a,
+            cur.y + (tgt.y - cur.y) * a,
+            cur.z + (tgt.z - cur.z) * a,
+        ))
+
+    # ------------------------------------------------------------------ #
+    #  Arm lerp                                                            #
+    # ------------------------------------------------------------------ #
+
+    def _apply_arm_lerp(self, dt):
+        sa = self._get_component('FreeLookSpringArm')
+        if not sa:
+            return
+        try:
+            actual = sa.TargetArmLength
+            if self._target_arm_length is None:
+                self._target_arm_length = actual
+                self._dbg(f"PyPawnDrone: arm lerp initialized to {actual:.3f}")
+                return
+            diff = self._target_arm_length - actual
+            if abs(diff) < 0.01:
+                self.uobject.call_function('SetFreeLookArmLength', self._target_arm_length)
+                return
+            a = min(1.0, self.SCALE_LERP_SPEED * dt)
+            self.uobject.call_function('SetFreeLookArmLength', actual + diff * a)
+            self._dbg(f"arm lerp {actual:.1f} -> {self._target_arm_length:.1f}")
+        except Exception as e:
+            ue.log_warning(f"PyPawnDrone: arm lerp error: {e}")
+
+    # ------------------------------------------------------------------ #
+    #  Movement                                                            #
+    # ------------------------------------------------------------------ #
+
+    def _apply_movement(self, dt):
         fwd   = self._axis_forward
         right = self._axis_right
         up    = self._axis_up
-
         if fwd == 0.0 and right == 0.0 and up == 0.0:
             return
-
-        rot          = self.uobject.get_actor_rotation()
-        fwd_vec      = KismetMathLibrary.GetForwardVector(rot)
-        right_vec    = KismetMathLibrary.GetRightVector(rot)
-        up_vec       = KismetMathLibrary.GetUpVector(rot)
-
+        rot       = self.uobject.get_actor_rotation()
+        fwd_vec   = KismetMathLibrary.GetForwardVector(rot)
+        right_vec = KismetMathLibrary.GetRightVector(rot)
+        up_vec    = KismetMathLibrary.GetUpVector(rot)
         delta = (
             fwd_vec   * (fwd   * self.move_speed) +
             right_vec * (right * self.move_speed) +
             up_vec    * (up    * self.move_speed)
         )
+        self.uobject.set_actor_location(self.uobject.get_actor_location() + delta)
 
-        current = self.uobject.get_actor_location()
-        self.uobject.set_actor_location(current + delta)
+    # ------------------------------------------------------------------ #
+    #  Rotation                                                            #
+    # ------------------------------------------------------------------ #
 
-    def _apply_rotation(self, dt: float):
-        """
-        Mouse X  →  roll  (when roll_mode)  or  yaw  (normal)
-        Mouse Y  →  pitch (always)
-        """
+    def _apply_rotation(self, dt):
+        # FRotator attrs: .roll .pitch .yaw  (constructor: roll, pitch, yaw)
         mx = self._axis_mouse_x
         my = self._axis_mouse_y
+        rs = self.rotation_speed
 
-        if mx == 0.0 and my == 0.0:
+        alt_held  = self.input.is_key_down("LeftAlt")
+        ctrl_held = self.input.is_key_down("Ctrl")
+
+        # Ctrl+Alt -> size-only mode, skip all rotation
+        if alt_held and ctrl_held:
             return
 
-        rs    = self.rotation_speed
-        pitch = my * rs   # delta pitch  (Y axis of rotation)
+        # Alt only -> free-look: rotate FreeLookSpringArm component
+        if alt_held:
+            sa = self._get_component('FreeLookSpringArm')
+            if sa:
+                if self.roll_mode:
+                    if mx != 0.0:
+                        sa.AddLocalRotation(FRotator(mx * rs, 0.0, 0.0))
+                    if my != 0.0:
+                        sa.AddLocalRotation(FRotator(0.0, my * rs, 0.0))
+                else:
+                    if mx != 0.0:
+                        sa.AddLocalRotation(FRotator(0.0, 0.0, mx * rs))
+                    if my != 0.0:
+                        sa.AddLocalRotation(FRotator(0.0, my * rs, 0.0))
+            return
 
-        if self.roll_mode:
-            # add_actor_local_rotation: roll delta on X, pitch on Y
-            delta = FRotator(pitch, 0.0, mx * rs)   # (pitch, yaw, roll)
-            self.uobject.add_actor_local_rotation(delta)
+        if self.continuous_tilt:
+            cur_q = self.uobject.get_actor_rotation().quaternion()
+
+            if self.legacy_mode:
+                if self.roll_mode:
+                    if mx != 0.0:
+                        self.uobject.add_actor_local_rotation(FRotator(mx * rs, 0.0, 0.0))
+                    if my != 0.0:
+                        self.uobject.add_actor_local_rotation(FRotator(0.0, my * rs, 0.0))
+                else:
+                    if mx != 0.0:
+                        self.uobject.add_actor_local_rotation(FRotator(0.0, 0.0, mx * rs))
+                    if my != 0.0:
+                        self.uobject.add_actor_local_rotation(FRotator(0.0, my * rs, 0.0))
+            else:
+                pass
+                # if self.roll_mode:
+                #     if mx != 0.0 or my != 0.0:
+                #         fwd = KismetMathLibrary.GetForwardVector(self.uobject.get_actor_rotation())
+                #         right = KismetMathLibrary.GetRightVector(self.uobject.get_actor_rotation())
+                #         ax = fwd.x * mx * rs - right.x * my * rs
+                #         ay = fwd.y * mx * rs - right.y * my * rs
+                #         az = fwd.z * mx * rs - right.z * my * rs
+                #         angle = math.sqrt(ax * ax + ay * ay + ay * ay)
+                #         if angle > 0.0:
+                #             angle_r = math.radians(angle)
+                #             s = math.sin(angle_r / 2) / angle
+                #             dq = FQuat(ax * s, ay * s, az * s, math.cos(angle_r / 2))
+                #             cur_q = cur_q * dq
+                #             self.uobject.set_actor_rotation(cur_q)
+                # else:
+                #     if mx != 0.0 or my != 0.0:
+                #         up = KismetMathLibrary.GetUpVector(self.uobject.get_actor_rotation())
+                #         right = KismetMathLibrary.GetRightVector(self.uobject.get_actor_rotation())
+                #         # combined axis: weighted sum of up and right, then normalize
+                #         ax = up.x * mx * rs - right.x * my * rs
+                #         ay = up.y * mx * rs - right.y * my * rs
+                #         az = up.z * mx * rs - right.z * my * rs
+                #         angle = math.sqrt(ax*ax + ay*ay + az*az)
+                #         if angle > 0.0:
+                #             angle_r = math.radians(angle)
+                #             s = math.sin(angle_r/2) / angle
+                #             dq = FQuat(ax * s, ay * s, az * s, math.cos(angle_r/2))
+                #             cur_q = cur_q * dq
+                #             self.uobject.set_actor_rotation(cur_q)
+
         else:
-            # yaw in world space, pitch in local space
-            yaw_delta   = FRotator(0.0,  mx * rs, 0.0)
-            pitch_delta = FRotator(pitch, 0.0,    0.0)
-            self.uobject.add_actor_world_rotation(yaw_delta)
-            self.uobject.add_actor_local_rotation(pitch_delta)
+            # Gimbal lock singularity avoidance:
+            # near poles, blend yaw into roll so we never fully lock
+            self._pitch += my * rs
+            self._pitch = max(-90.0, min(90.0, self._pitch))
 
+            if self.roll_mode:
+                self._roll += mx * rs
+            else:
+                pole_proximity = abs(self._pitch) / 90.0
+                yaw_component = mx * rs * (1.0 - pole_proximity)
+                roll_component = mx * rs * pole_proximity
+                self._yaw += yaw_component
+                self._roll += roll_component
+
+            # FRotator(roll, pitch, yaw)
+            self.uobject.set_actor_rotation(FRotator(self._roll, self._pitch, self._yaw))

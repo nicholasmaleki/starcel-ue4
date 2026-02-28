@@ -16,13 +16,19 @@ opencv-python
 imageio
 pymupdf
 mpmath # (should work or be installed as a dependency of the previous packages)
-
-# reals (extract the folder and navigate inside it, then run python -m pip install .)
+py-cpuinfo
+pynput
+wmi
+GPUtil
+comtypes
+# reals (extract the source folder release from github and navigate inside it, then run python -m pip install .)
 
 # cairosvg
-# svglib 
+# svglib
 # reportlab
 # aggdraw
 
 # Inkscape installed
 # Blender installed
+# macOS extras: pyobjc-framework-AppKit pyobjc-framework-Quartz
+# Linux extras: sudo apt install wmctrl xclip dunst

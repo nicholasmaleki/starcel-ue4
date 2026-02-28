@@ -110,11 +110,13 @@ The last Starcel release was written, at the time, in the newest Python, Python 
 
 
 ## What new features are planned
-- Tables and homoiconic Python spreadsheets
-- Hotkey editor
-- File explorer, icons, and desktop environment
-- CLI, SSH, and SCP
-- Advanced function search with live searches and history
+- Tables and homoiconic Python spreadsheets (WIP)
+- Hotkey editor (WIP)
+- File explorer, icons, and desktop environment (WIP)
+- Transparent Windows and Live Wallpaper (WIP)
+- CLI (WIP), SSH, and SCP
+- Advanced function and question search with live search and history
+- Multiplayer (WIP)
 - Multi-language IDE
 	- Syntax highlighting (CodeMirror, highlight.js, etc.) and LSP/intellisense starting with IntelliJ-PyCharm open source
 	- Debugger: step execution, breakpoints (line, conditional, memory, data), cli or environment at breakpoint, variable inspection, call stack, memory/register inspection, thread & concurrency debugging, reverse/time-travel debugging, inline variable values, hover tooltips
@@ -136,9 +138,8 @@ The last Starcel release was written, at the time, in the newest Python, Python 
 	- Monadic, diadic, triadic, and n-adic chains https://github.com/codereport/jello (extend to Applicatives and Functors)
 	- Combinatorial exploration: permutations of functions
 - LLLM code translation and live code explanation
-- Math, algebra, calculus
+- Math, algebra, calculus (WIP)
 - SVG and LaTeX rendering
-- API for the Reals
 - Units (convert on click) and text editing
 - Computer algebra system (symbolic math)
 - Numerical methods: ODE/PDE solvers, optimization
@@ -147,12 +148,12 @@ The last Starcel release was written, at the time, in the newest Python, Python 
 - LEAN integration
 - Logic to type theory conversion https://www.youtube.com/watch?v=QRrcwahx-3s?&t=417
 - Sequent calculus for dialetheia https://github.com/samuelemarro/convergent-sequent-calculator
-- Geometric algebra rendering: PGA, VGA, CGA, STA
+- Geometric algebra rendering: PGA, VGA, CGA, STA (WIP)
 - Interactive 3D visualization
 - Animation timeline editor
 - Excel, Google Sheets, HDF5, and FOAM3 importer
-- Multidimensional graphing
-- Plotting, charts, digraphs, nodes (OriginLab Pro features)
+- Multidimensional graphing/plotting (WIP)
+- Plotting, charts, digraphs, nodes (OriginLab Pro, seaborn, matplotlib, ggplot2 features)
 - Network visualization https://github.com/fortra/impacket https://github.com/KimiNewt/pyshark https://github.com/secdev/scapy
 - Dynamic graphing and variables with reverse order calculation engine
 - Performance profiling: flame graphs, memory profilers https://github.com/benfred/py-spy
@@ -164,7 +165,7 @@ The last Starcel release was written, at the time, in the newest Python, Python 
 - VRChat/Helios features
 - Physics simulation engine: chaos physics, hair, rigid body, particles, fluids, breaking, flex https://github.com/windystrife/UnrealEngine_NVIDIAGameWorks
 - Add Starcel as a desktop environment for Debian Linux
-- Make a new OS by working backwards from what was necessary in this project
+- macOS support
 - Tutorial
 - Academic hall and learning center: history, math, geometric algebra, physics, particles, physical matter
 

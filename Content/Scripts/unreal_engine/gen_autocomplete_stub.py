@@ -211,7 +211,7 @@ def gen_intellisense_stubs_structs():
     # Mapping of structs to fields with Python types
     structs_to_stub = {
         "FVector": {"X": float, "Y": float, "Z": float},
-        "FRotator": {"Pitch": float, "Yaw": float, "Roll": float},
+        "FRotator": {"__init__(self, roll: float = 0.0, pitch: float = 0.0, yaw: float = 0.0) -> None": "...", "Pitch": float, "Yaw": float, "Roll": float}, # FRotator(roll, pitch, yaw). However, the API for the constructor in Unreal C++ uses (pitch, yaw, roll), despite (roll, pitch, yaw) being used in the editor.
         "FTransform": {"Translation": "FVector", "Rotation": "FRotator", "Scale3D": "FVector"},
         "FQuat": {"X": float, "Y": float, "Z": float, "W": float},
         "FLinearColor": {"R": float, "G": float, "B": float, "A": float},
