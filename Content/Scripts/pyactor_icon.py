@@ -1,5 +1,6 @@
 import unreal_engine as ue
 from unreal_engine import FVector, FRotator, FTransform
+from unreal_engine.enums import ECollisionChannel
 from unreal_engine_tools import find_component
 
 # ---------------------------------------------------------------------------
@@ -10,17 +11,23 @@ class IconSphere:
     Mouse-hover shrink animation for a StaticMeshActor.
     Requires 'Enable Mouse over Events' in Project Settings > Input.
     """
-    HOVER_DELTA = 0.1
+    HOVER_DELTA = 0.3
     LERP_SPEED  = 8.0
 
     def begin_play(self):
+        self.uobject.enable_input()
+        self.player_controller = self.uobject.get_player_controller()
+        self.player_controller.bEnableMouseOverEvents = True
+        self.player_controller.CurrentClickTraceChannel = ECollisionChannel.ECC_WorldDynamic
         self.base_scale   = self.uobject.get_actor_scale()
         self.target_scale = self.base_scale
         try:
-            smc = find_component(self.uobject, "Sphere")
+            self.smc = find_component(self.uobject, "Sphere")
+
             # print(smc)
-            smc.bind_event('OnBeginCursorOver', self.on_hover_begin)
-            smc.bind_event('OnEndCursorOver',   self.on_hover_end)
+            self.smc.bind_event('OnBeginCursorOver', self.on_hover_begin)
+            self.smc.bind_event('OnEndCursorOver',   self.on_hover_end)
+            print("BOUND")
         except Exception as e:
             ue.log_warning(f'IconHoverComponent: cursor events unavailable: {e}')
 

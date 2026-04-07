@@ -22,6 +22,8 @@ from input_devices import Keyboard, Mouse, HotkeyManager, TraceHelper
 from ue_spawn import spawn_icon
 from icon_to_image import extract_icon
 
+from gizmo import test_gizmos, setup_gizmo_interaction
+
 ue.log('Hello i am a Python module.')
 # Code placed outside the Main class will not run when connecting to a server.
 
@@ -411,7 +413,7 @@ class Main:
         # self.input.bind_press("Ctrl+Shift+B", lambda: ue.log("Ctrl+Shift+B"))
         # self.input.bind_press("Ctrl+Shift+A", lambda: ue.log("Ctrl+Shift+A"))
         #
-        # self.input.bind_press("M", self.input.toggle_cursor)
+        self.input.bind_press("M", self.input.toggle_cursor)
         #
         # # Repeat
         # self.input.bind_repeat("W", lambda: ue.log("Holding W"))
@@ -643,7 +645,7 @@ class Main:
 
             # Testing icon
             print("Testing icon")
-            self.info = extract_icon(r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\Movies\psychedelic.mp4", preview=True, return_info=True)
+            self.info = extract_icon(r"C:\Users\nicho\Downloads\GoogleDriveSetup.exe", preview=True, return_info=True)
             self.icon = spawn_icon(self.info["image"], location=FVector(310, 50, 400))
             self.icon.get_actor_component('Sphere').SetSimulatePhysics(True)
 
@@ -678,14 +680,14 @@ class Main:
 
             # TESTING POSSESSION
             print("TESTING POSSESSION")
-            bp_drone = ue.load_object(Blueprint, '/Game/Blueprints/Assets/DroneCharacter/BP_PyDroneCharacter.BP_PyDroneCharacter')
-            player = world.actor_spawn(bp_drone.GeneratedClass)
-            transform = FTransform(FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1))
-            player.set_actor_transform(transform)
-            # player.get_actor_component('Text3DComponent').Text = "HI"
-            self.uobject.get_player_controller().Possess(player)
-            py_player = player.get_py_proxy()
-            py_player._setup_input()
+            # bp_drone = ue.load_object(Blueprint, '/Game/Blueprints/Assets/DroneCharacter/BP_PyDroneCharacter.BP_PyDroneCharacter')
+            # player = world.actor_spawn(bp_drone.GeneratedClass)
+            # transform = FTransform(FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1))
+            # player.set_actor_transform(transform)
+            # # player.get_actor_component('Text3DComponent').Text = "HI"
+            # self.uobject.get_player_controller().Possess(player)
+            # py_player = player.get_py_proxy()
+            # py_player._setup_input()
 
             player_controller = self.uobject.get_player_controller()
             pawn = player_controller.get_pawn()
@@ -695,7 +697,7 @@ class Main:
                 actor_name="TestSphere",  # M_Color is default
                 material_path="/Game/Materials/M_Color.M_Color",
                 params = {
-                    "Color": (0, 1, 0, 1),
+                    "Color": (0, 0, 1, 1),
                     "Metallic": 0.5,
                     "Specular": 0.5,
                     "Roughness": 0.2,
@@ -759,7 +761,9 @@ class Main:
         self.test_kingdon()
         # self.test_cylinder()
         # self.test_text()
-        print("Testing unreal rendering:")
+        print("Testing gizmos")
+        _gizmo_cyl, _gizmo_giz = test_gizmos()
+        self._gizmo_tick = setup_gizmo_interaction(self.uobject, self.input, _gizmo_giz, _gizmo_cyl)
         # example_unreal_rendering()
 
     # this is called at every 'tick'
@@ -772,6 +776,9 @@ class Main:
         self.uobject.set_actor_location(location)
 
         # self.input.print_cursor_info()
+
+        if hasattr(self, '_gizmo_tick'):
+            self._gizmo_tick(delta_time)
 
 
     def you_pressed_K(self):
@@ -913,5 +920,3 @@ class Main:
 
 # https://github.com/kprimo/UEPyTutorials/blob/main/Content/Scripts/Basic/DynamicTexture/dynamic_texture.py
 # https://github.com/kprimo/UEPyTutorials/blob/main/Content/Scripts/Advanced/StableDiffusion/RuntimeImage/runtime_image.py
-
-

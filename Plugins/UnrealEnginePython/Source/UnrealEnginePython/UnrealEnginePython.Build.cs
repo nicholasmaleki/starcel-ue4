@@ -178,6 +178,13 @@ public class UnrealEnginePython : ModuleRules
 #endif
 
 
+        if (Target.bBuildEditor)
+        {
+            // Required for IPythonScriptPlugin.h so we can shut it down before
+            // taking ownership of the Python VM in StartupModule.
+            PrivateDependencyModuleNames.Add("PythonScriptPlugin");
+        }
+
         DynamicallyLoadedModuleNames.AddRange(
             new string[]
             {

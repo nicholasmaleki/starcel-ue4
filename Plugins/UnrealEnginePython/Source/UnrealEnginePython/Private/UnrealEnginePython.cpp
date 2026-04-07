@@ -5,6 +5,7 @@
 #include "PythonBlueprintFunctionLibrary.h"
 #include "HAL/IConsoleManager.h"
 #include "HAL/PlatformFilemanager.h"
+#include "Windows/WindowsHWrapper.h"
 #include <clocale>
 #if ENGINE_MINOR_VERSION < 13
 #include "ClassIconFinder.h"
@@ -12,6 +13,7 @@
 
 #include "Styling/SlateStyleRegistry.h"
 #if WITH_EDITOR
+#include "IPythonScriptPlugin.h"
 #include "Interfaces/IPluginManager.h"
 #endif
 
@@ -29,25 +31,10 @@ void unreal_engine_init_py_module();
 void init_unreal_engine_builtin();
 
 #if PLATFORM_LINUX
-// so something seems to have changed between 4.18 and 4.25 which means we can no longer
-// import python extension modules that have/are dynamic libraries (ie site?dist-packages modules)
-// eg import ctypes fails with missing dynamic link symbol found in the primary python shared library
-// it seems that the python extension modules are not able to access the primary
-// python shared library /usr/lib/x86_64-linux-gnu/libpythonx.x.so symbols
-// OK so this gets even more confusing as apparently on other linux distributions the python extension libraries
-// ARE linked with the primary python shared library - this is a debian/ubuntu issue
-// it appears what happened is that the default symbol visibility for global symbols was changed from default to hidden
-// - likely to reduce chance of symbol clashes - it could be particularly true now with Unreals python implementation
-// although that seems to use static linking - but this fixup may mean we cannot have both python implementations
-// active
-// note that ue4_module_options is a symbol whose existence and value is checked in either LinuxPlatformProcess.cpp (4.18)
-// or UnixPlatformProcess.cpp (4.25) to determine if to load dynamic libraries using RTLD_GLOBAL
-// - otherwise RTLD_LOCAL is used
-// it apparently has to be a global symbol itself for this to work
 #if ENGINE_MINOR_VERSION >= 25
-const char *ue4_module_options __attribute__((visibility("default"))) = "linux_global_symbols";
+const char* ue4_module_options __attribute__((visibility("default"))) = "linux_global_symbols";
 #else
-const char *ue4_module_options = "linux_global_symbols";
+const char* ue4_module_options = "linux_global_symbols";
 #endif
 #endif
 
@@ -67,22 +54,21 @@ const char *ue4_module_options = "linux_global_symbols";
 #include "Android/AndroidApplication.h"
 #endif
 
-const char *UEPyUnicode_AsUTF8(PyObject *py_str)
+const char* UEPyUnicode_AsUTF8(PyObject* py_str)
 {
 #if PY_MAJOR_VERSION < 3
 	if (PyUnicode_Check(py_str))
 	{
-		PyObject *unicode = PyUnicode_AsUTF8String(py_str);
+		PyObject* unicode = PyUnicode_AsUTF8String(py_str);
 		if (unicode)
 		{
 			return PyString_AsString(unicode);
 		}
-		// just a hack to avoid crashes
-		return (char *)"<invalid_string>";
+		return (char*)"<invalid_string>";
 	}
-	return (const char *)PyString_AsString(py_str);
+	return (const char*)PyString_AsString(py_str);
 #elif PY_MINOR_VERSION < 7
-	return (const char *)PyUnicode_AsUTF8(py_str);
+	return (const char*)PyUnicode_AsUTF8(py_str);
 #else
 	return PyUnicode_AsUTF8(py_str);
 #endif
@@ -91,12 +77,12 @@ const char *UEPyUnicode_AsUTF8(PyObject *py_str)
 #if PY_MAJOR_VERSION < 3
 int PyGILState_Check()
 {
-	PyThreadState * tstate = _PyThreadState_Current;
+	PyThreadState* tstate = _PyThreadState_Current;
 	return tstate && (tstate == PyGILState_GetThisThreadState());
 }
 #endif
 
-bool PyUnicodeOrString_Check(PyObject *py_obj)
+bool PyUnicodeOrString_Check(PyObject* py_obj)
 {
 	if (PyUnicode_Check(py_obj))
 	{
@@ -131,20 +117,20 @@ void FUnrealEnginePythonModule::UESetupPythonInterpreter(bool verbose)
 	}
 
 #if PY_MAJOR_VERSION >= 3
-	wchar_t **argv = (wchar_t **)FMemory::Malloc(sizeof(wchar_t *) * (Args.Num() + 1));
+	wchar_t** argv = (wchar_t**)FMemory::Malloc(sizeof(wchar_t*) * (Args.Num() + 1));
 #else
-	char **argv = (char **)FMemory::Malloc(sizeof(char *) * (Args.Num() + 1));
+	char** argv = (char**)FMemory::Malloc(sizeof(char*) * (Args.Num() + 1));
 #endif
 	argv[Args.Num()] = nullptr;
 
 	for (int32 i = 0; i < Args.Num(); i++)
 	{
 #if PY_MAJOR_VERSION >= 3
-	#if ENGINE_MINOR_VERSION >= 20
-		argv[i] = (wchar_t *)(TCHAR_TO_WCHAR(*Args[i]));
-	#else
-		argv[i] = (wchar_t *)(*Args[i]);
-	#endif
+#if ENGINE_MINOR_VERSION >= 20
+		argv[i] = (wchar_t*)(TCHAR_TO_WCHAR(*Args[i]));
+#else
+		argv[i] = (wchar_t*)(*Args[i]);
+#endif
 #else
 		argv[i] = TCHAR_TO_UTF8(*Args[i]);
 #endif
@@ -154,21 +140,32 @@ void FUnrealEnginePythonModule::UESetupPythonInterpreter(bool verbose)
 
 	unreal_engine_init_py_module();
 
-	PyObject *py_sys = PyImport_ImportModule("sys");
-	PyObject *py_sys_dict = PyModule_GetDict(py_sys);
+	PyObject* py_sys = PyImport_ImportModule("sys");
+	if (!py_sys)
+	{
+		UE_LOG(LogPython, Error, TEXT("Failed to import sys - Python stdlib not found. Check PythonHome config."));
+		PyErr_Print();
+		return;
+	}
+	PyObject* py_sys_dict = PyModule_GetDict(py_sys);
 
-	PyObject *py_path = PyDict_GetItemString(py_sys_dict, "path");
+	PyObject* py_path = PyDict_GetItemString(py_sys_dict, "path");
+	if (!py_path)
+	{
+		UE_LOG(LogPython, Error, TEXT("sys.path is NULL"));
+		Py_DECREF(py_sys);
+		return;
+	}
 
-	char *zip_path = TCHAR_TO_UTF8(*ZipPath);
-	PyObject *py_zip_path = PyUnicode_FromString(zip_path);
+	char* zip_path = TCHAR_TO_UTF8(*ZipPath);
+	PyObject* py_zip_path = PyUnicode_FromString(zip_path);
 	PyList_Insert(py_path, 0, py_zip_path);
-
 
 	int i = 0;
 	for (FString ScriptsPath : ScriptsPaths)
 	{
-		char *scripts_path = TCHAR_TO_UTF8(*ScriptsPath);
-		PyObject *py_scripts_path = PyUnicode_FromString(scripts_path);
+		char* scripts_path = TCHAR_TO_UTF8(*ScriptsPath);
+		PyObject* py_scripts_path = PyUnicode_FromString(scripts_path);
 		PyList_Insert(py_path, i++, py_scripts_path);
 		if (verbose)
 		{
@@ -176,25 +173,25 @@ void FUnrealEnginePythonModule::UESetupPythonInterpreter(bool verbose)
 		}
 	}
 
-	char *additional_modules_path = TCHAR_TO_UTF8(*AdditionalModulesPath);
-	PyObject *py_additional_modules_path = PyUnicode_FromString(additional_modules_path);
+	char* additional_modules_path = TCHAR_TO_UTF8(*AdditionalModulesPath);
+	PyObject* py_additional_modules_path = PyUnicode_FromString(additional_modules_path);
 	PyList_Insert(py_path, 0, py_additional_modules_path);
 
 	if (verbose)
 	{
 		UE_LOG(LogPython, Log, TEXT("Python VM initialized: %s"), UTF8_TO_TCHAR(Py_GetVersion()));
 	}
+
+	Py_DECREF(py_sys);
 }
 
 static void setup_stdout_stderr()
 {
-	// Redirecting stdout
 	char const* code =
 		"import sys\n"
 		"import builtins\n"
 		"import unreal_engine\n"
 		"\n"
-		"# Redirect stdout/stderr to UE log\n"
 		"class UnrealEngineOutput:\n"
 		"    def __init__(self, logger):\n"
 		"        self.logger = logger\n"
@@ -214,7 +211,6 @@ static void setup_stdout_stderr()
 		"sys.stdout = UnrealEngineOutput(unreal_engine.log)\n"
 		"sys.stderr = UnrealEngineOutput(unreal_engine.log_error)\n"
 		"\n"
-		"# Helper decorator for UE events\n"
 		"class event:\n"
 		"    def __init__(self, event_signature):\n"
 		"        self.event_signature = event_signature\n"
@@ -224,7 +220,6 @@ static void setup_stdout_stderr()
 		"\n"
 		"unreal_engine.event = event\n"
 		"\n"
-		"# Override built-in print to support multiple arguments\n"
 		"original_python_print = builtins.print\n"
 		"def custom_print(*args, sep=' ', end='', **kwargs):\n"
 		"    text = sep.join(str(a) for a in args) + end\n"
@@ -234,9 +229,7 @@ static void setup_stdout_stderr()
 		"\n"
 		"print('Python print to ue.log working.')\n";
 
-	//UE_LOG(LogPython, Log, TEXT("Python setup_stdout_stderr() const created"));
 	PyRun_SimpleString(code);
-	//UE_LOG(LogPython, Log, TEXT("Python setup_stdout_stderr() code string ran"));
 }
 
 namespace
@@ -271,8 +264,8 @@ namespace
 			UPythonBlueprintFunctionLibrary::ExecutePythonString(cmdString);
 		}
 	}
-
 }
+
 FAutoConsoleCommand ExecPythonScriptCommand(
 	TEXT("py.exec"),
 	*NSLOCTEXT("UnrealEnginePython", "CommandText_Exec", "Execute python script").ToString(),
@@ -286,20 +279,40 @@ FAutoConsoleCommand ExecPythonStringCommand(
 
 void FUnrealEnginePythonModule::StartupModule()
 {
+#if WITH_EDITOR
+	// If PythonScriptPlugin has already initialized Python, shut it down first
+	// so we can take full ownership of the Python VM. Attempting to coexist
+	// causes two python39.dll instances with conflicting interpreter state.
+	if (Py_IsInitialized())
+	{
+		UE_LOG(LogPython, Log, TEXT("Shutting down PythonScriptPlugin before initializing UnrealEnginePython"));
+		IPythonScriptPlugin::Get()->ShutdownModule();
+	}
+#endif
+
+#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 7
+	// Python 3.7+ changes the C locale which affects functions using C string APIs.
+	// Save it now so we can restore it after Py_Initialize.
+	FString CurrentLocale;
+	if (const char* CurrentLocalePtr = setlocale(LC_ALL, nullptr))
+	{
+		CurrentLocale = ANSI_TO_TCHAR(CurrentLocalePtr);
+	}
+#endif
+
 	BrutalFinalize = false;
 
-	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
 	FString PythonHome;
 	if (GConfig->GetString(UTF8_TO_TCHAR("Python"), UTF8_TO_TCHAR("Home"), PythonHome, GEngineIni))
 	{
 #if PY_MAJOR_VERSION >= 3
-	#if ENGINE_MINOR_VERSION >= 20
-		wchar_t *home = (wchar_t *)(TCHAR_TO_WCHAR(*PythonHome));
-	#else
-		wchar_t *home = (wchar_t *)*PythonHome;
-	#endif
+#if ENGINE_MINOR_VERSION >= 20
+		wchar_t* home = (wchar_t*)(TCHAR_TO_WCHAR(*PythonHome));
 #else
-		char *home = TCHAR_TO_UTF8(*PythonHome);
+		wchar_t* home = (wchar_t*)*PythonHome;
+#endif
+#else
+		char* home = TCHAR_TO_UTF8(*PythonHome);
 #endif
 		FPlatformMisc::SetEnvironmentVar(TEXT("PYTHONHOME"), *PythonHome);
 		Py_SetPythonHome(home);
@@ -311,15 +324,14 @@ void FUnrealEnginePythonModule::StartupModule()
 		FPaths::NormalizeFilename(PythonHome);
 		PythonHome = FPaths::ConvertRelativePathToFull(PythonHome);
 #if PY_MAJOR_VERSION >= 3
-	#if ENGINE_MINOR_VERSION >= 20
-		wchar_t *home = (wchar_t *)(TCHAR_TO_WCHAR(*PythonHome));
-	#else
-		wchar_t *home = (wchar_t *)*PythonHome;
-	#endif
+#if ENGINE_MINOR_VERSION >= 20
+		wchar_t* home = (wchar_t*)(TCHAR_TO_WCHAR(*PythonHome));
 #else
-		char *home = TCHAR_TO_UTF8(*PythonHome);
+		wchar_t* home = (wchar_t*)*PythonHome;
 #endif
-
+#else
+		char* home = TCHAR_TO_UTF8(*PythonHome);
+#endif
 		Py_SetPythonHome(home);
 	}
 
@@ -329,13 +341,13 @@ void FUnrealEnginePythonModule::StartupModule()
 	if (GConfig->GetString(UTF8_TO_TCHAR("Python"), UTF8_TO_TCHAR("ProgramName"), IniValue, GEngineIni))
 	{
 #if PY_MAJOR_VERSION >= 3
-	#if ENGINE_MINOR_VERSION >= 20
-		wchar_t *program_name = (wchar_t *)(TCHAR_TO_WCHAR(*IniValue));
-	#else
-		wchar_t *program_name = (wchar_t *)*IniValue;
-	#endif
+#if ENGINE_MINOR_VERSION >= 20
+		wchar_t* program_name = (wchar_t*)(TCHAR_TO_WCHAR(*IniValue));
 #else
-		char *program_name = TCHAR_TO_UTF8(*IniValue);
+		wchar_t* program_name = (wchar_t*)*IniValue;
+#endif
+#else
+		char* program_name = TCHAR_TO_UTF8(*IniValue);
 #endif
 		Py_SetProgramName(program_name);
 	}
@@ -346,13 +358,13 @@ void FUnrealEnginePythonModule::StartupModule()
 		FPaths::NormalizeFilename(IniValue);
 		IniValue = FPaths::ConvertRelativePathToFull(IniValue);
 #if PY_MAJOR_VERSION >= 3
-	#if ENGINE_MINOR_VERSION >= 20
-		wchar_t *program_name = (wchar_t *)(TCHAR_TO_WCHAR(*IniValue));
-	#else
-		wchar_t *program_name = (wchar_t *)*IniValue;
-	#endif
+#if ENGINE_MINOR_VERSION >= 20
+		wchar_t* program_name = (wchar_t*)(TCHAR_TO_WCHAR(*IniValue));
 #else
-		char *program_name = TCHAR_TO_UTF8(*IniValue);
+		wchar_t* program_name = (wchar_t*)*IniValue;
+#endif
+#else
+		char* program_name = TCHAR_TO_UTF8(*IniValue);
 #endif
 		Py_SetProgramName(program_name);
 	}
@@ -409,7 +421,6 @@ void FUnrealEnginePythonModule::StartupModule()
 			ScriptsPaths.Add(PluginScriptsPath);
 		}
 
-		// allows third parties to include their code in the main plugin directory
 		if (plugin->GetName() == "UnrealEnginePython")
 		{
 			ScriptsPaths.Add(plugin->GetBaseDir());
@@ -422,9 +433,6 @@ void FUnrealEnginePythonModule::StartupModule()
 		ZipPath = FPaths::Combine(*PROJECT_CONTENT_DIR, UTF8_TO_TCHAR("ue_python.zip"));
 	}
 
-	// To ensure there are no path conflicts, if we have a valid python home at this point,
-	// we override the current environment entirely with the environment we want to use,
-	// removing any paths to other python environments we aren't using.
 	if (PythonHome.Len() > 0)
 	{
 		FPlatformMisc::SetEnvironmentVar(TEXT("PYTHONHOME"), *PythonHome);
@@ -437,7 +445,6 @@ void FUnrealEnginePythonModule::StartupModule()
 		FPlatformMisc::GetEnvironmentVariable(TEXT("PATH"), OrigPathVar.GetCharArray().GetData(), MaxPathVarLen);
 #endif
 
-		// Get the current path and remove elements with python in them, we don't want any conflicts
 		const TCHAR* PathDelimiter = FPlatformMisc::GetPathVarDelimiter();
 		TArray<FString> PathVars;
 		OrigPathVar.ParseIntoArray(PathVars, PathDelimiter, true);
@@ -450,8 +457,7 @@ void FUnrealEnginePythonModule::StartupModule()
 			}
 		}
 
-		// Setup our own paths for PYTHONPATH
-		#if PLATFORM_WINDOWS
+#if PLATFORM_WINDOWS
 		TArray<FString> OurPythonPaths = {
 			PythonHome,
 			FPaths::Combine(PythonHome, TEXT("Lib")),
@@ -460,11 +466,10 @@ void FUnrealEnginePythonModule::StartupModule()
 		FString PythonPathVars = FString::Join(OurPythonPaths, PathDelimiter);
 		FPlatformMisc::SetEnvironmentVar(TEXT("PYTHONPATH"), *PythonPathVars);
 
-		// Also add our paths to PATH, just so any searching will find our local python
 		PathVars.Append(OurPythonPaths);
 		FString ModifiedPath = FString::Join(PathVars, PathDelimiter);
 		FPlatformMisc::SetEnvironmentVar(TEXT("PATH"), *ModifiedPath);
-		#endif
+#endif
 	}
 
 
@@ -518,10 +523,6 @@ void FUnrealEnginePythonModule::StartupModule()
 	Py_SetPath(Py_DecodeLocale(TCHAR_TO_UTF8(*BasePythonPath), NULL));
 #endif
 #endif
-	// force python because sometimes it doesn't work.  
-	//Py_SetPythonHome(L"C:\\Users\\nicho\\AppData\\Local\\Programs\\Python\\Python39");
-	//Py_SetProgramName(L"C:\\Users\\nicho\\AppData\\Local\\Programs\\Python\\Python39\\python.exe");
-	//UE_LOG(LogTemp, Warning, TEXT("CODE CHANGED!"));
 
 	void* Dll = FPlatformProcess::GetDllHandle(TEXT("python39.dll"));
 	if (!Dll)
@@ -533,53 +534,43 @@ void FUnrealEnginePythonModule::StartupModule()
 		UE_LOG(LogTemp, Log, TEXT("python39.dll loaded successfully."));
 	}
 
-	setlocale(LC_ALL, "C"); // force to use "C" locale instead of "English_United States.1252"
-
-	Py_Initialize();
-
-	if (!Py_IsInitialized()) {
-		UE_LOG(LogPython, Error, TEXT("Python did not initialize"));
+	// Log the actual path of the loaded python39.dll
+#if PLATFORM_WINDOWS
+	{
+		HMODULE PyModule = GetModuleHandleW(L"python39.dll");
+		if (PyModule)
+		{
+			wchar_t Path[MAX_PATH];
+			GetModuleFileNameW(PyModule, Path, MAX_PATH);
+			UE_LOG(LogPython, Warning, TEXT("Actual Python DLL loaded from: %s"), Path);
+		}
+		else
+		{
+			UE_LOG(LogPython, Warning, TEXT("python39.dll not found in loaded modules list"));
+		}
 	}
-	else {
-		UE_LOG(LogPython, Log, TEXT("Python initialized"));
-	}
+#endif
 
 	setlocale(LC_ALL, "C");
 
-	// PyRun_SimpleString("import sys; print(sys.executable); print(sys.path)");
-	//PyErr_Print();
+	Py_Initialize();
 
-	// After Py_Initialize()
-	//PyRun_SimpleString(
-	//	"import sys, os\n"
-	//	"sys.path.append(r'C:\\Users\\nicho\\AppData\\Local\\Programs\\Python\\Python39\\Lib')\n"
-	//	"sys.path.append(r'C:\\Users\\nicho\\AppData\\Local\\Programs\\Python\\Python39\\DLLs')\n"
-	//	"print('PYTHON PREFIX:', sys.prefix)\n"
-	//	"print('PYTHON EXECUTABLE:', sys.executable)\n"
-	//	"print('SYS.PATH:')\n"
-	//	"for p in sys.path:\n"
-	//	"    print('  ', repr(p))\n"
-	//	"print('cwd:', os.getcwd())\n"
-	//);
+#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 7
+	// Restore the locale that Python 3.7+ changed on us
+	if (!CurrentLocale.IsEmpty())
+	{
+		setlocale(LC_ALL, TCHAR_TO_ANSI(*CurrentLocale));
+	}
+#endif
 
 	UE_LOG(LogPython, Log, TEXT("Py_IsInitialized %d"), Py_IsInitialized());
 	UE_LOG(LogPython, Log, TEXT("PyEval_ThreadsInitialized %d"), PyEval_ThreadsInitialized());
 
-	if (PyErr_Occurred()) {
-		UE_LOG(LogPython, Error, TEXT("PyErr occured"));
-		PyErr_Print();
-	}
-
 #if PLATFORM_WINDOWS
-	// Restore stdio state after Py_Initialize set it to O_BINARY, otherwise
-	// everything that the engine will output is going to be encoded in UTF-16.
-	// The behaviour is described here: https://bugs.python.org/issue16587
 	_setmode(_fileno(stdin), O_TEXT);
 	_setmode(_fileno(stdout), O_TEXT);
 	_setmode(_fileno(stderr), O_TEXT);
 
-	// Also restore the user-requested UTF-8 flag if relevant (behaviour copied
-	// from LaunchEngineLoop.cpp).
 	if (FParse::Param(FCommandLine::Get(), TEXT("UTF8Output")))
 	{
 		FPlatformMisc::SetUTF8Output();
@@ -625,32 +616,28 @@ void FUnrealEnginePythonModule::StartupModule()
 
 
 	PyGILState_STATE gstate = PyGILState_Ensure();
-	#pragma warning(push)
-	#pragma warning(disable : 4458) // hide warning about member hiding
+#pragma warning(push)
+#pragma warning(disable : 4458)
 	PyObject* main_module = PyImport_AddModule("__main__");
 	if (!main_module) {
 		PyErr_Print();
 		UE_LOG(LogPython, Error, TEXT("PyImport_AddModule(__main__) returned NULL!"));
-		//fprintf(stderr, "PyImport_AddModule returned NULL!\n");
 		if (PyErr_Occurred()) {
-			PyErr_Print();   // prints Python-side exception info to stderr
+			PyErr_Print();
 		}
-		// don't call PyModule_GetDict — bail or handle error
 	}
 	else {
 		PyObject* main_dict = PyModule_GetDict(main_module);
-		local_dict = main_dict;// PyDict_New();
+		local_dict = main_dict;
 		if (!local_dict) {
 			UE_LOG(LogPython, Error, TEXT("Python globals dict is NULL"));
 		}
 		else {
-			// Make sure Python keeps it alive
 			Py_INCREF(local_dict);
-			// bridge to the module-level globals
 			this->main_dict = local_dict;
 		}
 	}
-	#pragma warning(pop)
+#pragma warning(pop)
 	PyGILState_Release(gstate);
 
 	setup_stdout_stderr();
@@ -676,7 +663,6 @@ void FUnrealEnginePythonModule::StartupModule()
 #endif
 	}
 
-
 	for (FString ImportModule : ImportModules)
 	{
 		if (PyImport_ImportModule(TCHAR_TO_UTF8(*ImportModule)))
@@ -689,15 +675,11 @@ void FUnrealEnginePythonModule::StartupModule()
 		}
 	}
 
-	// release the GIL
-	PyThreadState *UEPyGlobalState = PyEval_SaveThread();
+	PyThreadState* UEPyGlobalState = PyEval_SaveThread();
 }
 
 void FUnrealEnginePythonModule::ShutdownModule()
 {
-	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
-	// we call this function before unloading the module.
-
 	UE_LOG(LogPython, Log, TEXT("Goodbye Python"));
 	if (!BrutalFinalize)
 	{
@@ -706,11 +688,11 @@ void FUnrealEnginePythonModule::ShutdownModule()
 	}
 }
 
-void FUnrealEnginePythonModule::RunString(char *str)
+void FUnrealEnginePythonModule::RunString(char* str)
 {
 	FScopePythonGIL gil;
 
-	PyObject *eval_ret = PyRun_String(str, Py_file_input, (PyObject *)main_dict, (PyObject *)local_dict);
+	PyObject* eval_ret = PyRun_String(str, Py_file_input, (PyObject*)main_dict, (PyObject*)local_dict);
 	if (!eval_ret)
 	{
 		if (PyErr_ExceptionMatches(PyExc_SystemExit))
@@ -725,16 +707,16 @@ void FUnrealEnginePythonModule::RunString(char *str)
 }
 
 #if PLATFORM_MAC
-void FUnrealEnginePythonModule::RunStringInMainThread(char *str)
+void FUnrealEnginePythonModule::RunStringInMainThread(char* str)
 {
-	MainThreadCall(^{
+	MainThreadCall(^ {
 	RunString(str);
 		});
 }
 
-void FUnrealEnginePythonModule::RunFileInMainThread(char *filename)
+void FUnrealEnginePythonModule::RunFileInMainThread(char* filename)
 {
-	MainThreadCall(^{
+	MainThreadCall(^ {
 	RunFile(filename);
 		});
 }
@@ -744,40 +726,36 @@ FString FUnrealEnginePythonModule::Pep8ize(FString Code)
 {
 	FScopePythonGIL gil;
 
-	PyObject *pep8izer_module = PyImport_ImportModule("autopep8");
+	PyObject* pep8izer_module = PyImport_ImportModule("autopep8");
 	if (!pep8izer_module)
 	{
 		unreal_engine_py_log_error();
 		UE_LOG(LogPython, Error, TEXT("unable to load autopep8 module, please install it"));
-		// return the original string to avoid losing data
 		return Code;
 	}
 
-	PyObject *pep8izer_func = PyObject_GetAttrString(pep8izer_module, (char*)"fix_code");
+	PyObject* pep8izer_func = PyObject_GetAttrString(pep8izer_module, (char*)"fix_code");
 	if (!pep8izer_func)
 	{
 		unreal_engine_py_log_error();
 		UE_LOG(LogPython, Error, TEXT("unable to get autopep8.fix_code function"));
-		// return the original string to avoid losing data
 		return Code;
 	}
 
-	PyObject *ret = PyObject_CallFunction(pep8izer_func, (char *)"s", TCHAR_TO_UTF8(*Code));
+	PyObject* ret = PyObject_CallFunction(pep8izer_func, (char*)"s", TCHAR_TO_UTF8(*Code));
 	if (!ret)
 	{
 		unreal_engine_py_log_error();
-		// return the original string to avoid losing data
 		return Code;
 	}
 
 	if (!PyUnicodeOrString_Check(ret))
 	{
 		UE_LOG(LogPython, Error, TEXT("returned value is not a string"));
-		// return the original string to avoid losing data
 		return Code;
 	}
 
-	const char *pep8ized = UEPyUnicode_AsUTF8(ret);
+	const char* pep8ized = UEPyUnicode_AsUTF8(ret);
 	FString NewCode = FString(pep8ized);
 	Py_DECREF(ret);
 
@@ -785,7 +763,7 @@ FString FUnrealEnginePythonModule::Pep8ize(FString Code)
 }
 
 
-void FUnrealEnginePythonModule::RunFile(char *filename)
+void FUnrealEnginePythonModule::RunFile(char* filename)
 {
 	FScopePythonGIL gil;
 	FString full_path = UTF8_TO_TCHAR(filename);
@@ -815,7 +793,7 @@ void FUnrealEnginePythonModule::RunFile(char *filename)
 	}
 
 #if PY_MAJOR_VERSION >= 3
-	FILE *fd = nullptr;
+	FILE* fd = nullptr;
 
 #if PLATFORM_WINDOWS
 	if (fopen_s(&fd, TCHAR_TO_UTF8(*full_path), "r") != 0)
@@ -832,7 +810,7 @@ void FUnrealEnginePythonModule::RunFile(char *filename)
 	}
 #endif
 
-	PyObject *eval_ret = PyRun_File(fd, TCHAR_TO_UTF8(*full_path), Py_file_input, (PyObject *)main_dict, (PyObject *)local_dict);
+	PyObject* eval_ret = PyRun_File(fd, TCHAR_TO_UTF8(*full_path), Py_file_input, (PyObject*)main_dict, (PyObject*)local_dict);
 	fclose(fd);
 	if (!eval_ret)
 	{
@@ -846,9 +824,8 @@ void FUnrealEnginePythonModule::RunFile(char *filename)
 	}
 	Py_DECREF(eval_ret);
 #else
-	// damn, this is horrible, but it is the only way i found to avoid the CRT error :(
 	FString command = FString::Printf(TEXT("execfile(\"%s\")"), *full_path);
-	PyObject *eval_ret = PyRun_String(TCHAR_TO_UTF8(*command), Py_file_input, (PyObject *)main_dict, (PyObject *)local_dict);
+	PyObject* eval_ret = PyRun_String(TCHAR_TO_UTF8(*command), Py_file_input, (PyObject*)main_dict, (PyObject*)local_dict);
 	if (!eval_ret)
 	{
 		if (PyErr_ExceptionMatches(PyExc_SystemExit))
@@ -864,18 +841,18 @@ void FUnrealEnginePythonModule::RunFile(char *filename)
 }
 
 
-void ue_py_register_magic_module(char *name, PyObject *(*func)())
+void ue_py_register_magic_module(char* name, PyObject* (*func)())
 {
-	PyObject *py_sys = PyImport_ImportModule("sys");
-	PyObject *py_sys_dict = PyModule_GetDict(py_sys);
+	PyObject* py_sys = PyImport_ImportModule("sys");
+	PyObject* py_sys_dict = PyModule_GetDict(py_sys);
 
-	PyObject *py_sys_modules = PyDict_GetItemString(py_sys_dict, "modules");
-	PyObject *u_module = func();
+	PyObject* py_sys_modules = PyDict_GetItemString(py_sys_dict, "modules");
+	PyObject* u_module = func();
 	Py_INCREF(u_module);
 	PyDict_SetItemString(py_sys_modules, name, u_module);
 }
 
-PyObject *ue_py_register_module(const char *name)
+PyObject* ue_py_register_module(const char* name)
 {
 	return PyImport_AddModule(name);
 }

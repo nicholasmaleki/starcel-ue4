@@ -2019,6 +2019,7 @@ int unreal_engine_py_ffieldclass_init(ue_PyUObject*, PyObject*, PyObject*);
 
 void unreal_engine_init_py_module()
 {
+	//PyGILState_STATE gil = PyGILState_Ensure();
 #if PY_MAJOR_VERSION >= 3
 	PyObject * new_unreal_engine_module = PyImport_AddModule("unreal_engine");
 #else
@@ -2268,6 +2269,7 @@ void unreal_engine_init_py_module()
 	PyDict_SetItemString(unreal_engine_dict, "APP_RETURN_TYPE_CANCEL", PyLong_FromLong(EAppReturnType::Cancel));
 
 #endif
+	//PyGILState_Release(gil);
 }
 
 

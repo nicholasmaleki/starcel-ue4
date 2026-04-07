@@ -1,5 +1,6 @@
 # Starcel
-Hi, I'm Nick Maleki. I'm the owner of Recursion Computing and the developer of Starcel. 
+Hi, I'm Nick, the developer of Starcel. 
+
 
 ## What is it? 
 A Python controlled 3D spreadsheet. A full Unreal Engine 4 instance with Chaos physics. Support for Client and Server. It can be used as a visualization or education tool.
@@ -11,6 +12,7 @@ This project is intended for content creators, hobbyists, developers, spreadshee
 
 ## Price? 
 Currently, free! In the future, as more features are added we will switch to a paid model. 
+
 
 ## Please donate to keep this project running!
 You can donate on [Paypal](https://www.paypal.com/paypalme/RecursionIs) or [Patreon](https://www.patreon.com/RecursionIs)
@@ -31,6 +33,8 @@ The default Unreal Engine map contains a PyActor which loads main.py and the cla
 Create a Text object by double clicking Enter. Once created, you can use =py() to run any Python command. 
 
 The state of the world is not saved in main.py or elsewhere, you will need to make changes there directly or copy your changes from the world elsewhere to save. This will be changed in the future.
+
+Set the UE_PYTHON_DIR environment variable to the location of your python installation, `C:\Users\nicho\AppData\Local\Programs\Python\Python39\` for example.
 
 
 ## Questions, Issues, and Support
@@ -54,7 +58,9 @@ Anything else can be asked in our Discord. We are a community of volunteers so w
 ## Known Issues
 It seems that python code outside the main file being used by the pyactor will not be reloaded in the Editor when you stop and replay. You will need to fully restart the editor to get the changes to files outside main.py to reload. I will work on a fix for this later. 
 
-Unfortunately, I wasn't able to get the Python Editor Script Plugin to work alongside UnrealEnginePython, as the script plugin loads python37.dll which conflicts with UEPython's python39.dll. Unfortunately, this means we won't be able to have Cesium's 3D Earth until a later update.  
+Hair is not working in UE4-Chaos, I will need to upgrade to UE4-Plus, so if you happen to know how to do this upgrade without rebuilding blueprints and maps please let me know. 
+
+Server support is still a WIP.
 
 
 ## Are public Starcel servers safe? 
@@ -95,9 +101,11 @@ Not currently, expect crashes and lost work. Eventually we will release a stable
 
 
 ## Can I make a 2D UI? 
-It is not recommended to control any elements in Starcel with a 2D UI. You can build a UI out of 3D elements in the 3D space and make it always display flat on the included screen which I have added as a component to each Pawn's camera. However, if you need, you could use Tkinter, QT, etc. to make a 2D UI outside the game window. UnrealEnginePython has built in support for QT in Engine using Slate. This would render directly on top of the existing Starcel viewport.
+It is not recommended to control any elements in Starcel with a 2D UI. You can build a UI out of 3D elements in the 3D space and make it always display flat on the included screen which I have added as a component to each Pawn's camera. In theory, anything you make in 2D, including websites, you can make exactly the same in 3D. Despite the recommendation, UnrealEnginePython has built in support for QT in Engine using Slate, which renders directly on top of the existing Starcel viewport. If you need, you could use Tkinter, QT, etc. to make a 2D UI outside the game window.
 
-In theory, any application made in 2D, which includes all websites, can be made to look exactly the same in 3D. 
+
+# Logging
+Advanced logging is available. Disclaimer, by default all keystrokes in the program are logged.
 
 
 ## UE5 and Python upgrade? 
@@ -150,6 +158,7 @@ The last Starcel release was written, at the time, in the newest Python, Python 
 - Sequent calculus for dialetheia https://github.com/samuelemarro/convergent-sequent-calculator
 - Geometric algebra rendering: PGA, VGA, CGA, STA (WIP)
 - Interactive 3D visualization
+- Multiple Views: cad style, first person view, third person view, map style, etc. 
 - Animation timeline editor
 - Excel, Google Sheets, HDF5, and FOAM3 importer
 - Multidimensional graphing/plotting (WIP)
@@ -168,6 +177,10 @@ The last Starcel release was written, at the time, in the newest Python, Python 
 - macOS support
 - Tutorial
 - Academic hall and learning center: history, math, geometric algebra, physics, particles, physical matter
+
+
+## Would you like to contribute? 
+I love pull requests! Send as many feature updates and issues as you would like. If you are looking for something specific to work on I am really looking for someone to clean up the Unreal Engine files according to [standards](https://github.com/Allar/ue5-style-guide) and update the python files to match, so if you have a lot of experience in Unreal that is a great place to start. I am also looking to upgrade the Python code to be more Pythonic, but you may want to make sure we have installed all UnrealEnginePython Modus features first. I am looking for someone to integrate Starcel as a renderer for Manim. If you want to tackle any of the planned features it would be immensely helpful! 
 
 
 ## Why Unreal? 
