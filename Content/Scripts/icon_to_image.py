@@ -1316,9 +1316,12 @@ def _shgetfileinfo_icon(path, file_attributes, use_attrs=False):
 # ── HICON -> PIL Image ────────────────────────────────────────────────────────
 
 def _hicon_to_pil(hicon, size):
-    if not hicon or not ctypes.windll.user32.GetIconInfo(
-        hicon, ctypes.byref(_ICONINFO())
-    ):
+    # Set argtypes so ctypes treats the HICON as a 64-bit void pointer on
+    # 64-bit Windows — without this, large handle values overflow c_int.
+    _GetIconInfo = ctypes.windll.user32.GetIconInfo
+    _GetIconInfo.argtypes = [ctypes.c_void_p, ctypes.POINTER(_ICONINFO)]
+    _GetIconInfo.restype  = ctypes.wintypes.BOOL
+    if not hicon or not _GetIconInfo(hicon, ctypes.byref(_ICONINFO())):
         raise RuntimeError("Invalid icon handle: {}".format(hicon))
 
     draw_size = 256

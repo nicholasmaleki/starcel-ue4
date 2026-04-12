@@ -388,7 +388,36 @@ class SpatialDimensionSelector():
 
 
 
+class Axis:
+    def __init__(self, x="x", y="y", z="z"):
+        self.x = x
+        self.y = y
+        self.z = z
 
+    def swap_axis(self, input):
+        # for i in range(input[0]):
+        #     input[0][i] = input[1][i]
+        return [input[1],input[0]]
+
+    def get_render_order(self, axis_list=None):
+        return axis_list or [self.x, self.y, self.z]
+
+    def setup_axis(self):
+        default_16d_axis = ["x", "y", "z", "w", "v", "u", "t", "s", "r", "q", "p", "o", "n", "m", "l", "k"]
+
+        default_3d_axis = default_16d_axis[:3] # 48 possible orientations for the 3 axis and their negatives in orthogonal(90 degree) space. 3! * 2^3
+        default_0d_axis = 0 # or [] # 1 orientation in nD
+        default_1d_axis = default_16d_axis[:1] # 2 in 1d. 4 in 2d. 12 in 3D
+        default_2d_axis = default_16d_axis[:2] # 8 in 2d. 24 in 3D
+        default_4d_axis = default_16d_axis[:4] # 384 possible orientations for the 4 axis and their negatives in orthogonal(90 degree) space. 4! * 2^4
+
+        unreal_default_axis = default_3d_axis # on start, unreal has z up, y right, and x away from camera
+        unreal_default_walltable_axis = [unreal_default_axis[1], -unreal_default_axis[2], unreal_default_axis[0]] # best for 2D and 3D tables on screens
+        unreal_default_groundtable_axis = [unreal_default_axis[1], -unreal_default_axis[0], -unreal_default_axis[2]]
+        unreal_default_groundtable_axis_zup = [unreal_default_axis[1], -unreal_default_axis[0], unreal_default_axis[2]]
+        unreal_default_wallgraph_axis = [unreal_default_axis[1], unreal_default_axis[2], unreal_default_axis[0]] # usually used for 2D graphs on screens. not usually used in 3D
+        unreal_default_groundgraph_axis = [unreal_default_axis[1], unreal_default_axis[0], unreal_default_axis[2]]
+        # self.swap_axis()
 
 
 # class Cylinder():

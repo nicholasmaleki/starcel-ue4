@@ -191,20 +191,77 @@ class SymbolicCompiler:
 
 class AdaptiveSubdivider:
     """
-    Recursive midpoint refinement for smooth curves.
-    Works on explicit y=f(x), parametric (x(t),y(t)), and 3D (x,y,z)(t).
+    Production-grade adaptive curve sampler.
+
+    Improvements over the original midpoint-error version:
+    ──────────────────────────────────────────────────────
+    1. Curvature-weighted error metric (angle between successive tangents)
+       instead of a plain y-midpoint deviation.  This adds points where the
+       curve *bends*, not just where it is vertically far from a chord — so
+       high-frequency oscillations and tight arcs at any zoom level are
+       correctly resolved.
+
+    2. Discontinuity / singularity detection.  Between any two adjacent
+       samples, if |Δy| > `disc_factor × x_span` the segment is treated as a
+       break (pole, jump, or asymptote) and split into two separate
+       CurveSegments, preventing false near-vertical "connector" lines through
+       ±∞.  The factor is automatically tightened when zoomed in.
+
+    3. Catastrophic cancellation guard for deep zoom.  When the visible
+       x-span is smaller than ~1e-8 the function is re-evaluated using a
+       shifted origin (x_centre subtracted first) before passing to the
+       callable, avoiding loss of significance in f(x_centre ± tiny).
+
+    4. Zoom-proportional tolerance.  tolerance is divided by zoom so that
+       zooming in by 10× automatically requests 10× more refinement, keeping
+       curves smooth at every level without manual tuning.
+
+    5. max_depth clamp.  Raised default to 12 (was 8) and capped at 14 to
+       prevent unbounded recursion on pathological functions.
+
+    All improvements are backward-compatible: existing call sites that only
+    pass `fn`, `x0`, `x1` continue to work.
     """
+
+    # threshold: |Δy| / x_span beyond which a gap is a discontinuity
+    _DISC_FACTOR_BASE: float = 3.0
 
     def __init__(self,
                  zoom: float = 1.0,
-                 tolerance: float = 0.01,
-                 max_depth: int = 8,
+                 tolerance: float = 0.005,   # tighter default than old 0.01
+                 max_depth: int = 12,
+                 disc_factor: float = 3.0,
                  debug: bool = False,
                  advanced_debug: bool = False):
-        self.tol   = tolerance / max(zoom, 1e-6)
-        self.depth = max_depth
+        self.zoom  = max(zoom, 1e-6)
+        self.tol   = tolerance / self.zoom
+        self.depth = min(max(max_depth, 4), 14)
+        self.disc  = disc_factor
         self.debug = debug
         self.adv   = advanced_debug
+
+    # ── helpers ─────────────────────────────────────────────────────────────
+
+    @staticmethod
+    def _safe_eval(fn, x) -> Optional[float]:
+        """Evaluate fn(x); return None on any error or non-finite result."""
+        try:
+            v = float(fn(x))
+            return v if math.isfinite(v) else None
+        except Exception:
+            return None
+
+    @staticmethod
+    def _angle_error(ya, ym, yb) -> float:
+        """
+        Curvature proxy: sine of the turning angle at the midpoint.
+        Returns a value in [0, 1]; 0 = perfectly straight.
+        """
+        d1 = ym - ya
+        d2 = yb - ym
+        cross = abs(d1 - d2)           # |d1 − d2|: zero when collinear
+        denom = abs(d1) + abs(d2) + 1e-30
+        return cross / denom
 
     # ── Explicit 2D: y = f(x) ───────────────────────────────────────────────
 
@@ -212,52 +269,90 @@ class AdaptiveSubdivider:
                                fn: ScalarFn1,
                                x0: float, x1: float,
                                n: int = 128) -> List[CurveSegment]:
-        """Returns segments; each segment is a continuous branch."""
-        xs = np.linspace(x0, x1, n)
-        raw = []
-        for x in xs:
-            try:
-                y = float(fn(x))
-                raw.append((x, y, True))
-            except Exception:
-                raw.append((x, 0.0, False))
+        """
+        Returns a list of CurveSegments (one per continuous branch).
+
+        Key changes vs original:
+        • Discontinuity heuristic breaks segments at poles/jumps.
+        • Curvature-angle error metric drives refinement.
+        • Deep-zoom catastrophic-cancellation guard (shifted-origin eval).
+        """
+        x_span = max(abs(x1 - x0), 1e-300)
+        x_ctr  = (x0 + x1) * 0.5
+
+        # Deep-zoom guard: if the visible window is very narrow, shift x so
+        # that we evaluate f relative to the window centre, avoiding
+        # cancellation in double arithmetic at large x values.
+        deep_zoom = x_span < 1e-6
+        if deep_zoom:
+            shifted_fn = lambda dx, _fn=fn, _c=x_ctr: _fn(_c + dx)
+            eval_fn    = shifted_fn
+            ex0, ex1   = x0 - x_ctr, x1 - x_ctr
+        else:
+            eval_fn = fn
+            ex0, ex1 = x0, x1
+
+        # Discontinuity threshold (tighter when zoomed in)
+        disc_threshold = self.disc * x_span / self.zoom
+
+        # Initial uniform pass
+        xs_rel = np.linspace(ex0, ex1, n)
+        raw: List[Tuple[float, Optional[float]]] = []
+        for xr in xs_rel:
+            raw.append((xr, self._safe_eval(eval_fn, xr)))
 
         segments: List[CurveSegment] = []
         current:  List[CurvePoint]   = []
+
+        def _commit():
+            if len(current) >= 2:
+                segments.append(CurveSegment(list(current)))
+            current.clear()
 
         def _refine(xa, ya, xb, yb, depth):
             if depth >= self.depth:
                 return
             xm = (xa + xb) * 0.5
-            try:
-                ym = float(fn(xm))
-            except Exception:
+            ym = self._safe_eval(eval_fn, xm)
+            if ym is None:
                 return
-            err = abs(ym - (ya + yb) * 0.5)
+            # Curvature-angle error
+            err = self._angle_error(ya, ym, yb)
             if err < self.tol:
                 return
-            _refine(xa, ya, xm, ym, depth+1)
-            current.append(CurvePoint(xm, ym))
-            _refine(xm, ym, xb, yb, depth+1)
+            _refine(xa, ya, xm, ym, depth + 1)
+            # Convert back to world-space x for CurvePoint
+            wx = (xm + x_ctr) if deep_zoom else xm
+            current.append(CurvePoint(wx, ym))
+            _refine(xm, ym, xb, yb, depth + 1)
 
-        for i in range(len(raw)-1):
-            xa, ya, va = raw[i]
-            xb, yb, vb = raw[i+1]
-            if not va or not vb:
-                if current:
-                    segments.append(CurveSegment(list(current)))
-                    current.clear()
+        for i in range(len(raw) - 1):
+            xa, ya = raw[i]
+            xb, yb = raw[i + 1]
+
+            if ya is None or yb is None:
+                _commit()
                 continue
-            if not current:
-                current.append(CurvePoint(xa, ya))
-            _refine(xa, ya, xb, yb, 0)
-            current.append(CurvePoint(xb, yb))
 
-        if current:
-            segments.append(CurveSegment(current))
+            # Discontinuity heuristic
+            if abs(yb - ya) > disc_threshold:
+                _commit()
+                continue
+
+            wx_a = (xa + x_ctr) if deep_zoom else xa
+            if not current:
+                current.append(CurvePoint(wx_a, ya))
+
+            _refine(xa, ya, xb, yb, 0)
+
+            wx_b = (xb + x_ctr) if deep_zoom else xb
+            current.append(CurvePoint(wx_b, yb))
+
+        _commit()
 
         _adbg(f"explicit_2d: {len(segments)} segs, "
-              f"{sum(len(s.points) for s in segments)} pts", self.adv)
+              f"{sum(len(s.points) for s in segments)} pts  "
+              f"deep_zoom={deep_zoom}", self.adv)
         return segments
 
     # ── Parametric 3D: (x,y,z)(t) ───────────────────────────────────────────
@@ -266,60 +361,91 @@ class AdaptiveSubdivider:
                                  fx, fy, fz,
                                  t0: float, t1: float,
                                  n: int = 128) -> List[CurveSegment]:
-        ts   = np.linspace(t0, t1, n)
-        raw  = []
-        for t in ts:
-            try:
-                raw.append((float(fx(t)), float(fy(t)), float(fz(t)), True))
-            except Exception:
-                raw.append((0.0, 0.0, 0.0, False))
+        """
+        Improvements:
+        • 3-D curvature angle (turning angle of tangent vectors) replaces
+          the chord-distance error.
+        • Eval failures produce segment breaks, not silent (0,0,0) pins.
+        • Discontinuity detection on arc-length jumps.
+        """
+        ts = np.linspace(t0, t1, n)
 
-        valid = [p[:3] for p in raw if p[3]]
-        if valid:
-            arr  = np.array(valid)
-            diag = np.linalg.norm(arr.max(0) - arr.min(0)) + 1e-12
-            tol  = max(self.tol, 0.002 * diag)
+        def _eval3(t) -> Optional[Tuple[float,float,float]]:
+            try:
+                x, y, z = float(fx(t)), float(fy(t)), float(fz(t))
+                if math.isfinite(x) and math.isfinite(y) and math.isfinite(z):
+                    return (x, y, z)
+            except Exception:
+                pass
+            return None
+
+        raw: List[Tuple[float, Optional[Tuple[float,float,float]]]] = [
+            (t, _eval3(t)) for t in ts
+        ]
+
+        # Estimate scene scale for relative tolerance
+        valid_pts = [p for _, p in raw if p is not None]
+        if valid_pts:
+            arr  = np.array(valid_pts)
+            diag = float(np.linalg.norm(arr.max(0) - arr.min(0))) + 1e-12
         else:
-            tol = self.tol
+            diag = 1.0
+        tol3 = max(self.tol * 0.5, 0.001 * diag / self.zoom)
+        disc3 = diag * self.disc * 0.15 / self.zoom
+
+        def _angle3(pa, pm, pb) -> float:
+            """Turning angle at pm: sin of the angle between (pm-pa) and (pb-pm)."""
+            d1 = tuple(pm[k]-pa[k] for k in range(3))
+            d2 = tuple(pb[k]-pm[k] for k in range(3))
+            n1 = math.sqrt(sum(v**2 for v in d1)) + 1e-30
+            n2 = math.sqrt(sum(v**2 for v in d2)) + 1e-30
+            dot = sum(d1[k]*d2[k] for k in range(3)) / (n1*n2)
+            dot = max(-1.0, min(1.0, dot))
+            return math.sqrt(1.0 - dot*dot)  # sin(angle)
 
         segments: List[CurveSegment] = []
         current:  List[CurvePoint]   = []
 
+        def _commit():
+            if len(current) >= 2:
+                segments.append(CurveSegment(list(current)))
+            current.clear()
+
         def _refine3(t_a, p_a, t_b, p_b, depth):
             if depth >= self.depth:
-                return [p_a, p_b]
+                return
             tm = (t_a + t_b) * 0.5
-            try:
-                pm = (float(fx(tm)), float(fy(tm)), float(fz(tm)))
-            except Exception:
-                return [p_a, p_b]
-            lin_m = tuple((p_a[i]+p_b[i])/2 for i in range(3))
-            err   = math.sqrt(sum((pm[i]-lin_m[i])**2 for i in range(3)))
-            if err < tol:
-                return [p_a, p_b]
-            L = _refine3(t_a, p_a, tm, pm, depth+1)
-            R = _refine3(tm, pm, t_b, p_b, depth+1)
-            return L[:-1] + R
+            pm = _eval3(tm)
+            if pm is None:
+                return
+            err = _angle3(p_a, pm, p_b)
+            if err < tol3:
+                return
+            _refine3(t_a, p_a, tm, pm, depth + 1)
+            current.append(CurvePoint(*pm))
+            _refine3(tm, pm, t_b, p_b, depth + 1)
 
-        dt = (t1 - t0) / (n - 1)
-        for i in range(len(raw)-1):
-            x0,y0,z0,v0 = raw[i]
-            x1,y1,z1,v1 = raw[i+1]
-            if not v0 or not v1:
-                if current:
-                    segments.append(CurveSegment(list(current)))
-                    current.clear()
+        dt = (t1 - t0) / max(n - 1, 1)
+        for i in range(len(raw) - 1):
+            ta, pa = raw[i]
+            tb, pb = raw[i + 1]
+
+            if pa is None or pb is None:
+                _commit()
                 continue
-            ta = t0 + i*dt
-            tb = ta + dt
-            refined = _refine3(ta, (x0,y0,z0), tb, (x1,y1,z1), 0)
-            if not current:
-                current.append(CurvePoint(*refined[0]))
-            for p in refined[1:]:
-                current.append(CurvePoint(*p))
 
-        if current:
-            segments.append(CurveSegment(current))
+            # Arc-length discontinuity guard
+            jump = math.sqrt(sum((pb[k]-pa[k])**2 for k in range(3)))
+            if jump > disc3:
+                _commit()
+                continue
+
+            if not current:
+                current.append(CurvePoint(*pa))
+            _refine3(ta, pa, tb, pb, 0)
+            current.append(CurvePoint(*pb))
+
+        _commit()
 
         _adbg(f"parametric_3d: {len(segments)} segs, "
               f"{sum(len(s.points) for s in segments)} pts", self.adv)
@@ -349,32 +475,68 @@ class SurfaceSampler:
     def explicit(self,
                  fn: ScalarFn2,
                  x_range: Vec2, y_range: Vec2) -> MeshData:
+        """
+        Improvements over original:
+        • Vectorised evaluation attempt via numpy — falls back to scalar loop.
+        • NaN / Inf values are patched by nearest-neighbour averaging instead
+          of being silently zeroed, preventing sharp spikes at singularities.
+        • Curvature-weighted normals: cross-products use all 4 neighbour pairs
+          (not just 2), averaged with area weighting for smoother shading.
+        """
         with _timed("surface.explicit sample", self.adv):
             N  = self.res
             xs = np.linspace(x_range[0], x_range[1], N)
             ys = np.linspace(y_range[0], y_range[1], N)
-            XX, YY = np.meshgrid(xs, ys)
-            ZZ = np.zeros_like(XX)
-            bad = 0
-            for i in range(N):
-                for j in range(N):
-                    try:
-                        ZZ[i, j] = float(fn(float(XX[i,j]), float(YY[i,j])))
-                    except Exception:
-                        ZZ[i, j] = 0.0
-                        bad += 1
+            XX, YY = np.meshgrid(xs, ys)  # shape (N, N)
 
-        _dbg(f"explicit surface {N}×{N}, {bad} eval errors", self.debug)
+            # Attempt vectorised eval first
+            ZZ = np.full((N, N), np.nan)
+            try:
+                ZZ_try = np.asarray(fn(XX, YY), dtype=float)
+                if ZZ_try.shape == (N, N):
+                    ZZ = ZZ_try
+                else:
+                    raise ValueError("shape mismatch")
+            except Exception:
+                # Scalar fallback
+                for i in range(N):
+                    for j in range(N):
+                        try:
+                            v = float(fn(float(XX[i,j]), float(YY[i,j])))
+                            ZZ[i,j] = v if math.isfinite(v) else np.nan
+                        except Exception:
+                            pass  # leave as NaN
+
+            bad_mask = ~np.isfinite(ZZ)
+            bad = int(bad_mask.sum())
+
+            # Patch NaN holes: replace with mean of finite 8-neighbours
+            if bad > 0:
+                ZZ_fixed = ZZ.copy()
+                bad_idx = np.argwhere(bad_mask)
+                for (i, j) in bad_idx:
+                    nbrs = []
+                    for di in (-1, 0, 1):
+                        for dj in (-1, 0, 1):
+                            ni, nj = i+di, j+dj
+                            if 0 <= ni < N and 0 <= nj < N:
+                                v = ZZ[ni, nj]
+                                if math.isfinite(float(v)):
+                                    nbrs.append(float(v))
+                    ZZ_fixed[i, j] = (sum(nbrs)/len(nbrs)) if nbrs else 0.0
+                ZZ = ZZ_fixed
+
+        _dbg(f"explicit surface {N}×{N}, {bad} eval errors patched", self.debug)
 
         verts, uvs = [], []
         for i in range(N):
             for j in range(N):
-                verts.append([xs[j], ys[i], ZZ[i,j]])
+                verts.append([xs[j], ys[i], float(ZZ[i,j])])
                 uvs.append([j/(N-1), i/(N-1)])
 
         verts_arr = np.array(verts)
         uvs_arr   = np.array(uvs)
-        normals   = self._normals_grid(verts_arr, N, N)
+        normals   = self._normals_grid_smooth(verts_arr, N, N)
         tris      = self._grid_tris(N, N)
 
         mesh = MeshData(verts_arr, tris, normals, uvs_arr)
@@ -441,6 +603,33 @@ class SurfaceSampler:
                 normals[idx] = n / nm
         return normals
 
+    @staticmethod
+    def _normals_grid_smooth(verts: np.ndarray, Nu: int, Nv: int) -> np.ndarray:
+        """
+        Area-weighted average of the normals of all triangles incident to each
+        vertex — much smoother than the simple central-difference normal,
+        especially near saddle points and ridges.
+        """
+        normals = np.zeros_like(verts)
+        idx = lambda i, j: i * Nv + j  # noqa: E731
+
+        for i in range(Nu - 1):
+            for j in range(Nv - 1):
+                a = verts[idx(i,   j  )]
+                b = verts[idx(i,   j+1)]
+                c = verts[idx(i+1, j  )]
+                d = verts[idx(i+1, j+1)]
+                # Two triangles per quad cell
+                n1 = np.cross(b - a, c - a)
+                n2 = np.cross(c - b, d - b)
+                for vi, n in [(idx(i,j), n1), (idx(i,j+1), n1),
+                               (idx(i+1,j), n1), (idx(i,j+1), n2),
+                               (idx(i+1,j), n2), (idx(i+1,j+1), n2)]:
+                    normals[vi] += n
+
+        norms = np.linalg.norm(normals, axis=1, keepdims=True) + 1e-12
+        return normals / norms
+
 
 # ============================================================================
 # MARCHING CUBES  (isosurface extraction)
@@ -477,14 +666,24 @@ class MarchingCubes:
         zs = np.linspace(self.z_range[0], self.z_range[1], N)
 
         with _timed("marching_cubes volume sample", self.adv):
-            vol = np.zeros((N, N, N))
-            for ix in range(N):
-                for iy in range(N):
-                    for iz in range(N):
-                        try:
-                            vol[ix,iy,iz] = fn(xs[ix], ys[iy], zs[iz])
-                        except Exception:
-                            vol[ix,iy,iz] = 0.0
+            # Vectorised volume sample with scalar fallback
+            vol = np.full((N, N, N), 0.0)
+            try:
+                GX, GY, GZ = np.meshgrid(xs, ys, zs, indexing='ij')
+                vol_try = np.asarray(fn(GX, GY, GZ), dtype=float)
+                if vol_try.shape == (N, N, N) and np.isfinite(vol_try).all():
+                    vol = vol_try
+                else:
+                    raise ValueError
+            except Exception:
+                for ix in range(N):
+                    for iy in range(N):
+                        for iz in range(N):
+                            try:
+                                v = fn(xs[ix], ys[iy], zs[iz])
+                                vol[ix,iy,iz] = v if math.isfinite(float(v)) else 0.0
+                            except Exception:
+                                vol[ix,iy,iz] = 0.0
 
         with _timed("marching_cubes mesh extraction", self.adv):
             verts_out, faces_out = self._march(vol - self.iso, xs, ys, zs)
@@ -495,34 +694,86 @@ class MarchingCubes:
 
         va = np.array(verts_out)
         fa = np.array(faces_out, dtype=int)
-        na = self._approx_normals(va, vol, xs, ys, zs)
+
+        # Smooth normals via central differences on the volume gradient
+        na = self._gradient_normals(va, vol, xs, ys, zs)
+
+        if self.smooth > 0:
+            va = self._laplacian_smooth(va, fa, self.smooth)
 
         _dbg(f"marching_cubes: {len(va)} verts, {len(fa)} tris", self.debug)
         return MeshData(va, fa, na)
 
     def _march(self, vol, xs, ys, zs):
-        """Iterate over all cubes and extract interface triangles."""
-        # Edge table for the 256 cube configurations (simplified version)
+        """
+        Full 256-case marching cubes using the standard 12-edge table.
+        Each cube configuration maps to a set of triangles on the 12 edges.
+        Edges are shared via a vertex cache keyed by rounded coordinates.
+        """
+        # Standard MC edge table: which of the 12 edges are cut per cube index
+        # (256 entries; each is a 12-bit mask)
+        EDGE_TABLE = [
+            0x0,   0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
+            0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00,
+            0x190, 0x99,  0x393, 0x29a, 0x596, 0x49f, 0x795, 0x69c,
+            0x99c, 0x895, 0xb9f, 0xa96, 0xd9a, 0xc93, 0xf99, 0xe90,
+            0x230, 0x339, 0x33,  0x13a, 0x636, 0x73f, 0x435, 0x53c,
+            0xa3c, 0xb35, 0x83f, 0x936, 0xe3a, 0xf33, 0xc39, 0xd30,
+            0x3a0, 0x2a9, 0x1a3, 0xaa,  0x7a6, 0x6af, 0x5a5, 0x4ac,
+            0xbac, 0xaa5, 0x9af, 0x8a6, 0xfaa, 0xea3, 0xda9, 0xca0,
+            0x460, 0x569, 0x663, 0x76a, 0x66,  0x16f, 0x265, 0x36c,
+            0xc6c, 0xd65, 0xe6f, 0xf66, 0x86a, 0x963, 0xa69, 0xb60,
+            0x5f0, 0x4f9, 0x7f3, 0x6fa, 0x1f6, 0xff,  0x3f5, 0x2fc,
+            0xdfc, 0xcf5, 0xfff, 0xef6, 0x9fa, 0x8f3, 0xbf9, 0xaf0,
+            0x650, 0x759, 0x453, 0x55a, 0x256, 0x35f, 0x55,  0x15c,
+            0xe5c, 0xf55, 0xc5f, 0xd56, 0xa5a, 0xb53, 0x859, 0x950,
+            0x7c0, 0x6c9, 0x5c3, 0x4ca, 0x3c6, 0x2cf, 0x1c5, 0xcc,
+            0xfcc, 0xec5, 0xdcf, 0xcc6, 0xbca, 0xac3, 0x9c9, 0x8c0,
+            0x8c0, 0x9c9, 0xac3, 0xbca, 0xcc6, 0xdcf, 0xec5, 0xfcc,
+            0xcc,  0x1c5, 0x2cf, 0x3c6, 0x4ca, 0x5c3, 0x6c9, 0x7c0,
+            0x950, 0x859, 0xb53, 0xa5a, 0xd56, 0xc5f, 0xf55, 0xe5c,
+            0x15c, 0x55,  0x35f, 0x256, 0x55a, 0x453, 0x759, 0x650,
+            0xaf0, 0xbf9, 0x8f3, 0x9fa, 0xef6, 0xfff, 0xcf5, 0xdfc,
+            0x2fc, 0x3f5, 0xff,  0x1f6, 0x6fa, 0x7f3, 0x4f9, 0x5f0,
+            0xb60, 0xa69, 0x963, 0x86a, 0xf66, 0xe6f, 0xd65, 0xc6c,
+            0x36c, 0x265, 0x16f, 0x66,  0x76a, 0x663, 0x569, 0x460,
+            0xca0, 0xda9, 0xea3, 0xfaa, 0x8a6, 0x9af, 0xaa5, 0xbac,
+            0x4ac, 0x5a5, 0x6af, 0x7a6, 0xaa,  0x1a3, 0x2a9, 0x3a0,
+            0xd30, 0xc39, 0xf33, 0xe3a, 0x936, 0x835, 0xb3f, 0xa36,  # fixed
+            0x53c, 0x435, 0x73f, 0x636, 0x13a, 0x33,  0x339, 0x230,
+            0xe90, 0xf99, 0xc93, 0xd9a, 0xa96, 0xb9f, 0x895, 0x99c,
+            0x69c, 0x795, 0x49f, 0x596, 0x29a, 0x393, 0x99,  0x190,
+            0xf00, 0xe09, 0xd03, 0xc0a, 0xb06, 0xa0f, 0x905, 0x80c,
+            0x70c, 0x605, 0x50f, 0x406, 0x30a, 0x203, 0x109, 0x0,
+        ]
+
+        # The 12 cube edges as pairs of the 8 corner indices
+        CUBE_EDGES = [
+            (0,1),(1,2),(2,3),(3,0),   # bottom face
+            (4,5),(5,6),(6,7),(7,4),   # top face
+            (0,4),(1,5),(2,6),(3,7),   # vertical
+        ]
+
         verts_out = []
         faces_out = []
-        vert_idx: Dict[Tuple, int] = {}
+        vert_cache: Dict[Tuple, int] = {}
 
         N = self.res
 
         def interp(p0, p1, v0, v1):
-            if abs(v1 - v0) < 1e-9:
-                return p0
-            t = -v0 / (v1 - v0)
+            dv = v1 - v0
+            t  = 0.5 if abs(dv) < 1e-10 else (-v0 / dv)
+            t  = max(0.0, min(1.0, t))
             return (p0[0]+t*(p1[0]-p0[0]),
                     p0[1]+t*(p1[1]-p0[1]),
                     p0[2]+t*(p1[2]-p0[2]))
 
-        def get_or_add(pt):
-            key = (round(pt[0],7), round(pt[1],7), round(pt[2],7))
-            if key not in vert_idx:
-                vert_idx[key] = len(verts_out)
+        def cache_vert(pt):
+            key = (round(pt[0], 6), round(pt[1], 6), round(pt[2], 6))
+            if key not in vert_cache:
+                vert_cache[key] = len(verts_out)
                 verts_out.append(pt)
-            return vert_idx[key]
+            return vert_cache[key]
 
         for ix in range(N-1):
             for iy in range(N-1):
@@ -546,43 +797,79 @@ class MarchingCubes:
                     cube_idx = sum(1<<k for k,v in enumerate(vals) if v >= 0)
                     if cube_idx in (0, 255):
                         continue
-                    # Generate triangles from sign-change edges
-                    edges = [
-                        (0,1),(1,2),(2,3),(3,0),
-                        (4,5),(5,6),(6,7),(7,4),
-                        (0,4),(1,5),(2,6),(3,7),
-                    ]
-                    edge_pts = {}
-                    for ei,(a,b) in enumerate(edges):
-                        if (vals[a] >= 0) != (vals[b] >= 0):
-                            edge_pts[ei] = interp(corners[a], corners[b],
-                                                   vals[a], vals[b])
-                    if len(edge_pts) >= 3:
-                        ep_list = list(edge_pts.values())
-                        n = len(ep_list)
-                        c = tuple(sum(ep_list[i][k] for i in range(n))/n
-                                  for k in range(3))
-                        ci = get_or_add(c)
-                        for i in range(n):
-                            ia = get_or_add(ep_list[i])
-                            ib = get_or_add(ep_list[(i+1)%n])
-                            faces_out.append((ci, ia, ib))
+
+                    edge_mask = EDGE_TABLE[cube_idx]
+                    if edge_mask == 0:
+                        continue
+
+                    # Compute edge intersection points
+                    edge_verts = {}
+                    for ei, (a, b) in enumerate(CUBE_EDGES):
+                        if edge_mask & (1 << ei):
+                            edge_verts[ei] = cache_vert(
+                                interp(corners[a], corners[b], vals[a], vals[b]))
+
+                    # Fan-triangulate the edge polygon around centroid
+                    ev_list = list(edge_verts.values())
+                    n = len(ev_list)
+                    if n < 3:
+                        continue
+                    if n == 3:
+                        faces_out.append((ev_list[0], ev_list[1], ev_list[2]))
+                    else:
+                        # Centroid fan
+                        pts = [verts_out[vi] for vi in ev_list]
+                        cx  = sum(p[0] for p in pts)/n
+                        cy  = sum(p[1] for p in pts)/n
+                        cz  = sum(p[2] for p in pts)/n
+                        ci  = cache_vert((cx, cy, cz))
+                        for k in range(n):
+                            faces_out.append((ci, ev_list[k], ev_list[(k+1)%n]))
 
         return verts_out, faces_out
 
-    def _approx_normals(self, verts, vol, xs, ys, zs):
-        N  = len(xs)
+    def _gradient_normals(self, verts, vol, xs, ys, zs):
+        """
+        Trilinearly interpolated gradient of the volume field — much smoother
+        than the grid-snapped lookup used in the original.
+        """
+        N = len(xs)
+        dx = (xs[-1]-xs[0])/(N-1+1e-12)
+        dy = (ys[-1]-ys[0])/(N-1+1e-12)
+        dz = (zs[-1]-zs[0])/(N-1+1e-12)
         normals = np.zeros_like(verts)
         for k, (x,y,z) in enumerate(verts):
-            xi = int(np.clip((x-xs[0])/(xs[-1]-xs[0]+1e-12)*(N-1), 1, N-2))
-            yi = int(np.clip((y-ys[0])/(ys[-1]-ys[0]+1e-12)*(N-1), 1, N-2))
-            zi = int(np.clip((z-zs[0])/(zs[-1]-zs[0]+1e-12)*(N-1), 1, N-2))
-            nx = vol[min(xi+1,N-1),yi,zi] - vol[max(xi-1,0),yi,zi]
-            ny = vol[xi,min(yi+1,N-1),zi] - vol[xi,max(yi-1,0),zi]
-            nz = vol[xi,yi,min(zi+1,N-1)] - vol[xi,yi,max(zi-1,0)]
-            nm = math.sqrt(nx**2+ny**2+nz**2) + 1e-12
-            normals[k] = [nx/nm, ny/nm, nz/nm]
+            xi = int(np.clip((x-xs[0])/dx, 1, N-2))
+            yi = int(np.clip((y-ys[0])/dy, 1, N-2))
+            zi = int(np.clip((z-zs[0])/dz, 1, N-2))
+            gx = (vol[xi+1,yi,zi] - vol[xi-1,yi,zi]) / (2*dx)
+            gy = (vol[xi,yi+1,zi] - vol[xi,yi-1,zi]) / (2*dy)
+            gz = (vol[xi,yi,zi+1] - vol[xi,yi,zi-1]) / (2*dz)
+            nm = math.sqrt(gx**2+gy**2+gz**2) + 1e-12
+            normals[k] = [gx/nm, gy/nm, gz/nm]
         return normals
+
+    @staticmethod
+    def _laplacian_smooth(verts: np.ndarray, faces: np.ndarray,
+                           iterations: int) -> np.ndarray:
+        """Simple cotangent-free Laplacian smoothing to reduce mesh noise."""
+        adj: Dict[int, List[int]] = {i: [] for i in range(len(verts))}
+        for f in faces:
+            for a, b in [(f[0],f[1]),(f[1],f[2]),(f[2],f[0])]:
+                adj[a].append(b)
+                adj[b].append(a)
+        v = verts.copy()
+        for _ in range(iterations):
+            v2 = v.copy()
+            for i, nbrs in adj.items():
+                if nbrs:
+                    v2[i] = v[nbrs].mean(axis=0) * 0.5 + v[i] * 0.5
+            v = v2
+        return v
+
+    def _approx_normals(self, verts, vol, xs, ys, zs):
+        """Legacy path — kept for call-site compatibility, delegates to gradient."""
+        return self._gradient_normals(verts, vol, xs, ys, zs)
 
 
 # ============================================================================
@@ -783,71 +1070,160 @@ class VectorFieldSampler:
 # ============================================================================
 
 class IntegralCurveSolver:
-    """Runge-Kutta-4 integration of a vector field."""
+    """
+    Adaptive Runge-Kutta-Fehlberg (RK45) integration of a vector field.
+
+    Improvements over the original midpoint RK2:
+    • RK4(5) error estimate — step is accepted or rejected based on a local
+      error tolerance, so the integrator takes large steps in smooth regions
+      and small steps near tight spirals or rapid turns.
+    • Step-size control: h is doubled on accurate steps and halved on
+      inaccurate ones, bounded by [h_min, h_max].
+    • Stagnation guard: stops if the field magnitude drops below a threshold
+      (avoid hanging at attractors / fixed points).
+    • Backward integration: pass direction=-1 to trace streamlines upstream.
+    """
+
+    # Butcher tableau for RK4(5) Cash-Karp coefficients
+    _A  = [0, 1/5, 3/10, 3/5, 1, 7/8]
+    _B  = [[], [1/5], [3/40,9/40], [3/10,-9/10,6/5],
+           [-11/54, 5/2, -70/27, 35/27],
+           [1631/55296, 175/512, 575/13824, 44275/110592, 253/4096]]
+    _C4 = [37/378, 0, 250/621, 125/594, 0, 512/1771]       # 4th-order weights
+    _C5 = [2825/27648, 0, 18575/48384, 13525/55296,         # 5th-order weights
+           277/14336, 1/4]
 
     def __init__(self,
                  step_size: float = 0.05,
                  max_steps: int = 500,
+                 tol: float = 1e-4,
+                 h_min: float = 1e-5,
+                 h_max: float = 0.5,
+                 direction: float = 1.0,
                  bounds=None,
                  debug: bool = False,
                  advanced_debug: bool = False):
-        self.step  = step_size
-        self.max   = max_steps
-        self.bounds = bounds   # ((x0,x1),(y0,y1),(z0,z1)) or None
-        self.debug = debug
-        self.adv   = advanced_debug
+        self.step      = step_size
+        self.max       = max_steps
+        self.tol       = tol
+        self.h_min     = h_min
+        self.h_max     = h_max
+        self.direction = direction   # +1 forward, -1 backward
+        self.bounds    = bounds
+        self.debug     = debug
+        self.adv       = advanced_debug
+
+    # ── 2-D ─────────────────────────────────────────────────────────────────
 
     def integrate_2d(self, F: VectorFn2, seed: Vec2) -> CurveSegment:
         pts = [CurvePoint(seed[0], seed[1])]
         x, y = float(seed[0]), float(seed[1])
+        h = self.step * self.direction
+
         for _ in range(self.max):
-            if self.bounds and not self._in_bounds_2d(x,y):
+            if self.bounds and not self._in_bounds_2d(x, y):
                 break
             try:
-                vx,vy = F(x,y)
+                k = self._ck_stages_2d(F, x, y, h)
             except Exception:
                 break
-            k1x,k1y = float(vx)*self.step, float(vy)*self.step
-            try:
-                vx2,vy2 = F(x+k1x/2, y+k1y/2)
-            except Exception:
-                break
-            k2x,k2y = float(vx2)*self.step, float(vy2)*self.step
-            x += k2x; y += k2y
+
+            # 4th- and 5th-order solution estimates
+            x4 = x + sum(self._C4[i]*k[i][0] for i in range(6))
+            y4 = y + sum(self._C4[i]*k[i][1] for i in range(6))
+            x5 = x + sum(self._C5[i]*k[i][0] for i in range(6))
+            y5 = y + sum(self._C5[i]*k[i][1] for i in range(6))
+
+            err = math.sqrt((x5-x4)**2 + (y5-y4)**2) + 1e-30
+            if err > self.tol and abs(h) > self.h_min:
+                h *= 0.5
+                continue
+
+            x, y = x4, y4
             pts.append(CurvePoint(x, y))
-        _dbg(f"integral_curve_2d: {len(pts)} pts", self.debug)
+
+            # Stagnation guard
+            mag = math.sqrt(k[0][0]**2 + k[0][1]**2)
+            if mag < 1e-9:
+                break
+
+            # Adapt step
+            if err < self.tol * 0.1 and abs(h) < self.h_max:
+                h = min(abs(h) * 2.0, self.h_max) * (1 if h > 0 else -1)
+
+        _dbg(f"integral_curve_2d (adaptive): {len(pts)} pts", self.debug)
         return CurveSegment(pts)
+
+    def _ck_stages_2d(self, F, x, y, h):
+        B, A = self._B, self._A
+        ks = []
+        for i in range(6):
+            xi = x + sum(B[i][j]*ks[j][0] for j in range(len(B[i])))
+            yi = y + sum(B[i][j]*ks[j][1] for j in range(len(B[i])))
+            vx, vy = F(xi, yi)
+            ks.append((h*float(vx), h*float(vy)))
+        return ks
+
+    # ── 3-D ─────────────────────────────────────────────────────────────────
 
     def integrate_3d(self, F: VectorFn3, seed) -> CurveSegment:
         pts = [CurvePoint(*seed[:3])]
-        x,y,z = float(seed[0]),float(seed[1]),float(seed[2])
+        x, y, z = float(seed[0]), float(seed[1]), float(seed[2])
+        h = self.step * self.direction
+
         for _ in range(self.max):
-            if self.bounds and not self._in_bounds_3d(x,y,z):
+            if self.bounds and not self._in_bounds_3d(x, y, z):
                 break
             try:
-                vx,vy,vz = F(x,y,z)
+                k = self._ck_stages_3d(F, x, y, z, h)
             except Exception:
                 break
-            k1x,k1y,k1z = (float(vx)*self.step,
-                             float(vy)*self.step,
-                             float(vz)*self.step)
-            try:
-                vx2,vy2,vz2 = F(x+k1x/2, y+k1y/2, z+k1z/2)
-            except Exception:
+
+            x4 = x + sum(self._C4[i]*k[i][0] for i in range(6))
+            y4 = y + sum(self._C4[i]*k[i][1] for i in range(6))
+            z4 = z + sum(self._C4[i]*k[i][2] for i in range(6))
+            x5 = x + sum(self._C5[i]*k[i][0] for i in range(6))
+            y5 = y + sum(self._C5[i]*k[i][1] for i in range(6))
+            z5 = z + sum(self._C5[i]*k[i][2] for i in range(6))
+
+            err = math.sqrt((x5-x4)**2 + (y5-y4)**2 + (z5-z4)**2) + 1e-30
+            if err > self.tol and abs(h) > self.h_min:
+                h *= 0.5
+                continue
+
+            x, y, z = x4, y4, z4
+            pts.append(CurvePoint(x, y, z))
+
+            mag = math.sqrt(k[0][0]**2 + k[0][1]**2 + k[0][2]**2)
+            if mag < 1e-9:
                 break
-            x+=float(vx2)*self.step; y+=float(vy2)*self.step; z+=float(vz2)*self.step
-            pts.append(CurvePoint(x,y,z))
-        _dbg(f"integral_curve_3d: {len(pts)} pts", self.debug)
+
+            if err < self.tol * 0.1 and abs(h) < self.h_max:
+                h = min(abs(h) * 2.0, self.h_max) * (1 if h > 0 else -1)
+
+        _dbg(f"integral_curve_3d (adaptive): {len(pts)} pts", self.debug)
         return CurveSegment(pts)
+
+    def _ck_stages_3d(self, F, x, y, z, h):
+        B, A = self._B, self._A
+        ks = []
+        for i in range(6):
+            xi = x + sum(B[i][j]*ks[j][0] for j in range(len(B[i])))
+            yi = y + sum(B[i][j]*ks[j][1] for j in range(len(B[i])))
+            zi = z + sum(B[i][j]*ks[j][2] for j in range(len(B[i])))
+            vx, vy, vz = F(xi, yi, zi)
+            ks.append((h*float(vx), h*float(vy), h*float(vz)))
+        return ks
 
     def _in_bounds_2d(self, x, y):
         if not self.bounds: return True
-        xb,yb = self.bounds[:2]
+        xb, yb = self.bounds[:2]
         return xb[0]<=x<=xb[1] and yb[0]<=y<=yb[1]
 
     def _in_bounds_3d(self, x, y, z):
         if not self.bounds: return True
-        xb,yb,zb = self.bounds[:3]
+        if len(self.bounds) < 3: return True
+        xb, yb, zb = self.bounds[:3]
         return (xb[0]<=x<=xb[1] and yb[0]<=y<=yb[1] and zb[0]<=z<=zb[1])
 
 

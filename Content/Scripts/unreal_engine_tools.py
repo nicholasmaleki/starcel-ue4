@@ -307,29 +307,42 @@ def get_python_root():
 global tickers
 tickers = []
 
+_world_cache = None
+
 def get_world():
+    global _world_cache
+    # Return cached world if still valid (avoids repeated all_worlds() scans)
+    if _world_cache is not None:
+        try:
+            _world_cache.get_name()  # will raise if the UObject was GC'd
+            return _world_cache
+        except Exception:
+            _world_cache = None
+
     scmaps = []
-    world = None
-    if not world:
-        for _world in ue.all_worlds():
-            if _world.get_name() == "StarcelExampleMap":
-                scmaps.append(_world)
+    for _world in ue.all_worlds():
+        if _world.get_name() == "StarcelExampleMap":
+            scmaps.append(_world)
 
-        if len(scmaps) > 1:
-            ue.log_warning("Found more than one StarcelExampleMap:")
-            print([w.get_name() for w in scmaps])
+    if len(scmaps) > 1:
+        ue.log_warning("Found more than one StarcelExampleMap:")
+        print([w.get_name() for w in scmaps])
 
-        if len(scmaps) == 1:
-            world = scmaps[0]
-        else:
-            ue.log_warning("Using the first world found")
-            world = scmaps[0] # len(scmaps) - 1
+    if scmaps:
+        _world_cache = scmaps[0]
+    else:
+        all_w = ue.all_worlds()
+        if all_w:
+            _world_cache = all_w[0]
+            ue.log_warning("Can't find world, assigning the first existing world, " + _world_cache.get_name())
 
-        if not world:
-            world = ue.all_worlds()[0]
-            ue.log_warning("Can't find world, assigning the first existing world, " + world.get_name())
+    return _world_cache
 
-    return world
+
+def invalidate_world_cache():
+    """Call when PIE stops/starts to force get_world() to re-scan."""
+    global _world_cache
+    _world_cache = None
 
 
 def _GetWorld(): # alternative from https://github.com/dfb/UnrealEnginePython/tree/modus
@@ -713,7 +726,7 @@ def reset_backgrounds():
     sky = find_actor("SM_SkySphere_2")  # IDK why it got the name _2
     sky_white = find_actor("SM_SkySpherePureWhiteManualExposure")
     # sky_white_autoexposure = find_actor("SM_SkySpherePureWhite")
-    sky_video = find_actor("BP_VideoSkySphere_8")  # IDK why it got the name _8
+    sky_video = find_actor("BP_VideoSkySphere")  # IDK why it got the name _8
     sky_sun_time = find_actor("BP_SkySphere")
     sky_spheres = [sky, sky_white, sky_video, sky_sun_time]  # , sky_white_autoexposure]
 
@@ -757,7 +770,10 @@ def reset_backgrounds():
 
     # sky_light.set_property("bLowerHemisphereIsSolidColor", False)
     # sky_light.set_property("LowerHemisphereColor", (0,0,0,1))
-    py_actor.call_function("DisableWindowTransparent")
+    try:
+        py_actor.call_function("DisableWindowTransparent")
+    except Exception as e:
+        ue.log_warning(f'DisableWindowTransparent failed: {e}')
 
 
 def change_background(background="white", path="file://"):
@@ -770,10 +786,11 @@ def change_background(background="white", path="file://"):
         print(py_actor)
 
     # grab actors for background
-    sky = find_actor("SM_SkySphere_2")  # IDK why it got the name _2
+    sky = find_actor("SM_SkySphere")  # IDK why it got the name _2
     sky_white = find_actor("SM_SkySpherePureWhiteManualExposure")
     # sky_white_autoexposure = find_actor("SM_SkySpherePureWhite")
-    sky_video = find_actor("BP_VideoSkySphere_8")  # IDK why it got the name _8
+    sky_video = find_actor("BP_VideoSkySphere")  # IDK why it got the name _8
+    print("SKY VIDEO FOUND:", sky_video)
     sky_sun_time = find_actor("BP_SkySphere")
     sky_spheres = [sky, sky_white, sky_video, sky_sun_time]  # , sky_white_autoexposure]
 
@@ -817,7 +834,10 @@ def change_background(background="white", path="file://"):
 
     # sky_light.set_property("bLowerHemisphereIsSolidColor", False)
     # sky_light.set_property("LowerHemisphereColor", (0,0,0,1))
-    py_actor.call_function("DisableWindowTransparent")
+    try:
+        py_actor.call_function("DisableWindowTransparent")
+    except Exception as e:
+        ue.log_warning(f'DisableWindowTransparent failed: {e}')
 
     # TODO: Add transparency and green screen defaults https://github.com/historia-Inc/WindowTransparency https://www.fab.com/listings/a967c271-f440-4bc2-93f8-3699122f0f7b https://forums.unrealengine.com/t/transparent-window/123446
     modes = ["white", "black", "white_no_bloom", "white_less_emissive", "stars", "sky", "image", "video", "transparent"]
@@ -832,7 +852,7 @@ def change_background(background="white", path="file://"):
             # fog.set_property("FogInscatteringColor", (0, 0, 0, 1))
             # fogblack.SetActorHiddenInGame(False)
             apply_material(
-                actor_name="SM_SkySphere_2",
+                actor_name="SM_SkySphere",
                 material_path="/Game/Materials/M_SkyBox.M_SkyBox",
                 params={
                     "Color": (0,0,0,1),
@@ -874,7 +894,7 @@ def change_background(background="white", path="file://"):
                 py_actor = find_actor("BP_PyActor")
                 # print(py_actor)
                 apply_material(
-                    actor_name="SM_SkySphere_2",
+                    actor_name="SM_SkySphere",
                     material_path="/Game/Materials/M_SkyBox",
                     bp_helper=py_actor,
                     params={
@@ -889,6 +909,7 @@ def change_background(background="white", path="file://"):
                 ue.log_warning("image mode requires working path")
         elif background == "video":  # TODO: HISPlayer Unreal Engine plugin for faster playback
             if os.path.exists(path):
+                print("SET BACKGROUND VIDEO CALLED")
                 ue_path = "file://" + path
                 sky_light.SetActorHiddenInGame(True)
                 # light_bp = ue.load_object(Blueprint, '/Game/Blueprints/Assets/BP_SkyLight.BP_SkyLight')

@@ -16,13 +16,15 @@ import asyncio, time
 from typing import List, Dict, Union, Optional
 import random
 
-from nd_table.examples import example_unreal_rendering
+from nd_table.examples import test_nd_table_grid
 from input_devices import Keyboard, Mouse, HotkeyManager, TraceHelper
 
 from ue_spawn import spawn_icon
 from icon_to_image import extract_icon
 
-from gizmo import test_gizmos, setup_gizmo_interaction
+from gizmo import test_gizmos, setup_gizmo_interaction  # returns (target, gizmo_root, handles)
+
+from test_spawn import test_text3d_click, test_spawn_all
 
 ue.log('Hello i am a Python module.')
 # Code placed outside the Main class will not run when connecting to a server.
@@ -31,8 +33,6 @@ ue.log('Hello i am a Python module.')
 
 # # Keep track of the current index
 # current_bg_index = 0
-
-change_background("white_less_emissive")
 
 def spawn_icon2(pil_image, location=FVector(0, 0, 0), rotation=FRotator(0, 0, 0), scale=FVector(1, 1, 1),
                 material_path='/Game/Materials/M_Icon.M_Icon',
@@ -124,7 +124,7 @@ def spawn_icon2(pil_image, location=FVector(0, 0, 0), rotation=FRotator(0, 0, 0)
 
 
 # Stop the background music
-# find_actor("CellDriftLoop").SetActorHiddenInGame(True)
+find_actor("CellDriftLoop").SetActorHiddenInGame(True)
 
 # Use this if you want to rebuild the unreal_engine intellisense(.pyi, etc.) and cli
 # rebuild_generated_modules()
@@ -228,6 +228,8 @@ class Main:
 
     def end_play(self, reason):
         ue.log("Ending play")
+        import unreal_engine_tools
+        unreal_engine_tools.invalidate_world_cache()
         for i, ticker in enumerate(tickers):
             ue.remove_ticker(ticker)
             del tickers[i]
@@ -368,6 +370,8 @@ class Main:
     def begin_play(self):
         ue.log('Begin Play on Main class')
         #change_background("video", os.path.join(os.path.abspath(ue.get_content_dir()),"Movies", "psychedelic.mp4"))
+        change_background("white")
+
         global world
         world = get_world()
         print("begin_play found world", world)
@@ -388,7 +392,7 @@ class Main:
 
         self.input = HotkeyManager(self.uobject, self.keyboard, self.mouse)
         self.trace = TraceHelper(self.uobject)
-        #
+        
         # # Enable mouse features
         # self.input.enable_mouse_events(True, True)
         # # self.input.show_cursor(True)
@@ -643,15 +647,20 @@ class Main:
             else:
                 ue.log("CLIENT (no AuthorityGameMode) Client likely connected to dedicated server. ")
 
-            # Testing icon
+            # Testing icon (the green sphere = GoogleDriveSetup.exe icon).
+            # source_path is attached to the actor so pyactor_icon.IconSphere
+            # can open it in Chrome on click via `cmd /c start chrome "<path>"`.
             print("Testing icon")
-            self.info = extract_icon(r"C:\Users\nicho\Downloads\GoogleDriveSetup.exe", preview=True, return_info=True)
-            self.icon = spawn_icon(self.info["image"], location=FVector(310, 50, 400))
+            _google_drive_exe = r"C:\Users\nicho\Downloads\GoogleDriveSetup.exe"
+            self.info = extract_icon(_google_drive_exe, preview=True, return_info=True)
+            self.icon = spawn_icon(self.info["image"],
+                                   location=FVector(310, 50, 400),
+                                   source_path=_google_drive_exe)
             self.icon.get_actor_component('Sphere').SetSimulatePhysics(True)
 
             # some kind of movability problem
             # self.monk = 0
-            # def ticke():
+            # def tick():
             #     print("ticked")
             #     self.monk += 1
             #     if self.monk > 3:
@@ -680,14 +689,14 @@ class Main:
 
             # TESTING POSSESSION
             print("TESTING POSSESSION")
-            # bp_drone = ue.load_object(Blueprint, '/Game/Blueprints/Assets/DroneCharacter/BP_PyDroneCharacter.BP_PyDroneCharacter')
-            # player = world.actor_spawn(bp_drone.GeneratedClass)
-            # transform = FTransform(FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1))
-            # player.set_actor_transform(transform)
-            # # player.get_actor_component('Text3DComponent').Text = "HI"
-            # self.uobject.get_player_controller().Possess(player)
-            # py_player = player.get_py_proxy()
-            # py_player._setup_input()
+            bp_drone = ue.load_object(Blueprint, '/Game/Blueprints/Assets/DroneCharacter/BP_PyDroneCharacter.BP_PyDroneCharacter')
+            player = world.actor_spawn(bp_drone.GeneratedClass)
+            transform = FTransform(FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1))
+            player.set_actor_transform(transform)
+            # player.get_actor_component('Text3DComponent').Text = "HI"
+            self.uobject.get_player_controller().Possess(player)
+            py_player = player.get_py_proxy()
+            py_player._setup_input()
 
             player_controller = self.uobject.get_player_controller()
             pawn = player_controller.get_pawn()
@@ -697,7 +706,7 @@ class Main:
                 actor_name="TestSphere",  # M_Color is default
                 material_path="/Game/Materials/M_Color.M_Color",
                 params = {
-                    "Color": (0, 0, 1, 1),
+                    "Color": (0, 1, 0, 1),
                     "Metallic": 0.5,
                     "Specular": 0.5,
                     "Roughness": 0.2,
@@ -762,9 +771,16 @@ class Main:
         # self.test_cylinder()
         # self.test_text()
         print("Testing gizmos")
-        _gizmo_cyl, _gizmo_giz = test_gizmos()
-        self._gizmo_tick = setup_gizmo_interaction(self.uobject, self.input, _gizmo_giz, _gizmo_cyl)
-        # example_unreal_rendering()
+        # _gizmo_target, _gizmo_root, _gizmo_handles = test_gizmos()
+        # self._gizmo_tick = setup_gizmo_interaction(self.uobject, self.input, _gizmo_target, _gizmo_root, _gizmo_handles)
+        # nd_table grid test moved to test_spawn_all()
+
+        self._t3d_actor, self._t3d_table, self._t3d_tick = test_text3d_click(
+            uobject=self.uobject, input_manager=self.input)
+
+        results = test_spawn_all()
+        print(results)
+
 
     # this is called at every 'tick'
     def tick(self, delta_time):
@@ -779,6 +795,9 @@ class Main:
 
         if hasattr(self, '_gizmo_tick'):
             self._gizmo_tick(delta_time)
+
+        if hasattr(self, '_t3d_tick'):
+            self._t3d_tick(delta_time)
 
 
     def you_pressed_K(self):

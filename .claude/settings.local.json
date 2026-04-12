@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find 'C:/Users/nicho/Documents/Unreal Projects/Starcel9/Content' -type f -name *.py)",
+      "Bash(grep -l \"chart\\\\|plot\\\\|graph\\\\|heatmap\\\\|surface\\\\|visualization\" \"C:/Users/nicho/Documents/Unreal Projects/Starcel9/Content/Scripts\"/*.py)",
+      "Bash(xargs grep:*)",
+      "Bash(grep -r \"CurvablePlane\\\\|class.*Plotter\\\\|class.*Curvable\" /c/Users/nicho/Documents/\"Unreal Projects\"/Starcel9/Content/Scripts/*.py)",
+      "Bash(grep -r \"BP_CurvablePlane\" /c/Users/nicho/Documents/\"Unreal Projects\"/Starcel9/Content/Scripts/*.py)",
+      "Bash(python -c \"from PIL import Image; img = Image.open\\(r'C:\\\\Users\\\\nicho\\\\Documents\\\\Unreal Projects\\\\Starcel9\\\\Content\\\\Materials\\\\crosshair.png'\\); print\\(f'{img.width}x{img.height} {img.mode}'\\)\")",
+      "Bash(grep -n \"subprocess\\\\|Popen\\\\|os\\\\.system\\\\|^\\\\\\\\s*ls\\\\\\\\|cmd\\\\|shell\\\\|run\\(\" \"C:\\\\Users\\\\nicho\\\\Documents\\\\Unreal Projects\\\\Starcel9\\\\Content\\\\Scripts\\\\icon_to_image.py\")",
+      "Bash(grep -v \"^--$\")"
+    ]
+  }
+}

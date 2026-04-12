@@ -58,11 +58,67 @@ def _set_transform(actor, location, rotation, scale):
     actor.set_actor_transform(transform)
 
 
+def _spawn_pyactor(python_module, python_class,
+                   location=None, rotation=None, scale=None,
+                   components=None):
+    """
+    Spawn a PyActor dynamically (no Blueprint required).
+
+    *components* is an optional list of dicts, each with:
+        class_name : str  — UE component class (e.g. 'StaticMeshComponent')
+        name       : str  — component name
+        mesh       : str  — optional mesh asset path to SetStaticMesh
+        root       : bool — if True, use add_actor_root_component
+
+    Returns the spawned actor.
+    """
+    world = _get_world()
+    loc = location if location is not None else FVector(0, 0, 0)
+    rot = rotation if rotation is not None else FRotator(0, 0, 0)
+
+    actor = world.actor_spawn(ue.find_class('PyActor'), loc, rot)
+
+    # Add components before setting Python class (so begin_play sees them)
+    if components:
+        for comp in components:
+            cls = ue.find_class(comp['class_name'])
+            if comp.get('root', False):
+                c = actor.add_actor_root_component(cls, comp['name'])
+            else:
+                c = actor.add_actor_component(cls, comp['name'])
+            if comp.get('mesh'):
+                mesh_obj = ue.load_object(StaticMesh, comp['mesh'])
+                c.SetStaticMesh(mesh_obj)
+                c.Mobility = EComponentMobility.Movable
+
+    actor.set_property('PythonModule', python_module)
+    actor.set_property('PythonClass', python_class)
+
+    if scale is not None:
+        _set_transform(actor, loc, rot, scale)
+
+    return actor
+
+
 def _exec_console(cmd):
     """Run a console command via the player controller."""
+    # Try world.get_player_controller first (standard UEP path)
     try:
-        pc = ue.get_player_controller(0)
+        pc = _get_world().get_player_controller(0)
         pc.ConsoleCommand(cmd)
+        return
+    except Exception:
+        pass
+    # Fallback: iterate world actors and find a PlayerController
+    try:
+        from unreal_engine.classes import PlayerController
+        for actor in _get_world().all_actors():
+            try:
+                if actor.is_a(PlayerController):
+                    actor.ConsoleCommand(cmd)
+                    return
+            except Exception:
+                continue
     except Exception as e:
         ue.log_warning(f'_exec_console: failed to run "{cmd}": {e}')
 
@@ -117,7 +173,8 @@ def _ensure_video(path):
             ['ffmpeg', '-y', '-i', path,
              '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
              '-c:a', 'aac', tmp],
-            capture_output=True, text=True
+            capture_output=True, text=True,
+            creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0),
         )
         if result.returncode == 0:
             ue.log(f'_ensure_video: converted "{ext}" -> MP4 ({tmp})')
@@ -177,7 +234,8 @@ def _convert_via_blender(path, tmp_fbx):
         try:
             result = subprocess.run(
                 [exe, '--background', '--python', script_tmp],
-                capture_output=True, text=True, timeout=120
+                capture_output=True, text=True, timeout=120,
+                creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0),
             )
             if result.returncode == 0 and os.path.exists(tmp_fbx):
                 ue.log(f'_ensure_fbx: converted via Blender ({tmp_fbx})')
@@ -232,50 +290,148 @@ def _ensure_fbx(path):
 # ---------------------------------------------------------------------------
 
 def spawn_image(path, location=None, rotation=None, scale=None,
-                material_path='/Game/Materials/M_ImagePlane',
+                material_path='/Game/Materials/M_TexturePicture',
                 param_name='Texture'):
     """
-    Spawn a thin cube scaled to image aspect ratio and textured with *path*.
+    Spawn a vertical cube textured with the image at *path* (picture frame).
 
-    Unsupported formats (.webp, .gif, .psd, etc.) are auto-converted to PNG.
-    The material at *material_path* must have a TextureSampleParameter2D
-    named *param_name*.
+    Uses M_TexturePicture as a MID with a pil_image_to_texture-generated
+    texture — no UE asset import required.  The cube is oriented vertically:
+    width on X, thin on Y, height on Z, sized to match the image's pixel
+    dimensions (1 px = 1 UU).
+
+    Unsupported formats are auto-converted to PNG via PIL.
     """
+    from PIL import Image as PILImage
+    from unreal_engine_tools import pil_image_to_texture
+
     world = _get_world()
-    path = _ensure_image(path)
+    path  = _ensure_image(path)
 
-    img_w, img_h = 100.0, 100.0
+    # ---- load and size the image ----
     try:
-        from PIL import Image as PILImage
-        with PILImage.open(path) as im:
-            img_w, img_h = float(im.width), float(im.height)
-    except Exception:
-        pass
+        pil_img = PILImage.open(path).convert('RGBA')
+    except Exception as e:
+        ue.log_warning(f'spawn_image: cannot open "{path}": {e}')
+        return None
 
+    img_w, img_h = float(pil_img.width), float(pil_img.height)
+
+    # ---- spawn cube actor (no location; transform set after) ----
     actor = world.actor_spawn(StaticMeshActor)
-    smc = actor.StaticMeshComponent
-    smc.SetStaticMesh(ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube'))
+    smc   = actor.StaticMeshComponent
+    cube  = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube')
+    smc.SetStaticMesh(cube)
     smc.Mobility = EComponentMobility.Movable
 
-    mat = ue.load_object(Material, material_path)
+    # ---- apply M_TexturePicture as MID, set texture parameter ----
+    mat = ue.load_object(Material, material_path + '.' + material_path.split('/')[-1])
+    if mat is None:
+        mat = ue.load_object(Material, material_path)
     if mat:
         try:
-            tex = None
-            try:
-                from unreal_engine.classes import TextureFactory
-                tex_name = os.path.splitext(os.path.basename(path))[0]
-                tex = TextureFactory().factory_import_object(
-                    path, f'/Game/SpawnTextures/{tex_name}')
-            except Exception as e:
-                ue.log_warning(f'spawn_image: texture import failed: {e}')
-            dmi = smc.CreateAndSetMaterialInstanceDynamic(0)
+            mid = smc.create_material_instance_dynamic(mat)
+            tex = pil_image_to_texture(pil_img)
             if tex:
-                dmi.SetTextureParameterValue(param_name, tex)
+                mid.set_material_texture_parameter(param_name, tex)
+            smc.set_material(0, mid)
         except Exception as e:
-            ue.log_warning(f'spawn_image: material setup failed: {e}')
+            ue.log_warning(f'spawn_image: material/texture setup failed: {e}')
+    else:
+        ue.log_warning(f'spawn_image: could not load material at "{material_path}"')
 
-    img_scale = scale if scale is not None else FVector(img_w / 100.0, img_h / 100.0, 0.01)
-    _set_transform(actor, location, rotation, img_scale)
+    # ---- vertical picture-frame scaling: 1 px → 1 UU ----
+    # Default cube is 100×100×100 UU, so divide by 100 for unit scale.
+    # X = width, Z = height (vertical), Y = thin frame depth.
+    if scale is None:
+        scale = FVector(img_w / 100.0, 0.05, img_h / 100.0)
+    ue.log(f'spawn_image: "{os.path.basename(path)}" {int(img_w)}x{int(img_h)} px '
+           f'→ scale=({scale.x:.3f}, {scale.y:.3f}, {scale.z:.3f})  '
+           f'world size = {int(img_w)}x{int(scale.y*100)}x{int(img_h)} UU')
+    _set_transform(actor, location, rotation, scale)
+    # Verify UE actually applied the non-uniform scale
+    try:
+        s = actor.get_actor_scale()
+        ue.log(f'spawn_image: actor scale readback = '
+               f'({s.x:.3f}, {s.y:.3f}, {s.z:.3f})')
+    except Exception:
+        pass
+    return actor
+
+
+# ---------------------------------------------------------------------------
+# spawn_video_plane — uses BP_VideoSkySphere's SetVideoBackground pattern
+# ---------------------------------------------------------------------------
+#
+# NOTE ON VIDEO IN THIS PROJECT:
+# The working video path is BP_VideoSkySphere.call_function("SetVideoBackground",
+# "file://" + abs_path).  That Blueprint wires MediaPlayer → MediaTexture →
+# FileMediaSource → Material internally via its Blueprint graph.  Trying to
+# create those objects from Python via ue.new_object() and wire them manually
+# does NOT produce a playable result in UE4.27+UEP — the MediaTexture never
+# receives frames because the Blueprint event graph (ReceiveTick, OnMediaOpened)
+# is what pumps the texture each frame.
+#
+# spawn_video_plane therefore spawns BP_VideoSkySphere and calls
+# SetVideoBackground, then repositions and rescales the actor to act as a
+# flat video picture frame instead of a sky sphere.
+# ---------------------------------------------------------------------------
+
+def spawn_video_plane(path, location=None, rotation=None, scale=None,
+                      bp_path='/Game/Blueprints/Assets/BP_VideoSkySphere.BP_VideoSkySphere'):
+    """
+    Spawn a BP_VideoSkySphere and call ``SetVideoBackground("file://..." + path)``
+    to play a video — the same proven method used by ``change_background("video", ...)``
+    for the psychedelic sky background.
+
+    The actor is repositioned to *location* and optionally rescaled to *scale*.
+    If *scale* is None, it is left at the Blueprint's default scale (sky sphere
+    sized).  Pass a small scale like ``FVector(0.01, 0.01, 0.01)`` to use it as
+    a room-scale video screen.
+
+    Parameters
+    ----------
+    path    : absolute filesystem path to an MP4 video
+    location: FVector world position (default origin)
+    rotation: FRotator (default identity)
+    scale   : FVector  (default None = Blueprint default)
+    bp_path : package path to the video-capable Blueprint
+
+    Returns
+    -------
+    actor   : the spawned BP_VideoSkySphere actor (holds MediaPlayer internally)
+    """
+    world = _get_world()
+    path  = _ensure_video(path)
+
+    # ---- spawn the Blueprint ----
+    try:
+        bp = ue.load_object(Blueprint, bp_path)
+    except Exception as e:
+        ue.log_warning(f'spawn_video_plane: could not load "{bp_path}": {e}')
+        return None
+    if bp is None:
+        ue.log_warning(f'spawn_video_plane: Blueprint not found at "{bp_path}"')
+        return None
+
+    try:
+        actor = world.actor_spawn(bp.GeneratedClass)
+    except Exception as e:
+        ue.log_warning(f'spawn_video_plane: actor_spawn failed: {e}')
+        return None
+
+    # ---- position / scale ----
+    _set_transform(actor, location, rotation, scale)
+
+    # ---- play the video (same call as change_background("video", path)) ----
+    ue_path = "file://" + os.path.abspath(path)
+    try:
+        actor.call_function("SetVideoBackground", ue_path)
+        ue.log(f'spawn_video_plane: SetVideoBackground("{os.path.basename(path)}") '
+               f'on {actor.get_name()}')
+    except Exception as e:
+        ue.log_warning(f'spawn_video_plane: SetVideoBackground failed: {e}')
+
     return actor
 
 
@@ -284,7 +440,7 @@ def spawn_image(path, location=None, rotation=None, scale=None,
 # ---------------------------------------------------------------------------
 
 def spawn_video(path, location=None, rotation=None, scale=None,
-                material_path='/Game/Materials/M_VideoPlane',
+                material_path='/Game/Movies/M_VideoTexture_Video',
                 param_name='MediaTexture',
                 autoplay=True):
     """
@@ -310,7 +466,8 @@ def spawn_video(path, location=None, rotation=None, scale=None,
         result = subprocess.run(
             ['ffprobe', '-v', 'error', '-select_streams', 'v:0',
              '-show_entries', 'stream=width,height', '-of', 'csv=p=0', path],
-            capture_output=True, text=True
+            capture_output=True, text=True,
+            creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0),
         )
         parts = result.stdout.strip().split(',')
         if len(parts) == 2:
@@ -382,9 +539,12 @@ def spawn_sound(path, location=None, volume=1.0, pitch=1.0,
 
     if as_actor:
         try:
-            bp = ue.load_object(Blueprint, '/Game/Blueprints/BP_SoundSphere')
-            actor = world.actor_spawn(bp.GeneratedClass)
-            _set_transform(actor, loc, None, None)
+            actor = _spawn_pyactor(
+                'pyactor_sound', 'SoundSphere',
+                location=loc,
+                components=[dict(class_name='StaticMeshComponent',
+                                 name='Sphere', root=True,
+                                 mesh='/Engine/BasicShapes/Sphere.Sphere')])
             if sound:
                 actor.Sound = sound
             return actor
@@ -802,44 +962,353 @@ def spawn_earth(location=None, rotation=None, scale=None,
     return actor
 
 
+# ---------------------------------------------------------------------------
+# spawn_table — render an nd_table.Table as Text3D actors
+# ---------------------------------------------------------------------------
+
+def spawn_table(table, location=None, world_location=None,
+                orientation='wall_table', render_gridlines=True,
+                render_text=True, cell_spacing=100.0):
+    """
+    Render an nd_table.Table as Text3D actors in the world.
+
+    Parameters
+    ----------
+    table           : nd_table.ndtable.Table
+    location        : FVector | None  (world origin; alias for world_location)
+    orientation     : 'wall_table' | 'ground_table'
+    render_gridlines: bool
+    render_text     : bool
+    cell_spacing    : float  UE units between cells
+
+    Returns
+    -------
+    UnrealTableRenderer instance  (holds .cell_actors, .gridline_actors)
+    """
+    from nd_table.unreal_integration import UnrealTableRenderer
+    loc = world_location or location or FVector(0, 0, 0)
+    renderer = UnrealTableRenderer(
+        world=_get_world(),
+        cell_spacing=cell_spacing,
+        orientation_preset=orientation,
+        text_mode='3d',
+    )
+    renderer.render_table(table, world_location=loc,
+                          render_gridlines=render_gridlines,
+                          render_text=render_text)
+    return renderer
+
+
+# ---------------------------------------------------------------------------
+# spawn_desktop_icons — grid of BP_Icon actors from a folder's shell icons
+# ---------------------------------------------------------------------------
+
+def spawn_desktop_icons(location=None, desktop_path=None, spacing=150,
+                        max_icons=50):
+    """
+    Scan a folder (default: Windows Desktop) for files, extract their Windows
+    shell icons via icon_to_image, and spawn a grid of BP_Icon actors.
+
+    Parameters
+    ----------
+    location     : FVector  — world origin of the grid bottom-left icon
+    desktop_path : str | None  — folder to scan; defaults to user Desktop
+    spacing      : float  — UE units between icon centres (default 150)
+    max_icons    : int    — cap on number of icons spawned
+
+    Returns
+    -------
+    list of spawned icon actors
+    """
+    import math
+    from icon_to_image import get_folder_icons
+
+    loc    = location or FVector(0, 0, 0)
+    folder = desktop_path or os.path.join(os.path.expanduser('~'), 'Desktop')
+
+    try:
+        icons = get_folder_icons(folder)   # {path: PIL Image}
+    except Exception as e:
+        ue.log_warning(f'spawn_desktop_icons: could not scan "{folder}": {e}')
+        return []
+
+    paths  = list(icons.items())[:max_icons]
+    cols   = max(1, int(math.ceil(math.sqrt(len(paths)))))
+    actors = []
+
+    for i, (path, pil_img) in enumerate(paths):
+        col = i % cols
+        row = i // cols
+        icon_loc = FVector(
+            loc.x,
+            loc.y + col * spacing,
+            loc.z + row * spacing,
+        )
+        try:
+            actor = spawn_icon(pil_img, location=icon_loc, source_path=path)
+            if actor:
+                actors.append(actor)
+        except Exception as e:
+            ue.log_warning(f'spawn_desktop_icons: spawn_icon failed for "{path}": {e}')
+
+    ue.log(f'spawn_desktop_icons: spawned {len(actors)} icons from "{folder}"')
+    return actors
+
+
+# ---------------------------------------------------------------------------
+# spawn_system_monitor — BP_SysMon with live sysinfo ticker
+# ---------------------------------------------------------------------------
+
+def spawn_system_monitor(location=None, rotation=None, scale=None):
+    """
+    Spawn a system monitor PyActor with Text3DComponent.
+    The Python component updates its text every 2 seconds automatically.
+
+    Requires:
+      - sysinfo.py in Scripts/
+      - activity_tracker.py daemon running (optional; gracefully skipped)
+    """
+    actor = _spawn_pyactor(
+        'pyactor_sysmon', 'PyActorSysmon',
+        location=location, rotation=rotation, scale=scale,
+        components=[dict(class_name='Text3DComponent',
+                         name='Text3DComponent', root=True)])
+    # Set default text while waiting for first update
+    try:
+        t3d = find_component(actor, 'Text3DComponent')
+        if t3d:
+            t3d.Text = 'Loading...'
+    except Exception:
+        pass
+    return actor
+
+
+# ---------------------------------------------------------------------------
+# spawn_camera_actor — BP_PyCamera with PyActorCamera component
+# ---------------------------------------------------------------------------
+
+def spawn_camera_actor(location=None, rotation=None,
+                       camera_type='normal'):
+    """
+    Spawn a camera PyActor with CineCameraComponent.
+
+    camera_type options:
+      'normal'        Standard 35mm full-frame
+      'cinematic'     Wide 24mm f/2.8
+      'macro'         Extreme bokeh 50mm f/0.95
+      'bokeh'         Portrait 85mm f/1.4
+      'bokeh_tele'    Telephoto 135mm f/1.8
+      'panini'        14mm + Panini projection
+      'cctv'          6mm 1/3" sensor
+      'anamorphic'    40mm anamorphic
+      'orthographic'  Orthographic projection
+
+    Returns the spawned actor; its Python component (PyActorCamera) handles
+    lens/DOF settings automatically in begin_play.
+    """
+    actor = _spawn_pyactor(
+        'pyactor_camera', 'PyActorCamera',
+        location=location, rotation=rotation,
+        components=[dict(class_name='CineCameraComponent',
+                         name='CineCameraComponent', root=True)])
+    if actor is None:
+        return None
+    try:
+        actor.camera_type = camera_type
+    except Exception:
+        pass
+    return actor
+
+
+# ---------------------------------------------------------------------------
+# spawn_file_explorer — BP_FileExplorer with FileExplorer Python component
+# ---------------------------------------------------------------------------
+
+def spawn_file_explorer(location=None, rotation=None,
+                        initial_path=None):
+    """
+    Spawn a FileExplorer PyActor (no Blueprint required).
+
+    The Python component (FileExplorer) calls refresh() in begin_play,
+    which populates a table of files using EverythingAPI + UnrealTableRenderer.
+
+    Requires:
+      - Everything (Voidtools) running in background
+      - Everything64.dll accessible
+    """
+    actor = _spawn_pyactor(
+        'pyactor_file_explorer', 'FileExplorer',
+        location=location, rotation=rotation)
+    if actor is None:
+        return None
+    if initial_path is not None:
+        try:
+            actor.initial_path = initial_path
+        except Exception:
+            pass
+    return actor
+
+
+# ---------------------------------------------------------------------------
+# spawn_plot — BP_MathPlot with PyActorPlotter component
+# ---------------------------------------------------------------------------
+
+def spawn_plot(function_expr='sin(x)+cos(y)',
+               plot_type='surface',
+               mesh_mode='triangles',
+               orientation='ground_table',
+               resolution=32,
+               x_range=(-3.14159, 3.14159),
+               y_range=(-3.14159, 3.14159),
+               z_range=(-2.0, 2.0),
+               units_per_uu=100.0,
+               show_grid=True,
+               location=None,
+               rotation=None,
+               bp_path='/Game/Blueprints/Assets/BP_MathPlot.BP_MathPlot'):
+    """
+    Spawn a BP_MathPlot actor and render *function_expr* as a 3D plot.
+
+    Parameters
+    ----------
+    function_expr : str
+        Math expression of x and y, e.g. 'sin(x)+cos(y)', 'x**2-y**2',
+        'sin(sqrt(x**2+y**2))'.  Supports sin/cos/tan/sqrt/log/exp/abs/pi/e.
+    plot_type : str
+        'surface'   — z=f(x,y) colormap mesh  (default)
+        'heatmap'   — flat coloured panel
+        'contour'   — contour lines
+        'wireframe' — wireframe mesh
+    mesh_mode : str
+        'triangles'    — per-triangle tilted Plane actors (default)
+        'spheres'      — sphere at each vertex
+        'sphere_lines' — spheres + cylinder edges
+    orientation : str
+        'ground_table' — horizontal, z rises up  (default)
+        'wall_table'   — vertical panel, y down
+        'wall_graph'   — vertical panel, y up
+    resolution : int
+        Grid samples per axis. 32 is fast; 64 is detailed.
+    x_range / y_range / z_range : (float, float)
+        Math-space axis limits.
+    units_per_uu : float
+        How many math units fit in 100 UE units (scale).
+    show_grid : bool
+        Draw axis grid lines.
+    location / rotation : FVector / FRotator
+        World transform.
+    bp_path : str
+        Path to BP_MathPlot Blueprint.
+
+    Returns
+    -------
+    actor | None
+
+    Blueprint setup (do once in UE Editor)
+    ---------------------------------------
+    1. Create Actor Blueprint: Content/Blueprints/Assets/BP_MathPlot
+    2. Add Python component, set module.class = pyactor_plotter.PyActorPlotter
+    3. Add String variables (Instance Editable, Expose on Spawn):
+         function_expr  default "sin(x)+cos(y)"
+         plot_type      default "surface"
+         orientation    default "ground_table"
+    4. Add Integer variable: resolution  default 32
+    5. Add Float variables: x_min=-3.14, x_max=3.14, y_min=-3.14, y_max=3.14,
+                            z_min=-2.0, z_max=2.0, units_per_uu=100.0
+    6. Add Boolean variable: show_grid  default True
+    """
+    actor = spawn_blueprint(bp_path, location, rotation)
+    if actor is None:
+        return None
+
+    # Set parameters on the PyActorPlotter component directly — no Blueprint
+    # variables needed.  begin_play already ran, so call render() after patching.
+    try:
+        pc = actor.get_component('Python')
+        if pc is not None:
+            pycomp = pc.get_python_object()   # the PyActorPlotter instance
+            if pycomp is not None:
+                pycomp.function_expr = function_expr
+                pycomp.plot_type     = plot_type
+                pycomp.mesh_mode     = mesh_mode
+                pycomp.orientation   = orientation
+                pycomp.resolution    = resolution
+                pycomp.x_range       = x_range
+                pycomp.y_range       = y_range
+                pycomp.z_range       = z_range
+                pycomp.units_per_uu  = units_per_uu
+                pycomp.show_grid     = show_grid
+                pycomp.render()
+    except Exception as e:
+        ue.log_warning(f'spawn_plot: could not configure PyActorPlotter: {e}')
+
+    return actor
+
+
+# ---------------------------------------------------------------------------
+# File-type detection — extended with new types
+# ---------------------------------------------------------------------------
+
+TABLE_KEYWORDS   = {'table', 'nd_table', 'ndtable'}
+SYSMON_KEYWORDS  = {'sysmon', 'system_monitor', 'systemmonitor', 'monitor'}
+DESKTOP_KEYWORDS = {'desktop', 'desktop_icons', 'desktopicons'}
+PLOT_KEYWORDS    = {'plot', 'math_plot', 'mathplot', 'heatmap', 'surface', 'chart', 'graph'}
 
 
 def spawn_icon(pil_image, location=FVector(0,0,0), rotation=FRotator(0,0,0), scale=FVector(1,1,1),
                material_path='/Game/Materials/M_Icon.M_Icon',
                param_name='Texture',
                bp_path='/Game/Blueprints/Assets/BP_Icon.BP_Icon',
-               component_name = 'Sphere'):
+               component_name = 'Sphere',
+               source_path=None):
     """
     Spawn a BP_Icon actor and apply *pil_image* as *param_name* texture.
 
     BP_Icon should have:
       • A StaticMeshComponent (sphere or any mesh)
-      • A Python component pointing to ue_components.IconHoverComponent
-        (hover-shrink effect is handled there)
-
-    The IconHoverComponent class is kept in ue_components.py but is also
-    defined below for reference — do not attach it again here.
+      • A Python component pointing to pyactor_icon.IconSphere
+        (hover-shrink + click-to-open handled there)
 
     Requires Pillow and a material at *material_path* with a
     TextureSampleParameter2D named *param_name*.
+
+    Parameters
+    ----------
+    source_path : str or None
+        Filesystem path the icon represents (e.g. the .exe or .png the
+        PIL image was extracted from).  If provided, the path is attached
+        to the spawned actor as ``actor.source_path`` so that
+        ``pyactor_icon.IconSphere.on_clicked`` can open it in Chrome via
+        ``cmd /c start chrome "<path>"``.
     """
     world = _get_world()
-    # print("ue_spawn.py world", world)
 
-    actor = None # TODO: Almost certainly needs to be a class variable to stop GC from collecting it
+    actor = None
 
-    # Spawn BP_Icon (hover effect comes from its Python component)
+    # Spawn as PyActor with sphere mesh + pyactor_icon.IconSphere
     try:
-        bp = ue.load_object(Blueprint, bp_path)
-        actor = world.actor_spawn(bp.GeneratedClass) # , location)
-        print("PRINTING ACTOR", actor)
-        actor.set_actor_transform(FTransform(location, rotation, scale))
+        actor = _spawn_pyactor(
+            'pyactor_icon', 'IconSphere',
+            location=location, rotation=rotation, scale=scale,
+            components=[dict(class_name='StaticMeshComponent',
+                             name=component_name, root=True,
+                             mesh='/Engine/BasicShapes/Sphere.Sphere')])
         target_comp = find_component(actor, component_name)
     except Exception as e:
-        ue.log_warning(f'spawn_icon: could not load BP_Icon at "{bp_path}": {e}. '
-                       'Make sure BP_Icon exists in your project.')
+        ue.log_warning(f'spawn_icon: PyActor spawn failed: {e}')
         return None
 
+    # Attach the source path to the actor.  Note: world.actor_spawn()
+    # already ran BP_Icon's BeginPlay (and therefore IconSphere.begin_play)
+    # synchronously, so this assignment happens AFTER begin_play has
+    # finished.  That's fine — IconSphere reads source_path lazily via
+    # _get_source_path() every time the user clicks, so it picks up the
+    # value whenever it arrives.
+    if source_path is not None:
+        try:
+            actor.source_path = source_path
+        except Exception as e:
+            ue.log_warning(f'spawn_icon: could not attach source_path: {e}')
 
     try:
         tex = pil_image_to_texture(pil_image)
@@ -905,6 +1374,9 @@ def _detect_type(path_or_name):
     if lower in PRIMITIVE_NAMES:  return 'primitive'
     if lower in CAMERA_KEYWORDS:  return 'camera'
     if lower in EARTH_KEYWORDS:   return 'earth'
+    if lower in TABLE_KEYWORDS:   return 'table'
+    if lower in SYSMON_KEYWORDS:  return 'sysmon'
+    if lower in DESKTOP_KEYWORDS: return 'desktop'
     ext = os.path.splitext(lower)[1]
     if ext in IMAGE_EXTS:         return 'image'
     if ext in VIDEO_EXTS:         return 'video'
@@ -962,6 +1434,18 @@ def spawn(
     earth_preset='satellite',
     earth_asset_id=None,
     earth_bp_path='/Game/Blueprints/BP_CesiumEarth',
+    # Table options
+    table_data=None,
+    orientation='wall_table',
+    render_gridlines=True,
+    render_text=True,
+    cell_spacing=100.0,
+    # Desktop icon options
+    desktop_path=None,
+    icon_spacing=150,
+    max_icons=50,
+    # Sysmon
+    sysmon_bp_path='/Game/Blueprints/Assets/BP_SysMon.BP_SysMon',
 ):
     """
     Universal spawn function for UnrealEnginePython.
@@ -1011,7 +1495,8 @@ def spawn(
         ue.log_warning(
             f'spawn: cannot detect type for "{path_or_type}". '
             'Pass type= explicitly. '
-            'Supported: image, video, sound, obj, primitive, camera, class, blueprint.'
+            'Supported: image, video, sound, obj, primitive, camera, earth, '
+            'table, sysmon, desktop, class, blueprint.'
         )
         return None
 
@@ -1067,6 +1552,24 @@ def spawn(
             asset_id=earth_asset_id,
             bp_path=earth_bp_path,
         )
+
+    elif detected == 'table':
+        if table_data is None:
+            ue.log_warning('spawn: type="table" requires table_data= parameter.')
+            return None
+        return spawn_table(table_data, location=location,
+                           orientation=orientation,
+                           render_gridlines=render_gridlines,
+                           render_text=render_text,
+                           cell_spacing=cell_spacing)
+
+    elif detected == 'sysmon':
+        return spawn_system_monitor(location, rotation, scale,
+                                    bp_path=sysmon_bp_path)
+
+    elif detected == 'desktop':
+        return spawn_desktop_icons(location, desktop_path=desktop_path,
+                                   spacing=icon_spacing, max_icons=max_icons)
 
     elif detected == 'class':
         if uclass is None:

@@ -1,9 +1,19 @@
+import os
 import unreal_engine as ue
 from unreal_engine.classes import KismetMathLibrary
-from unreal_engine import FVector, FRotator, FQuat
+from unreal_engine import FVector, FRotator, FQuat, FTransform
 from constants import FiniteRepetitionSelector
 from input_devices import Keyboard, Mouse, HotkeyManager, TraceHelper
 import math
+
+try:
+    from unreal_engine.classes import StaticMeshActor, StaticMesh, Material
+    from unreal_engine.enums import EComponentMobility
+except Exception:
+    StaticMeshActor    = None
+    StaticMesh         = None
+    Material           = None
+    EComponentMobility = None
 
 # TYPING REFERENCE (never changes):
 #   FVector  -> .x  .y  .z
@@ -66,9 +76,112 @@ class PyPawnDrone:
         self.keyboard = Keyboard()
         self.mouse    = Mouse()
         self.input    = HotkeyManager(self.uobject, self.keyboard, self.mouse)
+
+        # ---- Crosshair image plane attached to Screen component ----
+        self.crosshair_actor = None
+        self._spawn_crosshair()
+
         self._dbg("PyPawnDrone: begin_play OK")
 
+    # ------------------------------------------------------------------ #
+    #  Crosshair — tiny image plane attached to Screen cube center        #
+    # ------------------------------------------------------------------ #
+
+    CROSSHAIR_PATH = r'C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\Materials\crosshair.png'
+    CROSSHAIR_MATS = (
+        '/Game/Materials/M_Crosshair',
+        '/Game/Materials/M_TextureUnlit',
+        '/Game/Materials/M_TexturePicture',
+    )
+    CROSSHAIR_PARAM = 'Texture'
+    CROSSHAIR_SCALE = 3.0   # multiplier so tiny PNGs are visible at distance
+    SCREEN_NAME     = 'Screen'
+
+    def _spawn_crosshair(self):
+        """Add a StaticMeshComponent (cube) to the owning actor, attach it
+        to the Screen component, and texture it with crosshair.png.
+
+        This does NOT spawn a separate actor or touch the Screen's own
+        material — it creates a new component on the same actor."""
+        from unreal_engine_tools import find_component
+        from unreal_engine.classes import StaticMeshComponent
+
+        screen = find_component(self.uobject, self.SCREEN_NAME)
+        if screen is None:
+            self._dbg(f'PyPawnDrone: no "{self.SCREEN_NAME}" component — '
+                      'crosshair skipped')
+            return
+
+        if not os.path.exists(self.CROSSHAIR_PATH):
+            ue.log_warning(f'PyPawnDrone: crosshair not found: '
+                           f'"{self.CROSSHAIR_PATH}"')
+            return
+
+        try:
+            from PIL import Image as PILImage
+            from unreal_engine_tools import pil_image_to_texture
+
+            pil_img = PILImage.open(self.CROSSHAIR_PATH).convert('RGBA')
+            img_w, img_h = float(pil_img.width), float(pil_img.height)
+
+            # Load material
+            mat = None
+            mat_name = None
+            for mp in self.CROSSHAIR_MATS:
+                if mat is not None:
+                    break
+                for path in (mp + '.' + mp.split('/')[-1], mp):
+                    try:
+                        mat = ue.load_object(Material, path)
+                        mat_name = mp.split('/')[-1]
+                        break
+                    except Exception:
+                        pass
+
+            if mat is None:
+                ue.log_warning(f'PyPawnDrone: no usable crosshair material '
+                               f'(tried {[m.split("/")[-1] for m in self.CROSSHAIR_MATS]}) '
+                               '— skipping crosshair')
+                return
+
+            tex = pil_image_to_texture(pil_img)
+            if tex is None:
+                ue.log_warning('PyPawnDrone: pil_image_to_texture returned None')
+                return
+
+            # Add a new StaticMeshComponent to the owning actor
+            owner = self.uobject.get_owner() or self.uobject.get_actor()
+            smc = owner.add_actor_component(StaticMeshComponent, 'Crosshair')
+            cube = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube')
+            smc.SetStaticMesh(cube)
+            smc.Mobility = EComponentMobility.Movable
+
+            # Apply textured MID
+            mid = smc.create_material_instance_dynamic(mat)
+            mid.set_material_texture_parameter(self.CROSSHAIR_PARAM, tex)
+            smc.set_material(0, mid)
+
+            # Attach to Screen, then offset in front
+            smc.AttachToComponent(screen)
+            s = self.CROSSHAIR_SCALE
+            smc.set_relative_scale(FVector(img_w / 100.0 * s, 0.01, img_h / 100.0 * s))
+            smc.set_relative_location(FVector(0, -55.0, 0))
+
+            self.crosshair_actor = smc  # keep ref for cleanup
+            ue.log(f'PyPawnDrone: crosshair {int(img_w)}x{int(img_h)} px '
+                   f'component attached to "{self.SCREEN_NAME}" (mat={mat_name})')
+        except Exception as e:
+            ue.log_warning(f'PyPawnDrone: crosshair spawn failed: {e}')
+
     def end_play(self, reason):
+        if hasattr(self, 'crosshair_actor') and self.crosshair_actor:
+            try:
+                self.crosshair_actor.DestroyComponent()
+            except Exception:
+                try:
+                    self.crosshair_actor.actor_destroy()
+                except Exception:
+                    pass
         if hasattr(self, 'input') and self.input:
             self.input.shutdown()
 

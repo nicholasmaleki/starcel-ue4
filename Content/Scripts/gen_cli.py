@@ -68,7 +68,7 @@ tools: Dict[str, Dict[str, Any]] = {}
 for path in extra_exes:
     if os.path.isfile(path):
         cmd = os.path.basename(path)[:-4]
-        tools[sanitize(cmd)] = {"cmd": path, "preset_args": [], "arg_prefix": "", "arg_suffix": "", "no_window": False}
+        tools[sanitize(cmd)] = {"cmd": path, "preset_args": [], "arg_prefix": "", "arg_suffix": "", "no_window": True}
 
 for bin_dir in BIN_DIRS:
     if os.path.isdir(bin_dir):
@@ -76,7 +76,7 @@ for bin_dir in BIN_DIRS:
             if is_exe(fname):
                 cmd = fname[:-4]
                 full_path = os.path.join(bin_dir, fname)
-                tools[sanitize(cmd)] = {"cmd": full_path, "preset_args": [], "arg_prefix": "", "arg_suffix": "", "no_window": False}
+                tools[sanitize(cmd)] = {"cmd": full_path, "preset_args": [], "arg_prefix": "", "arg_suffix": "", "no_window": True}
 
 for alias, spec in ALIASES.items():
     t = sanitize(spec["target"])
@@ -258,9 +258,10 @@ class _CommandNode:
         exe_name = os.path.basename(cmd).lower()
         flags = subprocess.CREATE_NO_WINDOW if self._no_window else 0
 
-        # Interactive commands run directly in console
+        # Interactive commands — still hidden unless no_window is explicitly False
         if exe_name in INTERACTIVE_COMMANDS:
-            return_code = subprocess.run([cmd] + list(args_list)).returncode
+            return_code = subprocess.run([cmd] + list(args_list),
+                                         creationflags=flags).returncode
             elapsed = time.perf_counter() - start
             print(f"Time: {{elapsed:.6f}}s")
             return CommandResult("", "", return_code)

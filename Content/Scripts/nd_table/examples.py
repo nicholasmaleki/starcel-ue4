@@ -155,14 +155,30 @@ def example_text_sizing_test():
     print()
 
 
-def example_unreal_rendering():
-    print("=" * 70)
-    print("COMPREHENSIVE UNREAL RENDERING TEST")
-    print(f"Global Offset: {GLOBAL_OFFSET}")
-    print("=" * 70)
-    
+def test_nd_table_grid(base_location=None):
+    """
+    Comprehensive nD table rendering test (2D through 7D).
+    Uses 10x10 for the base 2D table.
+
+    Returns dict compatible with test_spawn_all results format.
+    """
+    from unreal_engine import FVector as _FV
+
+    if base_location is None:
+        base_location = GLOBAL_OFFSET
+
+    def _off(x, y, z):
+        return _FV(base_location.x + x, base_location.y + y,
+                   base_location.z + z)
+
+    _log = print
+    _log("=" * 70)
+    _log("test_nd_table_grid")
+    _log(f"Base Location: {base_location}")
+    _log("=" * 70)
+
     world = get_world()
-    
+
     renderer = UnrealTableRenderer(
         world=world,
         cell_spacing=100.0,
@@ -171,47 +187,44 @@ def example_unreal_rendering():
         debug=False,
         aggressive_debug=True
     )
-    
-    # ===== 2D TABLE =====
-    print("\n[2D TEST] Creating 5x5 table...")
-    t2d = Table(shape=(5, 5), aggressive_debug=True)
-    for i in range(5):
-        for j in range(5):
+
+    # ===== 2D TABLE (10x10) =====
+    _log("\n[2D TEST] Creating 10x10 table...")
+    t2d = Table(shape=(10, 10), aggressive_debug=True)
+    for i in range(10):
+        for j in range(10):
             t2d[i, j] = f"({i},{j})"
-    
     t2d[0, 0] = 100
     t2d[1, 0] = 200
     t2d[2, 0] = 300
-    
-    print(f"2D: {len(t2d.cells)} cells")
-    renderer.render_table(t2d, world_location=offset(0, 0, 100))
-    print("✓ 2D rendered\n")
-    
-    # ===== 2D WITH NEGATIVES =====
-    print("[2D NEGATIVE] Table with negative indices...")
-    t2d_neg = Table(shape=[(-2, 2), (-2, 2)], aggressive_debug=True)
-    for i in range(-2, 3):
-        for j in range(-2, 3):
-            t2d_neg[i, j] = 1 # f"[{i},{j}]"
-    
-    print(f"2D Negative: {len(t2d_neg.cells)} cells (should be 25)")
-    renderer.render_table(t2d_neg, world_location=offset(800, 0, 100))
-    print("✓ 2D negative rendered\n")
-    
+
+    _log(f"2D: {len(t2d.cells)} cells")
+    renderer.render_table(t2d, world_location=_off(0, 0, 100))
+    _log("2D rendered\n")
+
+    # ===== 2D WITH NEGATIVES (10x10) =====
+    _log("[2D NEGATIVE] Table with negative indices...")
+    t2d_neg = Table(shape=[(-5, 4), (-5, 4)], aggressive_debug=True)
+    for i in range(-5, 5):
+        for j in range(-5, 5):
+            t2d_neg[i, j] = 1
+    _log(f"2D Negative: {len(t2d_neg.cells)} cells")
+    renderer.render_table(t2d_neg, world_location=_off(1200, 0, 100))
+    _log("2D negative rendered\n")
+
     # ===== 3D TABLE =====
-    print("[3D TEST] Creating 3x3x3 table...")
+    _log("[3D TEST] Creating 3x3x3 table...")
     t3d = Table(shape=(3, 3, 3), aggressive_debug=True)
     for i in range(3):
         for j in range(3):
             for k in range(3):
                 t3d[i, j, k] = f"{i}{j}{k}"
-    
-    print(f"3D: {len(t3d.cells)} cells (should be 27)")
-    renderer.render_table(t3d, world_location=offset(0, 800, 100))
-    print("✓ 3D rendered\n")
-    
+    _log(f"3D: {len(t3d.cells)} cells")
+    renderer.render_table(t3d, world_location=_off(0, 1200, 100))
+    _log("3D rendered\n")
+
     # ===== 3D WITH TABS AND NEWLINES =====
-    print("[3D TAB/NEWLINE] Table with special characters...")
+    _log("[3D TAB/NEWLINE] Table with special characters...")
     t3d_special = Table(shape=(2, 2, 2), aggressive_debug=True)
     t3d_special[0, 0, 0] = "hello\n\n\nworld!"
     t3d_special[0, 0, 1] = "tab\t\tseparated"
@@ -221,56 +234,45 @@ def example_unreal_rendering():
     t3d_special[1, 0, 1] = "B\nC\nD"
     t3d_special[1, 1, 0] = "tabs:\t\t\there"
     t3d_special[1, 1, 1] = "newlines:\n\n\nhere"
-    
-    print(f"3D Special: {len(t3d_special.cells)} cells")
-    renderer.render_table(t3d_special, world_location=offset(1200, 800, 100))
-    print("✓ 3D tab/newline rendered\n")
-    
+    renderer.render_table(t3d_special, world_location=_off(1200, 1200, 100))
+    _log("3D tab/newline rendered\n")
+
     # ===== 3D WITH NEGATIVES =====
-    print("[3D NEGATIVE] Table with negative indices...")
+    _log("[3D NEGATIVE] Table with negative indices...")
     t3d_neg = Table(shape=[(-1, 1), (-1, 1), (-1, 1)], aggressive_debug=True)
     for i in range(-1, 2):
         for j in range(-1, 2):
             for k in range(-1, 2):
                 t3d_neg[i, j, k] = f"[{i},{j},{k}]"
-    
-    print(f"3D Negative: {len(t3d_neg.cells)} cells (should be 27)")
-    renderer.render_table(t3d_neg, world_location=offset(1600, 0, 100))
-    print("✓ 3D negative rendered\n")
-    
+    renderer.render_table(t3d_neg, world_location=_off(2400, 0, 100))
+    _log("3D negative rendered\n")
+
     # ===== 3D WITH FUNCTION =====
-    print("[3D FUNCTION] Table with callable function...")
+    _log("[3D FUNCTION] Table with callable function...")
     t3d_func = Table(shape=(2, 2, 2), aggressive_debug=True)
     for i in range(2):
         for j in range(2):
             for k in range(2):
                 t3d_func[i, j, k] = i * 100 + j * 10 + k
-    
     def calc_sum():
         return t3d_func[0,0,0] + t3d_func[1,1,1]
-    
     t3d_func[0, 0, 1] = calc_sum
-    
-    print(f"3D Function: {len(t3d_func.cells)} cells")
-    renderer.render_table(t3d_func, world_location=offset(800, 800, 100))
-    print("✓ 3D function rendered\n")
-    
+    renderer.render_table(t3d_func, world_location=_off(1200, 2400, 100))
+    _log("3D function rendered\n")
+
     # ===== 4D TABLE =====
-    print("[4D TEST] Creating 2^4 table...")
+    _log("[4D TEST] Creating 2^4 table...")
     t4d = Table(shape=(2, 2, 2, 2), aggressive_debug=True)
     for i in range(2):
         for j in range(2):
             for k in range(2):
                 for w in range(2):
                     t4d[i,j,k,w] = f"{i}{j}{k}{w}"
-    
-    print(f"4D: {len(t4d.cells)} cells")
-    renderer.render_table(t4d, world_location=offset(0, 1600, 100))
-    print("✓ 4D rendered\n")
-    
-    # ===== 4D WITH NEGATIVE - CREATE MANUALLY =====
-    print("[4D NEGATIVE] Table with negative 4th dimension...")
-    # Create axes manually to avoid shape parsing issue
+    renderer.render_table(t4d, world_location=_off(0, 2400, 100))
+    _log("4D rendered\n")
+
+    # ===== 4D WITH NEGATIVE =====
+    _log("[4D NEGATIVE] Table with negative 4th dimension...")
     axes_4d = [
         Axis(start=0, end=1, name="dim0"),
         Axis(start=0, end=1, name="dim1"),
@@ -283,13 +285,11 @@ def example_unreal_rendering():
             for k in range(2):
                 for w in range(-1, 2):
                     t4d_neg[i,j,k,w] = f"D4={w}"
-    
-    print(f"4D Negative: {len(t4d_neg.cells)} cells (should be 24)")
-    renderer.render_table(t4d_neg, world_location=offset(1600, 800, 100))
-    print("✓ 4D negative rendered\n")
-    
+    renderer.render_table(t4d_neg, world_location=_off(2400, 1200, 100))
+    _log("4D negative rendered\n")
+
     # ===== 5D TABLE =====
-    print("[5D TEST] Creating 2^5 table...")
+    _log("[5D TEST] Creating 2^5 table...")
     t5d = Table(shape=(2, 2, 2, 2, 2), aggressive_debug=True)
     for i in range(2):
         for j in range(2):
@@ -297,13 +297,11 @@ def example_unreal_rendering():
                 for w in range(2):
                     for v in range(2):
                         t5d[i,j,k,w,v] = f"{i}{j}{k}{w}{v}"
-    
-    print(f"5D: {len(t5d.cells)} cells")
-    renderer.render_table(t5d, world_location=offset(800, 1600, 100))
-    print("✓ 5D rendered\n")
-    
+    renderer.render_table(t5d, world_location=_off(1200, 3600, 100))
+    _log("5D rendered\n")
+
     # ===== 6D TABLE =====
-    print("[6D TEST] Creating 2^6 table...")
+    _log("[6D TEST] Creating 2^6 table...")
     t6d = Table(shape=(2, 2, 2, 2, 2, 2), aggressive_debug=True)
     count = 0
     for i in range(2):
@@ -314,13 +312,11 @@ def example_unreal_rendering():
                         for u in range(2):
                             t6d[i,j,k,w,v,u] = f"{count}"
                             count += 1
-    
-    print(f"6D: {len(t6d.cells)} cells")
-    renderer.render_table(t6d, world_location=offset(0, 2400, 100))
-    print("✓ 6D rendered\n")
-    
+    renderer.render_table(t6d, world_location=_off(0, 3600, 100))
+    _log("6D rendered\n")
+
     # ===== 7D TABLE =====
-    print("[7D TEST] Creating 2^7 table...")
+    _log("[7D TEST] Creating 2^7 table...")
     t7d = Table(shape=(2, 2, 2, 2, 2, 2, 2), aggressive_debug=True)
     count = 0
     for i in range(2):
@@ -332,15 +328,21 @@ def example_unreal_rendering():
                             for t in range(2):
                                 t7d[i,j,k,w,v,u,t] = count
                                 count += 1
-    
-    print(f"7D: {len(t7d.cells)} cells")
-    renderer.render_table(t7d, world_location=offset(800, 2400, 100))
-    print("✓ 7D rendered\n")
-    
-    print("=" * 70)
-    print(f"ALL TESTS COMPLETE")
-    print(f"Cells: {len(renderer.cell_actors)}, Gridlines: {len(renderer.gridline_actors)}")
-    print("=" * 70)
+    renderer.render_table(t7d, world_location=_off(2400, 3600, 100))
+    _log("7D rendered\n")
+
+    n_cells = len(renderer.cell_actors)
+    n_lines = len(renderer.gridline_actors)
+    _log("=" * 70)
+    _log(f"ALL TESTS COMPLETE")
+    _log(f"Cells: {n_cells}, Gridlines: {n_lines}")
+    _log("=" * 70)
+
+    return renderer
+
+
+# Keep old name as alias for backwards compatibility
+example_unreal_rendering = test_nd_table_grid
 
 
 if __name__ == '__main__':

@@ -1062,11 +1062,15 @@ class Table:
         
     def _get_formula_context(self) -> Dict:
         """Get context for formula evaluation"""
-        import math
+        import math, builtins
         context = {
-            '__builtins__': __builtins__,
+            '__builtins__': builtins.__dict__ if hasattr(builtins, '__dict__') else builtins,
             'math': math,
             'np': np,
+            # Common builtins explicitly for safety
+            'max': max, 'min': min, 'sum': sum, 'abs': abs,
+            'round': round, 'len': len, 'int': int, 'float': float,
+            'str': str, 'bool': bool, 'list': list,
         }
         
         # Add global tables
