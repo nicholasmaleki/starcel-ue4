@@ -84,7 +84,7 @@ class Constants:
                 self.__quotes = [bytes.fromhex(h).decode('utf-8') for h in loaded_quotes_hex]
                 self.__quotes.append(worldhello.hello_world())
             print("Successfully unpickled quotes")
-        except:
+        except Exception:
             print("Failed to unpickle quotes")
 
 
@@ -102,10 +102,10 @@ class WorldSize():
         # self.ue4_world_max = 88000000000 # bEnableLargeWorlds = true, UE_USE_UE4_WORLD_MAX=0. Although, this reports larger: https://old.reddit.com/r/unrealengine/comments/1axhmhm/is_the_88_million_km_max_world_size_total_area_or/kro5la5/
 
         # all in meters
-        self.observable_universe = 8.8 * 10 ^ 26
-        self.milky_way_galaxy = 9 * 10 ^ 20
-        self.solar_system = 3 * 10 ^ 13
-        self.au = 1.496 * 10 ^ 11
+        self.observable_universe = 8.8 * 10 ** 26
+        self.milky_way_galaxy = 9 * 10 ** 20
+        self.solar_system = 3 * 10 ** 13
+        self.au = 1.496 * 10 ** 11
         self.earth_size = 12756000  # includes bulge at the equator. Notice that it fits into the tiled ue4 world
         self.usa = 4500000
         self.usa_state = 800000
@@ -116,11 +116,11 @@ class WorldSize():
         self.hand = .2
 
         self.large_manmade_radiowave_wavelength = 100000000
-        self.max_visible_wavelength = 7.8 * 10 ^ (-7)
-        self.min_visible_wavelength = 3.8 * 10 ^ (-7)
-        self.euv_wavelength = 10 ^ (-8)
-        self.smallest_observed_wavelength = 10 ^ (-23)  # smallest wavelength gamma ray
-        self.planck_length = 1.616 * 10 ^ (-35)
+        self.max_visible_wavelength = 7.8 * 10 ** (-7)
+        self.min_visible_wavelength = 3.8 * 10 ** (-7)
+        self.euv_wavelength = 10 ** (-8)
+        self.smallest_observed_wavelength = 10 ** (-23)  # smallest wavelength gamma ray
+        self.planck_length = 1.616 * 10 ** (-35)
 
         # diameters in nm
         self.good_particle_physics__size = 0.000005
@@ -138,11 +138,11 @@ class WorldSize():
         self.nist_siliconkg = 93600000
 
         # in kg
-        self.electron_weight = 9.1093837 * 10 ^ (-31)
-        self.photon_am_weight = 9.52 * 10 ^ (-50)  # AM Radio. Using Planck's constant.
+        self.electron_weight = 9.1093837 * 10 ** (-31)
+        self.photon_am_weight = 9.52 * 10 ** (-50)  # AM Radio. Using Planck's constant.
         # 2.09024042 × 10^(-28)nm particle width by idiot math using electrons weight and size, 2 orders of magnitude difference between this and planck length
-        self.photon_visible_weight = 4.42 * 10 ^ (-36)  # 9.70468767*10^(-15)nm by idiot math
-        self.photon_gamma_weight = 2.21 * 10 ^ (-19)  # 485.234384nm by idiot math
+        self.photon_visible_weight = 4.42 * 10 ** (-36)  # 9.70468767*10^(-15)nm by idiot math
+        self.photon_gamma_weight = 2.21 * 10 ** (-19)  # 485.234384nm by idiot math
 
         self.speed_of_light = 299792458 # (m / s)
         radius = 1
@@ -274,42 +274,42 @@ class FiniteRepetitionSelector:
 
     def increase_value(self, value: float) -> float:
         value = self.autonegate_value(value)
-        op    = self._op()
-        b     = self.current_operand
+        op      = self._op()
+        operand = self.current_operand
 
         if op == 0:   # C/S  (successor)
             return self._to_f(self._to_r(value) + 1)
         if op == 1:   # +
-            return self._to_f(self._to_r(value) + self._to_r(b))
+            return self._to_f(self._to_r(value) + self._to_r(operand))
         if op == 2:   # *
-            return self._to_f(self._to_r(value) * self._to_r(b))
+            return self._to_f(self._to_r(value) * self._to_r(operand))
         if op == 3:   # ^
-            return self._to_f(self._to_r(value) ** self._to_r(b))
+            return self._to_f(self._to_r(value) ** self._to_r(operand))
         if op == 4:   # ↑  tetration
-            return self._tetrate(value, round(b))
+            return self._tetrate(value, round(operand))
         if op == 5:   # ↑↑ pentation
-            return self._pentate(value, round(b))
+            return self._pentate(value, round(operand))
         return value
 
     def decrease_value(self, value: float) -> float:
         value = self.autonegate_value(value)
-        op    = self._op()
-        b     = self.current_operand
+        op      = self._op()
+        operand = self.current_operand
 
         if op == 0:   # C/S  (predecessor)
             return self._to_f(self._to_r(value) - 1)
         if op == 1:   # -
-            return self._to_f(self._to_r(value) - self._to_r(b))
+            return self._to_f(self._to_r(value) - self._to_r(operand))
         if op == 2:   # /
-            if b == 0:
+            if operand == 0:
                 raise ZeroDivisionError("Operand is zero for division.")
-            return self._to_f(self._to_r(value) / self._to_r(b))
+            return self._to_f(self._to_r(value) / self._to_r(operand))
         if op == 3:   # root  (inverse power)
-            if b == 0:
+            if operand == 0:
                 raise ZeroDivisionError("Operand is zero for root.")
-            return self._to_f(self._to_r(value) ** self._to_r(1.0 / b))
+            return self._to_f(self._to_r(value) ** self._to_r(1.0 / operand))
         if op == 4:   # inverse tetration (iterated log)
-            return self._tetrate_inverse(value, round(b))
+            return self._tetrate_inverse(value, round(operand))
         if op == 5:   # no clean inverse for pentation; return as-is with warning
             ue.log_warning("FiniteRepetitionSelector: no analytic inverse for pentation; value unchanged.")
             return value

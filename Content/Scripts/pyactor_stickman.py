@@ -176,10 +176,13 @@ class PyActorStickMan:
                 ue.log_warning('PyActorStickMan: texture conversion failed')
                 return
 
-            # Add component to the owning actor (not a separate actor)
-            owner = self.uobject.get_owner() or self.uobject.get_actor()
-            smc = owner.add_actor_component(StaticMeshComponent, 'Crosshair')
-            cube = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube')
+            # Spawn a SEPARATE actor for the crosshair (add_actor_component
+            # crashes BP actors with construction scripts during begin_play)
+            from unreal_engine_tools import get_world
+            world = self.uobject.get_world() or get_world()
+            actor = world.actor_spawn(StaticMeshActor)
+            smc   = actor.StaticMeshComponent
+            cube  = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube')
             smc.SetStaticMesh(cube)
             smc.Mobility = EComponentMobility.Movable
 
@@ -187,14 +190,14 @@ class PyActorStickMan:
             mid.set_material_texture_parameter(self.param_name, tex)
             smc.set_material(0, mid)
 
-            # Attach to Screen, scale, offset in front
-            smc.AttachToComponent(screen)
-            smc.set_relative_scale(FVector(img_w / 100.0, 0.01, img_h / 100.0))
-            smc.set_relative_location(FVector(0, -55.0, 0))
+            # Scale and attach to Screen component
+            actor.set_actor_scale(FVector(img_w / 100.0, 0.01, img_h / 100.0))
+            actor.attach_to_component(screen)
+            actor.K2_SetActorRelativeLocation(FVector(0, -55.0, 0))
 
-            self.crosshair_comp = smc
+            self.crosshair_comp = actor
             ue.log(f'PyActorStickMan: crosshair {int(img_w)}x{int(img_h)} px '
-                   f'component attached to "{self.component_name}" (mat={mat_name})')
+                   f'actor attached to "{self.component_name}" (mat={mat_name})')
         except Exception as e:
             ue.log_warning(f'PyActorStickMan: crosshair spawn failed: {e}')
 

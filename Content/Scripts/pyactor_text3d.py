@@ -131,21 +131,17 @@ class PyActorText3D:
             smc   = actor.StaticMeshComponent
             cube  = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube')
             smc.SetStaticMesh(cube)
-            smc.Mobility = EComponentMobility.Movable
+            smc.SetMobility(EComponentMobility.Movable)
 
             mat = ue.load_object(Material, self.CURSOR_MAT_PATH)
             mid = smc.create_material_instance_dynamic(mat)
-            r, g, b, a = self.CURSOR_COLOR
-            mid.set_material_vector_parameter('Color', FVector(r, g, b))
-            mid.set_material_scalar_parameter('Opacity', a)
             smc.set_material(0, mid)
-            self._cursor_mid = mid
 
-            # Scale: width/4 of a character, full height, thin depth.
-            # Cube is 100 UU → divide by 100 for 1 UU.
-            cw = self.CHAR_WIDTH  / 100.0 * 0.25   # quarter-width
-            ch = self.CHAR_HEIGHT / 100.0 * 1.0
-            cd = 0.01                                # thin
+            # Scale: thin bar, quarter-char width, full char height.
+            # Cube is 100 UU base → divide by 100.
+            cw = self.CHAR_WIDTH  / 100.0 * 0.25
+            ch = self.CHAR_HEIGHT / 100.0
+            cd = 0.01
             actor.set_actor_scale(FVector(cd, cw, ch))
 
             actor.attach_to_component(self.text3d)
@@ -161,31 +157,77 @@ class PyActorText3D:
             ue.log_warning(f'PyActorText3D: cursor spawn failed: {e}')
 
     def _move_cursor_to(self, char_index):
-        """Position the cursor at the left edge of the given character."""
+        """Snap the cursor to the discrete position after the clicked character.
+
+        Uses CharacterKernings for the exact glyph-relative position (discrete),
+        falls back to CharacterMeshes bounds, then to fixed-width grid.
+        """
         if self._cursor_actor is None or self.text3d is None:
             return
         self._cursor_char_idx = char_index
         self._cursor_timer    = 0.0
         self._cursor_visible  = True
 
-        # Get kerning position for this glyph
+        placed = False
+        next_idx = char_index + 1  # cursor goes AFTER the clicked char
+
+        # Strategy 1: CharacterKernings — discrete per-glyph relative positions
         kernings = None
         try:
             kernings = self.text3d.CharacterKernings
         except Exception:
             pass
 
-        if kernings is not None and 0 <= char_index < len(kernings):
+        if kernings is not None:
+            ue.log(f'PyActorText3D cursor: kernings available, len={len(kernings)}, '
+                   f'char_index={char_index}, next_idx={next_idx}')
+            if next_idx < len(kernings) and kernings[next_idx] is not None:
+                try:
+                    rel = kernings[next_idx].get_relative_location()
+                    ue.log(f'PyActorText3D cursor: kerning[{next_idx}] rel=({rel.x:.1f}, {rel.y:.1f}, {rel.z:.1f})')
+                    self._cursor_actor.K2_SetActorRelativeLocation(rel)
+                    placed = True
+                except Exception as e:
+                    ue.log_warning(f'PyActorText3D cursor: kerning strategy failed: {e}')
+            elif char_index < len(kernings) and kernings[char_index] is not None:
+                try:
+                    rel = kernings[char_index].get_relative_location()
+                    offset_rel = FVector(rel.x, rel.y + self.CHAR_WIDTH, rel.z)
+                    ue.log(f'PyActorText3D cursor: last char, kerning[{char_index}]+CHAR_WIDTH rel=({offset_rel.x:.1f}, {offset_rel.y:.1f}, {offset_rel.z:.1f})')
+                    self._cursor_actor.K2_SetActorRelativeLocation(offset_rel)
+                    placed = True
+                except Exception as e:
+                    ue.log_warning(f'PyActorText3D cursor: last-char kerning failed: {e}')
+        else:
+            ue.log(f'PyActorText3D cursor: no kernings available')
+
+        # Strategy 2: CharacterMeshes bounds — discrete right edge
+        if not placed:
+            char_meshes = None
             try:
-                rel = kernings[char_index].get_relative_location()
-                self._cursor_actor.set_actor_relative_location(rel)
+                char_meshes = self.text3d.CharacterMeshes
             except Exception:
                 pass
-        else:
-            # Fallback: fixed-width grid
-            col = char_index
-            y = col * self.CHAR_WIDTH
-            self._cursor_actor.set_actor_relative_location(FVector(0, y, 0))
+
+            if char_meshes is not None and 0 <= char_index < len(char_meshes):
+                mesh = char_meshes[char_index]
+                if mesh is not None:
+                    try:
+                        rel = mesh.get_relative_location()
+                        # Offset by one full glyph width for "after character"
+                        self._cursor_actor.K2_SetActorRelativeLocation(
+                            FVector(rel.x, rel.y + self.CHAR_WIDTH, rel.z))
+                        placed = True
+                    except Exception:
+                        pass
+
+        # Strategy 3: fixed-width grid
+        if not placed:
+            y = next_idx * self.CHAR_WIDTH
+            try:
+                self._cursor_actor.K2_SetActorRelativeLocation(FVector(0, y, 0))
+            except Exception:
+                pass
 
         self._cursor_actor.SetActorHiddenInGame(False)
 

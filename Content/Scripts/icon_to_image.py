@@ -192,17 +192,7 @@ _IID_IImageList = _GUID(
 
 # ── Filesystem metadata helper ────────────────────────────────────────────────
 
-def _human_size(n):
-    """Return a human-readable size string, e.g. '22.51 MB'."""
-    if n is None:
-        return None
-    if n == 0:
-        return "0 B"
-    val = float(n)
-    for unit in ("B", "KB", "MB", "GB", "TB"):
-        if val < 1024 or unit == "TB":
-            return "{:.2f} {}".format(val, unit) if unit != "B" else "{} B".format(int(val))
-        val /= 1024
+from utils import human_size as _human_size
 
 
 def _stat_info(input_path):

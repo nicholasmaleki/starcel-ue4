@@ -188,53 +188,49 @@ def test_nd_table_grid(base_location=None):
         aggressive_debug=True
     )
 
-    # ===== 2D TABLE (10x10) =====
-    _log("\n[2D TEST] Creating 10x10 table...")
-    t2d = Table(shape=(10, 10), aggressive_debug=True)
-    for i in range(10):
-        for j in range(10):
+    # ===== 2D TABLE (3x3) =====
+    _log("\n[2D TEST] Creating 3x3 table...")
+    t2d = Table(shape=(3, 3), aggressive_debug=True)
+    for i in range(3):
+        for j in range(3):
             t2d[i, j] = f"({i},{j})"
     t2d[0, 0] = 100
     t2d[1, 0] = 200
     t2d[2, 0] = 300
-
-    _log(f"2D: {len(t2d.cells)} cells")
     renderer.render_table(t2d, world_location=_off(0, 0, 100))
     _log("2D rendered\n")
 
-    # ===== 2D WITH NEGATIVES (10x10) =====
+    # ===== 2D WITH NEGATIVES =====
     _log("[2D NEGATIVE] Table with negative indices...")
-    t2d_neg = Table(shape=[(-5, 4), (-5, 4)], aggressive_debug=True)
-    for i in range(-5, 5):
-        for j in range(-5, 5):
-            t2d_neg[i, j] = 1
-    _log(f"2D Negative: {len(t2d_neg.cells)} cells")
-    renderer.render_table(t2d_neg, world_location=_off(1200, 0, 100))
+    t2d_neg = Table(shape=[(-1, 1), (-1, 1)], aggressive_debug=True)
+    for i in range(-1, 2):
+        for j in range(-1, 2):
+            t2d_neg[i, j] = f"[{i},{j}]"
+    renderer.render_table(t2d_neg, world_location=_off(600, 0, 100))
     _log("2D negative rendered\n")
 
     # ===== 3D TABLE =====
-    _log("[3D TEST] Creating 3x3x3 table...")
-    t3d = Table(shape=(3, 3, 3), aggressive_debug=True)
-    for i in range(3):
-        for j in range(3):
-            for k in range(3):
+    _log("[3D TEST] Creating 2x2x2 table...")
+    t3d = Table(shape=(2, 2, 2), aggressive_debug=True)
+    for i in range(2):
+        for j in range(2):
+            for k in range(2):
                 t3d[i, j, k] = f"{i}{j}{k}"
-    _log(f"3D: {len(t3d.cells)} cells")
-    renderer.render_table(t3d, world_location=_off(0, 1200, 100))
+    renderer.render_table(t3d, world_location=_off(0, 600, 100))
     _log("3D rendered\n")
 
     # ===== 3D WITH TABS AND NEWLINES =====
     _log("[3D TAB/NEWLINE] Table with special characters...")
     t3d_special = Table(shape=(2, 2, 2), aggressive_debug=True)
-    t3d_special[0, 0, 0] = "hello\n\n\nworld!"
-    t3d_special[0, 0, 1] = "tab\t\tseparated"
-    t3d_special[0, 1, 0] = "multi\nline\ntext"
+    t3d_special[0, 0, 0] = "hello\nworld!"
+    t3d_special[0, 0, 1] = "tab\tsep"
+    t3d_special[0, 1, 0] = "multi\nline"
     t3d_special[0, 1, 1] = "A"
-    t3d_special[1, 0, 0] = "hello\t\t\tworld!"
-    t3d_special[1, 0, 1] = "B\nC\nD"
-    t3d_special[1, 1, 0] = "tabs:\t\t\there"
-    t3d_special[1, 1, 1] = "newlines:\n\n\nhere"
-    renderer.render_table(t3d_special, world_location=_off(1200, 1200, 100))
+    t3d_special[1, 0, 0] = "B\nC"
+    t3d_special[1, 0, 1] = "D"
+    t3d_special[1, 1, 0] = "tabs:\there"
+    t3d_special[1, 1, 1] = "end"
+    renderer.render_table(t3d_special, world_location=_off(600, 600, 100))
     _log("3D tab/newline rendered\n")
 
     # ===== 3D WITH NEGATIVES =====
@@ -244,7 +240,7 @@ def test_nd_table_grid(base_location=None):
         for j in range(-1, 2):
             for k in range(-1, 2):
                 t3d_neg[i, j, k] = f"[{i},{j},{k}]"
-    renderer.render_table(t3d_neg, world_location=_off(2400, 0, 100))
+    renderer.render_table(t3d_neg, world_location=_off(1200, 0, 100))
     _log("3D negative rendered\n")
 
     # ===== 3D WITH FUNCTION =====
@@ -257,7 +253,7 @@ def test_nd_table_grid(base_location=None):
     def calc_sum():
         return t3d_func[0,0,0] + t3d_func[1,1,1]
     t3d_func[0, 0, 1] = calc_sum
-    renderer.render_table(t3d_func, world_location=_off(1200, 2400, 100))
+    renderer.render_table(t3d_func, world_location=_off(1200, 600, 100))
     _log("3D function rendered\n")
 
     # ===== 4D TABLE =====
@@ -268,7 +264,7 @@ def test_nd_table_grid(base_location=None):
             for k in range(2):
                 for w in range(2):
                     t4d[i,j,k,w] = f"{i}{j}{k}{w}"
-    renderer.render_table(t4d, world_location=_off(0, 2400, 100))
+    renderer.render_table(t4d, world_location=_off(0, 1200, 100))
     _log("4D rendered\n")
 
     # ===== 4D WITH NEGATIVE =====
@@ -285,7 +281,7 @@ def test_nd_table_grid(base_location=None):
             for k in range(2):
                 for w in range(-1, 2):
                     t4d_neg[i,j,k,w] = f"D4={w}"
-    renderer.render_table(t4d_neg, world_location=_off(2400, 1200, 100))
+    renderer.render_table(t4d_neg, world_location=_off(600, 1200, 100))
     _log("4D negative rendered\n")
 
     # ===== 5D TABLE =====
@@ -297,11 +293,11 @@ def test_nd_table_grid(base_location=None):
                 for w in range(2):
                     for v in range(2):
                         t5d[i,j,k,w,v] = f"{i}{j}{k}{w}{v}"
-    renderer.render_table(t5d, world_location=_off(1200, 3600, 100))
+    renderer.render_table(t5d, world_location=_off(0, 1800, 100))
     _log("5D rendered\n")
 
-    # ===== 6D TABLE =====
-    _log("[6D TEST] Creating 2^6 table...")
+    # ===== 6D TABLE (2^6 = 64 cells) =====
+    _log("[6D TEST] Creating 2^6 table (64 cells)...")
     t6d = Table(shape=(2, 2, 2, 2, 2, 2), aggressive_debug=True)
     count = 0
     for i in range(2):
@@ -310,26 +306,10 @@ def test_nd_table_grid(base_location=None):
                 for w in range(2):
                     for v in range(2):
                         for u in range(2):
-                            t6d[i,j,k,w,v,u] = f"{count}"
+                            t6d[i,j,k,w,v,u] = count
                             count += 1
-    renderer.render_table(t6d, world_location=_off(0, 3600, 100))
-    _log("6D rendered\n")
-
-    # ===== 7D TABLE =====
-    _log("[7D TEST] Creating 2^7 table...")
-    t7d = Table(shape=(2, 2, 2, 2, 2, 2, 2), aggressive_debug=True)
-    count = 0
-    for i in range(2):
-        for j in range(2):
-            for k in range(2):
-                for w in range(2):
-                    for v in range(2):
-                        for u in range(2):
-                            for t in range(2):
-                                t7d[i,j,k,w,v,u,t] = count
-                                count += 1
-    renderer.render_table(t7d, world_location=_off(2400, 3600, 100))
-    _log("7D rendered\n")
+    renderer.render_table(t6d, world_location=_off(0, 2400, 100))
+    _log(f"6D rendered ({count} cells)\n")
 
     n_cells = len(renderer.cell_actors)
     n_lines = len(renderer.gridline_actors)

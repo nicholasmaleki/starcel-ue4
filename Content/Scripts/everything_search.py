@@ -35,24 +35,11 @@ from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Union
 
 import metadata as _meta
+from utils import filetime_to_dt as _filetime_to_dt, human_size as _human_size
 
 # ---------------------------------------------------------------------------
-# Windows FILETIME helpers
+# Windows FILETIME helpers — now in utils.py
 # ---------------------------------------------------------------------------
-_WIN_TICKS        = 10_000_000
-_EPOCH_DIFF_TICKS = (
-    datetime.datetime(1970, 1, 1) - datetime.datetime(1601, 1, 1)
-).total_seconds() * _WIN_TICKS
-
-
-def _filetime_to_dt(buf: ctypes.c_ulonglong) -> Optional[datetime.datetime]:
-    raw = struct.unpack('<Q', buf)[0]
-    if raw in (0, 2**64 - 1):
-        return None
-    try:
-        return datetime.datetime.fromtimestamp((raw - _EPOCH_DIFF_TICKS) / _WIN_TICKS)
-    except (OSError, ValueError):
-        return None
 
 
 # ---------------------------------------------------------------------------
@@ -121,24 +108,35 @@ _EXT_TORRENT = frozenset('torrent'.split())
 _EXT_LINK    = frozenset('lnk'.split())
 
 
+_EXT_CATEGORIES: Dict[str, str] = {}
+for _cat, _exts in [
+    ('Video',        _EXT_VIDEO),
+    ('Image',        _EXT_IMAGE),
+    ('Audio',        _EXT_AUDIO),
+    ('Document',     _EXT_DOC),
+    ('Spreadsheet',  _EXT_SHEET),
+    ('Presentation', _EXT_PPTX),
+    ('Executable',   _EXT_EXEC),
+    ('Archive',      _EXT_ARCHIVE),
+    ('3D',           _EXT_3D),
+    ('Crypto/Key',   _EXT_CRYPTO),
+    ('Database',     _EXT_DB),
+    ('Font',         _EXT_FONT),
+    ('Email',        _EXT_EMAIL),
+    ('Torrent',      _EXT_TORRENT),
+    ('Shortcut',     _EXT_LINK),
+]:
+    for _e in _exts:
+        _EXT_CATEGORIES[_e] = _cat
+
+
 def _classify(ext: str) -> str:
     e = ext.lower().lstrip('.')
-    if e in _EXT_VIDEO:    return 'Video'
-    if e in _EXT_IMAGE:    return 'Image'
-    if e in _EXT_AUDIO:    return 'Audio'
-    if e in _EXT_DOC:      return 'Document'
-    if e in _EXT_SHEET:    return 'Spreadsheet'
-    if e in _EXT_PPTX:     return 'Presentation'
-    if e in _EXT_EXEC:     return 'Executable'
-    if e in _EXT_ARCHIVE:  return 'Archive'
-    if e in _EXT_3D:       return '3D'
-    if e in _EXT_CRYPTO:   return 'Crypto/Key'
-    if e in _EXT_DB:       return 'Database'
-    if e in _EXT_FONT:     return 'Font'
-    if e in _EXT_EMAIL:    return 'Email'
-    if e in _EXT_TORRENT:  return 'Torrent'
-    if e in _EXT_LINK:     return 'Shortcut'
-    if e in _meta.TEXT_EXTS: return 'Text/Code'
+    cat = _EXT_CATEGORIES.get(e)
+    if cat:
+        return cat
+    if e in _meta.TEXT_EXTS:
+        return 'Text/Code'
     return 'File'
 
 
@@ -158,16 +156,7 @@ def fmt_date(dt_val: Optional[datetime.datetime], python_style: bool = False) ->
     return dt_val.strftime('%d/%m/%Y %I:%M %p')
 
 
-def _human_size(n: Optional[int]) -> Optional[str]:
-    if n is None:
-        return None
-    if n == 0:
-        return '0 B'
-    val = float(n)
-    for unit in ('B', 'KB', 'MB', 'GB', 'TB'):
-        if val < 1024 or unit == 'TB':
-            return f"{val:.2f} {unit}" if unit != 'B' else f"{int(val)} B"
-        val /= 1024
+# _human_size — now in utils.py
 
 
 def _permission_string(full_path: str) -> Optional[str]:
@@ -509,10 +498,10 @@ class EverythingSearch:
                     size_bytes = self._size_buf.value
                 if flags & REQ_DATE_MODIFIED:
                     dll.Everything_GetResultDateModified(i, self._mtime_buf)
-                    date_modified = _filetime_to_dt(self._mtime_buf)
+                    date_modified = _filetime_to_dt(self._mtime_buf.value)
                 if flags & REQ_DATE_CREATED:
                     dll.Everything_GetResultDateCreated(i, self._ctime_buf)
-                    date_created = _filetime_to_dt(self._ctime_buf)
+                    date_created = _filetime_to_dt(self._ctime_buf.value)
 
                 p     = Path(full_path) if full_path else None
                 name  = p.name   if p else None

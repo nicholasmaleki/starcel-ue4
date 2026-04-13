@@ -149,25 +149,27 @@ class PyPawnDrone:
                 ue.log_warning('PyPawnDrone: pil_image_to_texture returned None')
                 return
 
-            # Add a new StaticMeshComponent to the owning actor
-            owner = self.uobject.get_owner() or self.uobject.get_actor()
-            smc = owner.add_actor_component(StaticMeshComponent, 'Crosshair')
-            cube = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube')
+            # Spawn a SEPARATE actor (add_actor_component crashes BP actors
+            # with construction scripts during begin_play)
+            from unreal_engine_tools import get_world
+            world = self.uobject.get_world() or get_world()
+            actor = world.actor_spawn(StaticMeshActor)
+            smc   = actor.StaticMeshComponent
+            cube  = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube')
             smc.SetStaticMesh(cube)
             smc.Mobility = EComponentMobility.Movable
 
-            # Apply textured MID
             mid = smc.create_material_instance_dynamic(mat)
             mid.set_material_texture_parameter(self.CROSSHAIR_PARAM, tex)
             smc.set_material(0, mid)
 
-            # Attach to Screen, then offset in front
-            smc.AttachToComponent(screen)
+            # Scale and attach to Screen component
             s = self.CROSSHAIR_SCALE
-            smc.set_relative_scale(FVector(img_w / 100.0 * s, 0.01, img_h / 100.0 * s))
-            smc.set_relative_location(FVector(0, -55.0, 0))
+            actor.set_actor_scale(FVector(img_w / 100.0 * s, 0.01, img_h / 100.0 * s))
+            actor.attach_to_component(screen)
+            actor.K2_SetActorRelativeLocation(FVector(0, -55.0, 0))
 
-            self.crosshair_actor = smc  # keep ref for cleanup
+            self.crosshair_actor = actor  # keep ref for cleanup
             ue.log(f'PyPawnDrone: crosshair {int(img_w)}x{int(img_h)} px '
                    f'component attached to "{self.SCREEN_NAME}" (mat={mat_name})')
         except Exception as e:

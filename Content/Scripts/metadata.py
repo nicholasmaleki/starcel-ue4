@@ -109,16 +109,7 @@ def _fmt_duration(seconds: Optional[float]) -> Optional[str]:
     return f"{h}:{m:02d}:{sec:02d}" if h else f"{m}:{sec:02d}"
 
 
-def _human_size(n: Optional[int]) -> Optional[str]:
-    if n is None:
-        return None
-    if n == 0:
-        return '0 B'
-    val = float(n)
-    for unit in ('B', 'KB', 'MB', 'GB', 'TB'):
-        if val < 1024 or unit == 'TB':
-            return f"{val:.2f} {unit}" if unit != 'B' else f"{int(val)} B"
-        val /= 1024
+from utils import human_size as _human_size
 
 
 # ===========================================================================

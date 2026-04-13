@@ -41,14 +41,14 @@ SH_CYL  = '/Engine/BasicShapes/Cylinder'
 SH_CUBE = '/Engine/BasicShapes/Cube'
 M_COLOR = '/Game/Materials/M_Color.M_Color'
 
-_O = FVector(0, 0, 0)
+ORIGIN = FVector(0, 0, 0)
 
 # ── rotation helper ────────────────────────────────────────────────────────
 # BasicShapes Cone and Cylinder are both authored along +Z.
 # _rot(axis) returns the FRotator that makes the +Z axis point along *axis*.
 # This is identical to the test_cylinder pattern in main.py.
 def _rot(axis):
-    r = KismetMathLibrary.FindLookAtRotation(_O, axis)
+    r = KismetMathLibrary.FindLookAtRotation(ORIGIN, axis)
     r.pitch += 90
     return r
 
@@ -79,33 +79,33 @@ _actor_mid    = {}   # actor → MID
 _actor_colors = {}   # actor → (r, g, b, emissive)
 _piece_off    = {}   # actor → FVector offset from target centre (world-space)
 
-def _set_color(a, r, g, b, em):
-    mid = _actor_mid.get(a)
+def _set_color(actor, red, green, blue, emissive):
+    mid = _actor_mid.get(actor)
     if not mid: return
-    try: mid.set_material_vector_parameter('Color', ue.FVector(r, g, b))
+    try: mid.set_material_vector_parameter('Color', ue.FVector(red, green, blue))
     except: pass
-    try: mid.set_material_scalar_parameter('Emissive Multiplier', em)
+    try: mid.set_material_scalar_parameter('Emissive Multiplier', emissive)
     except: pass
 
-def _apply_color(a, r, g, b, em=2.0):
+def _apply_color(actor, red, green, blue, emissive=2.0):
     try:
         mat = ue.load_object(Material, M_COLOR)
-        mid = a.StaticMeshComponent.create_material_instance_dynamic(mat)
-        a.StaticMeshComponent.set_material(0, mid)
-        _actor_mid[a]    = mid
-        _actor_colors[a] = (r, g, b, em)
-        _set_color(a, r, g, b, em)
+        mid = actor.StaticMeshComponent.create_material_instance_dynamic(mat)
+        actor.StaticMeshComponent.set_material(0, mid)
+        _actor_mid[actor]    = mid
+        _actor_colors[actor] = (red, green, blue, emissive)
+        _set_color(actor, red, green, blue, emissive)
     except Exception as e:
         _log(f"color fail: {e}")
 
-def _hover_enter(a):
-    if a in _actor_colors:
-        r, g, b, e = _actor_colors[a]
-        _set_color(a, min(r+0.5, 1), min(g+0.5, 1), min(b+0.5, 1), e * 5)
+def _hover_enter(actor):
+    if actor in _actor_colors:
+        red, green, blue, emissive = _actor_colors[actor]
+        _set_color(actor, min(red+0.5, 1), min(green+0.5, 1), min(blue+0.5, 1), emissive * 5)
 
-def _hover_exit(a):
-    if a in _actor_colors:
-        _set_color(a, *_actor_colors[a])
+def _hover_exit(actor):
+    if actor in _actor_colors:
+        _set_color(actor, *_actor_colors[actor])
 
 # ── spawn helper ───────────────────────────────────────────────────────────
 def _spawn(path, loc, rot, sc, label, offset):
@@ -114,15 +114,15 @@ def _spawn(path, loc, rot, sc, label, offset):
     if not mesh:
         _log(f"MISSING: {path}")
         return None
-    a = world.actor_spawn(StaticMeshActor)
-    smc = a.StaticMeshComponent
+    actor = world.actor_spawn(StaticMeshActor)
+    smc = actor.StaticMeshComponent
     smc.SetStaticMesh(mesh)
     smc.Mobility = EComponentMobility.Movable
-    a.SetActorEnableCollision(True)
-    a.set_actor_transform(FTransform(loc, rot, sc))
-    a.set_actor_label(label)
-    _piece_off[a] = offset
-    return a
+    actor.SetActorEnableCollision(True)
+    actor.set_actor_transform(FTransform(loc, rot, sc))
+    actor.set_actor_label(label)
+    _piece_off[actor] = offset
+    return actor
 
 # ── build ──────────────────────────────────────────────────────────────────
 def test_gizmos():

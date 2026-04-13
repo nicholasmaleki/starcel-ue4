@@ -841,8 +841,10 @@ def change_background(background="white", path="file://"):
 
     # TODO: Add transparency and green screen defaults https://github.com/historia-Inc/WindowTransparency https://www.fab.com/listings/a967c271-f440-4bc2-93f8-3699122f0f7b https://forums.unrealengine.com/t/transparent-window/123446
     modes = ["white", "black", "white_no_bloom", "white_less_emissive", "stars", "sky", "image", "video", "transparent"]
+    ue.log(f"Background set to {background}")
     if background in modes:
         if background == "white":
+            print("Reached white SET BACKGROUND VIDEO CALLED")
             mat = ue.load_object(Material, "/Game/Materials/M_SkyBoxWhiteForManualExposure")
             find_component(sky_white, "").set_material(0, mat)
             sky_sun_time.ManuallySetSunPosition = True
@@ -909,7 +911,7 @@ def change_background(background="white", path="file://"):
                 ue.log_warning("image mode requires working path")
         elif background == "video":  # TODO: HISPlayer Unreal Engine plugin for faster playback
             if os.path.exists(path):
-                print("SET BACKGROUND VIDEO CALLED")
+                print("Reached video SET BACKGROUND VIDEO CALLED")
                 ue_path = "file://" + path
                 sky_light.SetActorHiddenInGame(True)
                 # light_bp = ue.load_object(Blueprint, '/Game/Blueprints/Assets/BP_SkyLight.BP_SkyLight')

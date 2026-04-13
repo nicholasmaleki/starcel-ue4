@@ -8,7 +8,8 @@
       "Bash(grep -r \"BP_CurvablePlane\" /c/Users/nicho/Documents/\"Unreal Projects\"/Starcel9/Content/Scripts/*.py)",
       "Bash(python -c \"from PIL import Image; img = Image.open\\(r'C:\\\\Users\\\\nicho\\\\Documents\\\\Unreal Projects\\\\Starcel9\\\\Content\\\\Materials\\\\crosshair.png'\\); print\\(f'{img.width}x{img.height} {img.mode}'\\)\")",
       "Bash(grep -n \"subprocess\\\\|Popen\\\\|os\\\\.system\\\\|^\\\\\\\\s*ls\\\\\\\\|cmd\\\\|shell\\\\|run\\(\" \"C:\\\\Users\\\\nicho\\\\Documents\\\\Unreal Projects\\\\Starcel9\\\\Content\\\\Scripts\\\\icon_to_image.py\")",
-      "Bash(grep -v \"^--$\")"
+      "Bash(grep -v \"^--$\")",
+      "Bash(ls -la \"C:/Users/nicho/Documents/Unreal Projects/Starcel9/Content/Scripts/__pycache__/pyactor_stickman\"* \"C:/Users/nicho/Documents/Unreal Projects/Starcel9/Content/Scripts/__pycache__/pypawn_drone\"*)"
     ]
   }
 }

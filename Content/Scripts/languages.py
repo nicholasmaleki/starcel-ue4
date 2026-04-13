@@ -1,9 +1,14 @@
 import os
 import sys
-import requests
 import inspect
 from typing import Any, Dict, List, Optional
 import unreal_engine as ue
+
+try:
+    import requests
+except ImportError:
+    requests = None
+    ue.log_warning('languages.py: requests not installed — Piston API unavailable')
 
 PISTON_URL = "https://emkc.org/api/v2/piston"
 __all__ = ["langs"]

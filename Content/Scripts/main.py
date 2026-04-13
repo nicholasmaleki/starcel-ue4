@@ -2,7 +2,17 @@ import unreal_engine as ue
 import unreal_engine.classes
 from unreal_engine_tools import *
 import numpy as np
-import os, sys, subprocess, importlib, urllib.request, socket, math, sympy, fast_autocomplete, numba, kingdon #numba_cuda
+import os
+import sys
+import subprocess
+import importlib
+import urllib.request
+import socket
+import math
+import sympy
+import fast_autocomplete
+import numba
+import kingdon
 from unreal_engine import FVector, FRotator, FTransform, FHitResult, CLASS_CONFIG, CLASS_DEFAULT_CONFIG, CPF_CONFIG, CPF_GLOBAL_CONFIG, CPF_EXPOSE_ON_SPAWN, CPF_NET, CPF_REP_NOTIFY
 from unreal_engine.classes import Actor, Character, PlayerController, StaticMeshActor, KismetMathLibrary, KismetSystemLibrary, Object, StrProperty, IntProperty, Blueprint, Material, Texture, LargeStringAsync, LargeStringRPCActor, StaticMesh, StaticMeshActor
 from unreal_engine.enums import EInputEvent, ETraceTypeQuery, EDrawDebugTrace, EComponentMobility, EMouseCursor, ECollisionChannel
@@ -26,6 +36,8 @@ from gizmo import test_gizmos, setup_gizmo_interaction  # returns (target, gizmo
 
 from test_spawn import test_text3d_click, test_spawn_all
 
+_main_begin_play_ran = False
+
 ue.log('Hello i am a Python module.')
 # Code placed outside the Main class will not run when connecting to a server.
 
@@ -34,7 +46,7 @@ ue.log('Hello i am a Python module.')
 # # Keep track of the current index
 # current_bg_index = 0
 
-def spawn_icon2(pil_image, location=FVector(0, 0, 0), rotation=FRotator(0, 0, 0), scale=FVector(1, 1, 1),
+def spawn_icon2(pil_image, location=None, rotation=None, scale=None,
                 material_path='/Game/Materials/M_Icon.M_Icon',
                 param_name='Texture',
                 bp_path='/Game/Blueprints/Assets/BP_Icon.BP_Icon',
@@ -53,6 +65,12 @@ def spawn_icon2(pil_image, location=FVector(0, 0, 0), rotation=FRotator(0, 0, 0)
     Requires Pillow and a material at *material_path* with a
     TextureSampleParameter2D named *param_name*.
     """
+    if location is None:
+        location = FVector(0, 0, 0)
+    if rotation is None:
+        rotation = FRotator(0, 0, 0)
+    if scale is None:
+        scale = FVector(1, 1, 1)
     world = get_world()
     # print("ue_spawn.py world", world)
 
@@ -227,6 +245,8 @@ class Main:
         self.uobject.call_function('EventRunBlueprintFunctions')
 
     def end_play(self, reason):
+        global _main_begin_play_ran
+        _main_begin_play_ran = False
         ue.log("Ending play")
         import unreal_engine_tools
         unreal_engine_tools.invalidate_world_cache()
@@ -368,6 +388,11 @@ class Main:
 
     # this is called on game start
     def begin_play(self):
+        global _main_begin_play_ran
+        if _main_begin_play_ran:
+            ue.log('Main.begin_play: already ran — skipping (duplicate BP_PyActor)')
+            return
+        _main_begin_play_ran = True
         ue.log('Begin Play on Main class')
         #change_background("video", os.path.join(os.path.abspath(ue.get_content_dir()),"Movies", "psychedelic.mp4"))
         change_background("white")
@@ -392,7 +417,7 @@ class Main:
 
         self.input = HotkeyManager(self.uobject, self.keyboard, self.mouse)
         self.trace = TraceHelper(self.uobject)
-        
+
         # # Enable mouse features
         # self.input.enable_mouse_events(True, True)
         # # self.input.show_cursor(True)
@@ -656,7 +681,7 @@ class Main:
             self.icon = spawn_icon(self.info["image"],
                                    location=FVector(310, 50, 400),
                                    source_path=_google_drive_exe)
-            self.icon.get_actor_component('Sphere').SetSimulatePhysics(True)
+            # self.icon.get_actor_component('Sphere').SetSimulatePhysics(True)  # disabled: breaks click/hover detection
 
             # some kind of movability problem
             # self.monk = 0

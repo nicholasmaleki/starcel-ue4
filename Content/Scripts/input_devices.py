@@ -153,7 +153,7 @@ class Keyboard:
         self.keyboard_ANSI_shift = [
             ["~", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "_", "+", "Backspace"],
             ["Tab", "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "{", "}", "|"],
-            ["Caps", "A", "S", "D", "F", "G", "H", "J", "K", "L", ":", "\"" "Enter"],
+            ["Caps", "A", "S", "D", "F", "G", "H", "J", "K", "L", ":", "\"", "Enter"],
             ["LeftShift", "Z", "X", "C", "V", "B", "N", "M", "<", ">", "?", "RightShift"],
             ["LeftCtrl", "Win", "LeftAlt", "Space", "RightAlt", "Win", "Menu", "RightCtrl"]
         ]
@@ -182,17 +182,14 @@ class Keyboard:
 
         self._build_normalize_map()
 
-    def _clean(self, t: str):
-        return t.replace(" ", "").replace("_", "").lower()
-
     def _build_normalize_map(self):
         self.normalize_map = {}
         for k, v in self.LEGEND_TO_UE.items():
-            self.normalize_map[self._clean(k)] = v
+            self.normalize_map[_clean(k)] = v
         for k in self.ue_keys:
-            self.normalize_map[self._clean(k)] = k
+            self.normalize_map[_clean(k)] = k
         for k, v in self.ALIASES.items():
-            self.normalize_map[self._clean(k)] = v
+            self.normalize_map[_clean(k)] = v
 
     def normalize(self, token):
         if not token:
@@ -292,17 +289,14 @@ class Mouse:
         }
         self._build_normalize_map()
 
-    def _clean(self, t: str):
-        return t.replace(" ", "").replace("_", "").lower()
-
     def _build_normalize_map(self):
         self.normalize_map = {}
         for k, v in self.LEGEND_TO_UE.items():
-            self.normalize_map[self._clean(k)] = v
+            self.normalize_map[_clean(k)] = v
         for k in self.ue_keys:
-            self.normalize_map[self._clean(k)] = k
+            self.normalize_map[_clean(k)] = k
         for k, v in self.ALIASES.items():
-            self.normalize_map[self._clean(k)] = v
+            self.normalize_map[_clean(k)] = v
 
     def normalize(self, token):
         if not token:

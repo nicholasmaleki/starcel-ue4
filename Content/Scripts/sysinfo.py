@@ -1282,29 +1282,333 @@ def get_info_dict(mode: str = "normal", units: str = "usa") -> Dict[str, Any]:
 # STRING OUTPUT
 # ═══════════════════════════════════════════════════════════════════════════════
 
+def _heading(lines: List[str], title: str) -> None:
+    lines.append("")
+    lines.append(f"── {title} {'─'*(52-min(len(title),50))}")
+
+
+def _compact(lines: List[str], *pairs, sep: str = ", ") -> None:
+    """One line of label: value pairs, comma-separated."""
+    parts = []
+    for label, value in pairs:
+        v = str(value) if value is not None else ""
+        if v and v not in ("N/A", "None", ""):
+            parts.append(f"{label}: {v}")
+    if parts:
+        lines.append("  " + sep.join(parts))
+
+
+def _row(lines: List[str], label: str, value: Any, pad: int = 28) -> None:
+    v = str(value) if value is not None else ""
+    if v and v not in ("N/A", "None"):
+        lines.append(f"  {label:<{pad}} {v}")
+
+
+def _fmt_system(info: dict, mode: str, lines: List[str]) -> None:
+    if "system" not in info:
+        return
+    sys_info = info["system"]
+    _heading(lines, "SYSTEM")
+    _compact(lines, ("PC", sys_info.get("pc_name")),
+             ("OS", f"{sys_info.get('os_name')} {sys_info.get('os_release')}"),
+             ("Arch", sys_info.get("architecture")))
+    _compact(lines, ("Uptime", sys_info.get("uptime_str")),
+             ("Time", f"{sys_info.get('date')} {sys_info.get('time')}"),
+             ("TZ", sys_info.get("timezone")))
+    _compact(lines, ("Power", sys_info.get("power_plan")),
+             ("Secure Boot", sys_info.get("secure_boot")))
+    _compact(lines, ("Board", sys_info.get("mb_model")),
+             ("Mfr", sys_info.get("mb_manufacturer")),
+             ("BIOS", sys_info.get("bios_version")))
+    _compact(lines, ("Processes", sys_info.get("total_processes")),
+             ("Threads", sys_info.get("total_threads")),
+             ("Startup Items", sys_info.get("startup_programs")))
+    if mode == "advanced":
+        _compact(lines, ("Python", sys_info.get("python_ver")),
+                 ("Hostname", sys_info.get("hostname")))
+        _compact(lines, ("OS Build", sys_info.get("os_version")))
+
+
+def _fmt_cpu(info: dict, mode: str, units: str, lines: List[str]) -> None:
+    if "cpu" not in info:
+        return
+    cpu_info = info["cpu"]
+    _heading(lines, "CPU")
+    _row(lines, "Name", cpu_info.get("cpu_name"))
+    _compact(lines,
+             ("Cores", f"{cpu_info.get('physical_cores')}P/{cpu_info.get('logical_cores')}L"),
+             ("Base", f"{cpu_info.get('base_clock_ghz')} GHz"),
+             ("Now", f"{cpu_info.get('current_clock_ghz')} GHz"),
+             ("Load", f"{cpu_info.get('utilization_pct')}%"))
+    _compact(lines, ("Temp Avg", _temp(cpu_info.get("cpu_temp_avg_c"), units)),
+             ("Temp Max", _temp(cpu_info.get("cpu_temp_max_c"), units)))
+    if mode == "advanced":
+        per = cpu_info.get("per_core_pct", [])
+        if per:
+            chunks = [per[i:i+8] for i in range(0, len(per), 8)]
+            for ci, chunk in enumerate(chunks):
+                lines.append("  " + "  ".join(
+                    f"C{ci*8+i}:{v:.0f}%" for i, v in enumerate(chunk)))
+        _compact(lines,
+                 ("L2", f"{cpu_info.get('l2_cache_kb','N/A')} KB"),
+                 ("L3", f"{cpu_info.get('l3_cache_kb','N/A')} KB"),
+                 ("Virt", str(cpu_info.get("virtualization", "N/A"))))
+
+
+def _fmt_gpu(info: dict, mode: str, lines: List[str]) -> None:
+    if "gpu" not in info or not info["gpu"]:
+        return
+    _heading(lines, "GPU")
+    for i, gpu in enumerate(info["gpu"]):
+        if len(info["gpu"]) > 1:
+            lines.append(f"  [GPU {i}]")
+        _row(lines, "Name", gpu.get("name"))
+        _compact(lines, ("Load", gpu.get("utilization")),
+                 ("Temp", gpu.get("temp_display")),
+                 ("VRAM", f"{gpu.get('mem_used_gb','?')}/{gpu.get('mem_total_gb', gpu.get('vram_gb','?'))} GB"),
+                 ("Mem%", gpu.get("mem_util_pct")))
+        if mode == "advanced":
+            _compact(lines, ("Driver", gpu.get("driver_ver")),
+                     ("Date", gpu.get("driver_date")),
+                     ("Res", gpu.get("resolution")),
+                     ("Hz", gpu.get("refresh_hz")))
+
+
+def _fmt_memory(info: dict, lines: List[str]) -> None:
+    if "memory" not in info:
+        return
+    mem = info["memory"]
+    _heading(lines, "MEMORY & SWAP")
+    _compact(lines, ("RAM", f"{mem.get('used_gb')}/{mem.get('total_gb')} GB"),
+             ("Usage", f"{mem.get('usage_pct')}%"),
+             ("Free", f"{mem.get('available_gb')} GB"),
+             ("Cached", f"{mem.get('cached_gb')} GB"))
+    _compact(lines, ("Speed", f"{mem.get('speed_mhz')} MHz"),
+             ("Slots", f"{mem.get('slots_used')}/{mem.get('slots_total')}"),
+             ("Form", mem.get("form_factor")))
+    _compact(lines, ("Swap", f"{mem.get('swap_used_gb')}/{mem.get('swap_total_gb')} GB"),
+             ("Swap%", f"{mem.get('swap_pct')}%"))
+
+
+def _fmt_storage(info: dict, mode: str, lines: List[str]) -> None:
+    if "storage" not in info or not info["storage"]:
+        return
+    _heading(lines, "STORAGE")
+    for drv in info["storage"]:
+        lbl = drv.get("label", "")
+        tag = drv.get("letter", "?") + (f" [{lbl}]" if lbl else "")
+        sys_t = " [SYSTEM]" if drv.get("is_system") else ""
+        lines.append(f"  {tag}{sys_t}  {drv.get('model','')}")
+        _compact(lines, ("Used", f"{drv.get('used_tb')}/{drv.get('total_tb')} TB"),
+                 ("Free", f"{drv.get('free_tb')} TB"),
+                 ("Usage", f"{drv.get('usage_pct')}%"))
+        if mode == "advanced":
+            _compact(lines, ("Interface", drv.get("interface")),
+                     ("Type", drv.get("media_type")),
+                     ("Serial", drv.get("serial")))
+
+
+def _fmt_network(info: dict, mode: str, lines: List[str]) -> None:
+    if "network" not in info:
+        return
+    net = info["network"]
+    _heading(lines, "NETWORK")
+    _compact(lines, ("WAN", net.get("wan_ip")), ("Local", net.get("local_ip")),
+             ("Conns", net.get("active_connections")))
+    _compact(lines, ("Wi-Fi", net.get("wifi_ssid")),
+             ("Signal", net.get("wifi_signal")),
+             ("Link", net.get("wifi_speed")))
+    _compact(lines, ("DNS", net.get("dns_servers")))
+    _compact(lines, ("Sent", f"{net.get('total_sent_gb')} GB"),
+             ("Recv", f"{net.get('total_recv_gb')} GB"))
+    if mode == "advanced":
+        for adapter in net.get("adapters", []):
+            lines.append(
+                f"    [{adapter['name']}]  {adapter.get('ipv4','N/A')}"
+                f"  {adapter.get('speed_mbps','?')} Mbps")
+
+
+def _fmt_display(info: dict, lines: List[str]) -> None:
+    if "display" not in info or not info["display"]:
+        return
+    _heading(lines, "DISPLAY")
+    for disp in info["display"]:
+        _compact(lines, (disp.get("name", "Display"),
+                 f"{disp.get('resolution','?')} @ {disp.get('refresh_hz','?')} Hz"))
+
+
+def _fmt_audio(info: dict, lines: List[str]) -> None:
+    if "audio" not in info:
+        return
+    audio_info = info["audio"]
+    _heading(lines, "AUDIO")
+    _compact(lines, ("Output", audio_info.get("output_device")),
+             ("Input", audio_info.get("input_device")),
+             ("Volume", audio_info.get("master_volume")))
+
+
+def _fmt_battery(info: dict, lines: List[str]) -> None:
+    if not info.get("battery"):
+        return
+    bat = info["battery"]
+    _heading(lines, "BATTERY")
+    _compact(lines, ("Charge", f"{bat.get('percent')}%"),
+             ("Status", bat.get("status")),
+             ("Time", bat.get("time_remaining")),
+             ("Wear", f"{bat.get('wear_pct')}%"),
+             ("Health", bat.get("health")))
+
+
+def _fmt_bluetooth(info: dict, lines: List[str]) -> None:
+    if "bluetooth" not in info:
+        return
+    bt = info["bluetooth"]
+    _heading(lines, "BLUETOOTH")
+    _compact(lines, ("Adapter", bt.get("adapter_name")),
+             ("Present", str(bt.get("adapter_present"))))
+    devs = bt.get("devices", [])
+    if devs:
+        for dev in devs[:8]:
+            st = dev.get("status", "")
+            lines.append(f"    • {dev.get('name','?')}" + (f"  [{st}]" if st else ""))
+    else:
+        lines.append("    (no paired devices found)")
+
+
+def _fmt_weather(info: dict, lines: List[str]) -> None:
+    if "weather" not in info or info["weather"].get("error"):
+        return
+    weather = info["weather"]
+    _heading(lines, "WEATHER")
+    _compact(lines, ("Location", weather.get("location")),
+             ("Conditions", weather.get("conditions")))
+    _compact(lines, ("Temp", weather.get("temperature")),
+             ("Humidity", weather.get("humidity")),
+             ("Wind", weather.get("wind_speed")))
+
+
+def _fmt_clipboard(info: dict, lines: List[str]) -> None:
+    if "clipboard" not in info:
+        return
+    cb = info["clipboard"]
+    _heading(lines, "CLIPBOARD")
+    ct = cb.get("content_type", "empty")
+    if ct == "text":
+        _compact(lines, ("Type", "Text"), ("Chars", cb.get("char_count")),
+                 ("Words", cb.get("word_count")), ("Lines", cb.get("line_count")))
+        _row(lines, "Preview", f'"{cb.get("preview","")}"')
+    elif ct == "image":
+        _compact(lines, ("Type", "Image"), ("Size", cb.get("image_size")))
+    elif ct == "files":
+        _compact(lines, ("Type", "Files"), ("Count", cb.get("has_files")))
+        fl = cb.get("file_list", [])
+        if fl:
+            lines.append("    " + ", ".join(Path(f).name for f in fl[:5]))
+    else:
+        lines.append("  (clipboard empty)")
+
+
+def _fmt_notifications(info: dict, lines: List[str]) -> None:
+    if "notifications" not in info:
+        return
+    notif = info["notifications"]
+    _heading(lines, "NOTIFICATIONS")
+    _compact(lines, ("Count", notif.get("count")),
+             ("DND/Focus", "Active" if notif.get("dnd_active") else "Off"))
+    for item in notif.get("items", [])[:5]:
+        lines.append(f"    • {str(item)[:70]}")
+
+
+def _fmt_open_apps(info: dict, lines: List[str]) -> None:
+    if "open_apps" not in info:
+        return
+    apps_d = info["open_apps"]
+    _heading(lines, "OPEN APPLICATIONS")
+    lines.append(f"  Total: {apps_d.get('count', 0)}")
+    for app in apps_d.get("apps", [])[:20]:
+        name  = app.get("name", "?")
+        title = app.get("title", "")
+        cpu   = app.get("cpu_pct")
+        mem   = app.get("mem_mb")
+        entry = f"  {name}"
+        if title and title.lower() != name.lower():
+            entry += f"  —  {title[:45]}"
+        if cpu is not None and mem is not None:
+            entry += f"  (CPU {cpu}%, RAM {mem} MB)"
+        lines.append("   " + entry)
+
+
+def _fmt_activity(info: dict, lines: List[str]) -> None:
+    if "activity" not in info:
+        return
+    act = info["activity"]
+    _heading(lines, "MOUSE & KEYBOARD ACTIVITY")
+    if not act.get("tracker_running"):
+        lines.append(f"  ⚠  {act.get('note', 'Tracker not running.')}")
+    else:
+        _compact(lines, ("APM", act.get("actions_per_min")),
+                 ("Clicks/min", act.get("clicks_per_min")),
+                 ("Keys/min", act.get("keys_per_min")))
+        _compact(lines, ("L-click", act.get("mouse_left_clicks")),
+                 ("R-click", act.get("mouse_right_clicks")),
+                 ("M-click", act.get("mouse_middle_clicks")),
+                 ("Scroll", act.get("mouse_scroll_events")))
+        _compact(lines, ("Mouse dist (session)", act.get("mouse_distance")),
+                 ("All-time dist", act.get("alltime_distance")))
+        _compact(lines, ("Keys (session)", act.get("key_total")),
+                 ("All-time keys", act.get("alltime_key_total")),
+                 ("All-time clicks", act.get("alltime_mouse_clicks")))
+        top = act.get("top_keys", [])
+        if top:
+            _row(lines, "Top keys", ", ".join(f"{k}({n})" for k, n in top[:6]))
+
+
+def _fmt_processes(info: dict, lines: List[str]) -> None:
+    if "processes" not in info or not info["processes"]:
+        return
+    _heading(lines, "TOP PROCESSES  (by CPU)")
+    lines.append(f"  {'PID':<7} {'Name':<24} {'CPU%':>6}  {'MEM%':>6}  Status")
+    lines.append(f"  {'─'*52}")
+    for proc in info["processes"]:
+        lines.append(
+            f"  {proc['pid']:<7} {proc['name'][:23]:<24} "
+            f"{proc['cpu_pct']:>6.1f}%  {proc['mem_pct']:>5.2f}%  {proc['status']}"
+        )
+
+
+def _fmt_filesystem(info: dict, lines: List[str]) -> None:
+    if "filesystem" not in info:
+        return
+    fs = info["filesystem"]
+    _heading(lines, "FILE SYSTEM")
+    _compact(lines, ("Total Objects", fs.get("total_objects")),
+             ("Installed", fs.get("installed_programs")))
+    _compact(lines, ("Downloads", fs.get("downloads_objects")),
+             ("Documents", fs.get("documents_objects")))
+    rb = fs.get("recycle_bin_mb") or fs.get("trash_mb")
+    if rb:
+        _compact(lines, ("Trash/Recycle Bin", f"{rb} MB"))
+
+
+def _fmt_cooling(info: dict, lines: List[str]) -> None:
+    if "cooling" not in info:
+        return
+    cool = info["cooling"]
+    _heading(lines, "COOLING")
+    fans = cool.get("fans", [])
+    if fans:
+        _row(lines, "Fans", ", ".join(
+            f"{f.get('label','Fan')}: {f.get('rpm')} RPM" for f in fans))
+    for sensor, readings in cool.get("all_temps", {}).items():
+        for reading in readings[:3]:
+            lines.append(f"  {reading.get('label', sensor):<30} "
+                         f"{reading.get('display','N/A')}")
+
+
 def get_info_string(mode: str = "normal", units: str = "usa") -> str:
     """Return a human-readable string of system info."""
-    d = get_info_dict(mode=mode, units=units)
+    info = get_info_dict(mode=mode, units=units)
     lines: List[str] = []
-
-    def H(title: str) -> None:
-        lines.append("")
-        lines.append(f"── {title} {'─'*(52-min(len(title),50))}")
-
-    def C(*pairs, sep: str = ", ") -> None:
-        """One line of label: value pairs, comma-separated."""
-        parts = []
-        for label, value in pairs:
-            v = str(value) if value is not None else ""
-            if v and v not in ("N/A", "None", ""):
-                parts.append(f"{label}: {v}")
-        if parts:
-            lines.append("  " + sep.join(parts))
-
-    def R(label: str, value: Any, pad: int = 28) -> None:
-        v = str(value) if value is not None else ""
-        if v and v not in ("N/A", "None"):
-            lines.append(f"  {label:<{pad}} {v}")
 
     # Header
     now = datetime.datetime.now()
@@ -1313,251 +1617,28 @@ def get_info_string(mode: str = "normal", units: str = "usa") -> str:
     lines.append(f"║  Mode: {mode.upper():<12} Platform: {_OS:<21}║")
     lines.append(f"╚{'═'*54}╝")
 
-    # ── SYSTEM ────────────────────────────────────────────────────────────────
-    if "system" in d:
-        s = d["system"]
-        H("SYSTEM")
-        C(("PC", s.get("pc_name")), ("OS", f"{s.get('os_name')} {s.get('os_release')}"),
-          ("Arch", s.get("architecture")))
-        C(("Uptime", s.get("uptime_str")), ("Time", f"{s.get('date')} {s.get('time')}"),
-          ("TZ", s.get("timezone")))
-        C(("Power", s.get("power_plan")), ("Secure Boot", s.get("secure_boot")))
-        C(("Board", s.get("mb_model")), ("Mfr", s.get("mb_manufacturer")),
-          ("BIOS", s.get("bios_version")))
-        C(("Processes", s.get("total_processes")), ("Threads", s.get("total_threads")),
-          ("Startup Items", s.get("startup_programs")))
-        if mode == "advanced":
-            C(("Python", s.get("python_ver")), ("Hostname", s.get("hostname")))
-            C(("OS Build", s.get("os_version")))
+    # Sections
+    _fmt_system(info, mode, lines)
+    _fmt_cpu(info, mode, units, lines)
+    _fmt_gpu(info, mode, lines)
+    _fmt_memory(info, lines)
+    _fmt_storage(info, mode, lines)
+    _fmt_network(info, mode, lines)
+    _fmt_display(info, lines)
+    _fmt_audio(info, lines)
+    _fmt_battery(info, lines)
+    _fmt_bluetooth(info, lines)
+    _fmt_weather(info, lines)
+    _fmt_clipboard(info, lines)
+    _fmt_notifications(info, lines)
+    _fmt_open_apps(info, lines)
+    _fmt_activity(info, lines)
+    if mode == "advanced":
+        _fmt_processes(info, lines)
+        _fmt_filesystem(info, lines)
+        _fmt_cooling(info, lines)
 
-    # ── CPU ───────────────────────────────────────────────────────────────────
-    if "cpu" in d:
-        c = d["cpu"]
-        H("CPU")
-        R("Name", c.get("cpu_name"))
-        C(("Cores", f"{c.get('physical_cores')}P/{c.get('logical_cores')}L"),
-          ("Base", f"{c.get('base_clock_ghz')} GHz"),
-          ("Now", f"{c.get('current_clock_ghz')} GHz"),
-          ("Load", f"{c.get('utilization_pct')}%"))
-        C(("Temp Avg", _temp(c.get("cpu_temp_avg_c"), units)),
-          ("Temp Max", _temp(c.get("cpu_temp_max_c"), units)))
-        if mode == "advanced":
-            per = c.get("per_core_pct", [])
-            if per:
-                chunks = [per[i:i+8] for i in range(0, len(per), 8)]
-                for ci, chunk in enumerate(chunks):
-                    lines.append("  " + "  ".join(
-                        f"C{ci*8+i}:{v:.0f}%" for i, v in enumerate(chunk)))
-            C(("L2", f"{c.get('l2_cache_kb','N/A')} KB"),
-              ("L3", f"{c.get('l3_cache_kb','N/A')} KB"),
-              ("Virt", str(c.get("virtualization", "N/A"))))
-
-    # ── GPU ───────────────────────────────────────────────────────────────────
-    if "gpu" in d and d["gpu"]:
-        H("GPU")
-        for i, g in enumerate(d["gpu"]):
-            if len(d["gpu"]) > 1:
-                lines.append(f"  [GPU {i}]")
-            R("Name", g.get("name"))
-            C(("Load", g.get("utilization")), ("Temp", g.get("temp_display")),
-              ("VRAM", f"{g.get('mem_used_gb','?')}/{g.get('mem_total_gb', g.get('vram_gb','?'))} GB"),
-              ("Mem%", g.get("mem_util_pct")))
-            if mode == "advanced":
-                C(("Driver", g.get("driver_ver")), ("Date", g.get("driver_date")),
-                  ("Res", g.get("resolution")), ("Hz", g.get("refresh_hz")))
-
-    # ── MEMORY ────────────────────────────────────────────────────────────────
-    if "memory" in d:
-        m = d["memory"]
-        H("MEMORY & SWAP")
-        C(("RAM", f"{m.get('used_gb')}/{m.get('total_gb')} GB"),
-          ("Usage", f"{m.get('usage_pct')}%"),
-          ("Free", f"{m.get('available_gb')} GB"),
-          ("Cached", f"{m.get('cached_gb')} GB"))
-        C(("Speed", f"{m.get('speed_mhz')} MHz"),
-          ("Slots", f"{m.get('slots_used')}/{m.get('slots_total')}"),
-          ("Form", m.get("form_factor")))
-        C(("Swap", f"{m.get('swap_used_gb')}/{m.get('swap_total_gb')} GB"),
-          ("Swap%", f"{m.get('swap_pct')}%"))
-
-    # ── STORAGE ───────────────────────────────────────────────────────────────
-    if "storage" in d and d["storage"]:
-        H("STORAGE")
-        for drv in d["storage"]:
-            lbl = drv.get("label", "")
-            tag = drv.get("letter", "?") + (f" [{lbl}]" if lbl else "")
-            sys_t = " [SYSTEM]" if drv.get("is_system") else ""
-            lines.append(f"  {tag}{sys_t}  {drv.get('model','')}")
-            C(("Used", f"{drv.get('used_tb')}/{drv.get('total_tb')} TB"),
-              ("Free", f"{drv.get('free_tb')} TB"),
-              ("Usage", f"{drv.get('usage_pct')}%"))
-            if mode == "advanced":
-                C(("Interface", drv.get("interface")), ("Type", drv.get("media_type")),
-                  ("Serial", drv.get("serial")))
-
-    # ── NETWORK ───────────────────────────────────────────────────────────────
-    if "network" in d:
-        n = d["network"]
-        H("NETWORK")
-        C(("WAN", n.get("wan_ip")), ("Local", n.get("local_ip")),
-          ("Conns", n.get("active_connections")))
-        C(("Wi-Fi", n.get("wifi_ssid")), ("Signal", n.get("wifi_signal")),
-          ("Link", n.get("wifi_speed")))
-        C(("DNS", n.get("dns_servers")))
-        C(("Sent", f"{n.get('total_sent_gb')} GB"),
-          ("Recv", f"{n.get('total_recv_gb')} GB"))
-        if mode == "advanced":
-            for adapter in n.get("adapters", []):
-                lines.append(
-                    f"    [{adapter['name']}]  {adapter.get('ipv4','N/A')}"
-                    f"  {adapter.get('speed_mbps','?')} Mbps")
-
-    # ── DISPLAY ───────────────────────────────────────────────────────────────
-    if "display" in d and d["display"]:
-        H("DISPLAY")
-        for disp in d["display"]:
-            C((disp.get("name", "Display"),
-               f"{disp.get('resolution','?')} @ {disp.get('refresh_hz','?')} Hz"))
-
-    # ── AUDIO ─────────────────────────────────────────────────────────────────
-    if "audio" in d:
-        a = d["audio"]
-        H("AUDIO")
-        C(("Output", a.get("output_device")), ("Input", a.get("input_device")),
-          ("Volume", a.get("master_volume")))
-
-    # ── BATTERY ───────────────────────────────────────────────────────────────
-    if d.get("battery"):
-        b = d["battery"]
-        H("BATTERY")
-        C(("Charge", f"{b.get('percent')}%"), ("Status", b.get("status")),
-          ("Time", b.get("time_remaining")), ("Wear", f"{b.get('wear_pct')}%"),
-          ("Health", b.get("health")))
-
-    # ── BLUETOOTH ─────────────────────────────────────────────────────────────
-    if "bluetooth" in d:
-        bt = d["bluetooth"]
-        H("BLUETOOTH")
-        C(("Adapter", bt.get("adapter_name")),
-          ("Present", str(bt.get("adapter_present"))))
-        devs = bt.get("devices", [])
-        if devs:
-            for dev in devs[:8]:
-                st = dev.get("status", "")
-                lines.append(f"    • {dev.get('name','?')}" + (f"  [{st}]" if st else ""))
-        else:
-            lines.append("    (no paired devices found)")
-
-    # ── WEATHER ───────────────────────────────────────────────────────────────
-    if "weather" in d and not d["weather"].get("error"):
-        w = d["weather"]
-        H("WEATHER")
-        C(("Location", w.get("location")), ("Conditions", w.get("conditions")))
-        C(("Temp", w.get("temperature")), ("Humidity", w.get("humidity")),
-          ("Wind", w.get("wind_speed")))
-
-    # ── CLIPBOARD ─────────────────────────────────────────────────────────────
-    if "clipboard" in d:
-        cb = d["clipboard"]
-        H("CLIPBOARD")
-        ct = cb.get("content_type", "empty")
-        if ct == "text":
-            C(("Type", "Text"), ("Chars", cb.get("char_count")),
-              ("Words", cb.get("word_count")), ("Lines", cb.get("line_count")))
-            R("Preview", f'"{cb.get("preview","")}"')
-        elif ct == "image":
-            C(("Type", "Image"), ("Size", cb.get("image_size")))
-        elif ct == "files":
-            C(("Type", "Files"), ("Count", cb.get("has_files")))
-            fl = cb.get("file_list", [])
-            if fl:
-                lines.append("    " + ", ".join(Path(f).name for f in fl[:5]))
-        else:
-            lines.append("  (clipboard empty)")
-
-    # ── NOTIFICATIONS ─────────────────────────────────────────────────────────
-    if "notifications" in d:
-        notif = d["notifications"]
-        H("NOTIFICATIONS")
-        C(("Count", notif.get("count")),
-          ("DND/Focus", "Active" if notif.get("dnd_active") else "Off"))
-        for item in notif.get("items", [])[:5]:
-            lines.append(f"    • {str(item)[:70]}")
-
-    # ── OPEN APPLICATIONS ─────────────────────────────────────────────────────
-    if "open_apps" in d:
-        apps_d = d["open_apps"]
-        H("OPEN APPLICATIONS")
-        lines.append(f"  Total: {apps_d.get('count', 0)}")
-        for app in apps_d.get("apps", [])[:20]:
-            name  = app.get("name", "?")
-            title = app.get("title", "")
-            cpu   = app.get("cpu_pct")
-            mem   = app.get("mem_mb")
-            disp  = f"  {name}"
-            if title and title.lower() != name.lower():
-                disp += f"  —  {title[:45]}"
-            if cpu is not None and mem is not None:
-                disp += f"  (CPU {cpu}%, RAM {mem} MB)"
-            lines.append("   " + disp)
-
-    # ── ACTIVITY ──────────────────────────────────────────────────────────────
-    if "activity" in d:
-        act = d["activity"]
-        H("MOUSE & KEYBOARD ACTIVITY")
-        if not act.get("tracker_running"):
-            lines.append(f"  ⚠  {act.get('note', 'Tracker not running.')}")
-        else:
-            C(("APM", act.get("actions_per_min")),
-              ("Clicks/min", act.get("clicks_per_min")),
-              ("Keys/min", act.get("keys_per_min")))
-            C(("L-click", act.get("mouse_left_clicks")),
-              ("R-click", act.get("mouse_right_clicks")),
-              ("M-click", act.get("mouse_middle_clicks")),
-              ("Scroll", act.get("mouse_scroll_events")))
-            C(("Mouse dist (session)", act.get("mouse_distance")),
-              ("All-time dist", act.get("alltime_distance")))
-            C(("Keys (session)", act.get("key_total")),
-              ("All-time keys", act.get("alltime_key_total")),
-              ("All-time clicks", act.get("alltime_mouse_clicks")))
-            top = act.get("top_keys", [])
-            if top:
-                R("Top keys", ", ".join(f"{k}({n})" for k, n in top[:6]))
-
-    # ── TOP PROCESSES ─────────────────────────────────────────────────────────
-    if mode == "advanced" and "processes" in d and d["processes"]:
-        H("TOP PROCESSES  (by CPU)")
-        lines.append(f"  {'PID':<7} {'Name':<24} {'CPU%':>6}  {'MEM%':>6}  Status")
-        lines.append(f"  {'─'*52}")
-        for p in d["processes"]:
-            lines.append(
-                f"  {p['pid']:<7} {p['name'][:23]:<24} "
-                f"{p['cpu_pct']:>6.1f}%  {p['mem_pct']:>5.2f}%  {p['status']}"
-            )
-
-    # ── FILE SYSTEM ───────────────────────────────────────────────────────────
-    if mode == "advanced" and "filesystem" in d:
-        fs = d["filesystem"]
-        H("FILE SYSTEM")
-        C(("Total Objects", fs.get("total_objects")),
-          ("Installed", fs.get("installed_programs")))
-        C(("Downloads", fs.get("downloads_objects")),
-          ("Documents", fs.get("documents_objects")))
-        rb = fs.get("recycle_bin_mb") or fs.get("trash_mb")
-        if rb:
-            C(("Trash/Recycle Bin", f"{rb} MB"))
-
-    # ── COOLING ───────────────────────────────────────────────────────────────
-    if mode == "advanced" and "cooling" in d:
-        cool = d["cooling"]
-        H("COOLING")
-        fans = cool.get("fans", [])
-        if fans:
-            R("Fans", ", ".join(f"{f.get('label','Fan')}: {f.get('rpm')} RPM" for f in fans))
-        for sensor, readings in cool.get("all_temps", {}).items():
-            for r in readings[:3]:
-                lines.append(f"  {r.get('label', sensor):<30} {r.get('display','N/A')}")
-
+    # Footer
     lines.append("")
     lines.append(f"── {'─'*52}")
     lines.append(f"  Snapshot dir: {DATA_DIR}")

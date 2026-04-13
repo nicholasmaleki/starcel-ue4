@@ -107,7 +107,7 @@ def _check_prerequisites():
 
         ('Blueprint BP_CesiumEarth',
          lambda: bool(ue.load_object(ue.find_class('Blueprint'),
-                                     '/Game/Blueprints/BP_CesiumEarth')),
+                                     '/Game/Blueprints/Assets/BP_CesiumEarth')),
          'Requires Cesium for Unreal plugin + BP_CesiumEarth Blueprint'),
 
         ('EverythingAPI DLL',
@@ -318,27 +318,44 @@ def test_video():
     Spawn the loading_screen.mp4 as a vertical picture-frame video plane
     using MP_VideoTexture_Video_Mat, plus run the legacy Desktop-MP4 scan.
     """
-    from ue_spawn import spawn_video, spawn_video_plane
+    from ue_spawn import spawn_image, spawn_video
     results = {}
 
-    # ---- spawn_video_plane (uses BP_VideoSkySphere + SetVideoBackground)
-    loading_mp4 = (r'C:\Users\nicho\Documents\Unreal Projects'
-                   r'\Starcel9\Content\Movies\loading_screen.mp4')
-    if os.path.exists(loading_mp4):
-        actor = None
-        try:
-            actor = spawn_video_plane(
-                loading_mp4,
+    # ---- video plane: same as spawn_image but with M_VideoTexture_Video ----
+    # Uses a test image for sizing, applies the video material instead.
+    actor = None
+    try:
+        # Find any image to determine plane dimensions
+        test_img_path = None
+        for f in os.listdir(DESKTOP):
+            if f.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
+                test_img_path = os.path.join(DESKTOP, f)
+                break
+        if test_img_path is None:
+            # Use Feedback Hub screenshot as fallback
+            fb_dir = os.path.expandvars(
+                r'%LOCALAPPDATA%\Packages\Microsoft.WindowsFeedbackHub_8wekyb3d8bbwe\LocalState')
+            for root, dirs, files in os.walk(fb_dir):
+                for f in files:
+                    if f.lower().endswith('.png'):
+                        test_img_path = os.path.join(root, f)
+                        break
+                if test_img_path:
+                    break
+
+        if test_img_path:
+            actor = spawn_image(
+                test_img_path,
                 location=FVector(0, _Y_VIDEO + 400, 100),
-                scale=FVector(0.0002, 0.0002, 0.0002),  # character-scale screen
+                material_path='/Game/Movies/M_VideoTexture_Video',
             )
-        except Exception as e:
-            _log(f'  video_plane_loading exception: {e}')
-        results.update(_result('video_plane_loading', actor,
-                               extra='loading_screen.mp4 (BP_VideoSkySphere)'))
-    else:
-        results.update(_skip('video_plane_loading',
-                             f'not found: {loading_mp4}'))
+            _log(f'  video_plane: spawned with M_VideoTexture_Video at Y={_Y_VIDEO + 400}')
+        else:
+            _log(f'  video_plane: no test image found for sizing')
+    except Exception as e:
+        _log(f'  video_plane exception: {e}')
+    results.update(_result('video_plane', actor,
+                           extra='image plane with M_VideoTexture_Video'))
 
     # ---- legacy spawn_video on any Desktop MP4 ----
     mp4_path = None
@@ -601,6 +618,25 @@ def test_nd_table():
 _Y_PLOT = 9000
 
 
+_Y_PYACTOR_TEST = 7500
+
+
+def test_pyactor_assign():
+    """Spawn a BP_PyActor and assign pyactor_test.PyActorTest to verify
+    dynamic module/class assignment works."""
+    from ue_spawn import _spawn_pyactor
+    actor = None
+    try:
+        actor = _spawn_pyactor(
+            'pyactor_test', 'PyActorTest',
+            location=FVector(0, _Y_PYACTOR_TEST, 100))
+        _log(f'  pyactor_assign: spawned at Y={_Y_PYACTOR_TEST}')
+    except Exception as e:
+        _log(f'  pyactor_assign exception: {e}')
+    return _result('pyactor_assign', actor,
+                   extra='BP_PyActor with pyactor_test.PyActorTest')
+
+
 def test_plot():
     """
     Three plot tests spread along Y:
@@ -683,15 +719,23 @@ def test_plot():
 
         results.update(_result(name, actor))
 
-    # ---- 2D curve: tan(x) clamped ----
+    # ---- 2D curve: tan(x) with asymptote breaks ----
     plot_2d = None
     try:
         from ue_math_plotter import create_plotter
+
+        def _tan_safe(x):
+            """Return NaN near asymptotes so the curve breaks cleanly."""
+            v = math.tan(x)
+            if abs(v) > 5.0:
+                return float('nan')
+            return v
+
         p = create_plotter(
             world        = get_world(),
             origin       = FVector(0, _Y_PLOT + 1500, 0),
             x_range      = (-3.14159, 3.14159),
-            y_range      = (-3.14159, 3.14159),
+            y_range      = (-5.0, 5.0),
             z_range      = (-5.0, 5.0),
             units_per_uu = 80.0,
             orientation  = 'wall_table',
@@ -699,7 +743,7 @@ def test_plot():
         )
         p.labs(title='tan(x)', x='x', y='y')
         p.grid(True)
-        p.plot(lambda x: max(-5.0, min(5.0, math.tan(x))), n=256)
+        p.plot(_tan_safe, n=256)
         p.show()
         plot_2d = p
     except Exception as e:
@@ -748,6 +792,7 @@ def test_spawn_all():
         test_table,
         test_desktop_icons,
         test_icon,
+        test_pyactor_assign,
         test_nd_table,
         test_plot,
     ]:
@@ -1009,6 +1054,41 @@ def _log_click_on_actor_from_hit(actor, hit, text_content=None):
     )
 
 
+def _spawn_text_cursor(world):
+    """Spawn a thin translucent cube to use as a blinking insertion cursor."""
+    try:
+        from unreal_engine.classes import StaticMeshActor, StaticMesh, Material
+        from unreal_engine.enums import EComponentMobility
+
+        actor = world.actor_spawn(StaticMeshActor)
+        smc   = actor.StaticMeshComponent
+        cube  = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube')
+        smc.SetStaticMesh(cube)
+        smc.SetMobility(EComponentMobility.Movable)
+
+        # Try translucent material, fall back to any available
+        mid = None
+        for mat_path in ('/Game/Materials/M_Color_Translucent.M_Color_Translucent',
+                         '/Game/Materials/M_TextureUnlit.M_TextureUnlit',
+                         '/Game/Materials/M_Icon.M_Icon'):
+            try:
+                mat = ue.load_object(Material, mat_path)
+                mid = smc.create_material_instance_dynamic(mat)
+                break
+            except Exception:
+                continue
+        if mid is not None:
+            smc.set_material(0, mid)
+
+        # Thin vertical bar: width=2.5 UU, height=50 UU, depth=1 UU
+        actor.set_actor_scale(FVector(0.01, 0.025, 0.5))
+        actor.SetActorHiddenInGame(True)
+        return actor, mid
+    except Exception as e:
+        _log(f'text3d_click: cursor spawn failed: {e}')
+        return None, None
+
+
 def test_text3d_click(uobject=None, input_manager=None, location=None):
     """
     Spawn a Text3D actor with known string "ABCDEFGHIJ" and a 3x3 test table.
@@ -1147,10 +1227,72 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
     # with that method — same as gizmo uses self.uobject)
     _trace_obj = uobject
 
+    # ---- Insertion cursor ----
+    _cursor_actor, _cursor_mid = _spawn_text_cursor(get_world())
+    _cursor_state = {'timer': 0.0, 'visible': False, 'active': False}
+
+    def _position_cursor(hit_actor, hit):
+        """Snap the cursor to the discrete position AFTER the clicked character."""
+        import math
+
+        if _cursor_actor is None:
+            return
+
+        char_idx, _ = _resolve_char_from_meshes(hit_actor, hit)
+
+        t3d = None
+        try:
+            t3d = hit_actor.get_actor_component('Text3DComponent')
+        except Exception:
+            pass
+
+        if t3d is None or char_idx is None or char_idx < 0:
+            return
+
+        placed = False
+        actor_rot = hit_actor.get_actor_rotation()
+
+        try:
+            meshes = t3d.CharacterMeshes
+            if meshes and 0 <= char_idx < len(meshes) and meshes[char_idx]:
+                origin, extent = meshes[char_idx].GetComponentBounds()
+                # Right edge of clicked glyph, snapped with ceil
+                cursor_y = math.ceil(origin.y + extent.y)
+                # Shift down by half glyph height (origin is glyph center)
+                cursor_z = origin.z - extent.z
+                cursor_x = origin.x
+                _cursor_actor.set_actor_location(
+                    FVector(cursor_x, cursor_y, cursor_z))
+                _cursor_actor.set_actor_rotation(actor_rot)
+                placed = True
+        except Exception:
+            pass
+
+        if not placed:
+            # Fallback: world hit point
+            _cursor_actor.set_actor_location(hit.impact_point)
+            _cursor_actor.set_actor_rotation(actor_rot)
+
+        if placed:
+            _cursor_actor.SetActorHiddenInGame(False)
+            _cursor_state['active'] = True
+            _cursor_state['timer']  = 0.0
+            _cursor_state['visible'] = True
+
     # ---- Tick function: event-driven press state + cursor hit test ----
     _state['fired'] = False  # ensure we fire once per press
+    CURSOR_BLINK_RATE = 1.0
 
     def tick_fn(dt):
+        # Blink cursor
+        if _cursor_actor is not None and _cursor_state['active']:
+            _cursor_state['timer'] += dt
+            half = CURSOR_BLINK_RATE * 0.5
+            should_show = (_cursor_state['timer'] % CURSOR_BLINK_RATE) < half
+            if should_show != _cursor_state['visible']:
+                _cursor_state['visible'] = should_show
+                _cursor_actor.SetActorHiddenInGame(not should_show)
+
         if _trace_obj is None and _pc is None:
             return
 
@@ -1195,6 +1337,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
                 return
 
             _log_click_on_actor_from_hit(matched_actor, hit, text_content=matched_text)
+            _position_cursor(matched_actor, hit)
 
         elif not currently_down:
             _state['fired'] = False

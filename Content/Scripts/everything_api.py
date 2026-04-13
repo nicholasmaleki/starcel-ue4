@@ -29,19 +29,7 @@ import struct
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-_WIN_TICKS        = 10_000_000
-_EPOCH_DIFF_TICKS = (
-    datetime.datetime(1970, 1, 1) - datetime.datetime(1601, 1, 1)
-).total_seconds() * _WIN_TICKS
-
-
-def _filetime_to_dt(raw: int) -> Optional[datetime.datetime]:
-    if raw in (0, 2**64 - 1):
-        return None
-    try:
-        return datetime.datetime.fromtimestamp((raw - _EPOCH_DIFF_TICKS) / _WIN_TICKS)
-    except (OSError, ValueError):
-        return None
+from utils import filetime_to_dt as _filetime_to_dt
 
 
 REQ_FILE_NAME    = 0x00000001

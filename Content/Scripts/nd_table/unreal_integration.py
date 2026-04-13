@@ -503,7 +503,8 @@ class UnrealTableRenderer:
     def _render_nd_table(self, table: Table, base_location: FVector,
                         render_gridlines: bool, render_text: bool):
         if self.aggressive_debug:
-            ue.log(f"[RENDER nD] Spreading {table.ndim}D")
+            ue.log(f"[RENDER nD] Spreading {table.ndim}D  "
+                   f"extra_dims={table.ndim - 3}")
         
         extra_dims = table.ndim - 3
         
@@ -529,7 +530,13 @@ class UnrealTableRenderer:
         slice_spacing_z = max_size * self.base_cell_spacing * 2.0
         
         has_negative = any(min(table.axes[3 + i].indices) < 0 for i in range(extra_dims))
-        
+
+        if self.aggressive_debug:
+            ue.log(f"[RENDER nD] {table.ndim}D → {total_slices} slices  "
+                   f"grid=({grid_cols}x{grid_rows}x{grid_depth})  "
+                   f"slice_spacing_xy={slice_spacing_xy:.0f}  "
+                   f"slice_spacing_z={slice_spacing_z:.0f}")
+
         for idx, extra_combo in enumerate(combinations):
             col = idx % grid_cols
             row = (idx // grid_cols) % grid_rows
@@ -558,6 +565,10 @@ class UnrealTableRenderer:
                 base_location.z + z_offset
             )
             
+            if self.aggressive_debug:
+                ue.log(f"[RENDER nD] slice {idx}/{total_slices}  "
+                       f"extra={extra_combo}  col={col} row={row} depth={depth}  "
+                       f"loc=({slice_location.x:.0f}, {slice_location.y:.0f}, {slice_location.z:.0f})")
             self._render_direct(slice_3d, slice_location, render_gridlines, render_text)
             
             dim_names = [f"D{4+i}={val}" for i, val in enumerate(extra_combo)]

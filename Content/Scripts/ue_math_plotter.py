@@ -884,13 +884,11 @@ class UnrealActorFactory:
             if len(seg.points) < 2:
                 continue
             if mode == '2d':
-                pts = [(p.x*bounds.units_per_uu,
-                        0.0,
-                        p.y*bounds.units_per_uu) for p in seg.points]
+                pts = [bounds.to_uu(p.x, p.y, 0.0) for p in seg.points]
+                pts = [(v.x, v.y, v.z) for v in pts]
             else:
-                pts = [(p.x*bounds.units_per_uu,
-                        p.y*bounds.units_per_uu,
-                        p.z*bounds.units_per_uu) for p in seg.points]
+                pts = [bounds.to_uu(p.x, p.y, p.z) for p in seg.points]
+                pts = [(v.x, v.y, v.z) for v in pts]
             mesh = builder.build(pts)
             a = self.spawn_proc_mesh(mesh, style.color, style.opacity)
             if a: actors.append(a)
@@ -925,17 +923,20 @@ class GridRenderer:
     def render_grid_2d(self, spacing: float = 1.0,
                        color: Tuple = (0.85,0.85,0.85,1.0),
                        radius: float = 1.0):
+        """2D grid in the XY plane (Z=0).  Correct for all orientations."""
         b = self.bounds
         import numpy as np
+        # Vertical lines (one per x tick, spanning y_range)
         for x in np.arange(math.ceil(b.x_range[0]/spacing)*spacing,
                             b.x_range[1]+spacing/2, spacing):
-            p0 = b.to_uu(x, 0, b.y_range[0])
-            p1 = b.to_uu(x, 0, b.y_range[1])
+            p0 = b.to_uu(x, b.y_range[0], 0)
+            p1 = b.to_uu(x, b.y_range[1], 0)
             self.factory.spawn_cylinder(p0, p1, radius, color)
+        # Horizontal lines (one per y tick, spanning x_range)
         for y in np.arange(math.ceil(b.y_range[0]/spacing)*spacing,
                             b.y_range[1]+spacing/2, spacing):
-            p0 = b.to_uu(b.x_range[0], 0, y)
-            p1 = b.to_uu(b.x_range[1], 0, y)
+            p0 = b.to_uu(b.x_range[0], y, 0)
+            p1 = b.to_uu(b.x_range[1], y, 0)
             self.factory.spawn_cylinder(p0, p1, radius, color)
         _dbg("grid_2d rendered", self.debug)
 
@@ -973,10 +974,12 @@ class GridRenderer:
 
     def render_axes_2d(self, color: Tuple = (1.0,1.0,1.0,1.0), radius: float = 2.0):
         b = self.bounds
+        # X axis (horizontal)
         self.factory.spawn_cylinder(b.to_uu(b.x_range[0],0,0),
                                      b.to_uu(b.x_range[1],0,0), radius, color)
-        self.factory.spawn_cylinder(b.to_uu(0,0,b.y_range[0]),
-                                     b.to_uu(0,0,b.y_range[1]), radius, color)
+        # Y axis (vertical, in XY plane, Z=0)
+        self.factory.spawn_cylinder(b.to_uu(0,b.y_range[0],0),
+                                     b.to_uu(0,b.y_range[1],0), radius, color)
 
     def render_axes_3d(self, color: Tuple = (1.0,1.0,1.0,1.0), radius: float = 2.0):
         b = self.bounds
@@ -989,23 +992,19 @@ class GridRenderer:
 
     def render_tick_labels(self, spacing: float = 1.0,
                            color: Tuple = (0.8,0.8,0.8,1.0)):
-        """Spawn Text3D labels at each gridline, rotated to face +Y."""
+        """Spawn Text3D labels at each gridline in the XY plane (Z=0)."""
         b = self.bounds
         import numpy as np
-        # X-axis tick labels (below grid, facing +Y so camera can read them)
-        rot_x = FRotator(0, 0, 0)    # default face direction
+        # X-axis tick labels (below the grid)
         for x in np.arange(math.ceil(b.x_range[0]/spacing)*spacing,
                              b.x_range[1]+spacing/2, spacing):
-            pos = b.to_uu(x, 0, b.y_range[0] - 0.3)
-            self.factory.spawn_text(pos, f"{x:.1g}", size=5.0, color=color,
-                                    rotation=rot_x)
-        # Y-axis tick labels (left of grid, rotated 90° so text reads upward)
-        rot_y = FRotator(0, 0, 90)   # yaw 90° to face along +X
+            pos = b.to_uu(x, b.y_range[0] - 0.3, 0)
+            self.factory.spawn_text(pos, f"{x:.1g}", size=5.0, color=color)
+        # Y-axis tick labels (left of the grid)
         for y in np.arange(math.ceil(b.y_range[0]/spacing)*spacing,
                              b.y_range[1]+spacing/2, spacing):
-            pos = b.to_uu(b.x_range[0]-0.4, 0, y)
-            self.factory.spawn_text(pos, f"{y:.1g}", size=5.0, color=color,
-                                    rotation=rot_y)
+            pos = b.to_uu(b.x_range[0] - 0.4, y, 0)
+            self.factory.spawn_text(pos, f"{y:.1g}", size=5.0, color=color)
 
     def render_tick_labels_3d(self, spacing: float = 1.0,
                               color: Tuple = (0.8,0.8,0.8,1.0)):
@@ -1037,13 +1036,13 @@ class GridRenderer:
     def render_axis_labels(self, xlabel='', ylabel='', zlabel=''):
         b = self.bounds
         if xlabel:
-            pos = b.to_uu((b.x_range[0]+b.x_range[1])/2, 0, b.y_range[0]-0.7)
+            pos = b.to_uu((b.x_range[0]+b.x_range[1])/2, b.y_range[0]-0.7, 0)
             self.factory.spawn_text(pos, xlabel, size=8.0)
         if ylabel:
-            pos = b.to_uu(b.x_range[0]-0.9, 0, (b.y_range[0]+b.y_range[1])/2)
+            pos = b.to_uu(b.x_range[0]-0.9, (b.y_range[0]+b.y_range[1])/2, 0)
             self.factory.spawn_text(pos, ylabel, size=8.0)
         if zlabel:
-            pos = b.to_uu(b.x_range[0]-0.9, (b.y_range[0]+b.y_range[1])/2,
+            pos = b.to_uu(b.x_range[0]-0.9, 0,
                            (b.z_range[0]+b.z_range[1])/2)
             self.factory.spawn_text(pos, zlabel, size=8.0)
 

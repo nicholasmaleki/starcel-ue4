@@ -903,7 +903,7 @@ EARTH_PRESETS = {
 def spawn_earth(location=None, rotation=None, scale=None,
                 preset='satellite',
                 asset_id=None,
-                bp_path='/Game/Blueprints/BP_CesiumEarth'):
+                bp_path='/Game/Blueprints/Assets/BP_CesiumEarth'):
     """
     Spawn a BP_CesiumEarth actor and configure its raster overlay.
 
@@ -1255,7 +1255,7 @@ DESKTOP_KEYWORDS = {'desktop', 'desktop_icons', 'desktopicons'}
 PLOT_KEYWORDS    = {'plot', 'math_plot', 'mathplot', 'heatmap', 'surface', 'chart', 'graph'}
 
 
-def spawn_icon(pil_image, location=FVector(0,0,0), rotation=FRotator(0,0,0), scale=FVector(1,1,1),
+def spawn_icon(pil_image, location=None, rotation=None, scale=None,
                material_path='/Game/Materials/M_Icon.M_Icon',
                param_name='Texture',
                bp_path='/Game/Blueprints/Assets/BP_Icon.BP_Icon',
@@ -1281,21 +1281,24 @@ def spawn_icon(pil_image, location=FVector(0,0,0), rotation=FRotator(0,0,0), sca
         ``pyactor_icon.IconSphere.on_clicked`` can open it in Chrome via
         ``cmd /c start chrome "<path>"``.
     """
+    if location is None:
+        location = FVector(0, 0, 0)
+    if rotation is None:
+        rotation = FRotator(0, 0, 0)
+    if scale is None:
+        scale = FVector(1, 1, 1)
     world = _get_world()
 
     actor = None
 
-    # Spawn as PyActor with sphere mesh + pyactor_icon.IconSphere
+    # Spawn BP_Icon (hover/click/physics configured in Blueprint)
     try:
-        actor = _spawn_pyactor(
-            'pyactor_icon', 'IconSphere',
-            location=location, rotation=rotation, scale=scale,
-            components=[dict(class_name='StaticMeshComponent',
-                             name=component_name, root=True,
-                             mesh='/Engine/BasicShapes/Sphere.Sphere')])
+        bp = ue.load_object(Blueprint, bp_path)
+        actor = world.actor_spawn(bp.GeneratedClass)
+        actor.set_actor_transform(FTransform(location, rotation, scale))
         target_comp = find_component(actor, component_name)
     except Exception as e:
-        ue.log_warning(f'spawn_icon: PyActor spawn failed: {e}')
+        ue.log_warning(f'spawn_icon: could not load BP_Icon at "{bp_path}": {e}')
         return None
 
     # Attach the source path to the actor.  Note: world.actor_spawn()
@@ -1433,7 +1436,7 @@ def spawn(
     # Earth / Cesium options
     earth_preset='satellite',
     earth_asset_id=None,
-    earth_bp_path='/Game/Blueprints/BP_CesiumEarth',
+    earth_bp_path='/Game/Blueprints/Assets/BP_CesiumEarth',
     # Table options
     table_data=None,
     orientation='wall_table',
