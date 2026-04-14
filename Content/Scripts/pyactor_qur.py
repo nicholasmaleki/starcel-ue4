@@ -1,12 +1,19 @@
 import unreal_engine as ue
 from unreal_engine import FVector, FRotator, FTransform
 import random
+import pickle
+import os
 
 try:
     from unreal_engine.classes import StaticMeshActor, Blueprint, Material
     from unreal_engine.enums import EComponentMobility
 except Exception:
     StaticMeshActor = Blueprint = Material = EComponentMobility = None
+
+try:
+    import worldhello
+except Exception:
+    worldhello = None
 
 # ---------------------------------------------------------------------------
 # Python component for BP_Qur — spawns a Text3D quote every 60 seconds
@@ -20,23 +27,12 @@ except Exception:
 # ---------------------------------------------------------------------------
 
 QUOTES = [
-    "We're all mad here.",
-    "Imagination is the only weapon\nin the war against reality.",
-    "Every adventure requires\na first step.",
-    "If you don't know where\nyou're going, any road\nwill take you there.",
-    "I am not crazy;\nmy reality is just\ndifferent than yours.",
-    "Only a few find the way;\nsome don't recognize it\nwhen they do.",
-    "It's no use going back\nto yesterday, because\nI was a different person then.",
-    "Who in the world am I?\nAh, that's the great puzzle.",
-    "Begin at the beginning\nand go on till you come\nto the end; then stop.",
-    "Curiouser and curiouser!",
-    "Why, sometimes I've believed\nas many as six impossible\nthings before breakfast.",
-    "Not all who wander are lost.",
+    "Hello World",
 ]
 
 FONT_PATH = '/Game/Fonts/CatFont_Font'
-QUOTE_INTERVAL = 60.0   # seconds between quote changes
-QUOTE_OFFSET   = FVector(0, 0, 200)  # above the cat
+QUOTE_INTERVAL = 90.0   # 1.5 minutes between quote changes
+QUOTE_OFFSET   = FVector(0, 100, 200)  # to the right and up from the cat
 
 
 class PyActorQur:
@@ -46,16 +42,37 @@ class PyActorQur:
         self._elapsed    = 0.0
         self._quote_actor = None
         self._font       = None
+        self._first_quote_pending = True
 
         try:
             self._font = ue.load_object(ue.find_class('Font'), FONT_PATH)
         except Exception as e:
             ue.log_warning(f'PyActorQur: could not load font "{FONT_PATH}": {e}')
 
+        # ---- Load quotes from pickle (falls back to hardcoded QUOTES) ----
+        file_path = os.path.join(os.path.dirname(__file__), "quotes.pkl")
+        self.__quotes = None
+        try:
+            with open(file_path, 'rb') as file:
+                loaded_quotes_hex = pickle.load(file)
+                self.__quotes = [bytes.fromhex(h).decode('utf-8') for h in loaded_quotes_hex]
+                if worldhello is not None:
+                    self.__quotes.append(worldhello.hello_world())
+            print("Successfully unpickled quotes")
+        except Exception:
+            print("Failed to unpickle quotes")
+
         ue.log(f'PyActorQur: started on {self.uobject.get_name()}')
-        self._show_quote()
+        # NOTE: defer first quote spawn to tick() — calling actor_spawn here
+        # can fail with "running a ConstructionScript" on some PIE sessions.
 
     def tick(self, dt):
+        # Deferred first-quote spawn (avoids ConstructionScript conflict)
+        if self._first_quote_pending:
+            self._first_quote_pending = False
+            self._show_quote()
+            return
+
         self._elapsed += dt
         if self._elapsed >= QUOTE_INTERVAL:
             self._elapsed = 0.0
@@ -71,7 +88,9 @@ class PyActorQur:
                 pass
             self._quote_actor = None
 
-        quote = random.choice(QUOTES)
+        # Prefer loaded quotes, fall back to hardcoded list
+        quote_pool = self.__quotes if self.__quotes else QUOTES
+        quote = random.choice(quote_pool)
 
         # Spawn BP_Cell (Text3DComponent)
         try:
@@ -90,7 +109,8 @@ class PyActorQur:
                 if self._font:
                     t3d.Font = self._font
                 # Small scale for readable text
-                actor.set_actor_scale(FVector(0.3, 0.3, 0.3))
+                transform = FTransform(spawn_loc, FRotator(0, 0, 90), FVector(2, 2, 2))
+                actor.set_actor_transform(transform)
 
             # Attach so it follows the cat
             owner = self.uobject.get_owner()

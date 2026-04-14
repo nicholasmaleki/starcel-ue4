@@ -359,6 +359,91 @@ def spawn_image(path, location=None, rotation=None, scale=None,
     return actor
 
 
+def spawn_video_cube(video_path, location=None, rotation=None, scale=None,
+                     material_path='/Game/Movies/M_VideoTexture_Video',
+                     media_player_path='/Game/Movies/MP_VideoTexture'):
+    """
+    Spawn a cube with the M_VideoTexture_Video material applied DIRECTLY
+    (no MID), then open the MediaPlayer asset with the given video path so
+    the existing MediaTexture → MediaPlayer wiring inside the material plays
+    the custom video.
+
+    Uses the same cube-plane shape as spawn_image (width x thin x height).
+    """
+    from unreal_engine.classes import MediaPlayer
+
+    world = _get_world()
+    video_path = _ensure_video(video_path)
+
+    # ---- read video dimensions for aspect-ratio scale ----
+    vid_w, vid_h = 1920.0, 1080.0
+    try:
+        result = subprocess.run(
+            ['ffprobe', '-v', 'error', '-select_streams', 'v:0',
+             '-show_entries', 'stream=width,height', '-of', 'csv=p=0', video_path],
+            capture_output=True, text=True,
+            creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0),
+        )
+        parts = result.stdout.strip().split(',')
+        if len(parts) == 2:
+            vid_w, vid_h = float(parts[0]), float(parts[1])
+    except Exception:
+        pass
+
+    # ---- spawn cube actor ----
+    actor = world.actor_spawn(StaticMeshActor)
+    smc   = actor.StaticMeshComponent
+    cube  = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube')
+    smc.SetStaticMesh(cube)
+    smc.Mobility = EComponentMobility.Movable
+
+    # ---- apply material DIRECTLY (no MID) ----
+    mat = ue.load_object(Material, material_path + '.' + material_path.split('/')[-1])
+    if mat is None:
+        mat = ue.load_object(Material, material_path)
+    if mat:
+        smc.set_material(0, mat)
+    else:
+        ue.log_warning(f'spawn_video_cube: could not load material at "{material_path}"')
+
+    # ---- call OpenUrl on the MediaPlayer asset (same as BP SetVideoBackground) ----
+    try:
+        mp = ue.load_object(MediaPlayer,
+                            media_player_path + '.' + media_player_path.split('/')[-1])
+        if mp is None:
+            mp = ue.load_object(MediaPlayer, media_player_path)
+        if mp:
+            ue_url = "file://" + os.path.abspath(video_path)
+            opened = False
+            for method_name in ('OpenUrl', 'open_url'):
+                try:
+                    getattr(mp, method_name)(ue_url)
+                    opened = True
+                    break
+                except Exception:
+                    continue
+            if not opened:
+                try:
+                    mp.call_function("OpenUrl", ue_url)
+                    opened = True
+                except Exception as e:
+                    ue.log_warning(f'spawn_video_cube: OpenUrl call failed: {e}')
+            if opened:
+                ue.log(f'spawn_video_cube: OpenUrl("{ue_url}") on {media_player_path}')
+        else:
+            ue.log_warning(f'spawn_video_cube: could not load MediaPlayer at "{media_player_path}"')
+    except Exception as e:
+        ue.log_warning(f'spawn_video_cube: media player setup failed: {e}')
+
+    # ---- vertical picture-frame scaling: 1 px → 1 UU ----
+    if scale is None:
+        scale = FVector(vid_w / 100.0, 0.05, vid_h / 100.0)
+    ue.log(f'spawn_video_cube: "{os.path.basename(video_path)}" {int(vid_w)}x{int(vid_h)} px '
+           f'→ scale=({scale.x:.3f}, {scale.y:.3f}, {scale.z:.3f})')
+    _set_transform(actor, location, rotation, scale)
+    return actor
+
+
 # ---------------------------------------------------------------------------
 # spawn_video_plane — uses BP_VideoSkySphere's SetVideoBackground pattern
 # ---------------------------------------------------------------------------

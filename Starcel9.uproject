@@ -176,6 +176,10 @@
 		{
 			"Name": "MovieRenderPipeline",
 			"Enabled": true
+		},
+		{
+			"Name": "GLTFImporter",
+			"Enabled": true
 		}
 	]
 }

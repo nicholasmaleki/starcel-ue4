@@ -124,8 +124,8 @@ class PyActorStickMan:
     crosshair_path = r'C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\Materials\crosshair.png'
     material_paths = (
         '/Game/Materials/M_Crosshair',
-        '/Game/Materials/M_TextureUnlit',
         '/Game/Materials/M_TexturePicture',
+        '/Game/Materials/M_TextureUnlit',
     )
     param_name     = 'Texture'
     component_name = 'Screen'
@@ -190,9 +190,16 @@ class PyActorStickMan:
             mid.set_material_texture_parameter(self.param_name, tex)
             smc.set_material(0, mid)
 
-            # Scale and attach to Screen component
-            actor.set_actor_scale(FVector(img_w / 100.0, 0.01, img_h / 100.0))
+            # Attach first, then set relative scale (so it's relative to Screen)
             actor.attach_to_component(screen)
+            # Scale: img pixels / viewport pixels (so the crosshair occupies
+            # that fraction of the Screen's visible area)
+            try:
+                actor.set_actor_relative_scale(
+                    FVector(img_w / 1920.0, 0.01, img_h / 1080.0))
+            except Exception:
+                actor.set_actor_scale(
+                    FVector(img_w / 1920.0, 0.01, img_h / 1080.0))
             actor.K2_SetActorRelativeLocation(FVector(0, -55.0, 0))
 
             self.crosshair_comp = actor

@@ -681,7 +681,7 @@ class Main:
             self.icon = spawn_icon(self.info["image"],
                                    location=FVector(310, 50, 400),
                                    source_path=_google_drive_exe)
-            # self.icon.get_actor_component('Sphere').SetSimulatePhysics(True)  # disabled: breaks click/hover detection
+            self.icon.get_actor_component('Sphere').SetSimulatePhysics(True)  # disabled: breaks click/hover detection
 
             # some kind of movability problem
             # self.monk = 0

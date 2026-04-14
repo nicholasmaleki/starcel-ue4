@@ -90,8 +90,8 @@ class PyPawnDrone:
     CROSSHAIR_PATH = r'C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\Materials\crosshair.png'
     CROSSHAIR_MATS = (
         '/Game/Materials/M_Crosshair',
-        '/Game/Materials/M_TextureUnlit',
         '/Game/Materials/M_TexturePicture',
+        '/Game/Materials/M_TextureUnlit',
     )
     CROSSHAIR_PARAM = 'Texture'
     CROSSHAIR_SCALE = 3.0   # multiplier so tiny PNGs are visible at distance
@@ -163,10 +163,14 @@ class PyPawnDrone:
             mid.set_material_texture_parameter(self.CROSSHAIR_PARAM, tex)
             smc.set_material(0, mid)
 
-            # Scale and attach to Screen component
-            s = self.CROSSHAIR_SCALE
-            actor.set_actor_scale(FVector(img_w / 100.0 * s, 0.01, img_h / 100.0 * s))
+            # Attach first, then set relative scale
             actor.attach_to_component(screen)
+            try:
+                actor.set_actor_relative_scale(
+                    FVector(img_w / 1920.0, 0.01, img_h / 1080.0))
+            except Exception:
+                actor.set_actor_scale(
+                    FVector(img_w / 1920.0, 0.01, img_h / 1080.0))
             actor.K2_SetActorRelativeLocation(FVector(0, -55.0, 0))
 
             self.crosshair_actor = actor  # keep ref for cleanup

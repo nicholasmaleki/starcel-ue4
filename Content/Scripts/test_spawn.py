@@ -194,6 +194,35 @@ _Y_DESKTOP_ICONS = 6000
 _Y_ICON          = 7000
 
 
+def _find_test_image():
+    """Find any image for test sizing — Feedback Hub screenshot, Desktop PNG, or generate one."""
+    fb_root = os.path.expandvars(
+        r'%LOCALAPPDATA%\Packages\Microsoft.WindowsFeedbackHub_8wekyb3d8bbwe'
+        r'\LocalState')
+    if os.path.isdir(fb_root):
+        try:
+            for sub in os.listdir(fb_root):
+                cand = os.path.join(fb_root, sub, 'Capture0.png')
+                if os.path.exists(cand):
+                    return cand
+        except Exception:
+            pass
+    try:
+        for f in os.listdir(DESKTOP):
+            if f.lower().endswith('.png') and not f.startswith('_test_spawn'):
+                return os.path.join(DESKTOP, f)
+    except Exception:
+        pass
+    # Generate a small test image
+    try:
+        from PIL import Image as PILImage
+        path = os.path.join(DESKTOP, '_test_spawn_video.png')
+        PILImage.new('RGB', (320, 180), color=(30, 30, 30)).save(path)
+        return path
+    except Exception:
+        return None
+
+
 def test_primitives():
     """Spawn all 5 primitive shapes along Y."""
     from ue_spawn import spawn_primitive
@@ -318,44 +347,25 @@ def test_video():
     Spawn the loading_screen.mp4 as a vertical picture-frame video plane
     using MP_VideoTexture_Video_Mat, plus run the legacy Desktop-MP4 scan.
     """
-    from ue_spawn import spawn_image, spawn_video
+    from ue_spawn import spawn_video, spawn_video_cube
     results = {}
 
-    # ---- video plane: same as spawn_image but with M_VideoTexture_Video ----
-    # Uses a test image for sizing, applies the video material instead.
-    actor = None
-    try:
-        # Find any image to determine plane dimensions
-        test_img_path = None
-        for f in os.listdir(DESKTOP):
-            if f.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
-                test_img_path = os.path.join(DESKTOP, f)
-                break
-        if test_img_path is None:
-            # Use Feedback Hub screenshot as fallback
-            fb_dir = os.path.expandvars(
-                r'%LOCALAPPDATA%\Packages\Microsoft.WindowsFeedbackHub_8wekyb3d8bbwe\LocalState')
-            for root, dirs, files in os.walk(fb_dir):
-                for f in files:
-                    if f.lower().endswith('.png'):
-                        test_img_path = os.path.join(root, f)
-                        break
-                if test_img_path:
-                    break
-
-        if test_img_path:
-            actor = spawn_image(
-                test_img_path,
+    # ---- video cube: plays loading_screen.mp4 via MediaPlayer ----
+    loading_mp4 = (r'C:\Users\nicho\Documents\Unreal Projects'
+                   r'\Starcel9\Content\Movies\loading_screen.mp4')
+    if os.path.exists(loading_mp4):
+        actor = None
+        try:
+            actor = spawn_video_cube(
+                loading_mp4,
                 location=FVector(0, _Y_VIDEO + 400, 100),
-                material_path='/Game/Movies/M_VideoTexture_Video',
             )
-            _log(f'  video_plane: spawned with M_VideoTexture_Video at Y={_Y_VIDEO + 400}')
-        else:
-            _log(f'  video_plane: no test image found for sizing')
-    except Exception as e:
-        _log(f'  video_plane exception: {e}')
-    results.update(_result('video_plane', actor,
-                           extra='image plane with M_VideoTexture_Video'))
+        except Exception as e:
+            _log(f'  video_cube exception: {e}')
+        results.update(_result('video_cube', actor,
+                               extra='cube playing loading_screen.mp4'))
+    else:
+        results.update(_skip('video_cube', f'not found: {loading_mp4}'))
 
     # ---- legacy spawn_video on any Desktop MP4 ----
     mp4_path = None
@@ -584,6 +594,11 @@ def test_icon():
         from PIL import Image as PILImage
         img = PILImage.new('RGBA', (256, 256), (0, 200, 50, 255))
         actor = spawn_icon(img, location=FVector(0, _Y_ICON, 100))
+        if actor:
+            try:
+                actor.get_actor_component('Sphere').SetSimulatePhysics(True)
+            except Exception as phys_e:
+                _log(f'  icon physics: {phys_e}')
     except Exception as e:
         _log(f'  icon exception: {e}')
     return _result('icon_from_pil', actor)
@@ -1232,13 +1247,18 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
     _cursor_state = {'timer': 0.0, 'visible': False, 'active': False}
 
     def _position_cursor(hit_actor, hit):
-        """Snap the cursor to the discrete position AFTER the clicked character."""
-        import math
+        """Snap cursor to the discrete position AFTER the clicked character.
 
+        Dynamically reads the clicked glyph's actual height from
+        CharacterMeshes bounds, uses it for both the Z shift-down AND
+        the cursor's own scale, so the cursor matches the font size.
+        """
         if _cursor_actor is None:
             return
 
-        char_idx, _ = _resolve_char_from_meshes(hit_actor, hit)
+        actor_rot = hit_actor.get_actor_rotation()
+        actor_loc = hit_actor.get_actor_location()
+        world_pt = hit.impact_point
 
         t3d = None
         try:
@@ -1246,38 +1266,144 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
         except Exception:
             pass
 
-        if t3d is None or char_idx is None or char_idx < 0:
-            return
+        # Defaults for when bounds aren't available
+        glyph_h = 50.0   # full char height in UU
+        glyph_w = 50.0   # full char width in UU
 
-        placed = False
-        actor_rot = hit_actor.get_actor_rotation()
+        if t3d is not None:
+            try:
+                kernings = t3d.CharacterKernings
+                meshes   = None
+                try:
+                    meshes = t3d.CharacterMeshes
+                except Exception:
+                    pass
 
+                if kernings is not None and len(kernings) > 0:
+                    local_pt = _world_to_local(hit_actor, hit.impact_point)
+                    if local_pt is not None:
+                        glyph_edges = []
+                        for i in range(len(kernings)):
+                            if kernings[i] is not None:
+                                try:
+                                    rel = kernings[i].get_relative_location()
+                                    glyph_edges.append((rel.y, i, rel))
+                                except Exception:
+                                    pass
+                        glyph_edges.sort(key=lambda e: e[0])
+
+                        clicked_glyph = glyph_edges[0][1] if glyph_edges else -1
+                        for edge_y, gi, _ in glyph_edges:
+                            if local_pt.y >= edge_y:
+                                clicked_glyph = gi
+                            else:
+                                break
+
+                        # Read actual glyph dimensions from the clicked mesh
+                        if (meshes is not None
+                                and 0 <= clicked_glyph < len(meshes)
+                                and meshes[clicked_glyph] is not None):
+                            try:
+                                _, extent = meshes[clicked_glyph].GetComponentBounds()
+                                glyph_h = extent.z * 2.0
+                                glyph_w = extent.y * 2.0
+                            except Exception:
+                                pass
+
+                        # Compute descender depth: difference between the
+                        # highest bottom (baseline for non-descender chars)
+                        # and the lowest bottom (max descender char) across
+                        # all glyphs in the text.
+                        descender_depth = 0.0
+                        if meshes is not None and len(meshes) > 0:
+                            max_bot = None
+                            min_bot = None
+                            for m in meshes:
+                                if m is None:
+                                    continue
+                                try:
+                                    o, e = m.GetComponentBounds()
+                                    b = o.z - e.z
+                                    if max_bot is None or b > max_bot:
+                                        max_bot = b
+                                    if min_bot is None or b < min_bot:
+                                        min_bot = b
+                                except Exception:
+                                    continue
+                            if max_bot is not None and min_bot is not None:
+                                descender_depth = max_bot - min_bot
+
+                        # Determine left vs right half of clicked glyph.
+                        # CharacterKernings[i].y is the LEFT edge of glyph i.
+                        # Midpoint = left_edge + glyph_w/2
+                        side = 'right'  # default: snap AFTER the clicked char
+                        if (clicked_glyph >= 0
+                                and clicked_glyph < len(kernings)
+                                and kernings[clicked_glyph] is not None):
+                            try:
+                                click_rel = kernings[clicked_glyph].get_relative_location()
+                                mid_y = click_rel.y + glyph_w / 2.0
+                                side = 'left' if local_pt.y < mid_y else 'right'
+                            except Exception:
+                                pass
+
+                        target_rel = None
+                        if side == 'left':
+                            # Snap BEFORE clicked glyph (its own left edge)
+                            if (clicked_glyph >= 0
+                                    and clicked_glyph < len(kernings)
+                                    and kernings[clicked_glyph] is not None):
+                                target_rel = kernings[clicked_glyph].get_relative_location()
+                            target_glyph = clicked_glyph
+                        else:
+                            # Snap AFTER clicked glyph (left edge of next)
+                            next_glyph = clicked_glyph + 1
+                            if (next_glyph < len(kernings)
+                                    and kernings[next_glyph] is not None):
+                                target_rel = kernings[next_glyph].get_relative_location()
+                            elif (clicked_glyph >= 0
+                                  and kernings[clicked_glyph] is not None):
+                                # Past last glyph — estimate one glyph width after
+                                r = kernings[clicked_glyph].get_relative_location()
+                                target_rel = FVector(r.x, r.y + glyph_w, r.z)
+                            target_glyph = next_glyph
+
+                        if target_rel is not None:
+                            # Convert local → world (assumes actor has no rotation)
+                            # Shift down by one dynamic glyph height, then UP
+                            # by the descender depth (so the cursor bottom
+                            # aligns with the baseline, not the lowest descender)
+                            world_pt = FVector(
+                                actor_loc.x + target_rel.x,
+                                actor_loc.y + target_rel.y,
+                                actor_loc.z + target_rel.z - glyph_h + descender_depth,
+                            )
+                            _log(f'text3d_click: cursor snap clicked={clicked_glyph} '
+                                 f'side={side} → {target_glyph}  '
+                                 f'h={glyph_h:.1f} w={glyph_w:.1f} '
+                                 f'desc={descender_depth:.1f} '
+                                 f'rel=({target_rel.x:.1f},{target_rel.y:.1f},{target_rel.z:.1f})')
+            except Exception as e:
+                _log(f'text3d_click: cursor kerning snap FAILED: {e}')
+
+        # Scale cursor dynamically: thin bar matching glyph height
+        # Cube is 100 UU base → divide by 100 for UU conversion.
+        # X = depth (thin), Y = width (0.04 × char width), Z = height (full glyph)
         try:
-            meshes = t3d.CharacterMeshes
-            if meshes and 0 <= char_idx < len(meshes) and meshes[char_idx]:
-                origin, extent = meshes[char_idx].GetComponentBounds()
-                # Right edge of clicked glyph, snapped with ceil
-                cursor_y = math.ceil(origin.y + extent.y)
-                # Shift down by half glyph height (origin is glyph center)
-                cursor_z = origin.z - extent.z
-                cursor_x = origin.x
-                _cursor_actor.set_actor_location(
-                    FVector(cursor_x, cursor_y, cursor_z))
-                _cursor_actor.set_actor_rotation(actor_rot)
-                placed = True
+            _cursor_actor.set_actor_scale(FVector(
+                0.01,
+                glyph_w * 0.04 / 100.0,
+                glyph_h / 100.0,
+            ))
         except Exception:
             pass
 
-        if not placed:
-            # Fallback: world hit point
-            _cursor_actor.set_actor_location(hit.impact_point)
-            _cursor_actor.set_actor_rotation(actor_rot)
-
-        if placed:
-            _cursor_actor.SetActorHiddenInGame(False)
-            _cursor_state['active'] = True
-            _cursor_state['timer']  = 0.0
-            _cursor_state['visible'] = True
+        _cursor_actor.set_actor_location(world_pt)
+        _cursor_actor.set_actor_rotation(actor_rot)
+        _cursor_actor.SetActorHiddenInGame(False)
+        _cursor_state['active'] = True
+        _cursor_state['timer']  = 0.0
+        _cursor_state['visible'] = True
 
     # ---- Tick function: event-driven press state + cursor hit test ----
     _state['fired'] = False  # ensure we fire once per press

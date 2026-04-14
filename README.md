@@ -125,6 +125,7 @@ The last Starcel release was written, at the time, in the newest Python, Python 
 - CLI (WIP), SSH, and SCP
 - Advanced function and question search with live search and history
 - Multiplayer (WIP)
+- Claude md files
 - Multi-language IDE
 	- Syntax highlighting (CodeMirror, highlight.js, etc.) and LSP/intellisense starting with IntelliJ-PyCharm open source
 	- Debugger: step execution, breakpoints (line, conditional, memory, data), cli or environment at breakpoint, variable inspection, call stack, memory/register inspection, thread & concurrency debugging, reverse/time-travel debugging, inline variable values, hover tooltips
