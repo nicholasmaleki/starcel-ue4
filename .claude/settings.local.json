@@ -11,7 +11,16 @@
       "Bash(grep -v \"^--$\")",
       "Bash(ls -la \"C:/Users/nicho/Documents/Unreal Projects/Starcel9/Content/Scripts/__pycache__/pyactor_stickman\"* \"C:/Users/nicho/Documents/Unreal Projects/Starcel9/Content/Scripts/__pycache__/pypawn_drone\"*)",
       "Bash(ls -la \"C:/Users/nicho/Documents/Unreal Projects/Starcel9/Content/Scripts/__pycache__/test_spawn\"*)",
-      "Read(//c/Users/nicho/Documents/Unreal Projects/Starcel9/**)"
+      "Read(//c/Users/nicho/Documents/Unreal Projects/Starcel9/**)",
+      "Read(//c/Program Files/Blender Foundation//**)",
+      "Read(//c/Program Files \\(x86\\)/**)",
+      "Bash(\"/c/Program Files/Blender Foundation/Blender 4.5/blender.exe\" --background --python \"C:/Users/nicho/Downloads/glb_to_fbx.py\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('Content/Scripts/test_spawn.py', encoding='utf-8'\\).read\\(\\)\\); print\\('OK'\\)\")",
+      "Bash(\"/c/Program Files/Blender Foundation/Blender 4.5/blender.exe\" --background --python \"C:/Users/nicho/Downloads/glb_inspect.py\")",
+      "Bash(python -m py_compile \"C:/Users/nicho/Documents/Unreal Projects/Starcel9/Content/Scripts/ue_spawn.py\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\(r'C:\\\\Users\\\\nicho\\\\Documents\\\\Unreal Projects\\\\Starcel9\\\\Content\\\\Scripts\\\\nd_table\\\\resize_controller.py'\\).read\\(\\)\\); print\\('resize_controller OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\(r'C:\\\\Users\\\\nicho\\\\Documents\\\\Unreal Projects\\\\Starcel9\\\\Content\\\\Scripts\\\\nd_table\\\\unreal_integration.py'\\).read\\(\\)\\); print\\('unreal_integration OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\(r'C:/Users/nicho/Documents/Unreal Projects/Starcel9/Content/Scripts/test_spawn.py', encoding='utf-8'\\).read\\(\\)\\); print\\('OK'\\)\")"
     ]
   }
 }

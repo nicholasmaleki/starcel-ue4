@@ -14,7 +14,7 @@ except ImportError:
     ECollisionChannel = None
 
 
-# ── Player controller setup ───────────────────────────────────────────────
+# Player controller setup
 
 def setup_player_controller(uobject):
     """Enable input and configure the player controller for click/hover events.
@@ -42,7 +42,7 @@ def setup_player_controller(uobject):
     return player_controller
 
 
-# ── Mouse button check ────────────────────────────────────────────────────
+# Mouse button check
 
 def is_mouse_down(player_controller) -> bool:
     """Check if left mouse button is currently held.
@@ -67,7 +67,7 @@ def is_mouse_down(player_controller) -> bool:
         return False
 
 
-# ── Cursor trace ──────────────────────────────────────────────────────────
+# Cursor trace
 
 def cursor_hit_actor(uobject, player_controller, channel=None):
     """Trace under the cursor and return the hit actor, or None.

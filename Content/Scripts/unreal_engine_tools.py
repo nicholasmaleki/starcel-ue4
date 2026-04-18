@@ -660,15 +660,15 @@ def apply_material(
 
     for pname, v in params.items(): # pname is parameter name, v is value
 
-        # --- Scalar ---
+        # Scalar
         if isinstance(v, (int, float)):
             mid.set_material_scalar_parameter(pname, float(v))
 
-        # --- Vector ---
+        # Vector
         elif isinstance(v, (tuple, list)) and len(v) >= 3:
             mid.set_material_vector_parameter(pname, ue.FVector(v[0], v[1], v[2]))
 
-        # --- String path ---
+        # String path
         elif isinstance(v, str):
 
             # HDR → convert to TextureCube asynchronously
@@ -698,7 +698,7 @@ def apply_material(
                 else:
                     ue.log_warning(f"Could not load texture for param: {pname}")
 
-        # --- Already-loaded UE texture ---
+        # Already-loaded UE texture
         elif hasattr(v, "get_class") and "Texture" in v.get_class().get_name():
             mid.set_material_texture_parameter(pname, v)
             target_comp.set_material(material_index, mid)  # assign immediately

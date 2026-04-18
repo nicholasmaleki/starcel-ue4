@@ -18,9 +18,7 @@ from typing import List, Tuple, Union, Callable, Optional, Dict
 from .ndtable import Table, Axis
 
 
-# ============================================================================
 # SPREAD ENGINE
-# ============================================================================
 
 class SpreadEngine:
     """
@@ -439,9 +437,7 @@ class SpreadEngine:
         return positions
 
 
-# ============================================================================
 # DIMENSIONAL PROJECTION
-# ============================================================================
 
 class DimensionalProjector:
     """
@@ -521,9 +517,7 @@ class DimensionalProjector:
         return Table(shape=(3, 3))  # Placeholder
 
 
-# ============================================================================
 # SPREAD VISUALIZATION
-# ============================================================================
 
 class SpreadVisualizer:
     """
@@ -585,9 +579,7 @@ class SpreadVisualizer:
             print(''.join(row))
 
 
-# ============================================================================
 # EXAMPLE USAGE
-# ============================================================================
 
 def example_spreading():
     """Examples of different spread patterns"""

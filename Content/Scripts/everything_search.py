@@ -37,14 +37,10 @@ from typing import Any, Dict, Iterator, List, Optional, Union
 import metadata as _meta
 from utils import filetime_to_dt as _filetime_to_dt, human_size as _human_size
 
-# ---------------------------------------------------------------------------
 # Windows FILETIME helpers — now in utils.py
-# ---------------------------------------------------------------------------
 
 
-# ---------------------------------------------------------------------------
 # SDK constants
-# ---------------------------------------------------------------------------
 REQ_FILE_NAME          = 0x00000001
 REQ_PATH               = 0x00000002
 REQ_FULL_PATH          = 0x00000004
@@ -72,9 +68,7 @@ SORT_DATE_ACCESSED_ASC  = 23
 SORT_DATE_ACCESSED_DESC = 24
 
 
-# ---------------------------------------------------------------------------
 # File-type classification
-# ---------------------------------------------------------------------------
 _EXT_VIDEO   = frozenset(
     '3g2 3gp 3gp2 3gpp amv asf avi bdmv bik d2v divx drc dsa dsm dss dsv evo '
     'f4v flc fli flic flv hdmov ifo ivf m1v m2p m2t m2ts m2v m4v mkv mov '
@@ -140,9 +134,7 @@ def _classify(ext: str) -> str:
     return 'File'
 
 
-# ---------------------------------------------------------------------------
 # Formatting helpers
-# ---------------------------------------------------------------------------
 def fmt_date(dt_val: Optional[datetime.datetime], python_style: bool = False) -> Optional[str]:
     """
     Format a datetime object.
@@ -166,9 +158,7 @@ def _permission_string(full_path: str) -> Optional[str]:
         return None
 
 
-# ---------------------------------------------------------------------------
 # Result dataclass
-# ---------------------------------------------------------------------------
 DEFAULT_FIELD_ORDER: List[str] = [
     # Core
     'name', 'type', 'size', 'permissions', 'date_modified', 'date_created',
@@ -320,9 +310,7 @@ class Result:
         return '\n'.join(lines)
 
 
-# ---------------------------------------------------------------------------
 # Query parser
-# ---------------------------------------------------------------------------
 _NATIVE_TOKEN_RE = re.compile(
     r'^(?:'
     r'ext:|path:|folder:|file:|parent:|noext:'
@@ -366,9 +354,7 @@ def _parse_query(raw: str) -> str:
     return ' '.join(tokens)
 
 
-# ---------------------------------------------------------------------------
 # Main client
-# ---------------------------------------------------------------------------
 class EverythingSearch:
     """
     Everything SDK wrapper with rich per-file metadata.
@@ -431,9 +417,7 @@ class EverythingSearch:
             pass   # DLL will be released when the process exits anyway
         self._dll = None
 
-    # ------------------------------------------------------------------
     # Core search
-    # ------------------------------------------------------------------
     def search(
         self,
         query: str,
@@ -532,9 +516,7 @@ class EverythingSearch:
                 print(f"[EverythingSearch] error on result {i}: {type(exc).__name__}: {exc}")
                 continue
 
-    # ------------------------------------------------------------------
     # Enrichment dispatcher
-    # ------------------------------------------------------------------
     def _enrich(self, r: Result, path: str, ext: str, ftype: str) -> None:
         if ftype == 'Image':
             info = _meta.image_info(path, ext)
@@ -659,9 +641,7 @@ class EverythingSearch:
         elif ftype == 'Text/Code':
             r.length = _meta.text_line_count(path, ext)
 
-    # ------------------------------------------------------------------
     # Convenience helpers
-    # ------------------------------------------------------------------
     def search_in(self, folder: Union[str, Path], keywords: str = '', **kw) -> Iterator[Result]:
         """Search inside a folder. Mirrors GUI: "C:\\folder" keyword"""
         return self.search(f'"{folder}" {keywords}'.strip(), **kw)
@@ -690,9 +670,7 @@ class EverythingSearch:
     def search_fonts(self,   keywords: str = '', **kw): return self.search_ext(*_EXT_FONT,    keywords=keywords, **kw)
     def search_db(self,      keywords: str = '', **kw): return self.search_ext(*_EXT_DB,      keywords=keywords, **kw)
 
-    # ------------------------------------------------------------------
     # ctypes signatures
-    # ------------------------------------------------------------------
     def _setup_signatures(self) -> None:
         dll   = self._dll
         BOOL  = ctypes.c_bool
@@ -716,9 +694,7 @@ class EverythingSearch:
         dll.Everything_GetResultDateCreated.argtypes   = [DWORD, PULL]; dll.Everything_GetResultDateCreated.restype = None
 
 
-# ---------------------------------------------------------------------------
 # Demo
-# ---------------------------------------------------------------------------
 if __name__ == '__main__':
     QUERIES = [
         ('"C:\\Users\\nicho\\Downloads" pdf',     "PDFs in Downloads"),

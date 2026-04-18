@@ -11,7 +11,7 @@ except ImportError:
     ue = None
 
 
-# ── Windows FILETIME conversion ──────────────────────────────────────────
+# Windows FILETIME conversion
 
 _WIN_TICKS        = 10_000_000
 _EPOCH_DIFF_TICKS = (
@@ -34,7 +34,7 @@ def filetime_to_dt(raw: int) -> Optional[datetime.datetime]:
         return None
 
 
-# ── Human-readable byte sizes ────────────────────────────────────────────
+# Human-readable byte sizes
 
 def human_size(n) -> Optional[str]:
     """Convert byte count to human-readable string, e.g. '22.51 MB'.
@@ -56,7 +56,7 @@ def human_size(n) -> Optional[str]:
     return f"{val:.2f} PB"
 
 
-# ── Open path in Chrome ──────────────────────────────────────────────────
+# Open path in Chrome
 
 def open_with_chrome(path: str) -> None:
     """Open *path* in Chrome via ``cmd /c start chrome "<path>"``.

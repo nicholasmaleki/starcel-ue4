@@ -1,5 +1,5 @@
 # UE4.27 Constants Stub
-# --- Class Flags (CLASS_*) ---
+# Class Flags (CLASS_*)
 CLASS_NONE: int
 CLASS_ABSTRACT: int
 CLASS_DEFAULT_CONFIG: int
@@ -8,7 +8,7 @@ CLASS_TRANSIENT: int
 CLASS_OPTIONAL: int
 CLASS_CONFIG_DO_NOT_CHECK_DEFAULTS: int
 
-# --- Property Flags (CPF_*) ---
+# Property Flags (CPF_*)
 CPF_NONE: int
 CPF_EDIT: int
 CPF_CONSTPARM: int
@@ -69,7 +69,7 @@ CPF_EXPERIMENTAL_ALWAYS_OVERRIDEN: int
 CPF_EXPERIMENTAL_NEVER_OVERRIDEN: int
 CPF_ALLOW_SELF_REFERENCE: int
 
-# --- Object Flags (RF_*) ---
+# Object Flags (RF_*)
 RF_NO_FLAGS: int
 RF_PUBLIC: int
 RF_STANDALONE: int

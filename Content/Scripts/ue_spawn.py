@@ -36,9 +36,7 @@ from unreal_engine.enums import EComponentMobility, EPixelFormat
 from unreal_engine_tools import pil_image_to_texture, get_world, find_component
 from icon_to_image import extract_icon, get_folder_icons
 
-# ---------------------------------------------------------------------------
 # Helpers
-# ---------------------------------------------------------------------------
 
 def _get_world():
     try:
@@ -76,9 +74,13 @@ def _spawn_pyactor(python_module, python_class,
     loc = location if location is not None else FVector(0, 0, 0)
     rot = rotation if rotation is not None else FRotator(0, 0, 0)
 
-    actor = world.actor_spawn(ue.find_class('PyActor'), loc, rot)
+    # actor = world.actor_spawn(ue.find_class('PyActor'), loc, rot)
+    bp_pyactor = ue.load_object(Blueprint, '/Game/Blueprints/Assets/BP_PyActorEmpty.BP_PyActorEmpty')
+    actor = world.actor_spawn(bp_pyactor.GeneratedClass)
+    transform = FTransform(location, rotation, scale)
+    actor.set_actor_transform(transform)
 
-    # Add components before setting Python class (so begin_play sees them)
+    # Add components before setting Python class (so begin_play sees them)ggb
     if components:
         for comp in components:
             cls = ue.find_class(comp['class_name'])
@@ -123,11 +125,9 @@ def _exec_console(cmd):
         ue.log_warning(f'_exec_console: failed to run "{cmd}": {e}')
 
 
-# ---------------------------------------------------------------------------
 # Format conversion utilities
-# ---------------------------------------------------------------------------
 
-# ---- Image conversion -----------------------------------------------------
+# Image conversion
 
 IMAGE_NATIVE  = {'.png', '.jpg', '.jpeg', '.bmp', '.tga', '.tiff', '.exr', '.hdr'}
 IMAGE_CONVERT = {'.webp', '.ico', '.gif', '.psd', '.svg'}  # -> PNG via Pillow
@@ -154,7 +154,7 @@ def _ensure_image(path):
     return path
 
 
-# ---- Video conversion -----------------------------------------------------
+# Video conversion
 
 VIDEO_NATIVE  = {'.mp4', '.avi'}
 VIDEO_CONVERT = {'.mov', '.mkv', '.wmv', '.webm', '.flv', '.ts', '.m4v'}
@@ -186,7 +186,7 @@ def _ensure_video(path):
     return path
 
 
-# ---- 3-D format conversion ------------------------------------------------
+# 3-D format conversion
 
 OBJ_NATIVE  = {'.fbx'}
 OBJ_TRIMESH = {'.obj', '.ply', '.stl', '.off', '.dae', '.gltf', '.glb'}
@@ -259,7 +259,7 @@ def _ensure_fbx(path):
 
     tmp_fbx = tempfile.mktemp(suffix='.fbx')
 
-    # --- trimesh (fast, no external app needed) ---
+    # trimesh (fast, no external app needed)
     if ext in OBJ_TRIMESH:
         try:
             import trimesh
@@ -273,7 +273,7 @@ def _ensure_fbx(path):
         except Exception as e:
             ue.log_warning(f'_ensure_fbx: trimesh failed: {e}. Trying Blender fallback...')
 
-    # --- Blender CLI fallback ---
+    # Blender CLI fallback
     if ext in OBJ_TRIMESH or ext in OBJ_BLENDER:
         if _convert_via_blender(path, tmp_fbx):
             return tmp_fbx
@@ -285,9 +285,7 @@ def _ensure_fbx(path):
     return None
 
 
-# ---------------------------------------------------------------------------
 # spawn_image
-# ---------------------------------------------------------------------------
 
 def spawn_image(path, location=None, rotation=None, scale=None,
                 material_path='/Game/Materials/M_TexturePicture',
@@ -308,7 +306,7 @@ def spawn_image(path, location=None, rotation=None, scale=None,
     world = _get_world()
     path  = _ensure_image(path)
 
-    # ---- load and size the image ----
+    # load and size the image
     try:
         pil_img = PILImage.open(path).convert('RGBA')
     except Exception as e:
@@ -317,14 +315,14 @@ def spawn_image(path, location=None, rotation=None, scale=None,
 
     img_w, img_h = float(pil_img.width), float(pil_img.height)
 
-    # ---- spawn cube actor (no location; transform set after) ----
+    # spawn cube actor (no location; transform set after)
     actor = world.actor_spawn(StaticMeshActor)
     smc   = actor.StaticMeshComponent
     cube  = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube')
     smc.SetStaticMesh(cube)
     smc.Mobility = EComponentMobility.Movable
 
-    # ---- apply M_TexturePicture as MID, set texture parameter ----
+    # apply M_TexturePicture as MID, set texture parameter
     mat = ue.load_object(Material, material_path + '.' + material_path.split('/')[-1])
     if mat is None:
         mat = ue.load_object(Material, material_path)
@@ -340,7 +338,7 @@ def spawn_image(path, location=None, rotation=None, scale=None,
     else:
         ue.log_warning(f'spawn_image: could not load material at "{material_path}"')
 
-    # ---- vertical picture-frame scaling: 1 px → 1 UU ----
+    # vertical picture-frame scaling: 1 px → 1 UU
     # Default cube is 100×100×100 UU, so divide by 100 for unit scale.
     # X = width, Z = height (vertical), Y = thin frame depth.
     if scale is None:
@@ -370,12 +368,12 @@ def spawn_video_cube(video_path, location=None, rotation=None, scale=None,
 
     Uses the same cube-plane shape as spawn_image (width x thin x height).
     """
-    from unreal_engine.classes import MediaPlayer
+    from unreal_engine.classes import MediaPlayer, FileMediaSource
 
     world = _get_world()
     video_path = _ensure_video(video_path)
 
-    # ---- read video dimensions for aspect-ratio scale ----
+    # read video dimensions for aspect-ratio scale
     vid_w, vid_h = 1920.0, 1080.0
     try:
         result = subprocess.run(
@@ -390,14 +388,14 @@ def spawn_video_cube(video_path, location=None, rotation=None, scale=None,
     except Exception:
         pass
 
-    # ---- spawn cube actor ----
+    # spawn cube actor
     actor = world.actor_spawn(StaticMeshActor)
     smc   = actor.StaticMeshComponent
     cube  = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube')
     smc.SetStaticMesh(cube)
     smc.Mobility = EComponentMobility.Movable
 
-    # ---- apply material DIRECTLY (no MID) ----
+    # apply material DIRECTLY (no MID)
     mat = ue.load_object(Material, material_path + '.' + material_path.split('/')[-1])
     if mat is None:
         mat = ue.load_object(Material, material_path)
@@ -406,36 +404,68 @@ def spawn_video_cube(video_path, location=None, rotation=None, scale=None,
     else:
         ue.log_warning(f'spawn_video_cube: could not load material at "{material_path}"')
 
-    # ---- call OpenUrl on the MediaPlayer asset (same as BP SetVideoBackground) ----
+    # OpenSource on the MediaPlayer via FileMediaSource
     try:
         mp = ue.load_object(MediaPlayer,
                             media_player_path + '.' + media_player_path.split('/')[-1])
         if mp is None:
             mp = ue.load_object(MediaPlayer, media_player_path)
         if mp:
-            ue_url = "file://" + os.path.abspath(video_path)
-            opened = False
-            for method_name in ('OpenUrl', 'open_url'):
+            abs_path = os.path.abspath(video_path)
+
+            # Create a runtime FileMediaSource and set its FilePath struct
+            media_source = ue.new_object(FileMediaSource)
+            try:
+                media_source.set_property('FilePath', {'FilePath': abs_path})
+            except Exception:
                 try:
-                    getattr(mp, method_name)(ue_url)
+                    media_source.FilePath = {'FilePath': abs_path}
+                except Exception:
+                    try:
+                        media_source.set_file_path(abs_path)
+                    except Exception as e:
+                        ue.log_warning(f'spawn_video_cube: could not set FilePath: {e}')
+
+            # Open + play
+            opened = False
+            for open_name in ('OpenSource', 'open_source'):
+                try:
+                    getattr(mp, open_name)(media_source)
                     opened = True
                     break
                 except Exception:
                     continue
             if not opened:
                 try:
-                    mp.call_function("OpenUrl", ue_url)
+                    mp.call_function("OpenSource", media_source)
                     opened = True
                 except Exception as e:
-                    ue.log_warning(f'spawn_video_cube: OpenUrl call failed: {e}')
+                    ue.log_warning(f'spawn_video_cube: OpenSource call failed: {e}')
+
             if opened:
-                ue.log(f'spawn_video_cube: OpenUrl("{ue_url}") on {media_player_path}')
+                ue.log(f'spawn_video_cube: OpenSource("{abs_path}") on {media_player_path}')
+                played = False
+                for play_name in ('Play', 'play'):
+                    try:
+                        getattr(mp, play_name)()
+                        played = True
+                        break
+                    except Exception:
+                        continue
+                if not played:
+                    try:
+                        mp.call_function("Play")
+                        played = True
+                    except Exception as e:
+                        ue.log_warning(f'spawn_video_cube: Play call failed: {e}')
+                if played:
+                    ue.log(f'spawn_video_cube: Play() called on {media_player_path}')
         else:
             ue.log_warning(f'spawn_video_cube: could not load MediaPlayer at "{media_player_path}"')
     except Exception as e:
         ue.log_warning(f'spawn_video_cube: media player setup failed: {e}')
 
-    # ---- vertical picture-frame scaling: 1 px → 1 UU ----
+    # vertical picture-frame scaling: 1 px → 1 UU
     if scale is None:
         scale = FVector(vid_w / 100.0, 0.05, vid_h / 100.0)
     ue.log(f'spawn_video_cube: "{os.path.basename(video_path)}" {int(vid_w)}x{int(vid_h)} px '
@@ -444,9 +474,7 @@ def spawn_video_cube(video_path, location=None, rotation=None, scale=None,
     return actor
 
 
-# ---------------------------------------------------------------------------
 # spawn_video_plane — uses BP_VideoSkySphere's SetVideoBackground pattern
-# ---------------------------------------------------------------------------
 #
 # NOTE ON VIDEO IN THIS PROJECT:
 # The working video path is BP_VideoSkySphere.call_function("SetVideoBackground",
@@ -460,7 +488,6 @@ def spawn_video_cube(video_path, location=None, rotation=None, scale=None,
 # spawn_video_plane therefore spawns BP_VideoSkySphere and calls
 # SetVideoBackground, then repositions and rescales the actor to act as a
 # flat video picture frame instead of a sky sphere.
-# ---------------------------------------------------------------------------
 
 def spawn_video_plane(path, location=None, rotation=None, scale=None,
                       bp_path='/Game/Blueprints/Assets/BP_VideoSkySphere.BP_VideoSkySphere'):
@@ -489,7 +516,7 @@ def spawn_video_plane(path, location=None, rotation=None, scale=None,
     world = _get_world()
     path  = _ensure_video(path)
 
-    # ---- spawn the Blueprint ----
+    # spawn the Blueprint
     try:
         bp = ue.load_object(Blueprint, bp_path)
     except Exception as e:
@@ -505,10 +532,10 @@ def spawn_video_plane(path, location=None, rotation=None, scale=None,
         ue.log_warning(f'spawn_video_plane: actor_spawn failed: {e}')
         return None
 
-    # ---- position / scale ----
+    # position / scale
     _set_transform(actor, location, rotation, scale)
 
-    # ---- play the video (same call as change_background("video", path)) ----
+    # play the video (same call as change_background("video", path))
     ue_path = "file://" + os.path.abspath(path)
     try:
         actor.call_function("SetVideoBackground", ue_path)
@@ -520,9 +547,7 @@ def spawn_video_plane(path, location=None, rotation=None, scale=None,
     return actor
 
 
-# ---------------------------------------------------------------------------
 # spawn_video
-# ---------------------------------------------------------------------------
 
 def spawn_video(path, location=None, rotation=None, scale=None,
                 material_path='/Game/Movies/M_VideoTexture_Video',
@@ -596,9 +621,7 @@ def spawn_video(path, location=None, rotation=None, scale=None,
     return actor, media_player, media_texture
 
 
-# ---------------------------------------------------------------------------
 # spawn_sound
-# ---------------------------------------------------------------------------
 
 def spawn_sound(path, location=None, volume=1.0, pitch=1.0,
                 start_time=0.0, as_actor=False):
@@ -643,9 +666,7 @@ def spawn_sound(path, location=None, volume=1.0, pitch=1.0,
     return None
 
 
-# ---------------------------------------------------------------------------
 # spawn_obj
-# ---------------------------------------------------------------------------
 
 def spawn_obj(path, location=None, rotation=None, scale=None,
               import_path='/Game/ImportedMeshes'):
@@ -693,9 +714,7 @@ def spawn_obj(path, location=None, rotation=None, scale=None,
     return actor
 
 
-# ---------------------------------------------------------------------------
 # spawn_primitive
-# ---------------------------------------------------------------------------
 
 def spawn_primitive(primitive_type, location=None, rotation=None, scale=None):
     """Spawn a basic UE shape: 'cube' | 'sphere' | 'cylinder' | 'cone' | 'plane'"""
@@ -720,9 +739,7 @@ def spawn_primitive(primitive_type, location=None, rotation=None, scale=None):
     return actor
 
 
-# ---------------------------------------------------------------------------
 # Camera presets
-# ---------------------------------------------------------------------------
 
 CAMERA_PRESETS = {
     # Standard / safe default
@@ -813,7 +830,9 @@ def spawn_camera(location=None, rotation=None,
                  max_focal_length=None,
                  min_aperture=None,
                  max_aperture=None,
-                 dof_blade_count=None):
+                 dof_blade_count=None,
+                 set_view_target=True,
+                 view_blend_time=0.0):
     """
     Spawn a CineCameraActor or CameraActor with full lens / DOF / Panini control.
 
@@ -832,6 +851,8 @@ def spawn_camera(location=None, rotation=None,
     screen_percentage : int   r.ScreenPercentage  (100=native, 150=super-sampled)
     min/max_focal_length, min/max_aperture : float  lens range limits
     dof_blade_count   : int   diaphragm blades (affects bokeh shape)
+    set_view_target   : bool  automatically view through this camera after spawn
+    view_blend_time   : float seconds for SetViewTargetWithBlend (0 = instant)
 
     Notes on Panini
     ---------------
@@ -865,7 +886,7 @@ def spawn_camera(location=None, rotation=None,
 
     actor = None
 
-    # --- CineCameraActor ---
+    # CineCameraActor
     if camera_type == 'cine':
         try:
             from unreal_engine.classes import CineCameraActor
@@ -910,7 +931,7 @@ def spawn_camera(location=None, rotation=None,
             ue.log_warning(f'spawn_camera (cine): {e}. Trying standard CameraActor...')
             camera_type = 'standard'
 
-    # --- Standard CameraActor ---
+    # Standard CameraActor
     if camera_type == 'standard' or actor is None:
         try:
             from unreal_engine.classes import CameraActor
@@ -923,7 +944,7 @@ def spawn_camera(location=None, rotation=None,
 
     _set_transform(actor, location, rotation, FVector(1, 1, 1))
 
-    # --- Panini projection ---
+    # Panini projection
     if cfg.get('panini', False):
         d   = cfg.get('panini_d', 0.5)
         s   = cfg.get('panini_s', 0.05)
@@ -939,6 +960,17 @@ def spawn_camera(location=None, rotation=None,
         _exec_console('r.Upscale.Panini.S 0')
         _exec_console('r.ScreenPercentage 100')
 
+    # View through the camera
+    if set_view_target:
+        try:
+            pc = _get_world().get_player_controller(0)
+            if view_blend_time > 0:
+                pc.SetViewTargetWithBlend(actor, view_blend_time)
+            else:
+                pc.SetViewTarget(actor)
+        except Exception as e:
+            ue.log_warning(f'spawn_camera: SetViewTarget failed: {e}')
+
     return actor
 
 
@@ -949,9 +981,129 @@ def disable_panini():
     _exec_console('r.ScreenPercentage 100')
 
 
-# ---------------------------------------------------------------------------
+# spawn_camera_pawn — DefaultPawn + CineCameraComponent (possessable, flyable)
+
+def spawn_camera_pawn(location=None, rotation=None,
+                      preset=None,
+                      focal_length=None,
+                      aperture=None,
+                      sensor_width=None,
+                      focus_distance=None,
+                      min_focal_length=None,
+                      max_focal_length=None,
+                      min_aperture=None,
+                      max_aperture=None,
+                      dof_blade_count=None,
+                      possess=True,
+                      max_speed=1200.0):
+    """
+    Spawn a DefaultPawn with a CineCameraComponent attached — possessable
+    and flyable with standard WASD + mouse-look input.
+
+    Unlike spawn_camera (which spawns a CineCameraActor that can only be a
+    ViewTarget), this returns a Pawn that PlayerController.Possess() accepts.
+    DefaultPawn ships with a DefaultPawnMovementComponent that provides
+    noclip-style flight out of the box.
+
+    Parameters
+    ----------
+    preset        : str  — one of CAMERA_PRESETS keys
+    possess       : bool — auto-possess with player controller 0 after spawn
+    max_speed     : float — DefaultPawnMovementComponent MaxSpeed (UE units/sec)
+    (remaining lens/DOF params match spawn_camera)
+
+    Returns
+    -------
+    pawn (DefaultPawn with CineCameraComponent)
+    """
+    world = _get_world()
+
+    # Build config from preset + manual overrides (mirrors spawn_camera)
+    cfg = dict(CAMERA_PRESETS.get('default'))
+    if preset and preset in CAMERA_PRESETS:
+        cfg.update(CAMERA_PRESETS[preset])
+    if focal_length   is not None: cfg['focal_length']   = focal_length
+    if aperture       is not None: cfg['aperture']       = aperture
+    if sensor_width   is not None: cfg['sensor_width']   = sensor_width
+    if focus_distance is not None: cfg['focus_distance'] = focus_distance
+
+    try:
+        from unreal_engine.classes import DefaultPawn, CineCameraComponent
+    except Exception as e:
+        ue.log_warning(f'spawn_camera_pawn: cannot import classes: {e}')
+        return None
+
+    try:
+        pawn = world.actor_spawn(DefaultPawn)
+    except Exception as e:
+        ue.log_warning(f'spawn_camera_pawn: actor_spawn(DefaultPawn) failed: {e}')
+        return None
+
+    _set_transform(pawn, location, rotation, FVector(1, 1, 1))
+
+    # Attach CineCameraComponent. When the pawn is possessed, the player
+    # controller uses this component as the view (bFindCameraComponentWhenViewTarget).
+    try:
+        cam = pawn.add_actor_component(CineCameraComponent, 'CineCameraComponent')
+        cam.CurrentFocalLength = cfg['focal_length']
+        cam.CurrentAperture    = cfg['aperture']
+
+        try:
+            cam.FilmbackSettings.SensorWidth  = cfg['sensor_width']
+            cam.FilmbackSettings.SensorHeight = cfg['sensor_width'] * 9.0 / 16.0
+        except Exception:
+            pass
+
+        try:
+            cam.FocusSettings.ManualFocusDistance = cfg['focus_distance']
+            cam.FocusSettings.FocusMethod = 1  # EFocusMethod::Manual
+        except Exception:
+            pass
+
+        if min_focal_length is not None:
+            try: cam.LensSettings.MinFocalLength = min_focal_length
+            except Exception: pass
+        if max_focal_length is not None:
+            try: cam.LensSettings.MaxFocalLength = max_focal_length
+            except Exception: pass
+        if min_aperture is not None:
+            try: cam.LensSettings.MinFStop = min_aperture
+            except Exception: pass
+        if max_aperture is not None:
+            try: cam.LensSettings.MaxFStop = max_aperture
+            except Exception: pass
+        if dof_blade_count is not None:
+            try: cam.LensSettings.DiaphragmBladeCount = dof_blade_count
+            except Exception: pass
+
+        try: cam.post_edit_change()
+        except Exception: pass
+    except Exception as e:
+        ue.log_warning(f'spawn_camera_pawn: attach CineCameraComponent failed: {e}')
+
+    # Tune flight speed on the built-in movement component
+    try:
+        mc = pawn.get_actor_component_by_type(
+            ue.find_class('DefaultPawnMovementComponent'))
+        if mc is not None:
+            mc.MaxSpeed = max_speed
+    except Exception:
+        pass
+
+    # Possess with player controller 0 — this auto-sets view target to the pawn
+    if possess:
+        try:
+            pc = world.get_player_controller(0)
+            try: pc.UnPossess()
+            except Exception: pass
+            pc.Possess(pawn)
+        except Exception as e:
+            ue.log_warning(f'spawn_camera_pawn: Possess failed: {e}')
+
+    return pawn
+
+
 # spawn_class / spawn_blueprint
-# ---------------------------------------------------------------------------
 
 def spawn_class(uclass, location=None, rotation=None, scale=None):
     """Spawn an arbitrary UClass."""
@@ -973,9 +1125,7 @@ def spawn_blueprint(bp_path, location=None, rotation=None, scale=None):
     return actor
 
 
-# ---------------------------------------------------------------------------
 # spawn_earth — Cesium globe with tile overlay presets
-# ---------------------------------------------------------------------------
 
 # Ion Asset IDs for CesiumIonRasterOverlay
 EARTH_PRESETS = {
@@ -1047,9 +1197,7 @@ def spawn_earth(location=None, rotation=None, scale=None,
     return actor
 
 
-# ---------------------------------------------------------------------------
 # spawn_table — render an nd_table.Table as Text3D actors
-# ---------------------------------------------------------------------------
 
 def spawn_table(table, location=None, world_location=None,
                 orientation='wall_table', render_gridlines=True,
@@ -1084,9 +1232,7 @@ def spawn_table(table, location=None, world_location=None,
     return renderer
 
 
-# ---------------------------------------------------------------------------
 # spawn_desktop_icons — grid of BP_Icon actors from a folder's shell icons
-# ---------------------------------------------------------------------------
 
 def spawn_desktop_icons(location=None, desktop_path=None, spacing=150,
                         max_icons=50):
@@ -1140,9 +1286,7 @@ def spawn_desktop_icons(location=None, desktop_path=None, spacing=150,
     return actors
 
 
-# ---------------------------------------------------------------------------
 # spawn_system_monitor — BP_SysMon with live sysinfo ticker
-# ---------------------------------------------------------------------------
 
 def spawn_system_monitor(location=None, rotation=None, scale=None):
     """
@@ -1168,9 +1312,7 @@ def spawn_system_monitor(location=None, rotation=None, scale=None):
     return actor
 
 
-# ---------------------------------------------------------------------------
 # spawn_camera_actor — BP_PyCamera with PyActorCamera component
-# ---------------------------------------------------------------------------
 
 def spawn_camera_actor(location=None, rotation=None,
                        camera_type='normal'):
@@ -1205,9 +1347,7 @@ def spawn_camera_actor(location=None, rotation=None,
     return actor
 
 
-# ---------------------------------------------------------------------------
 # spawn_file_explorer — BP_FileExplorer with FileExplorer Python component
-# ---------------------------------------------------------------------------
 
 def spawn_file_explorer(location=None, rotation=None,
                         initial_path=None):
@@ -1234,9 +1374,7 @@ def spawn_file_explorer(location=None, rotation=None,
     return actor
 
 
-# ---------------------------------------------------------------------------
 # spawn_plot — BP_MathPlot with PyActorPlotter component
-# ---------------------------------------------------------------------------
 
 def spawn_plot(function_expr='sin(x)+cos(y)',
                plot_type='surface',
@@ -1330,9 +1468,7 @@ def spawn_plot(function_expr='sin(x)+cos(y)',
     return actor
 
 
-# ---------------------------------------------------------------------------
 # File-type detection — extended with new types
-# ---------------------------------------------------------------------------
 
 TABLE_KEYWORDS   = {'table', 'nd_table', 'ndtable'}
 SYSMON_KEYWORDS  = {'sysmon', 'system_monitor', 'systemmonitor', 'monitor'}
@@ -1441,9 +1577,7 @@ def spawn_icon(pil_image, location=None, rotation=None, scale=None,
     _set_transform(actor, location, rotation, scale)
     return actor
 
-# ---------------------------------------------------------------------------
 # File-type detection
-# ---------------------------------------------------------------------------
 
 IMAGE_EXTS  = {'.png', '.jpg', '.jpeg', '.bmp', '.tga', '.tiff', '.exr',
                '.hdr', '.webp', '.ico', '.gif', '.psd'}
@@ -1454,12 +1588,15 @@ OBJ_EXTS    = {'.fbx', '.obj', '.dae', '.collada', '.3ds', '.ply', '.stl',
                '.gltf', '.glb', '.blend', '.dxf', '.x3d', '.wrl', '.off'}
 PRIMITIVE_NAMES  = {'cube', 'sphere', 'cylinder', 'cone', 'plane'}
 CAMERA_KEYWORDS  = {'camera', 'cam', 'cine', 'cinecamera'}
+CAMERA_PAWN_KEYWORDS = {'camera_pawn', 'campawn', 'flycam', 'flycamera',
+                        'pawn_camera', 'possessable_camera'}
 EARTH_KEYWORDS   = {'earth', 'globe', 'cesium', 'cesiumearth'}
 
 
 def _detect_type(path_or_name):
     lower = path_or_name.lower()
     if lower in PRIMITIVE_NAMES:  return 'primitive'
+    if lower in CAMERA_PAWN_KEYWORDS: return 'camera_pawn'
     if lower in CAMERA_KEYWORDS:  return 'camera'
     if lower in EARTH_KEYWORDS:   return 'earth'
     if lower in TABLE_KEYWORDS:   return 'table'
@@ -1475,9 +1612,7 @@ def _detect_type(path_or_name):
     return None
 
 
-# ---------------------------------------------------------------------------
 # Main spawn()
-# ---------------------------------------------------------------------------
 
 def spawn(
     path_or_type,
@@ -1548,7 +1683,9 @@ def spawn(
     obj         .fbx .obj .glb .gltf .dae .ply .stl .blend .3ds …
                                                          (auto-converts to FBX)
     primitive   'cube' 'sphere' 'cylinder' 'cone' 'plane'
-    camera      'camera' 'cam' 'cine'
+    camera      'camera' 'cam' 'cine'       (CineCameraActor — view target only)
+    camera_pawn 'camera_pawn' 'flycam'      (DefaultPawn + CineCameraComponent,
+                                             possessable and flyable)
     earth       'earth' 'globe' 'cesium'  (Cesium globe via BP_CesiumEarth)
     blueprint   '/Game/…' UE content path
     class       pass uclass= parameter
@@ -1633,6 +1770,21 @@ def spawn(
             dof_blade_count=dof_blade_count,
         )
 
+    elif detected == 'camera_pawn':
+        return spawn_camera_pawn(
+            location=location, rotation=rotation,
+            preset=camera_preset,
+            focal_length=focal_length,
+            aperture=aperture,
+            sensor_width=sensor_width,
+            focus_distance=focus_distance,
+            min_focal_length=min_focal_length,
+            max_focal_length=max_focal_length,
+            min_aperture=min_aperture,
+            max_aperture=max_aperture,
+            dof_blade_count=dof_blade_count,
+        )
+
     elif detected == 'earth':
         return spawn_earth(
             location=location, rotation=rotation, scale=scale,
@@ -1673,9 +1825,7 @@ def spawn(
         return None
 
 
-# ---------------------------------------------------------------------------
 # Usage examples
-# ---------------------------------------------------------------------------
 #
 # from ue_spawn import spawn, spawn_icon, spawn_earth, disable_panini
 # from ue_spawn import CAMERA_PRESETS, EARTH_PRESETS

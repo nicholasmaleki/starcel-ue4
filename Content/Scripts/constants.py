@@ -211,7 +211,7 @@ class FiniteRepetitionSelector:
                 ue.log_warning("FiniteRepetitionSelector: 'reals' package not found – falling back to Python floats.")
                 self.use_reals = False
 
-    # ── helpers ──────────────────────────────────────────────────────────────
+    # helpers
 
     def _to_r(self, v):
         """Wrap v in a constructive Real if the backend is active."""
@@ -229,7 +229,7 @@ class FiniteRepetitionSelector:
             return -value
         return value
 
-    # ── tetration helpers ─────────────────────────────────────────────────────
+    # tetration helpers
 
     def _tetrate(self, base: float, height: int) -> float:
         """base ↑↑ height  (right-associative tower)."""
@@ -258,7 +258,7 @@ class FiniteRepetitionSelector:
             result = self._tetrate(base, round(result))
         return result
 
-    # ── public API ────────────────────────────────────────────────────────────
+    # public API
 
     def increase_value(self, value: float) -> float:
         value = self.autonegate_value(value)

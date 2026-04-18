@@ -87,7 +87,7 @@ def star_import(module_name, target_globals):
 # The goal was to use this when you want to edit any imports while using the editor, but it doesn't seem to do that
 def reload_all_modules():
     print("[HotReload] Reload start...")
-    # --- Reload project modules ---
+    # Reload project modules
     for name, module in list(sys.modules.items()):
         try:
             spec = getattr(module, "__spec__", None)
@@ -111,7 +111,7 @@ def reload_all_modules():
         except Exception as e:
             print(f"[HotReload] Skipped {name}: {e}")
 
-    # --- Handle star imports ---
+    # Handle star imports
     _star_imported = set()
 
     for module_name in detect_star_imports_from_main():
@@ -124,7 +124,7 @@ def reload_all_modules():
             star_import(module_name, globals())
             _star_imported.add(module_name)
 
-    # --- Handle manual imports with 'as' ---
+    # Handle manual imports with 'as'
     for module_name, alias in detect_manual_imports_from_main():
         if alias not in globals():
             try:
@@ -134,7 +134,7 @@ def reload_all_modules():
             except Exception as e:
                 print(f"[HotReload] Could not import {module_name} as {alias}: {e}")
 
-    # --- Reload manual modules ---
+    # Reload manual modules
     for module_name in MANUAL_MODULES:
         try:
             module = importlib.import_module(module_name)

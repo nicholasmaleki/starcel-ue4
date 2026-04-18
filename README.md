@@ -46,6 +46,8 @@ Unreal Engine support can be found on YouTube, their Discord, and their forum.
 
 UnrealEnginePython examples, Starcel examples, and the unreal_engine folder (Content/Scripts/unreal_engine, which has the class and function info) should cover just about everything you can do with the plugin. If you are certain there is an issue with the https://github.com/20tab/UnrealEnginePython plugin you can post on the issues tab on GitHub. I will check this every so often. 
 
+Advanced logging is available. 
+
 The UE4.27 port of the plugin can be found at https://github.com/HaiyiMei/UnrealEnginePython. I made changes to this source to upgrade it to Python 3.9 and to make it work for my use case. 
 
 Issues with the Starcel code and new features can be posted here. 
@@ -104,17 +106,13 @@ Not currently, expect crashes and lost work. Eventually we will release a stable
 It is not recommended to control any elements in Starcel with a 2D UI. You can build a UI out of 3D elements in the 3D space and make it always display flat on the included screen which I have added as a component to each Pawn's camera. In theory, anything you make in 2D, including websites, you can make exactly the same in 3D. Despite the recommendation, UnrealEnginePython has built in support for QT in Engine using Slate, which renders directly on top of the existing Starcel viewport. If you need, you could use Tkinter, QT, etc. to make a 2D UI outside the game window.
 
 
-# Logging
-Advanced logging is available. Disclaimer, by default all keystrokes in the program are logged.
-
-
 ## UE5 and Python upgrade? 
 You can use the included interop.py to help run newer Python versions with this version, but it will be slow and you will have to add workarounds for using functions like begin_play and tick. You will need to have both versions of Python installed. The latest edition of Starcel is written in Python 3.9 and Unreal Engine 4.27Chaos. This likely will not change for a while as Python's C++ bindings have been deprecated and changed in Python 3.10. This could take a month or few to upgrade. An [Unreal Engine 5 upgrade of the UnrealEnginePython plugin](https://github.com/20tab/UnrealEnginePython/pull/880) will require header, module, and api changes. This could take a month to upgrade. If you plan on working on this, message me for some info that should help you begin. 
 I do not plan on upgrading the project myself unless this project receives a lot of support and use. 
 
 
 ## What happened to the last Starcel and its features? 
-The last Starcel release was written, at the time, in the newest Python, Python 3.8, and the newest unreal engine release, UE5.1. Any Python build could be used, but I was using PyPy for its performance with the GARAMON 10 dimensional geometric algebra, which has now been replaced with the much more feature-rich Kingdon library. I will release those files at request, but I have not tried compiling the code after one failed test. I did, however, manage to copy the content folder into an empty project and view and use the map and blueprints from there. Many of the plugins and features in the last Starcel are not supported in this version, however there are plans to upgrade as much of it as possible. I will return to all the features showcased in the original video, with many features and new functionality added. 
+The last Starcel release was written in the newest Python at the time, Python 3.8, and the newest Unreal Engine release, UE5.1. Any Python build could be used, but I was using PyPy for its performance with the GARAMON 10 dimensional geometric algebra, which has now been replaced with the much more feature-rich Kingdon library. I will release those files at request, but I have not tried compiling the code after one failed test. I did, however, manage to copy the content folder into an empty project and view and use the map and blueprints from there. All of the features from the last version will return to this one, with many features and new functionality added. 
 
 
 ## What new features are planned
@@ -125,7 +123,6 @@ The last Starcel release was written, at the time, in the newest Python, Python 
 - CLI (WIP), SSH, and SCP
 - Advanced function and question search with live search and history
 - Multiplayer (WIP)
-- Claude md files
 - Multi-language IDE
 	- Syntax highlighting (CodeMirror, highlight.js, etc.) and LSP/intellisense starting with IntelliJ-PyCharm open source
 	- Debugger: step execution, breakpoints (line, conditional, memory, data), cli or environment at breakpoint, variable inspection, call stack, memory/register inspection, thread & concurrency debugging, reverse/time-travel debugging, inline variable values, hover tooltips
@@ -181,16 +178,24 @@ The last Starcel release was written, at the time, in the newest Python, Python 
 
 
 ## Would you like to contribute? 
-I love pull requests! Send as many feature updates and issues as you would like. If you are looking for something specific to work on I am really looking for someone to clean up the Unreal Engine files according to [standards](https://github.com/Allar/ue5-style-guide) and update the python files to match, so if you have a lot of experience in Unreal that is a great place to start. I am also looking to upgrade the Python code to be more Pythonic, but you may want to make sure we have installed all UnrealEnginePython Modus features first. I am looking for someone to integrate Starcel as a renderer for Manim. If you want to tackle any of the planned features it would be immensely helpful! 
+Send as many feature updates and issues as you would like. 
+
+Although you can work on anything you'd like, here are specific tasks I need help with: 
+- Upgrade the Python code to be more Pythonic, maybe inspired by Ursina, and make the unreal_engine functions more user-friendly
+- Integrate [UnrealEnginePython Modus](https://github.com/dfb/UnrealEnginePython/tree/modus)
+- Proper Software Engineering principles refactor — Much of this code is AI generated, and I lost the plot
+- Clean up the Unreal Engine files according to [standards](https://github.com/Allar/ue5-style-guide) and update the Python files to match. Try to migrate blueprints to Python code. 
+- Integrate Starcel as a renderer for Manim
+- AI md files (anthropic, openai, gemini, etc.)
+- Continued server development
+- 
 
 
 ## Why Unreal? 
-Unreal is great! It is industry-leading for developing games and in cinema. The Python bindings are the icing on the cake, making this a fully featured engine with quick scripting potential. The rendering system is unmatched, beautiful, and the engine itself is quite fast.
-Unity has limited Python support with Unity-PythonNet. Panda3D and RenderPipeline had issues with speed, server support, and windows. When I tested them, Blender's UPBGE and NVIDIA Omniverse were not ready for a server capable game with the features I was looking for. 
-
+Unreal is great! It is industry-leading for developing games and in cinema. The Python bindings are the icing on the cake, making this a fully featured engine with quick scripting potential. The rendering system is unmatched, beautiful, and the engine itself is fast. I tested Unity, Panda3D, UPBGE and NVIDIA Omniverse and they didn't have the features I was looking for.
 
 ## Where did you get the idea? 
-Originally, I wanted to build a system for multidimensional tables and multidimensional plotting of functions and data. For example, plotting multidimensional weights in LLMs (https://youtu.be/wjZofJX0v4M?&t=813, here the embedding space in GPT-3 is 12,228 dimensional, whereas Kingdon only allows up to 16 dimensions). I wanted to build the final form of computer interaction, by building in 3D we have allowed a space for representing just about any object you will encounter. Using a programming language designed to be human readable was paramount. I wanted something that is as close to the English language as possible while still being useful. Excel is the most used programming language by a large margin, with python being the next. It is very convenient to program in a table, as most data structures can be represented as a table. 
+I wanted to build a system for multidimensional tables and multidimensional plotting of functions and data. For example, plotting multidimensional weights in LLMs (https://youtu.be/wjZofJX0v4M?&t=813, here the embedding space in GPT-3 is 12,228 dimensional, whereas Kingdon only allows up to 16 dimensions). I wanted to build the final form of computer interaction, by building in 3D we have allowed a space for representing just about any object you will encounter and everything in the world. Using a programming language designed to be human readable was paramount. I wanted something that is as close to the English language as possible while still being useful. Excel is the most used programming language by a large margin, with python being the next. It is very convenient to program in a table, as many data structures, tensors, matrices, arrays, nodes, can be represented as a table. 
 
 
 ## Where does the name "Starcel" come from?
@@ -207,7 +212,7 @@ Originally, I wanted to build a system for multidimensional tables and multidime
 - Unreal Engine 4 has ~16,000,000 lines of code
 - 20tab/UnrealEnginePython is ~70,000 lines of code
 - starcel-ue4 is ~10,000 lines of Python code and ~2000 lines of C++ code, which is really reasonable, considered how many features are offered. I truly stand on the shoulders of giants.
-- starcel-ue4 was written in 4 months
+- starcel-ue4 was written in 6 months
 
 
 ## Donate
@@ -216,3 +221,8 @@ You can donate on [Paypal](https://www.paypal.com/paypalme/RecursionIs) or [Patr
 
 ## Need to contact me?
 I prefer to be reached via Discord, but if you need or if you are looking to donate or sponsor the project, you can contact me by email, nick@recursion.is. 
+
+
+## Social
+https://discord.gg/nAfm6knz
+https://recursion.is/youtube

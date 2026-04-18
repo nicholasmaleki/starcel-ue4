@@ -9,7 +9,6 @@ try:
 except Exception:
     StaticMeshActor = StaticMesh = Material = EComponentMobility = None
 
-# ---------------------------------------------------------------------------
 # Python component: click + hover for any actor with a Text3DComponent
 #
 # Blueprint requirements:
@@ -29,7 +28,6 @@ except Exception:
 #   Z axis = line descent      (up  ->  down),  row = -local_z / CHAR_HEIGHT
 #
 # Override _on_char_click(col, row) in a subclass or replace after spawn.
-# ---------------------------------------------------------------------------
 
 class PyActorText3D:
     """
@@ -55,9 +53,7 @@ class PyActorText3D:
     CURSOR_COLOR      = (1, 1, 1, 0.6)
     CURSOR_MAT_PATH   = '/Game/Materials/M_Color_Translucent.M_Color_Translucent'
 
-    # -----------------------------------------------------------------------
     # Lifecycle
-    # -----------------------------------------------------------------------
 
     def begin_play(self):
         self.uobject.enable_input()
@@ -110,9 +106,7 @@ class PyActorText3D:
             f'PyActorText3D: click detection is tick-based '
             f'on {self.uobject.get_name()}')
 
-    # -----------------------------------------------------------------------
     # Insertion cursor
-    # -----------------------------------------------------------------------
 
     def _spawn_cursor(self):
         """Spawn a thin translucent cube as a blinking insertion point."""
@@ -243,7 +237,7 @@ class PyActorText3D:
             self._cursor_actor.SetActorHiddenInGame(not should_show)
 
     def tick(self, dt):
-        # --- Scale lerp ---
+        # Scale lerp
         cur = self.uobject.get_actor_scale()
         tgt = self.target_scale
         a   = min(1.0, self.LERP_SPEED * dt)
@@ -258,11 +252,11 @@ class PyActorText3D:
         if self.text3d is None:
             return
 
-        # --- Cursor hit this actor? ---
+        # Cursor hit this actor?
         hit        = self.uobject.get_hit_result_under_cursor(ECollisionChannel.ECC_WorldDynamic)
         on_self    = hit is not None and hit.actor == self.uobject
 
-        # --- Tick-based hover fallback ---
+        # Tick-based hover fallback
         if not self._component_hover:
             if on_self and not self._hovered:
                 self._hovered = True
@@ -271,16 +265,14 @@ class PyActorText3D:
                 self._hovered = False
                 self.on_hover_end(self.text3d)
 
-        # --- Click detection (rising-edge on left mouse button) ---
+        # Click detection (rising-edge on left mouse button)
         mouse_down = self._is_mouse_down()
         if mouse_down and not self._was_mouse_down:
             if on_self:
                 self._process_click(hit.impact_point)
         self._was_mouse_down = mouse_down
 
-    # -----------------------------------------------------------------------
     # Hover callbacks (called by component events or tick fallback)
-    # -----------------------------------------------------------------------
 
     def _comp_hover_begin(self, component):
         self._hovered = True
@@ -298,9 +290,7 @@ class PyActorText3D:
     def on_hover_end(self, component):
         self.target_scale = self.base_scale
 
-    # -----------------------------------------------------------------------
     # Click processing — world hit -> local coords -> character col/row
-    # -----------------------------------------------------------------------
 
     def _process_click(self, world_pt):
         text = ''
@@ -315,7 +305,7 @@ class PyActorText3D:
             except Exception:
                 pass
 
-        # ---- Strategy 1: CharacterMeshes (proportional fonts) ----
+        # Strategy 1: CharacterMeshes (proportional fonts)
         mesh_idx   = None
         mesh_letter = None
         if char_meshes is not None and len(char_meshes) > 0:
@@ -347,7 +337,7 @@ class PyActorText3D:
                 mesh_idx = best_idx
                 mesh_letter = flat[best_idx] if best_idx < len(flat) else '?'
 
-        # ---- Strategy 2: fixed-width grid fallback ----
+        # Strategy 2: fixed-width grid fallback
         local_pt = self._world_to_local(world_pt)
         col = -1
         row = -1
@@ -355,7 +345,7 @@ class PyActorText3D:
             col = int(local_pt.y / self.CHAR_WIDTH)
             row = int(-local_pt.z / self.CHAR_HEIGHT)
 
-        # ---- Pick best result ----
+        # Pick best result
         if mesh_idx is not None:
             letter = mesh_letter
             idx    = mesh_idx
@@ -427,9 +417,7 @@ class PyActorText3D:
         except Exception:
             return False
 
-    # -----------------------------------------------------------------------
     # Override point
-    # -----------------------------------------------------------------------
 
     def _on_char_click(self, col, row, letter=None, char_index=None):
         """

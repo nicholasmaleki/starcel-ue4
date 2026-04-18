@@ -30,9 +30,9 @@ def gen_intellisense_stubs():
     Replaces __unknown_params__ with (*args, **kwargs)
     Differentiates instance vs static methods
     """
-    # --- UE4.27 constants stub ---
+    # UE4.27 constants stub
     constants_stub = '''\
-# --- Class Flags (CLASS_*) ---
+# Class Flags (CLASS_*)
 CLASS_NONE: int
 CLASS_ABSTRACT: int
 CLASS_DEFAULT_CONFIG: int
@@ -41,7 +41,7 @@ CLASS_TRANSIENT: int
 CLASS_OPTIONAL: int
 CLASS_CONFIG_DO_NOT_CHECK_DEFAULTS: int
 
-# --- Property Flags (CPF_*) ---
+# Property Flags (CPF_*)
 CPF_NONE: int
 CPF_EDIT: int
 CPF_CONSTPARM: int
@@ -102,7 +102,7 @@ CPF_EXPERIMENTAL_ALWAYS_OVERRIDEN: int
 CPF_EXPERIMENTAL_NEVER_OVERRIDEN: int
 CPF_ALLOW_SELF_REFERENCE: int
 
-# --- Object Flags (RF_*) ---
+# Object Flags (RF_*)
 RF_NO_FLAGS: int
 RF_PUBLIC: int
 RF_STANDALONE: int
@@ -135,16 +135,16 @@ RF_HAS_EXTERNAL_PACKAGE: int
 RF_ALL_FLAGS: int
 '''
 
-    # --- Generate the original source ---
+    # Generate the original source
     source = pystubgen.make_source(ue)
 
     functions_list = [o[1] for o in inspect.getmembers(ue) if inspect.isroutine(o[1])]
     funcDefs = '\n'.join([pystubgen.make_source(funcObj) for funcObj in functions_list])
 
-    # --- Replace all __unknown_params__ with self, *args, **kwargs ---
+    # Replace all __unknown_params__ with self, *args, **kwargs
     source = re.sub(r"\(__unknown_params__\)", "(self, *args, **kwargs)", source)
 
-    # --- Output path ---
+    # Output path
     stubFilePath = Path(os.path.join(os.path.abspath(ue.get_content_dir()),
                                      "Scripts", "unreal_engine", "__init__.py"))
     print(os.getcwd())
@@ -153,7 +153,7 @@ RF_ALL_FLAGS: int
         print(f"p4 edit {str(stubFilePath)}")
         os.system(f"p4 edit {str(stubFilePath)} && pause>nul")
 
-    # --- Write everything to file ---
+    # Write everything to file
     with open(str(stubFilePath), 'w', encoding='utf8') as outputFile:
         outputFile.write('# UE4.27 Constants Stub\n')
         outputFile.write(constants_stub)
@@ -167,7 +167,7 @@ RF_ALL_FLAGS: int
     # functions_list = [o[1] for o in inspect.getmembers(ue) if inspect.isroutine(o[1])]
     # funcDefs = '\n'.join([pystubgen.make_source(funcObj) for funcObj in functions_list])
     #
-    # # --- Output path ---
+    # # Output path
     # stubFilePath = Path(os.path.join(os.path.abspath(ue.get_content_dir()), "Scripts", "unreal_engine", "__init__.py"))
     # print(os.getcwd())
     #
@@ -175,7 +175,7 @@ RF_ALL_FLAGS: int
     #     print(f"p4 edit {str(stubFilePath)}")
     #     os.system(f"p4 edit {str(stubFilePath)} && pause>nul")
     #
-    # # --- Write everything to file ---
+    # # Write everything to file
     # with open(str(stubFilePath), 'w', encoding='utf8') as outputFile:
     #     outputFile.write('# UE4.27 Constants Stub\n')
     #     outputFile.write(constants_stub)

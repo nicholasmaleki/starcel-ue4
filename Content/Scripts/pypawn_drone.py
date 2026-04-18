@@ -43,9 +43,9 @@ class PyPawnDrone:
     SCALE_LERP_SPEED = 20.0
     DEBUG = False
 
-    # ------------------------------------------------------------------ #
+    # #
     #  Lifecycle                                                           #
-    # ------------------------------------------------------------------ #
+    # #
 
     def begin_play(self):
         self.pawn = self.uobject
@@ -77,15 +77,15 @@ class PyPawnDrone:
         self.mouse    = Mouse()
         self.input    = HotkeyManager(self.uobject, self.keyboard, self.mouse)
 
-        # ---- Crosshair image plane attached to Screen component ----
+        # Crosshair image plane attached to Screen component
         self.crosshair_actor = None
         self._spawn_crosshair()
 
         self._dbg("PyPawnDrone: begin_play OK")
 
-    # ------------------------------------------------------------------ #
+    # #
     #  Crosshair — tiny image plane attached to Screen cube center        #
-    # ------------------------------------------------------------------ #
+    # #
 
     CROSSHAIR_PATH = r'C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\Materials\crosshair.png'
     CROSSHAIR_MATS = (
@@ -191,9 +191,9 @@ class PyPawnDrone:
         if hasattr(self, 'input') and self.input:
             self.input.shutdown()
 
-    # ------------------------------------------------------------------ #
+    # #
     #  Input setup                                                         #
-    # ------------------------------------------------------------------ #
+    # #
 
     def _setup_input(self):
         self._dbg("PyPawnDrone: _setup_input")
@@ -209,9 +209,9 @@ class PyPawnDrone:
         self.input.bind_press("MouseScrollUp",   self._on_scroll_up)
         self.input.bind_press("MouseScrollDown", self._on_scroll_down)
 
-    # ------------------------------------------------------------------ #
+    # #
     #  Helpers                                                             #
-    # ------------------------------------------------------------------ #
+    # #
 
     def _get_component(self, name):
         try:
@@ -246,9 +246,9 @@ class PyPawnDrone:
         if self.DEBUG:
             ue.log(f"[DBG] {msg}")
 
-    # ------------------------------------------------------------------ #
+    # #
     #  Axis handlers                                                       #
-    # ------------------------------------------------------------------ #
+    # #
 
     def _on_axis_forward(self, v): self._axis_forward = v
     def _on_axis_right(self, v):   self._axis_right   = v
@@ -264,9 +264,9 @@ class PyPawnDrone:
         self.roll_mode = False
         self._dbg("PyPawnDrone: roll mode OFF")
 
-    # ------------------------------------------------------------------ #
+    # #
     #  Alt (free-look) -- only fires when Ctrl is NOT held                #
-    # ------------------------------------------------------------------ #
+    # #
 
     def _on_alt_pressed(self):
         if self.input.is_key_down("Ctrl"):
@@ -301,9 +301,9 @@ class PyPawnDrone:
         except Exception as e:
             ue.log_warning(f"PyPawnDrone: alt released error: {e}")
 
-    # ------------------------------------------------------------------ #
+    # #
     #  Scroll -- Ctrl > Alt > Shift priority                              #
-    # ------------------------------------------------------------------ #
+    # #
 
     def _on_scroll_up(self):
         if self.input.is_key_down("Ctrl"):
@@ -362,9 +362,9 @@ class PyPawnDrone:
         except Exception as e:
             ue.log_warning(f"PyPawnDrone: arm scroll error: {e}")
 
-    # ------------------------------------------------------------------ #
+    # #
     #  Tick                                                                #
-    # ------------------------------------------------------------------ #
+    # #
 
     def tick(self, dt):
         if not hasattr(self, "_axis_forward"):
@@ -374,9 +374,9 @@ class PyPawnDrone:
         self._apply_scale_lerp(dt)
         self._apply_arm_lerp(dt)
 
-    # ------------------------------------------------------------------ #
+    # #
     #  Scale lerp -- FVector uses .x .y .z                               #
-    # ------------------------------------------------------------------ #
+    # #
 
     def _apply_scale_lerp(self, dt):
         cur = self.uobject.get_actor_scale()   # FVector: .x .y .z
@@ -388,9 +388,9 @@ class PyPawnDrone:
             cur.z + (tgt.z - cur.z) * a,
         ))
 
-    # ------------------------------------------------------------------ #
+    # #
     #  Arm lerp                                                            #
-    # ------------------------------------------------------------------ #
+    # #
 
     def _apply_arm_lerp(self, dt):
         sa = self._get_component('FreeLookSpringArm')
@@ -412,9 +412,9 @@ class PyPawnDrone:
         except Exception as e:
             ue.log_warning(f"PyPawnDrone: arm lerp error: {e}")
 
-    # ------------------------------------------------------------------ #
+    # #
     #  Movement                                                            #
-    # ------------------------------------------------------------------ #
+    # #
 
     def _apply_movement(self, dt):
         fwd   = self._axis_forward
@@ -433,9 +433,9 @@ class PyPawnDrone:
         )
         self.uobject.set_actor_location(self.uobject.get_actor_location() + delta)
 
-    # ------------------------------------------------------------------ #
+    # #
     #  Rotation                                                            #
-    # ------------------------------------------------------------------ #
+    # #
 
     def _apply_rotation(self, dt):
         # FRotator attrs: .roll .pitch .yaw  (constructor: roll, pitch, yaw)

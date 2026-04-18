@@ -14,7 +14,6 @@ except Exception:
     EComponentMobility = None
     ECollisionChannel  = None
 
-# ---------------------------------------------------------------------------
 # Python component: file browser backed by EverythingAPI + nd_table
 #
 # Blueprint requirements (BP_FileExplorer):
@@ -31,10 +30,10 @@ except Exception:
 # Layout (head-on view, looking -X):
 #
 #     Icon | Name  | Size | Date | Type     ← header row (Z=0)
-#     [📄] file1   10 KB  ...    .txt       ← each file = one horizontal row
-#     [📁] folder  —      ...    folder
-#     [🖼 ] pic.png 2 MB   ...    .png
-#     ↑
+#      *    file1   10 KB  ...    .txt       ← each file = one horizontal row
+#      *    folder  —      ...    folder
+#      *    pic.png 2 MB   ...    .png
+
 #   leftmost icon column (one icon per file row)
 #
 # Click detection follows the gizmo pattern:
@@ -44,7 +43,6 @@ except Exception:
 #
 # Usage:
 #   actor = spawn_file_explorer(location=FVector(0, 0, 0))
-# ---------------------------------------------------------------------------
 
 
 def _human_bytes(n):
@@ -106,7 +104,7 @@ class FileExplorer:
 
         self.location = self.uobject.get_actor_location()
 
-        # ---- Player controller: enable click events ----------------------
+        # Player controller: enable click events
         try:
             self.uobject.enable_input()
             self.player_controller = self.uobject.get_player_controller()
@@ -120,7 +118,7 @@ class FileExplorer:
             ue.log_warning(f'FileExplorer: click setup failed: {e}')
             self.player_controller = None
 
-        # ---- EverythingAPI -----------------------------------------------
+        # EverythingAPI
         try:
             from everything_api import EverythingAPI
             self.api = EverythingAPI()
@@ -131,7 +129,7 @@ class FileExplorer:
                 'Make sure Everything (Voidtools) is running and '
                 'Everything64.dll is accessible.')
 
-        # ---- Table renderer ----------------------------------------------
+        # Table renderer
         try:
             from nd_table.unreal_integration import UnrealTableRenderer
             self.renderer = UnrealTableRenderer(
@@ -143,13 +141,11 @@ class FileExplorer:
         except Exception as e:
             ue.log_warning(f'FileExplorer: UnrealTableRenderer unavailable: {e}')
 
-        # ---- Initial listing ---------------------------------------------
+        # Initial listing
         self.current_folder = self.DEFAULT_FOLDER
         self.refresh()
 
-    # -----------------------------------------------------------------------
     # Tick — gizmo-style cursor trace for icon clicks
-    # -----------------------------------------------------------------------
 
     def tick(self, dt):
         if not self._click_map or self.player_controller is None:
@@ -182,9 +178,7 @@ class FileExplorer:
         except Exception:
             return False
 
-    # -----------------------------------------------------------------------
     # Public navigation API
-    # -----------------------------------------------------------------------
 
     def navigate_to(self, folder):
         """Navigate into *folder* and re-render the table."""
@@ -212,9 +206,7 @@ class FileExplorer:
         """Re-scan current_folder."""
         self.search(self.current_folder)
 
-    # -----------------------------------------------------------------------
     # Rendering — files as rows, fields as columns (head-on spreadsheet)
-    # -----------------------------------------------------------------------
 
     def _render(self, results):
         if self.renderer is None:
@@ -257,9 +249,7 @@ class FileExplorer:
 
         self._spawn_row_icons(results)
 
-    # -----------------------------------------------------------------------
     # Icon column
-    # -----------------------------------------------------------------------
 
     def _spawn_row_icons(self, results):
         """
@@ -410,9 +400,7 @@ class FileExplorer:
 
         ue.log(f'FileExplorer: spawned {spawned} row icons')
 
-    # -----------------------------------------------------------------------
     # Click handler — open with cmd /c start chrome "<path>"
-    # -----------------------------------------------------------------------
 
     def _on_file_click(self, item):
         full = item.get('full_path') or item.get('name', '')

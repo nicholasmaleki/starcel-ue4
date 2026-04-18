@@ -31,7 +31,7 @@ while True:
     try:
         op = msg["op"]
 
-        # ---- normal calls (strings, small stuff)
+        # normal calls (strings, small stuff)
         if op == "call":
             fn = getattr(legacy, msg["name"])
             result = fn(*msg["args"], **msg["kwargs"])
@@ -40,7 +40,7 @@ while True:
             sys.stdout.buffer.write(len(data).to_bytes(8, "big"))
             sys.stdout.buffer.write(data)
 
-        # ---- numpy calls
+        # numpy calls
         elif op == "call_numpy":
             fn = getattr(legacy, msg["name"])
 
@@ -53,7 +53,7 @@ while True:
             sys.stdout.buffer.write(len(data).to_bytes(8, "big"))
             sys.stdout.buffer.write(data)
 
-        # ---- hot reload
+        # hot reload
         elif op == "reload":
             legacy = importlib.reload(legacy)
             data = pickle.dumps(("ok", True))
@@ -114,7 +114,7 @@ while True:
 #
 #         return pickle.loads(data)
 #
-#     # ---- string / normal
+# # string / normal
 #     def call(self, name, *args, **kwargs):
 #         status, *rest = self._call({
 #             "op": "call",
@@ -129,7 +129,7 @@ while True:
 #             msg, tb = rest
 #             raise LegacyError(f"{msg}\n{tb}")
 #
-#     # ---- numpy
+# # numpy
 #     def call_numpy(self, name, arr: np.ndarray):
 #         shm = shared_memory.SharedMemory(create=True, size=arr.nbytes)
 #         shm_arr = np.ndarray(arr.shape, dtype=arr.dtype, buffer=shm.buf)

@@ -5,7 +5,7 @@ Extract Windows file/folder icons and thumbnails as PIL RGBA images.
 
 Public API
 ----------
-    # ── Single file ────────────────────────────────────────────────────────
+    # Single file
     img  = get_icon(input_path, preview=True, debug=False)
             -> PIL.Image.Image  (256x256 RGBA)
 
@@ -18,7 +18,7 @@ Public API
     extract_icon(input_path, output_path, preview=True, debug=False,
                  return_info=True)                                     -> dict
 
-    # ── Folder scan ────────────────────────────────────────────────────────
+    # Folder scan
     # return_info=False (default) → {path: PIL Image}   or saves PNGs
     # return_info=True            → {path: info dict}   (never saves, output_dir ignored)
     get_folder_icons(folder_path, preview=True, debug=False,
@@ -26,7 +26,7 @@ Public API
                      return_info=False)
             -> dict
 
-    # ── Priority queue ─────────────────────────────────────────────────────
+    # Priority queue
     q = IconQueue()
     q.add(path, priority=0)
     q.add_many(paths, priority=0)
@@ -88,7 +88,7 @@ import win32con
 from pathlib import Path
 from PIL import Image
 
-# ── Constants ─────────────────────────────────────────────────────────────────
+# Constants
 
 SHGFI_ICON              = 0x0000_0100
 SHGFI_LARGEICON         = 0x0000_0000
@@ -130,7 +130,7 @@ ASSOCIATED_EXTENSIONS = {
     ".reg", ".inf",
 }
 
-# ── Globals ───────────────────────────────────────────────────────────────────
+# Globals
 
 _DEBUG         = False
 _INKSCAPE_PATH = None
@@ -141,7 +141,7 @@ def _dbg(*args):
         print("[icon_debug]", *args)
 
 
-# ── COM initialisation ────────────────────────────────────────────────────────
+# COM initialisation
 
 _COM_INITIALISED = False
 
@@ -154,7 +154,7 @@ def _ensure_com():
     _COM_INITIALISED = True
 
 
-# ── Structs ───────────────────────────────────────────────────────────────────
+# Structs
 
 class SHFILEINFO(ctypes.Structure):
     _fields_ = [
@@ -190,7 +190,7 @@ _IID_IImageList = _GUID(
 )
 
 
-# ── Filesystem metadata helper ────────────────────────────────────────────────
+# Filesystem metadata helper
 
 from utils import human_size as _human_size
 
@@ -252,7 +252,7 @@ def _stat_info(input_path):
         "date_accessed": date_accessed,
     }
 
-# ── Batch / folder / priority-queue helpers ───────────────────────────────────
+# Batch / folder / priority-queue helpers
 
 _COST = {
     "icon":   0,
@@ -275,7 +275,7 @@ def _build_info_dict(input_path, img, is_pil):
     return info
 
 
-# ── Public API ────────────────────────────────────────────────────────────────
+# Public API
 
 def get_icon(input_path, preview=True, debug=False):
     """
@@ -413,7 +413,7 @@ def extract_icon(input_path, output_path=None, preview=True, debug=False,
     return None
 
 
-# ── Dispatcher ────────────────────────────────────────────────────────────────
+# Dispatcher
 
 def _resolve(input_path, preview):
     """Returns (hicon_or_pil_image, size, is_pil_image)."""
@@ -466,7 +466,7 @@ def _resolve(input_path, preview):
     return hicon, size, False
 
 
-# ── Preview / thumbnail ───────────────────────────────────────────────────────
+# Preview / thumbnail
 
 def _get_preview(path, ext):
     if ext == ".pdf":
@@ -862,7 +862,7 @@ def _fit_256(img):
     return canvas
 
 
-# ── Special / shell folder icons ──────────────────────────────────────────────
+# Special / shell folder icons
 
 def _special_folder_icon(path):
     _dbg("  special_folder_icon: {}".format(path))
@@ -885,7 +885,7 @@ def _plain_folder_icon():
     return 0, 32
 
 
-# ── Shortcut resolution ───────────────────────────────────────────────────────
+# Shortcut resolution
 
 def _lnk_icon(lnk_path):
     _dbg("  resolving .lnk: {}".format(lnk_path))
@@ -1026,7 +1026,7 @@ def _parse_lnk_binary(lnk_path):
     return target_path, icon_path, icon_idx
 
 
-# ── Core icon extraction ──────────────────────────────────────────────────────
+# Core icon extraction
 
 def _best_file_icon(path, index=0):
     _dbg("  _best_file_icon: {} idx={}".format(path, index))
@@ -1205,7 +1205,7 @@ def _registry_icon(ext):
     return (h, s) if h else (0, 0)
 
 
-# ── Shell image list ──────────────────────────────────────────────────────────
+# Shell image list
 
 def _get_comctl32():
     global _comctl32
@@ -1262,7 +1262,7 @@ def _imagelist_icon(path, file_attributes, use_attrs=False):
     return 0, 0
 
 
-# ── PrivateExtractIcons ───────────────────────────────────────────────────────
+# PrivateExtractIcons
 
 def _private_extract(path, index):
     for size in [256, 128, 64, 48, 32]:
@@ -1290,7 +1290,7 @@ def _icon_size(hicon):
     return 32
 
 
-# ── SHGetFileInfo direct icon (32px fallback) ─────────────────────────────────
+# SHGetFileInfo direct icon (32px fallback)
 
 def _shgetfileinfo_icon(path, file_attributes, use_attrs=False):
     shfi  = SHFILEINFO()
@@ -1303,7 +1303,7 @@ def _shgetfileinfo_icon(path, file_attributes, use_attrs=False):
     return shfi.hIcon if (ret and shfi.hIcon) else 0
 
 
-# ── HICON -> PIL Image ────────────────────────────────────────────────────────
+# HICON -> PIL Image
 
 def _hicon_to_pil(hicon, size):
     # Set argtypes so ctypes treats the HICON as a 64-bit void pointer on
@@ -1612,7 +1612,7 @@ class IconQueue:
         return infos if return_info else saved
 
 
-# ── __main__ demo ─────────────────────────────────────────────────────────────
+# __main__ demo
 #
 # if __name__ == "__main__":
 #     tests = [
@@ -1642,7 +1642,7 @@ class IconQueue:
 #         (r"C:\Users\nicho\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\everything-startup.lnk", "branding.png"),
 #     ]
 #
-#     # ── Original save-to-disk mode (unchanged) ────────────────────────────────
+# # Original save-to-disk mode (unchanged)
 #     for path, out in tests:
 #         try:
 #             extract_icon(path, out, debug=False)
@@ -1652,7 +1652,7 @@ class IconQueue:
 #
 #     print()
 #
-#     # ── Dict-return mode via get_icon_info() ──────────────────────────────────
+# # Dict-return mode via get_icon_info()
 #     path = r"C:\Users\nicho\Downloads\Library\weapons\firearms\manuals\thompson_tommy_full_auto_1927.pdf"
 #     info = get_icon_info(path, preview=True)
 #     print("get_icon_info():")
@@ -1664,7 +1664,7 @@ class IconQueue:
 #
 #     print()
 #
-#     # ── Dict-return mode via extract_icon(output_path=None) ───────────────────
+# # Dict-return mode via extract_icon(output_path=None)
 #     info2 = extract_icon(path, preview=True)
 #     assert info2["full_path"] == path
 #     print("extract_icon(no output_path) -> dict, keys:", list(info2))
@@ -1678,7 +1678,7 @@ class IconQueue:
 #
 #     print()
 #
-#     # ── IconQueue.process(return_info=True) ───────────────────────────────────
+# # IconQueue.process(return_info=True)
 #     q = IconQueue()
 #     q.add_many([p for p, _ in tests[:4]])
 #     print("Queue process(return_info=True):")
@@ -1690,7 +1690,7 @@ class IconQueue:
 #
 #     print()
 #
-#     # ── IconQueue.process_to_dir(return_info=True) ────────────────────────────
+# # IconQueue.process_to_dir(return_info=True)
 #     q2 = IconQueue()
 #     q2.add_many([p for p, _ in tests[:4]])
 #     infos = q2.process_to_dir("icons_out", return_info=True)
@@ -1700,7 +1700,7 @@ class IconQueue:
 #
 #     print()
 #
-#     # ── get_folder_icons(return_info=True) ────────────────────────────────────
+# # get_folder_icons(return_info=True)
 #     folder = r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\CLITools\Everything-1.4.1.1030.x64"
 #     folder_infos = get_folder_icons(folder, preview=False, return_info=True)
 #     print("get_folder_icons(return_info=True), count:", len(folder_infos))

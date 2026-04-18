@@ -19,6 +19,7 @@ All actors are placed at X=0, spread along the Y axis in bands:
   Y 9500          plot sphere_lines (custom point_mesh option)
   Y 10000         plot ripple sphere_lines
   Y 10500         plot tan(x) 2D curve
+  Y 11000         transform gizmo (test_gizmo only)
   Y 12000+        nd_table grid (2D 10x10 through 7D)
 
 Usage (PIE Python console):
@@ -29,19 +30,32 @@ Usage (PIE Python console):
     from test_spawn import test_text3d_click
     test_text3d_click()
 
+    # Interactive transform gizmo (needs uobject + input_manager):
+    from test_spawn import test_gizmo
+    target, handles, tick = test_gizmo(uobject, input_manager)
+
 Prerequisites summary printed to log at start of test_spawn_all().
 Log file: Desktop/test_spawn_log.txt
 """
 
 import os
+import sys
+import time
+import traceback
 import unreal_engine as ue
 from unreal_engine import FVector, FRotator
 from unreal_engine.enums import ECollisionChannel
 from unreal_engine_tools import get_world
 
-# ---------------------------------------------------------------------------
 # Logging — mirrors gizmo.py crash log pattern
-# ---------------------------------------------------------------------------
+# The log is designed to be copy-pasted back to Claude for diagnosis.
+# Each test emits:
+#   - section banner + start timestamp
+#   - inputs used (paths, locations, parameters)
+#   - spawned actor introspection (class, name, location, mobility, mesh, material, components)
+#   - full Python traceback on any failure
+#   - PASS/FAIL line + per-test elapsed time
+# Final summary: env info, per-test table, total pass/fail counts.
 
 DESKTOP   = os.path.join(os.path.expanduser('~'), 'Desktop')
 _LOG_PATH = os.path.join(DESKTOP, 'test_spawn_log.txt')
@@ -53,22 +67,166 @@ def _log(msg):
     _log_file.write(msg + '\n')
 
 
-def _result(name, actor_or_value, extra=''):
+def _section(title):
+    """Emit a clear visual section delimiter in the log."""
+    _log('')
+    _log('-' * 70)
+    _log(f'  {title}')
+    _log('-' * 70)
+
+
+def _log_exception(label, exc):
+    """Log a full traceback, not just the exception message.
+    Without this, root causes (wrong arg type, missing asset path, UE crash)
+    are invisible and Claude can't diagnose failures from the log."""
+    _log(f'  {label} EXCEPTION: {type(exc).__name__}: {exc}')
+    try:
+        tb = traceback.format_exc()
+        for line in tb.rstrip().splitlines():
+            _log(f'    {line}')
+    except Exception:
+        pass
+
+
+def _describe_actor(actor):
+    """Return a one-line summary of a spawned actor's observable state.
+    Used to tell apart 'returned None' / 'returned wrong class' /
+    'spawned but at wrong location' / 'spawned but mesh never assigned'."""
+    if actor is None:
+        return 'None'
+    parts = []
+    try:
+        parts.append(f'cls={type(actor).__name__}')
+    except Exception:
+        pass
+    try:
+        parts.append(f'name={actor.get_name()}')
+    except Exception:
+        pass
+    try:
+        parts.append(f'class_path={actor.get_class().get_name()}')
+    except Exception:
+        pass
+    try:
+        loc = actor.get_actor_location()
+        parts.append(f'loc=({loc.x:.0f},{loc.y:.0f},{loc.z:.0f})')
+    except Exception:
+        pass
+    try:
+        s = actor.get_actor_scale()
+        parts.append(f'scale=({s.x:.3f},{s.y:.3f},{s.z:.3f})')
+    except Exception:
+        pass
+    try:
+        root = actor.RootComponent
+        if root is not None:
+            try:
+                mob = int(root.Mobility)
+                parts.append(f'mobility={["Static","Stationary","Movable"][mob]}')
+            except Exception:
+                pass
+    except Exception:
+        pass
+    # StaticMeshActor-specific introspection — huge tell for spawn issues
+    try:
+        smc = getattr(actor, 'StaticMeshComponent', None)
+        if smc is not None:
+            try:
+                mesh = smc.StaticMesh
+                parts.append(f'mesh={mesh.get_name() if mesh else "None"}')
+            except Exception:
+                pass
+            try:
+                mats = smc.GetMaterials() if hasattr(smc, 'GetMaterials') else None
+                if mats is not None:
+                    parts.append(f'mats={len(mats)}')
+            except Exception:
+                pass
+    except Exception:
+        pass
+    try:
+        comps = actor.get_actor_components()
+        parts.append(f'comps={len(comps)}')
+    except Exception:
+        pass
+    try:
+        parts.append(f'pending_kill={bool(actor.is_pending_kill())}')
+    except Exception:
+        pass
+    return ' '.join(parts)
+
+
+def _result(name, actor_or_value, extra='', expected=None, inputs=None):
+    """Log a test outcome with rich context:
+      - inputs   : what params/paths were passed in
+      - expected : what a passing result should look like
+      - actor    : full introspection of the returned actor (class/loc/mesh/etc.)
+      - status   : PASS/FAIL line
+    """
     ok     = actor_or_value is not None
     status = 'PASS' if ok else 'FAIL'
+    if inputs is not None:
+        _log(f'  inputs:   {inputs}')
+    if expected is not None:
+        _log(f'  expected: {expected}')
+    if actor_or_value is not None:
+        try:
+            _log(f'  actor:    {_describe_actor(actor_or_value)}')
+        except Exception as e:
+            _log(f'  actor:    <introspection failed: {e}>')
+    else:
+        _log('  actor:    None  (spawner returned nothing)')
     suffix = f' — {extra}' if extra else ''
     _log(f'[{status}] {name}{suffix}')
     return {name: {'ok': ok, 'actor': actor_or_value}}
 
 
 def _skip(name, reason=''):
+    _log(f'  skip_reason: {reason}' if reason else '  skip_reason: (unspecified)')
     _log(f'[SKIP] {name}{(" — " + reason) if reason else ""}')
     return {name: {'ok': True, 'actor': None}}   # skips are non-failing
 
 
-# ---------------------------------------------------------------------------
+def _log_env():
+    """Dump environment info so version/path issues are obvious in the log."""
+    _log('=== Environment ===')
+    _log(f'  Time:       {time.strftime("%Y-%m-%d %H:%M:%S")}')
+    try:
+        _log(f'  Python:     {sys.version.split()[0]}  ({sys.executable})')
+    except Exception:
+        pass
+    try:
+        _log(f'  Platform:   {sys.platform}')
+    except Exception:
+        pass
+    try:
+        _log(f'  CWD:        {os.getcwd()}')
+    except Exception:
+        pass
+    try:
+        _log(f'  Scripts:    {os.path.dirname(__file__)}')
+    except Exception:
+        pass
+    try:
+        eng_ver = ue.get_engine_version() if hasattr(ue, 'get_engine_version') else None
+        _log(f'  UE version: {eng_ver}')
+    except Exception as e:
+        _log(f'  UE version: <err: {e}>')
+    try:
+        w = get_world()
+        _log(f'  World:      {w.get_name() if w else "None"}')
+        if w is not None:
+            try:
+                actors = w.all_actors()
+                _log(f'  Actors in world at start: {len(actors)}')
+            except Exception:
+                pass
+    except Exception as e:
+        _log(f'  World:      <err: {e}>')
+    _log(f'  Log path:   {_LOG_PATH}')
+
+
 # Prerequisites check — printed at top of test_spawn_all()
-# ---------------------------------------------------------------------------
 
 def _check_prerequisites():
     """
@@ -174,9 +332,7 @@ def _check_ffmpeg():
         return False
 
 
-# ---------------------------------------------------------------------------
 # Individual test functions
-# ---------------------------------------------------------------------------
 
 # Each function returns a dict { test_name: {'ok': bool, 'actor': ...} }
 # Actors are kept in the returned dict so Python holds references (prevent GC).
@@ -234,7 +390,7 @@ def test_primitives():
         try:
             actor = spawn_primitive(shape, location=loc)
         except Exception as e:
-            _log(f'  primitive_{shape} exception: {e}')
+            _log_exception(f'primitive_{shape}', e)
         results.update(_result(f'primitive_{shape}', actor))
     return results
 
@@ -253,7 +409,7 @@ def test_image():
     from ue_spawn import spawn_image
     results = {}
 
-    # ── 1. find an image path ───────────────────────────────────────────────
+    # 1. find an image path
     img_path = None
 
     # (a) User-specified Feedback Hub screenshot
@@ -301,7 +457,7 @@ def test_image():
             results.update(_skip('image_valid', f'PIL unavailable: {e}'))
             img_path = None
 
-    # ── 2. log expected cube dimensions ─────────────────────────────────────
+    # 2. log expected cube dimensions
     if img_path and os.path.exists(img_path):
         try:
             from PIL import Image as PILImage
@@ -327,10 +483,10 @@ def test_image():
                 except Exception as e:
                     _log(f'  image_valid: could not read actor scale: {e}')
         except Exception as e:
-            _log(f'  image_valid exception: {e}')
+            _log_exception('image_valid', e)
         results.update(_result('image_valid', actor))
 
-    # ── 3. invalid path — None is the correct result ───────────────────────
+    # 3. invalid path — None is the correct result
     bad = None
     try:
         bad = spawn_image('C:/nonexistent_path/bad.png',
@@ -350,7 +506,7 @@ def test_video():
     from ue_spawn import spawn_video, spawn_video_cube
     results = {}
 
-    # ---- video cube: plays loading_screen.mp4 via MediaPlayer ----
+    # video cube: plays loading_screen.mp4 via MediaPlayer
     loading_mp4 = (r'C:\Users\nicho\Documents\Unreal Projects'
                    r'\Starcel9\Content\Movies\loading_screen.mp4')
     if os.path.exists(loading_mp4):
@@ -361,13 +517,13 @@ def test_video():
                 location=FVector(0, _Y_VIDEO + 400, 100),
             )
         except Exception as e:
-            _log(f'  video_cube exception: {e}')
+            _log_exception('video_cube', e)
         results.update(_result('video_cube', actor,
                                extra='cube playing loading_screen.mp4'))
     else:
         results.update(_skip('video_cube', f'not found: {loading_mp4}'))
 
-    # ---- legacy spawn_video on any Desktop MP4 ----
+    # legacy spawn_video on any Desktop MP4
     mp4_path = None
     try:
         for f in os.listdir(DESKTOP):
@@ -383,7 +539,7 @@ def test_video():
             ret   = spawn_video(mp4_path, location=FVector(0, _Y_VIDEO, 100))
             actor = ret[0] if isinstance(ret, tuple) else ret
         except Exception as e:
-            _log(f'  video_valid exception: {e}')
+            _log_exception('video_valid', e)
         results.update(_result('video_valid', actor,
                                extra=os.path.basename(mp4_path)))
     else:
@@ -419,7 +575,7 @@ def test_sound():
                             location=FVector(0, _Y_SOUND + 200, 100),
                             as_actor=True)
     except Exception as e:
-        _log(f'  sound_as_actor exception: {e}')
+        _log_exception('sound_as_actor', e)
     results.update(_result('sound_as_actor', actor))
     return results
 
@@ -434,7 +590,7 @@ def test_cameras():
         try:
             actor = spawn_camera(location=loc, preset=preset_name)
         except Exception as e:
-            _log(f'  camera_{preset_name} exception: {e}')
+            _log_exception(f'camera_{preset_name}', e)
         results.update(_result(f'camera_{preset_name}', actor))
     return results
 
@@ -450,7 +606,7 @@ def test_earth():
             actor = spawn_earth(location=loc, preset=preset,
                                 scale=FVector(0.00001, 0.00001, 0.00001))
         except Exception as e:
-            _log(f'  earth_{preset} exception: {e}')
+            _log_exception(f'earth_{preset}', e)
         results.update(_result(f'earth_{preset}', actor))
     return results
 
@@ -462,7 +618,7 @@ def test_system_monitor():
     try:
         actor = spawn_system_monitor(location=FVector(0, _Y_SYSMON, 100))
     except Exception as e:
-        _log(f'  system_monitor exception: {e}')
+        _log_exception('system_monitor', e)
     return _result('system_monitor', actor)
 
 
@@ -473,7 +629,7 @@ def test_table():
     from ue_spawn import spawn_table
     results = {}
 
-    # ---- Basic table (unchanged) ----
+    # Basic table (unchanged)
     renderer = None
     try:
         from nd_table.ndtable import Table
@@ -483,11 +639,11 @@ def test_table():
         t[(2, 0)] = 'readme';  t[(2, 1)] = '1 KB';    t[(2, 2)] = '2024-01'; t[(2, 3)] = '.md'
         renderer = spawn_table(t, location=FVector(0, _Y_TABLE, 500))
     except Exception as e:
-        _log(f'  table exception: {e}')
+        _log_exception('table', e)
     n_cells = len(renderer.cell_actors) if renderer and hasattr(renderer, 'cell_actors') else 0
     results.update(_result('table', renderer, extra=f'{n_cells} cells'))
 
-    # ---- Advanced formula spreadsheet ----
+    # Advanced formula spreadsheet
     #  Uses spreadsheet labels A–C and extended AA, AB.
     #  Row 0: headers
     #  Rows 1-5: numeric data + formulas referencing other cells
@@ -561,7 +717,7 @@ def test_table():
         if formula_ok:
             _log(f'  adv_table: formulas evaluated successfully')
     except Exception as e:
-        _log(f'  adv_table exception: {e}')
+        _log_exception('adv_table', e)
 
     n_adv = len(adv_renderer.cell_actors) if adv_renderer and hasattr(adv_renderer, 'cell_actors') else 0
     results.update(_result('table_formulas', adv_renderer,
@@ -580,7 +736,7 @@ def test_desktop_icons():
             max_icons=5,
         )
     except Exception as e:
-        _log(f'  desktop_icons exception: {e}')
+        _log_exception('desktop_icons', e)
 
     first = actors[0] if actors else None
     return _result('desktop_icons', first, extra=f'{len(actors)} spawned')
@@ -600,13 +756,11 @@ def test_icon():
             except Exception as phys_e:
                 _log(f'  icon physics: {phys_e}')
     except Exception as e:
-        _log(f'  icon exception: {e}')
+        _log_exception('icon_from_pil', e)
     return _result('icon_from_pil', actor)
 
 
-# ---------------------------------------------------------------------------
 # nD table grid test  (Y 8000 area, offset in X/Y from base)
-# ---------------------------------------------------------------------------
 
 _Y_ND_TABLE = 12000
 
@@ -619,16 +773,14 @@ def test_nd_table():
         renderer = test_nd_table_grid(
             base_location=FVector(0, _Y_ND_TABLE, 700))
     except Exception as e:
-        _log(f'  nd_table_grid exception: {e}')
+        _log_exception('nd_table_grid', e)
     n_cells = len(renderer.cell_actors) if renderer and hasattr(renderer, 'cell_actors') else 0
     n_lines = len(renderer.gridline_actors) if renderer and hasattr(renderer, 'gridline_actors') else 0
     return _result('nd_table_grid', renderer,
                    extra=f'{n_cells} cells, {n_lines} gridlines')
 
 
-# ---------------------------------------------------------------------------
 # Plot test  (Y 9000 – 9500)
-# ---------------------------------------------------------------------------
 
 _Y_PLOT = 9000
 
@@ -637,19 +789,94 @@ _Y_PYACTOR_TEST = 7500
 
 
 def test_pyactor_assign():
-    """Spawn a BP_PyActor and assign pyactor_test.PyActorTest to verify
-    dynamic module/class assignment works."""
+    """Spawn a BP_PyActor with pyactor_test.PyActorTest and verify its
+    begin_play actually ran (logs 'Pyactor: hello world').
+    PASS = actor spawned AND begin_play_fired flag is set."""
+    import pyactor_test
+    pyactor_test.begin_play_fired = False   # reset between runs
+
     from ue_spawn import _spawn_pyactor
     actor = None
     try:
         actor = _spawn_pyactor(
             'pyactor_test', 'PyActorTest',
             location=FVector(0, _Y_PYACTOR_TEST, 100))
-        _log(f'  pyactor_assign: spawned at Y={_Y_PYACTOR_TEST}')
+        _log(f'  pyactor_hello_world: spawned at Y={_Y_PYACTOR_TEST}')
     except Exception as e:
-        _log(f'  pyactor_assign exception: {e}')
-    return _result('pyactor_assign', actor,
-                   extra='BP_PyActor with pyactor_test.PyActorTest')
+        _log_exception('pyactor_hello_world', e)
+
+    fired = pyactor_test.begin_play_fired
+    ok    = actor is not None and fired
+    _log(f'  pyactor_hello_world: spawned={actor is not None}, '
+         f'begin_play_fired={fired}')
+    return _result('pyactor_hello_world',
+                   actor if ok else None,
+                   extra='expects "Pyactor: hello world" from begin_play')
+
+
+_Y_GIZMO = 11000
+
+
+def test_gizmo(uobject=None, input_manager=None, location=None):
+    """
+    Spawn the interactive transform gizmo (target cylinder + move arrows,
+    rotate rings, scale handles, plane squares) and wire up drag interaction.
+    Returns (target, handles, tick_fn).
+
+    uobject       — the PyActor UObject (self.uobject from Main); used for
+                    get_hit_result_under_cursor traces
+    input_manager — self.input from Main; used for bind_press/bind_release
+                    on LeftMouseButton
+    location      — FVector spawn position for the target cylinder.
+                    Defaults to FVector(0, _Y_GIZMO, 100).
+
+    Call from Main.begin_play:
+        from test_spawn import test_gizmo
+        self._gizmo_target, self._gizmo_handles, self._gizmo_tick = \\
+            test_gizmo(uobject=self.uobject, input_manager=self.input)
+
+    Then in tick:
+        if hasattr(self, '_gizmo_tick') and self._gizmo_tick:
+            self._gizmo_tick(delta_time)
+
+    Omitting uobject/input_manager spawns the gizmo statically (no drag).
+    """
+    from gizmo import test_gizmos, setup_gizmo_interaction
+
+    if location is None:
+        location = FVector(0, _Y_GIZMO, 100)
+
+    _log('--- test_gizmo ---')
+    _log(f'Spawning gizmo target at {location}')
+
+    target      = None
+    gizmo_root  = None
+    handles     = None
+    tick_fn     = None
+
+    try:
+        target, gizmo_root, handles = test_gizmos(location=location)
+        _log(f'test_gizmo: spawned target + {len(handles)} handles')
+    except Exception as e:
+        _log(f'test_gizmo: spawn failed: {e}')
+        _result('gizmo', None, extra=str(e))
+        return None, None, None
+
+    if uobject is not None and input_manager is not None:
+        try:
+            tick_fn = setup_gizmo_interaction(
+                uobject, input_manager, target, gizmo_root, handles)
+            _log('test_gizmo: interaction wired up (drag LMB on any handle)')
+        except Exception as e:
+            _log(f'test_gizmo: interaction setup failed: {e}')
+    else:
+        _log('test_gizmo: WARNING — no uobject/input_manager; '
+             'gizmo will be static (no drag). Pass self.uobject and '
+             'self.input from Main.begin_play to enable interaction.')
+
+    _result('gizmo', target,
+            extra=f'{len(handles) if handles else 0} handles')
+    return target, handles, tick_fn
 
 
 def test_plot():
@@ -683,7 +910,7 @@ def test_plot():
         actor = None
         name  = v['name']
 
-        # ---- try Blueprint path ----
+        # try Blueprint path
         try:
             from ue_spawn import spawn_plot
             actor = spawn_plot(
@@ -697,7 +924,7 @@ def test_plot():
         except Exception as e:
             _log(f'  {name}: spawn_plot Blueprint path failed ({e}), trying direct plotter...')
 
-        # ---- fallback: create_plotter directly (debug=True shows mesh errors) ----
+        # fallback: create_plotter directly (debug=True shows mesh errors)
         if actor is None:
             try:
                 from ue_math_plotter import create_plotter
@@ -734,7 +961,7 @@ def test_plot():
 
         results.update(_result(name, actor))
 
-    # ---- 2D curve: tan(x) with asymptote breaks ----
+    # 2D curve: tan(x) with asymptote breaks
     plot_2d = None
     try:
         from ue_math_plotter import create_plotter
@@ -768,9 +995,7 @@ def test_plot():
     return results
 
 
-# ---------------------------------------------------------------------------
 # Aggregator
-# ---------------------------------------------------------------------------
 
 def test_spawn_all():
     """
@@ -787,15 +1012,26 @@ def test_spawn_all():
         from test_spawn import test_spawn_all
         results = test_spawn_all()
 
-    Open Desktop/test_spawn_log.txt for the PASS/FAIL report.
+    Open Desktop/test_spawn_log.txt for the PASS/FAIL report and copy-paste
+    the whole file back to Claude — it contains:
+      * environment (Python/UE versions, CWD, world name)
+      * prerequisite asset check
+      * per-test inputs, spawned-actor introspection, full tracebacks
+      * per-test elapsed time
+      * final summary table
     """
-    _log('=' * 60)
-    _log('test_spawn_all')
-    _log('=' * 60)
+    run_t0 = time.monotonic()
 
+    _log('=' * 70)
+    _log('test_spawn_all')
+    _log('=' * 70)
+
+    _log_env()
     _check_prerequisites()
 
-    results = {}
+    results  = {}
+    timings  = {}   # fn_name -> seconds
+    errors   = {}   # fn_name -> top-level exception if the whole fn blew up
     for fn in [
         test_primitives,
         test_image,
@@ -811,25 +1047,61 @@ def test_spawn_all():
         test_nd_table,
         test_plot,
     ]:
-        _log(f'--- {fn.__name__} ---')
+        _section(fn.__name__)
+        t0 = time.monotonic()
         try:
             results.update(fn())
         except Exception as e:
-            _log(f'  [ERROR] {fn.__name__} raised unhandled exception: {e}')
+            errors[fn.__name__] = e
+            _log_exception(fn.__name__, e)
+        timings[fn.__name__] = time.monotonic() - t0
+        _log(f'  elapsed: {timings[fn.__name__]:.2f}s')
 
     passed = sum(1 for v in results.values() if v['ok'])
     failed = len(results) - passed
-    _log('=' * 60)
+
+    _log('')
+    _log('=' * 70)
     _log(f'RESULTS: {passed} PASS / {failed} FAIL  (total {len(results)})')
+    _log(f'Total elapsed: {time.monotonic() - run_t0:.2f}s')
     _log(f'Log:     {_LOG_PATH}')
-    _log('=' * 60)
+    _log('=' * 70)
+
+    # Per-test table — fast scan of what passed/failed and class returned
+    _log('')
+    _log('Per-test summary:')
+    _log(f'  {"status":<6} {"test":<40} {"class":<30}')
+    _log(f'  {"-"*6} {"-"*40} {"-"*30}')
+    for name in sorted(results.keys()):
+        r = results[name]
+        status = 'PASS' if r['ok'] else 'FAIL'
+        cls_str = ''
+        if r.get('actor') is not None:
+            try:
+                cls_str = type(r['actor']).__name__
+            except Exception:
+                cls_str = '<?>'
+        else:
+            cls_str = '—'
+        _log(f'  {status:<6} {name:<40} {cls_str:<30}')
+
+    # Fail-only list — makes it easy to paste only failing tests back
+    failing = [n for n, r in results.items() if not r['ok']]
+    if failing:
+        _log('')
+        _log(f'FAILING TESTS ({len(failing)}): ' + ', '.join(failing))
+
+    # Per-fn elapsed times (spot hangs/slow tests)
+    _log('')
+    _log('Per-fn timings:')
+    for name, secs in timings.items():
+        marker = '  (fn-level error)' if name in errors else ''
+        _log(f'  {secs:6.2f}s  {name}{marker}')
 
     return results
 
 
-# ---------------------------------------------------------------------------
 # Text3D click investigation (manual — call, then click the spawned text)
-# ---------------------------------------------------------------------------
 
 _Y_TEXT3D_CLICK = 8000
 
@@ -866,7 +1138,7 @@ def _resolve_char_from_meshes(actor, hit):
     except Exception:
         pass
 
-    # --- Get glyph kerning components (one per visible character) ---
+    # Get glyph kerning components (one per visible character)
     kernings = None
     try:
         kernings = t3d.CharacterKernings
@@ -887,7 +1159,7 @@ def _resolve_char_from_meshes(actor, hit):
     if n_glyphs == 0:
         return None, None
 
-    # --- Transform hit point into actor local space ---
+    # Transform hit point into actor local space
     local_pt = _world_to_local(actor, hit.impact_point)
     if local_pt is None:
         return None, None
@@ -1036,17 +1308,17 @@ def _log_click_on_actor_from_hit(actor, hit, text_content=None):
         except Exception:
             text_content = ''
 
-    # ---- Strategy 1: CharacterMeshes (proportional-accurate) ----
+    # Strategy 1: CharacterMeshes (proportional-accurate)
     mesh_idx, mesh_letter = _resolve_char_from_meshes(actor, hit)
 
-    # ---- Strategy 2: fixed-width fallback ----
+    # Strategy 2: fixed-width fallback
     local_pt = _world_to_local(actor, world_pt)
     fw_idx, fw_letter, fw_col, fw_row = (-1, '?', -1, -1)
     if local_pt is not None:
         fw_idx, fw_letter, fw_col, fw_row = _resolve_char_fixed_width(
             local_pt, text_content)
 
-    # ---- Pick the best result ----
+    # Pick the best result
     if mesh_idx is not None and mesh_idx >= 0:
         method = 'CharacterMeshes'
         letter = mesh_letter
@@ -1097,6 +1369,11 @@ def _spawn_text_cursor(world):
 
         # Thin vertical bar: width=2.5 UU, height=50 UU, depth=1 UU
         actor.set_actor_scale(FVector(0.01, 0.025, 0.5))
+        # Disable collision so click-traces pass through the cursor itself
+        try:
+            actor.SetActorEnableCollision(False)
+        except Exception:
+            pass
         actor.SetActorHiddenInGame(True)
         return actor, mid
     except Exception as e:
@@ -1136,7 +1413,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
     _log(f'Spawning at {location}  (table at Y+400)')
     _log('BP_Cell requirement: Text3DComponent -> Generate Hit Events = ON')
 
-    # ---- Single-string actor: "ABCDEFGHIJ" ----
+    # Single-string actor: "ABCDEFGHIJ"
     single_actor = None
     try:
         single_actor = spawn_blueprint(
@@ -1167,7 +1444,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
     except Exception as e:
         _log(f'text3d_click: single actor spawn failed: {e}')
 
-    # ---- 3x3 test table ----
+    # 3x3 test table
     table_renderer = None
     try:
         from nd_table.ndtable import Table
@@ -1183,7 +1460,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
     except Exception as e:
         _log(f'text3d_click: table spawn failed: {e}')
 
-    # ---- Build watched dict: actor → text content ----
+    # Build watched dict: actor → text content
     watched = {}   # actor → str (text shown by that actor's Text3DComponent)
     if single_actor:
         watched[single_actor] = 'ABCDEFGHIJ'
@@ -1198,7 +1475,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
                 cell_text = f'cell{idx}'
             watched[cell_actor] = cell_text
 
-    # ---- Configure player controller for click traces ----
+    # Configure player controller for click traces
     # Use ECC_Visibility (same as gizmo) — most objects respond to it by default.
     # ECC_WorldDynamic requires explicit collision response on the BP_Cell.
     _pc = None
@@ -1215,17 +1492,16 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
         try:
             _pc.bEnableClickEvents     = True
             _pc.bEnableMouseOverEvents = True
-            _pc.bShowMouseCursor       = True
             _pc.CurrentClickTraceChannel = ECollisionChannel.ECC_Visibility
             _log('text3d_click: player controller configured '
                  '(ClickEvents=ON, MouseOverEvents=ON, '
-                 'ShowMouseCursor=ON, TraceChannel=ECC_Visibility)')
+                 'TraceChannel=ECC_Visibility)')
         except Exception as e:
             _log(f'text3d_click: WARNING — could not configure player controller: {e}')
     else:
         _log('text3d_click: WARNING — no player controller found')
 
-    # ---- Mouse state via input_manager.bind_press (same as gizmo) ----
+    # Mouse state via input_manager.bind_press (same as gizmo)
     # FKey doesn't exist in this UEP build — use the HotkeyManager binding.
     _state = {'down': False}
 
@@ -1242,23 +1518,179 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
     # with that method — same as gizmo uses self.uobject)
     _trace_obj = uobject
 
-    # ---- Insertion cursor ----
+    # Insertion cursor
     _cursor_actor, _cursor_mid = _spawn_text_cursor(get_world())
     _cursor_state = {'timer': 0.0, 'visible': False, 'active': False}
 
-    def _position_cursor(hit_actor, hit):
-        """Snap cursor to the discrete position AFTER the clicked character.
+    # Focus / typing state
+    # actor: the Text3D actor currently being edited (None when unfocused)
+    # string_idx: insertion index within the actor's full text string
+    _focus_state = {'actor': None, 'string_idx': 0}
 
-        Dynamically reads the clicked glyph's actual height from
-        CharacterMeshes bounds, uses it for both the Z shift-down AND
-        the cursor's own scale, so the cursor matches the font size.
-        """
+    def _string_idx_to_glyph(text, sidx):
+        """Count visible (non-space, non-newline) chars in text[:sidx]."""
+        sidx = max(0, min(sidx, len(text)))
+        return sum(1 for c in text[:sidx] if c not in ' \n')
+
+    def _glyph_to_string_idx(text, tg):
+        """Return the string index of the tg-th visible char (or len(text))."""
+        count = 0
+        for i, c in enumerate(text):
+            if count == tg:
+                return i
+            if c not in ' \n':
+                count += 1
+        return len(text)
+
+    def _hide_cursor():
+        if _cursor_actor is not None:
+            try:
+                _cursor_actor.SetActorHiddenInGame(True)
+            except Exception:
+                pass
+        _cursor_state['active']  = False
+        _cursor_state['visible'] = False
+
+    def _unfocus():
+        _focus_state['actor']      = None
+        _focus_state['string_idx'] = 0
+        _hide_cursor()
+
+    def _get_cursor_placement(actor, target_glyph):
+        """Compute (world_pt, scale_vec, rotation) for cursor at the left
+        edge of the glyph at target_glyph. target_glyph may equal the glyph
+        count (meaning: just past the last glyph). Returns None on failure."""
+        if actor is None:
+            return None
+        t3d = None
+        try:
+            t3d = actor.get_actor_component('Text3DComponent')
+        except Exception:
+            return None
+        if t3d is None:
+            return None
+
+        kernings = None
+        try:
+            kernings = t3d.CharacterKernings
+        except Exception:
+            pass
+        meshes = None
+        try:
+            meshes = t3d.CharacterMeshes
+        except Exception:
+            pass
+
+        if not kernings or len(kernings) == 0:
+            return None
+
+        glyph_h = 50.0
+        glyph_w = 50.0
+
+        # Read glyph dimensions from the reference mesh (target, clamped).
+        ref_idx = target_glyph
+        if ref_idx >= len(kernings):
+            ref_idx = len(kernings) - 1
+        if ref_idx < 0:
+            ref_idx = 0
+        if (meshes is not None
+                and 0 <= ref_idx < len(meshes)
+                and meshes[ref_idx] is not None):
+            try:
+                _, e = meshes[ref_idx].GetComponentBounds()
+                glyph_h = e.z * 2.0
+                glyph_w = e.y * 2.0
+            except Exception:
+                pass
+
+        # target_rel = left edge of target glyph, or one width past the last.
+        target_rel = None
+        if 0 <= target_glyph < len(kernings) and kernings[target_glyph] is not None:
+            try:
+                target_rel = kernings[target_glyph].get_relative_location()
+            except Exception:
+                pass
+        elif len(kernings) > 0 and kernings[-1] is not None:
+            try:
+                r = kernings[-1].get_relative_location()
+                target_rel = FVector(r.x, r.y + glyph_w, r.z)
+            except Exception:
+                pass
+        if target_rel is None:
+            return None
+
+        # Full vertical extent for cursor height/center.
+        full_top = None
+        full_bot = None
+        if meshes is not None:
+            for m in meshes:
+                if m is None:
+                    continue
+                try:
+                    o, e = m.GetComponentBounds()
+                    t = o.z + e.z
+                    b = o.z - e.z
+                    if full_top is None or t > full_top:
+                        full_top = t
+                    if full_bot is None or b < full_bot:
+                        full_bot = b
+                except Exception:
+                    continue
+        try:
+            o, e = t3d.GetComponentBounds()
+            t = o.z + e.z
+            b = o.z - e.z
+            if full_top is None or t > full_top:
+                full_top = t
+            if full_bot is None or b < full_bot:
+                full_bot = b
+        except Exception:
+            pass
+
+        actor_loc = actor.get_actor_location()
+        actor_rot = actor.get_actor_rotation()
+
+        if full_top is not None and full_bot is not None:
+            tight = full_top - full_bot
+            full_top += tight * 0.25  # headroom for diacritics/^
+            cursor_h = full_top - full_bot
+            cursor_z = (full_top + full_bot) * 0.5
+        else:
+            cursor_h = glyph_h
+            cursor_z = actor_loc.z + target_rel.z
+
+        world_pt = FVector(
+            actor_loc.x + target_rel.x,
+            actor_loc.y + target_rel.y,
+            cursor_z,
+        )
+        scale_vec = FVector(0.01, glyph_w * 0.3 / 100.0, cursor_h / 100.0)
+        return world_pt, scale_vec, actor_rot
+
+    def _show_cursor_at_glyph(actor, target_glyph):
+        """Move cursor to target_glyph. Returns True on success."""
         if _cursor_actor is None:
-            return
+            return False
+        placement = _get_cursor_placement(actor, target_glyph)
+        if placement is None:
+            return False
+        world_pt, scale_vec, rot = placement
+        try:
+            _cursor_actor.set_actor_scale(scale_vec)
+        except Exception:
+            pass
+        _cursor_actor.set_actor_location(world_pt)
+        _cursor_actor.set_actor_rotation(rot)
+        _cursor_actor.SetActorHiddenInGame(False)
+        _cursor_state['active']  = True
+        _cursor_state['timer']   = 0.0
+        _cursor_state['visible'] = True
+        return True
 
-        actor_rot = hit_actor.get_actor_rotation()
-        actor_loc = hit_actor.get_actor_location()
-        world_pt = hit.impact_point
+    def _position_cursor(hit_actor, hit):
+        """Derive target_glyph from a click hit, move cursor, set focus."""
+        if _cursor_actor is None or hit_actor is None:
+            return
 
         t3d = None
         try:
@@ -1266,150 +1698,234 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
         except Exception:
             pass
 
-        # Defaults for when bounds aren't available
-        glyph_h = 50.0   # full char height in UU
-        glyph_w = 50.0   # full char width in UU
+        text = ''
+        if t3d is not None:
+            try:
+                text = str(t3d.Text or '')
+            except Exception:
+                pass
 
+        kernings = None
+        meshes   = None
         if t3d is not None:
             try:
                 kernings = t3d.CharacterKernings
-                meshes   = None
+            except Exception:
+                pass
+            try:
+                meshes = t3d.CharacterMeshes
+            except Exception:
+                pass
+
+        # No kernings — fall back to dropping the cursor at the click point.
+        if not kernings or len(kernings) == 0:
+            try:
+                _cursor_actor.set_actor_location(hit.impact_point)
+                _cursor_actor.set_actor_rotation(hit_actor.get_actor_rotation())
+                _cursor_actor.SetActorHiddenInGame(False)
+                _cursor_state['active']  = True
+                _cursor_state['timer']   = 0.0
+                _cursor_state['visible'] = True
+            except Exception:
+                pass
+            _focus_state['actor']      = hit_actor
+            _focus_state['string_idx'] = len(text)
+            return
+
+        # Compute clicked glyph + left/right side from the hit.
+        local_pt = _world_to_local(hit_actor, hit.impact_point)
+        clicked_glyph = 0
+        side = 'right'
+
+        if local_pt is not None:
+            glyph_edges = []
+            for i in range(len(kernings)):
+                if kernings[i] is not None:
+                    try:
+                        rel = kernings[i].get_relative_location()
+                        glyph_edges.append((rel.y, i))
+                    except Exception:
+                        pass
+            glyph_edges.sort(key=lambda e: e[0])
+            if glyph_edges:
+                clicked_glyph = glyph_edges[0][1]
+                for edge_y, gi in glyph_edges:
+                    if local_pt.y >= edge_y:
+                        clicked_glyph = gi
+                    else:
+                        break
+
+            glyph_w_local = 50.0
+            if (meshes is not None
+                    and 0 <= clicked_glyph < len(meshes)
+                    and meshes[clicked_glyph] is not None):
                 try:
-                    meshes = t3d.CharacterMeshes
+                    _, e = meshes[clicked_glyph].GetComponentBounds()
+                    glyph_w_local = e.y * 2.0
                 except Exception:
                     pass
 
-                if kernings is not None and len(kernings) > 0:
-                    local_pt = _world_to_local(hit_actor, hit.impact_point)
-                    if local_pt is not None:
-                        glyph_edges = []
-                        for i in range(len(kernings)):
-                            if kernings[i] is not None:
-                                try:
-                                    rel = kernings[i].get_relative_location()
-                                    glyph_edges.append((rel.y, i, rel))
-                                except Exception:
-                                    pass
-                        glyph_edges.sort(key=lambda e: e[0])
+            if (0 <= clicked_glyph < len(kernings)
+                    and kernings[clicked_glyph] is not None):
+                try:
+                    r = kernings[clicked_glyph].get_relative_location()
+                    mid_y = r.y + glyph_w_local / 2.0
+                    side  = 'left' if local_pt.y < mid_y else 'right'
+                except Exception:
+                    pass
 
-                        clicked_glyph = glyph_edges[0][1] if glyph_edges else -1
-                        for edge_y, gi, _ in glyph_edges:
-                            if local_pt.y >= edge_y:
-                                clicked_glyph = gi
-                            else:
-                                break
+        target_glyph = clicked_glyph if side == 'left' else clicked_glyph + 1
 
-                        # Read actual glyph dimensions from the clicked mesh
-                        if (meshes is not None
-                                and 0 <= clicked_glyph < len(meshes)
-                                and meshes[clicked_glyph] is not None):
-                            try:
-                                _, extent = meshes[clicked_glyph].GetComponentBounds()
-                                glyph_h = extent.z * 2.0
-                                glyph_w = extent.y * 2.0
-                            except Exception:
-                                pass
+        if not _show_cursor_at_glyph(hit_actor, target_glyph):
+            return
 
-                        # Compute descender depth: difference between the
-                        # highest bottom (baseline for non-descender chars)
-                        # and the lowest bottom (max descender char) across
-                        # all glyphs in the text.
-                        descender_depth = 0.0
-                        if meshes is not None and len(meshes) > 0:
-                            max_bot = None
-                            min_bot = None
-                            for m in meshes:
-                                if m is None:
-                                    continue
-                                try:
-                                    o, e = m.GetComponentBounds()
-                                    b = o.z - e.z
-                                    if max_bot is None or b > max_bot:
-                                        max_bot = b
-                                    if min_bot is None or b < min_bot:
-                                        min_bot = b
-                                except Exception:
-                                    continue
-                            if max_bot is not None and min_bot is not None:
-                                descender_depth = max_bot - min_bot
+        _focus_state['actor']      = hit_actor
+        _focus_state['string_idx'] = _glyph_to_string_idx(text, target_glyph)
+        _log(f'text3d_click: cursor snap clicked={clicked_glyph} '
+             f'side={side} → {target_glyph}  '
+             f'focus string_idx={_focus_state["string_idx"]}')
 
-                        # Determine left vs right half of clicked glyph.
-                        # CharacterKernings[i].y is the LEFT edge of glyph i.
-                        # Midpoint = left_edge + glyph_w/2
-                        side = 'right'  # default: snap AFTER the clicked char
-                        if (clicked_glyph >= 0
-                                and clicked_glyph < len(kernings)
-                                and kernings[clicked_glyph] is not None):
-                            try:
-                                click_rel = kernings[clicked_glyph].get_relative_location()
-                                mid_y = click_rel.y + glyph_w / 2.0
-                                side = 'left' if local_pt.y < mid_y else 'right'
-                            except Exception:
-                                pass
-
-                        target_rel = None
-                        if side == 'left':
-                            # Snap BEFORE clicked glyph (its own left edge)
-                            if (clicked_glyph >= 0
-                                    and clicked_glyph < len(kernings)
-                                    and kernings[clicked_glyph] is not None):
-                                target_rel = kernings[clicked_glyph].get_relative_location()
-                            target_glyph = clicked_glyph
-                        else:
-                            # Snap AFTER clicked glyph (left edge of next)
-                            next_glyph = clicked_glyph + 1
-                            if (next_glyph < len(kernings)
-                                    and kernings[next_glyph] is not None):
-                                target_rel = kernings[next_glyph].get_relative_location()
-                            elif (clicked_glyph >= 0
-                                  and kernings[clicked_glyph] is not None):
-                                # Past last glyph — estimate one glyph width after
-                                r = kernings[clicked_glyph].get_relative_location()
-                                target_rel = FVector(r.x, r.y + glyph_w, r.z)
-                            target_glyph = next_glyph
-
-                        if target_rel is not None:
-                            # Convert local → world (assumes actor has no rotation)
-                            # Shift down by one dynamic glyph height, then UP
-                            # by the descender depth (so the cursor bottom
-                            # aligns with the baseline, not the lowest descender)
-                            world_pt = FVector(
-                                actor_loc.x + target_rel.x,
-                                actor_loc.y + target_rel.y,
-                                actor_loc.z + target_rel.z - glyph_h + descender_depth,
-                            )
-                            _log(f'text3d_click: cursor snap clicked={clicked_glyph} '
-                                 f'side={side} → {target_glyph}  '
-                                 f'h={glyph_h:.1f} w={glyph_w:.1f} '
-                                 f'desc={descender_depth:.1f} '
-                                 f'rel=({target_rel.x:.1f},{target_rel.y:.1f},{target_rel.z:.1f})')
-            except Exception as e:
-                _log(f'text3d_click: cursor kerning snap FAILED: {e}')
-
-        # Scale cursor dynamically: thin bar matching glyph height
-        # Cube is 100 UU base → divide by 100 for UU conversion.
-        # X = depth (thin), Y = width (0.04 × char width), Z = height (full glyph)
+    def _handle_typed_char(ch):
+        """Insert/delete at cursor. ch='\\b'=backspace, '\\n'=newline, else=literal."""
+        actor = _focus_state['actor']
+        if actor is None:
+            return
+        t3d = None
         try:
-            _cursor_actor.set_actor_scale(FVector(
-                0.01,
-                glyph_w * 0.04 / 100.0,
-                glyph_h / 100.0,
-            ))
+            t3d = actor.get_actor_component('Text3DComponent')
         except Exception:
-            pass
+            return
+        if t3d is None:
+            return
 
-        _cursor_actor.set_actor_location(world_pt)
-        _cursor_actor.set_actor_rotation(actor_rot)
-        _cursor_actor.SetActorHiddenInGame(False)
-        _cursor_state['active'] = True
-        _cursor_state['timer']  = 0.0
-        _cursor_state['visible'] = True
+        try:
+            text = str(t3d.Text or '')
+        except Exception:
+            text = ''
 
-    # ---- Tick function: event-driven press state + cursor hit test ----
+        idx = max(0, min(_focus_state['string_idx'], len(text)))
+
+        if ch == '\b':
+            if idx == 0:
+                return
+            text = text[:idx - 1] + text[idx:]
+            idx -= 1
+        else:
+            text = text[:idx] + ch + text[idx:]
+            idx += 1
+
+        try:
+            t3d.Text = text
+        except Exception as e:
+            _log(f'text3d_click: failed to set text: {e}')
+            return
+
+        watched[actor] = text
+        _focus_state['string_idx'] = idx
+
+        target_glyph = _string_idx_to_glyph(text, idx)
+        _show_cursor_at_glyph(actor, target_glyph)
+
+    # Notepad-style typing via direct Windows keyboard poll
+    # Bypasses UE's input routing so we get layout-correct translation
+    # (Shift, CapsLock, AltGr, dead keys) exactly like notepad.exe.
+    # Runs alongside HotkeyManager bindings in main.py without disturbing them.
+    try:
+        import ctypes as _ctypes
+        _user32 = _ctypes.WinDLL('user32', use_last_error=True)
+        _user32.GetAsyncKeyState.argtypes = [_ctypes.c_int]
+        _user32.GetAsyncKeyState.restype  = _ctypes.c_short
+        _user32.GetKeyState.argtypes      = [_ctypes.c_int]
+        _user32.GetKeyState.restype       = _ctypes.c_short
+        _user32.MapVirtualKeyW.argtypes   = [_ctypes.c_uint, _ctypes.c_uint]
+        _user32.MapVirtualKeyW.restype    = _ctypes.c_uint
+        _user32.ToUnicode.argtypes = [
+            _ctypes.c_uint, _ctypes.c_uint,
+            _ctypes.POINTER(_ctypes.c_ubyte), _ctypes.c_wchar_p,
+            _ctypes.c_int, _ctypes.c_uint,
+        ]
+        _user32.ToUnicode.restype = _ctypes.c_int
+        _WIN32_TYPING_OK = True
+    except Exception as _win_err:
+        _WIN32_TYPING_OK = False
+        _user32 = None
+        _ctypes = None
+        _log(f'text3d_click: ctypes typing unavailable ({_win_err})')
+
+    _prev_vk_down = bytearray(256)
+
+    def _build_kb_state():
+        """256-byte keyboard state for ToUnicode. High bit=down, low bit=toggle."""
+        buf = (_ctypes.c_ubyte * 256)()
+        for vk in range(256):
+            if _user32.GetAsyncKeyState(vk) & 0x8000:
+                buf[vk] = 0x80
+        # Toggle bits for CapsLock / NumLock / ScrollLock
+        for tvk in (0x14, 0x90, 0x91):
+            if _user32.GetKeyState(tvk) & 0x0001:
+                buf[tvk] |= 0x01
+        return buf
+
+    def _on_vk_rise(vk):
+        """Rising-edge handler — one character event, like notepad's WM_CHAR."""
+        if _focus_state['actor'] is None:
+            return
+        # Special keys first (ToUnicode would return '\b','\r','\t','\x1b' etc.
+        # but we want our own handling).
+        if vk == 0x08:      # VK_BACK
+            _handle_typed_char('\b')
+            return
+        if vk == 0x0D:      # VK_RETURN
+            _handle_typed_char('\n')
+            return
+        if vk == 0x09:      # VK_TAB
+            _handle_typed_char('\t')
+            return
+        if vk == 0x1B:      # VK_ESCAPE — leave the field
+            _unfocus()
+            return
+        # Everything else: ask Windows to translate via the current layout
+        try:
+            kb_state  = _build_kb_state()
+            scan_code = _user32.MapVirtualKeyW(vk, 0)  # MAPVK_VK_TO_VSC
+            outbuf    = _ctypes.create_unicode_buffer(8)
+            result    = _user32.ToUnicode(
+                vk, scan_code, kb_state, outbuf, len(outbuf), 0)
+        except Exception:
+            return
+        if result > 0:
+            for c in outbuf.value[:result]:
+                # Skip control chars (NUL..US); printable space (0x20) is OK
+                if c and ord(c) >= 0x20:
+                    _handle_typed_char(c)
+
+    def _poll_keyboard():
+        """Call each tick. Fires character events on rising edges while focused."""
+        if not _WIN32_TYPING_OK:
+            return
+        curr = bytearray(256)
+        for vk in range(256):
+            if _user32.GetAsyncKeyState(vk) & 0x8000:
+                curr[vk] = 1
+        if _focus_state['actor'] is not None:
+            for vk in range(256):
+                if curr[vk] and not _prev_vk_down[vk]:
+                    _on_vk_rise(vk)
+        for i in range(256):
+            _prev_vk_down[i] = curr[i]
+
+    _log('text3d_click: ctypes keyboard poll ready'
+         if _WIN32_TYPING_OK else
+         'text3d_click: typing disabled (ctypes unavailable)')
+
+    # Tick function: event-driven press state + cursor hit test
     _state['fired'] = False  # ensure we fire once per press
     CURSOR_BLINK_RATE = 1.0
 
     def tick_fn(dt):
+        # Typing poll (fires char events via Win32 ToUnicode when focused)
+        _poll_keyboard()
+
         # Blink cursor
         if _cursor_actor is not None and _cursor_state['active']:
             _cursor_state['timer'] += dt
@@ -1444,22 +1960,27 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
                 if hit is not None:
                     break
 
-            if hit is None:
-                return
-
-            hit_actor = hit.actor
+            hit_actor = hit.actor if hit is not None else None
             matched_actor = None
             matched_text  = None
-            for w_actor, w_text in watched.items():
-                try:
-                    if w_actor == hit_actor:
-                        matched_actor = w_actor
-                        matched_text  = w_text
-                        break
-                except Exception:
-                    pass
+            if hit_actor is not None:
+                for w_actor, w_text in watched.items():
+                    try:
+                        if w_actor == hit_actor:
+                            matched_actor = w_actor
+                            matched_text  = w_text
+                            break
+                    except Exception:
+                        pass
+
             if matched_actor is None:
-                _log(f'text3d_click: click — hit "{hit_actor.get_name() if hit_actor else None}" (not a watched text actor)')
+                # Click off any watched text actor — unfocus + hide cursor.
+                if hit_actor is not None:
+                    _log(f'text3d_click: off-click — hit '
+                         f'"{hit_actor.get_name()}" (not watched), unfocusing')
+                else:
+                    _log('text3d_click: off-click — nothing under cursor, unfocusing')
+                _unfocus()
                 return
 
             _log_click_on_actor_from_hit(matched_actor, hit, text_content=matched_text)

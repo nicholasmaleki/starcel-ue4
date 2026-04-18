@@ -1,7 +1,6 @@
 import unreal_engine as ue
 from unreal_engine_tools import find_component
 
-# ---------------------------------------------------------------------------
 # Python component: live system monitor for BP_SysMon
 #
 # Blueprint requirements (BP_SysMon):
@@ -17,7 +16,6 @@ from unreal_engine_tools import find_component
 #
 # If activity_tracker is not running, read_stats() returns None and only
 # sysinfo data is displayed — no crash.
-# ---------------------------------------------------------------------------
 
 
 class PyActorSysmon:
@@ -53,13 +51,12 @@ class PyActorSysmon:
             self._elapsed = 0.0
             self._update()
 
-    # -----------------------------------------------------------------------
 
     def _update(self):
         """Read sysinfo + activity_tracker, format, push to Text3DComponent."""
         lines = []
 
-        # --- System info ---
+        # System info
         try:
             from sysinfo import get_info_string
             sys_str = get_info_string(mode='minimal', units='usa')
@@ -68,7 +65,7 @@ class PyActorSysmon:
         except Exception as e:
             lines.append(f'[sysinfo error: {e}]')
 
-        # --- Activity tracker (optional daemon) ---
+        # Activity tracker (optional daemon)
         try:
             from activity_tracker import read_stats
             stats = read_stats()

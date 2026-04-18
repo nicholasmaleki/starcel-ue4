@@ -2,16 +2,13 @@ import unreal_engine as ue
 from unreal_engine import FVector, FRotator, FTransform
 from unreal_engine.enums import ECollisionChannel
 
-# ---------------------------------------------------------------------------
 # Python component: clickable sound sphere
-# ---------------------------------------------------------------------------
 #
 # CRASH NOTE: do NOT call `smc.bind_event('OnClicked', ...)` on
 # UPrimitiveComponent in UE4.27 + UEP.  The two-param sparse delegate
 # crashes `ue_bind_pyevent` at UEPyModule.cpp:4502 with an access violation
 # at 0x8.  Click detection is done via tick-based cursor trace + rising-edge
 # LMB comparison, same pattern as `gizmo.py` and `pyactor_icon.py`.
-# ---------------------------------------------------------------------------
 
 
 class SoundSphere:
@@ -48,9 +45,9 @@ class SoundSphere:
         except Exception:
             pass
 
-    # ------------------------------------------------------------------ #
+    # #
     # Tick — click detection
-    # ------------------------------------------------------------------ #
+    # #
 
     def tick(self, dt):
         if self.owner_actor is None or self.player_controller is None:

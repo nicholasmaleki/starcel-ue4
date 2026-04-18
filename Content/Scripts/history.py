@@ -32,14 +32,12 @@ except ImportError:
     pynput = None
 
 
-# --- Ensure log directory exists ---
+# Ensure log directory exists
 LOG_DIR = os.path.join(os.getcwd(), "Logs")
 os.makedirs(LOG_DIR, exist_ok=True)
 
 
-# ------------------------------------------------------------
 # Base History With Rotation + Retention
-# ------------------------------------------------------------
 class BaseHistory:
     def __init__(
         self,
@@ -67,7 +65,7 @@ class BaseHistory:
 
         self._open_new_log()
 
-    # ---------------- Rotation ---------------- #
+    # Rotation #
 
     def _rotation_delta(self):
         if self.rotate_by == "session":
@@ -124,7 +122,7 @@ class BaseHistory:
         self._close_log()
         self._open_new_log()
 
-    # ---------------- Cleanup ---------------- #
+    # Cleanup #
 
     def _cleanup_logs(self):
         if not os.path.exists(self.base_dir):
@@ -149,7 +147,7 @@ class BaseHistory:
                 except Exception:
                     pass
 
-    # ---------------- Logging ---------------- #
+    # Logging #
 
     def log(self, item):
         if not self.enabled:
@@ -179,7 +177,7 @@ class BaseHistory:
                 f.write(json.dumps({"timestamp": ts.isoformat(), "data": item}) + "\n")
                 self.entries_written += 1
 
-    # ---------------- API ---------------- #
+    # API #
 
     def enable(self):
         self.enabled = True
@@ -199,9 +197,7 @@ class BaseHistory:
         self._rotate()
 
 
-# ------------------------------------------------------------
 # Subclasses
-# ------------------------------------------------------------
 class KeyboardHistory(BaseHistory):
     def __init__(self):
         super().__init__("Keyboard")
@@ -254,9 +250,7 @@ class CrashHistory(BaseHistory):
         super().__init__("Crash")
 
 
-# ------------------------------------------------------------
 # History Manager
-# ------------------------------------------------------------
 class HistoryManager:
     POLL_INTERVAL = 0.5
 
@@ -279,7 +273,7 @@ class HistoryManager:
         if auto_start:
             self.start_background_thread()
 
-    # --- Logging API ---
+    # Logging API
 
     def log(self, history_type, item):
         if history_type not in self.histories:
@@ -305,7 +299,7 @@ class HistoryManager:
             for h in self.histories.values():
                 h.clear()
 
-    # --- Background tasks ---
+    # Background tasks
 
     def start_background_thread(self):
         self._thread = threading.Thread(target=self._background_loop, daemon=True)
@@ -332,12 +326,12 @@ class HistoryManager:
                 self.poll_copy()
             time.sleep(self.POLL_INTERVAL)
 
-    # --- Clipboard polling ---
+    # Clipboard polling
 
     def poll_copy(self):
         self.histories["Copy"].poll_clipboard()
 
-    # --- Keyboard logging ---
+    # Keyboard logging
 
     def _start_keyboard_listener(self):
         def on_press(key):

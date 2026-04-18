@@ -1,5 +1,6 @@
 import unreal_engine as ue
 from unreal_engine.enums import EMouseCursor, ECollisionChannel
+from unreal_engine.classes import StarcelHelper
 import time
 
 
@@ -367,7 +368,7 @@ class HotkeyManager:
 
         self.player_controller = self.uobject.get_player_controller()
 
-    # ---------------- Shutdown ----------------
+    # Shutdown
     def shutdown(self):
         """Call this in uObject_EndPlay to clean up properly"""
         self._is_shutting_down = True
@@ -391,7 +392,7 @@ class HotkeyManager:
         self._repeat_bindings.clear()
         ue.log("HotkeyManager shutdown complete")
 
-    # ---------------- Cursor ----------------
+    # Cursor
     def enable_mouse_events(self, click=True, over=True):
         """Enable mouse click and mouse-over events"""
         try:
@@ -423,6 +424,7 @@ class HotkeyManager:
     def toggle_cursor(self):
         """Toggle cursor visibility"""
         self.show_cursor(not self._cursor_visible)
+        StarcelHelper.ClickLMB() # force a click
 
     def print_cursor_info(self):
         """Print cursor configuration information"""
@@ -447,7 +449,7 @@ class HotkeyManager:
             'world_dir': direction
         }
 
-    # ---------------- Normalize ----------------
+    # Normalize
     def normalize_input_token(self, token):
         """Normalize input token to UE format"""
         k = self.keyboard.normalize(token)
@@ -466,7 +468,7 @@ class HotkeyManager:
             parts = chord
         return tuple(self.normalize_input_token(p) for p in parts)
 
-    # ---------------- Key Registry (for future visualization) ----------------
+    # Key Registry (for future visualization)
     def _register_binding(self, keys, binding_type, callback_name=None):
         """Register a binding for future keyboard visualization"""
         key_tuple = keys if isinstance(keys, tuple) else (keys,)
@@ -487,7 +489,7 @@ class HotkeyManager:
             return self._key_registry
         return self._key_registry.get(self.normalize_input_token(key), [])
 
-    # ---------------- Chords ----------------
+    # Chords
     def bind_chord_event(self, chord, event_type, callback):
         """Bind a chord (key combination) to a callback"""
         primary = chord[-1]
@@ -609,7 +611,7 @@ class HotkeyManager:
         parsed_chord = self.parse_chord(chord)
         self.bind_chord_event(parsed_chord, ue.IE_DOUBLE_CLICK, callback)
 
-    # ---------------- Repeat (poll based) ----------------
+    # Repeat (poll based)
     def bind_repeat(self, chord, callback):
         """Bind a key to repeat while held down (uses polling)"""
         chord = self.parse_chord(chord)
@@ -633,7 +635,7 @@ class HotkeyManager:
         self._repeat_bindings.append(ticker)
         self._register_binding(chord, "repeat", callback.__name__ if hasattr(callback, '__name__') else None)
 
-    # ---------------- Poll (non-binding check) ----------------
+    # Poll (non-binding check)
     def bind_poll(self, chord, callback, rate=None):
         """Poll a key state continuously without overriding engine bindings
         This checks key state without binding, so it won't interfere with actions like Jump
@@ -680,7 +682,7 @@ class HotkeyManager:
                 return False
         return True
 
-    # ---------------- Axis ----------------
+    # Axis
     def bind_axis(self, axis_name, callback, deadzone=0.0, poll=True):
         """Bind an axis input to a callback
         Note: For MouseX/MouseY, use bind_axis_poll instead as bind_axis may not work reliably
@@ -760,7 +762,7 @@ class HotkeyManager:
 
         self.uobject.bind_axis(axis, _handler)
 
-    # ---------------- Actions ----------------
+    # Actions
     def bind_action(self, name, pressed_cb=None, released_cb=None):
         """Bind an action defined in project input settings"""
         if pressed_cb:
@@ -781,7 +783,7 @@ class HotkeyManager:
         """Get list of engine-defined action mappings"""
         return ue.get_engine_defined_action_mappings()
 
-    # ---------------- Key State ----------------
+    # Key State
     def was_pressed(self, key):
         """Check if key was just pressed this frame"""
         return self.player_controller.WasInputKeyJustPressed(key)
@@ -790,7 +792,7 @@ class HotkeyManager:
         """Check if key was just released this frame"""
         return self.player_controller.WasInputKeyJustReleased(key)
 
-    # ---------------- Mouse ----------------
+    # Mouse
     def get_mouse_position(self, deproject=False):
         """Get mouse position in screen coordinates
         If deproject=True, also returns world position and direction
@@ -818,7 +820,7 @@ class HotkeyManager:
         success, world_pos, world_dir = self.player_controller.DeprojectMousePositionToWorld()
         return success, world_pos, world_dir
 
-    # ---------------- Mouse Delta (Timer) ----------------
+    # Mouse Delta (Timer)
     def log_mouse_delta_timer(self, rate=0.05):
         """Start logging mouse delta at specified rate"""
 

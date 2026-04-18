@@ -32,9 +32,7 @@ def _log(label: str, exc: Exception) -> None:
         if _DEBUG > 1:
             traceback.print_exc(file=sys.stderr)
 
-# ---------------------------------------------------------------------------
 # Optional imports
-# ---------------------------------------------------------------------------
 try:
     import mutagen
     _MUTAGEN = True
@@ -90,9 +88,7 @@ except ImportError:
     _7Z_OK = False
 
 
-# ===========================================================================
 # HELPERS
-# ===========================================================================
 
 def _read_bytes(path: str, count: int, offset: int = 0) -> bytes:
     with open(path, 'rb') as f:
@@ -112,9 +108,7 @@ def _fmt_duration(seconds: Optional[float]) -> Optional[str]:
 from utils import human_size as _human_size
 
 
-# ===========================================================================
 # IMAGE
-# ===========================================================================
 
 def image_info(path: str, ext: str) -> Dict[str, Any]:
     """Returns: dimensions (w,h), color_mode, bit_depth, dpi."""
@@ -229,9 +223,7 @@ def _image_dims_stdlib(path: str, ext: str) -> Optional[Tuple[int, int]]:
     return None
 
 
-# ===========================================================================
 # VIDEO
-# ===========================================================================
 
 def video_info(path: str) -> Dict[str, Any]:
     out: Dict[str, Any] = {'dimensions': None, 'length_s': None,
@@ -258,9 +250,7 @@ def video_info(path: str) -> Dict[str, Any]:
     return out
 
 
-# ===========================================================================
 # AUDIO
-# ===========================================================================
 
 def audio_tags(path: str) -> Dict[str, Any]:
     keys = ('length_s','album','album_artist','artist','title','track',
@@ -292,9 +282,7 @@ def audio_tags(path: str) -> Dict[str, Any]:
     return out
 
 
-# ===========================================================================
 # TEXT / CODE  —  line count
-# ===========================================================================
 
 # Extensions that get line counts
 TEXT_EXTS = frozenset(
@@ -355,9 +343,7 @@ def text_line_count(path: str, ext: str) -> Optional[str]:
     return None
 
 
-# ===========================================================================
 # ARCHIVE
-# ===========================================================================
 
 def archive_info(path: str, ext: str) -> Dict[str, Any]:
     out: Dict[str, Any] = {
@@ -501,9 +487,7 @@ def _7z_info(path: str) -> Dict[str, Any]:
     return out
 
 
-# ===========================================================================
 # DOCUMENTS
-# ===========================================================================
 
 def doc_length(path: str, ext: str) -> Optional[str]:
     e = ext.lower()
@@ -642,9 +626,7 @@ def _rtf_length(path: str) -> Optional[str]:
     return None
 
 
-# ===========================================================================
 # SPREADSHEET
-# ===========================================================================
 
 def spreadsheet_info(path: str, ext: str) -> Dict[str, Any]:
     out: Dict[str, Any] = {'dimensions': None, 'sheet_count': None}
@@ -694,9 +676,7 @@ def spreadsheet_info(path: str, ext: str) -> Dict[str, Any]:
     return out
 
 
-# ===========================================================================
 # PRESENTATION
-# ===========================================================================
 
 def presentation_info(path: str, ext: str) -> Dict[str, Any]:
     out: Dict[str, Any] = {'slide_count': None, 'notes_count': None}
@@ -712,9 +692,7 @@ def presentation_info(path: str, ext: str) -> Dict[str, Any]:
     return out
 
 
-# ===========================================================================
 # SHORTCUT (.lnk)  —  MS-SHLLINK binary format
-# ===========================================================================
 
 _LNK_HEADER_SZ = 0x4C
 _LNK_GUID      = b'\x01\x14\x02\x00\x00\x00\x00\x00\xC0\x00\x00\x00\x00\x00\x00\x46'
@@ -891,9 +869,7 @@ def _lnk_hotkey(raw: int) -> Optional[str]:
     return '+'.join(mods + [key]) if mods else key
 
 
-# ===========================================================================
 # CRYPTO / PGP / GPG / KEY / PEM
-# ===========================================================================
 
 _PGP_PACKET_TAGS: Dict[int, str] = {
     1:'Public-Key Encrypted Session Key', 2:'Signature',
@@ -1081,9 +1057,7 @@ def _parse_sig_subpackets(body: bytes, result: Dict[str, Any]) -> None:
         _log('_parse_sig_subpackets', exc)
 
 
-# ===========================================================================
 # SQLITE / DATABASE
-# ===========================================================================
 
 def sqlite_info(path: str) -> Dict[str, Any]:
     out: Dict[str, Any] = {
@@ -1123,9 +1097,7 @@ def sqlite_info(path: str) -> Dict[str, Any]:
     return out
 
 
-# ===========================================================================
 # TORRENT
-# ===========================================================================
 
 def torrent_info(path: str) -> Dict[str, Any]:
     out: Dict[str, Any] = {
@@ -1230,9 +1202,7 @@ def _bdecode(data: bytes, idx: int = 0):
         raise ValueError(f"Invalid bencode byte {c!r} at position {idx}")
 
 
-# ===========================================================================
 # FONT
-# ===========================================================================
 
 def font_info(path: str, ext: str) -> Dict[str, Any]:
     out: Dict[str, Any] = {
@@ -1339,9 +1309,7 @@ def _woff_name_table(raw: bytes, num_tables: int) -> Dict[str, Any]:
     return {}
 
 
-# ===========================================================================
 # EMAIL
-# ===========================================================================
 
 def email_info(path: str, ext: str) -> Dict[str, Any]:
     out: Dict[str, Any] = {
@@ -1369,9 +1337,7 @@ def email_info(path: str, ext: str) -> Dict[str, Any]:
     return out
 
 
-# ===========================================================================
 # 3D FILES
-# ===========================================================================
 
 def model_3d_info(path: str, ext: str) -> Optional[str]:
     e = ext.lower()

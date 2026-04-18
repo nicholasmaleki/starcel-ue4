@@ -31,7 +31,7 @@ from pathlib import Path
 from threading import Lock
 from typing import Any, Dict, Optional
 
-# ── storage path ──────────────────────────────────────────────────────────────
+# storage path
 _PLATFORM = platform.system()
 
 def _default_data_dir() -> Path:
@@ -52,7 +52,7 @@ LOG_FILE      = DATA_DIR / "activity_log.txt"
 
 _lock = Lock()
 
-# ── state ─────────────────────────────────────────────────────────────────────
+# state
 _state: Dict[str, Any] = {
     "session_start":     datetime.now().isoformat(),
     "last_update":       datetime.now().isoformat(),
@@ -136,7 +136,7 @@ def _append_log() -> None:
             f.write(line)
 
 
-# ── pynput listeners ──────────────────────────────────────────────────────────
+# pynput listeners
 def _start_listeners() -> None:
     try:
         from pynput import mouse, keyboard

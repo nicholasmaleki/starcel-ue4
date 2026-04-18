@@ -2,7 +2,6 @@ import unreal_engine as ue
 from unreal_engine import FVector, FRotator
 from unreal_engine_tools import find_component
 
-# ---------------------------------------------------------------------------
 # Python component: full camera control for BP_PyCamera
 #
 # Blueprint requirements (BP_PyCamera):
@@ -31,7 +30,6 @@ from unreal_engine_tools import find_component
 #
 # View transfer:
 #   transfer_to_player()   — make this camera the active view target
-# ---------------------------------------------------------------------------
 
 # Import CAMERA_PRESETS and _exec_console from ue_spawn (single source of truth)
 try:
@@ -98,9 +96,7 @@ class PyActorCamera:
         cam_type = getattr(self.uobject, 'camera_type', 'normal') or 'normal'
         self.set_type(cam_type)
 
-    # -----------------------------------------------------------------------
     # Camera type / preset
-    # -----------------------------------------------------------------------
 
     def set_type(self, type_name):
         """
@@ -169,9 +165,7 @@ class PyActorCamera:
         # Restore perspective if we were in orthographic
         self.set_projection('perspective')
 
-    # -----------------------------------------------------------------------
     # Projection mode
-    # -----------------------------------------------------------------------
 
     def set_projection(self, mode):
         """
@@ -187,9 +181,7 @@ class PyActorCamera:
         except Exception as e:
             ue.log_warning(f'PyActorCamera.set_projection({mode}): {e}')
 
-    # -----------------------------------------------------------------------
     # Panini projection
-    # -----------------------------------------------------------------------
 
     def enable_panini(self, d=0.5, s=0.05, screen_percentage=150):
         """Enable Panini projection via console commands (affects entire viewport)."""
@@ -204,9 +196,7 @@ class PyActorCamera:
         _exec_console('r.Upscale.Panini.S 0')
         _exec_console('r.ScreenPercentage 100')
 
-    # -----------------------------------------------------------------------
     # View transfer
-    # -----------------------------------------------------------------------
 
     def transfer_to_player(self, blend_time=0.0):
         """
@@ -221,9 +211,7 @@ class PyActorCamera:
         except Exception as e:
             ue.log_warning(f'PyActorCamera.transfer_to_player: {e}')
 
-    # -----------------------------------------------------------------------
     # Convenience accessors
-    # -----------------------------------------------------------------------
 
     def get_focal_length(self):
         if self._cam is None:

@@ -121,14 +121,14 @@ from ue_math_core import (
     _dbg, _adbg, _timed,
 )
 
-# ── Optional SymPy ────────────────────────────────────────────────────────────
+# Optional SymPy
 try:
     import sympy as _sp
     SYMPY_AVAILABLE = True
 except ImportError:
     SYMPY_AVAILABLE = False
 
-# ── Unreal Engine imports (guarded so the file works offline) ─────────────────
+# Unreal Engine imports (guarded so the file works offline)
 try:
     import unreal_engine as ue
     from unreal_engine import FVector, FRotator, FLinearColor, FTransform
@@ -172,9 +172,7 @@ _PALETTE = [
 ]
 
 
-# ============================================================================
 # LINE STYLE
-# ============================================================================
 
 @dataclass
 class LineStyle:
@@ -202,11 +200,9 @@ class LineStyle:
         return self.linewidth
 
 
-# ============================================================================
 # PLOT BOUNDS
-# ============================================================================
 
-# ── Axis orientation presets ─────────────────────────────────────────────────
+# Axis orientation presets
 #
 # UE default world axes:  X = forward (away from camera)
 #                         Y = right
@@ -262,7 +258,7 @@ class PlotBounds:
     # Pass e.g. 'wall_graph', 'ground_table', 'wall_table', or 'default'.
     orientation:  str   = 'default'
 
-    # ── resolved basis vectors (set by __post_init__) ────────────────────────
+    # resolved basis vectors (set by __post_init__)
     _ox: Tuple[float,float,float] = field(init=False, repr=False)
     _oy: Tuple[float,float,float] = field(init=False, repr=False)
     _oz: Tuple[float,float,float] = field(init=False, repr=False)
@@ -332,9 +328,7 @@ class PlotBounds:
                 self.z_range[0]<=z<=self.z_range[1])
 
 
-# ============================================================================
 # UNREAL ACTOR FACTORY
-# ============================================================================
 
 class UnrealActorFactory:
     """
@@ -410,7 +404,7 @@ class UnrealActorFactory:
         except Exception as e:
             if self.debug: print(f"{_P}apply_color error: {e}")
 
-    # ── Cylinder segment (primitive line) ────────────────────────────────────
+    # Cylinder segment (primitive line)
 
     def spawn_cylinder(self,
                        p0: FVector, p1: FVector,
@@ -463,7 +457,7 @@ class UnrealActorFactory:
             if self.debug: print(f"{_P}cylinder error: {e}")
             return None
 
-    # ── Sphere ────────────────────────────────────────────────────────────────
+    # Sphere
 
     def spawn_sphere(self, pos: FVector, radius: float, color: Tuple) -> Optional[Any]:
         """Spawn a point mesh (default: Sphere) at *pos* with given *radius*."""
@@ -486,7 +480,7 @@ class UnrealActorFactory:
             if self.debug: print(f"{_P}point_mesh error: {e}")
             return None
 
-    # ── Arrow ─────────────────────────────────────────────────────────────────
+    # Arrow
 
     def spawn_arrow(self, origin: FVector, tip: FVector,
                     shaft_r: float, color: Tuple) -> List[Any]:
@@ -497,7 +491,7 @@ class UnrealActorFactory:
         if h: actors.append(h)
         return actors
 
-    # ── Surface mesh via tilted plane quads ─────────────────────────────────
+    # Surface mesh via tilted plane quads
     # ProceduralMeshComponent.create_mesh_section_linear_color is not exposed
     # by add_actor_component in this UEP build.  Instead we tile the surface
     # with small StaticMeshActor planes (same approach as spawn_cylinder).
@@ -655,7 +649,7 @@ class UnrealActorFactory:
                   f"sph_r={sph_r:.1f}  cyl_r={cyl_r:.1f}")
         return len(edges) > 0 or None
 
-    # ── Bezier / curvable plane (BP_CurvablePlane + PMC) ────────────────────
+    # Bezier / curvable plane (BP_CurvablePlane + PMC)
 
     def _proc_mesh_curvable_plane(self,
                                   mesh: MeshData,
@@ -812,7 +806,7 @@ class UnrealActorFactory:
                 except Exception:
                     pass
 
-    # ── Text label ───────────────────────────────────────────────────────────
+    # Text label
 
     def spawn_text(self, pos: FVector, text: str,
                    size: float = 10.0, color: Tuple = (1,1,1,1),
@@ -828,7 +822,7 @@ class UnrealActorFactory:
             return None
         p = FVector(pos.x+self.origin.x, pos.y+self.origin.y, pos.z+self.origin.z)
 
-        # ── Try BP_Cell (Text3D Blueprint) ────────────────────────────────
+        # Try BP_Cell (Text3D Blueprint)
         try:
             from unreal_engine.classes import Blueprint
             bp = ue.load_object(Blueprint,
@@ -853,7 +847,7 @@ class UnrealActorFactory:
         except Exception:
             pass
 
-        # ── Fallback: small sphere as position marker ─────────────────────
+        # Fallback: small sphere as position marker
         try:
             r = max(5.0, size * 2)
             return self.spawn_sphere(pos, r, color)
@@ -861,7 +855,7 @@ class UnrealActorFactory:
             if self.debug: print(f"{_P}text fallback error: {e}")
             return None
 
-    # ── Tube mesh from CurveSegments ─────────────────────────────────────────
+    # Tube mesh from CurveSegments
 
     def spawn_segments_as_tube(self,
                                 segments: List[CurveSegment],
@@ -894,7 +888,7 @@ class UnrealActorFactory:
             if a: actors.append(a)
         return actors
 
-    # ── Cleanup ───────────────────────────────────────────────────────────────
+    # Cleanup
 
     def destroy_all(self):
         for a in self._spawned:
@@ -903,9 +897,7 @@ class UnrealActorFactory:
         self._spawned.clear()
 
 
-# ============================================================================
 # GRID & AXES RENDERER
-# ============================================================================
 
 class GridRenderer:
     """Render configurable axis grid lines, tick marks, and axis labels."""
@@ -1047,9 +1039,7 @@ class GridRenderer:
             self.factory.spawn_text(pos, zlabel, size=8.0)
 
 
-# ============================================================================
 # MATH PLOTTER  — main API class
-# ============================================================================
 
 class MathPlotter:
     """
@@ -1113,7 +1103,7 @@ class MathPlotter:
             print(f"{_P}MathPlotter init  bounds={self.bounds}  "
                   f"ga_backend={ga_backend}  debug={debug}  adv={advanced_debug}")
 
-    # ── Surface render mode ───────────────────────────────────────────────────
+    # Surface render mode
 
     @property
     def mesh_mode(self) -> str:
@@ -1134,7 +1124,7 @@ class MathPlotter:
     def point_mesh(self, value: str):
         self.factory.point_mesh = value
 
-    # ── Style helpers ─────────────────────────────────────────────────────────
+    # Style helpers
 
     def _next_style(self, **kw) -> LineStyle:
         """Return the next auto-cycle style, overridden by kw and pending aes."""
@@ -1168,9 +1158,7 @@ class MathPlotter:
         except Exception:
             return None
 
-    # ─────────────────────────────────────────────────────────────────────────
     # ══ 2D PLOTS ══
-    # ─────────────────────────────────────────────────────────────────────────
 
     def plot(self, f, x_range: Vec2 = None, n: int = 128,
              show_inflections: bool = False, **kw) -> 'MathPlotter':
@@ -1239,9 +1227,7 @@ class MathPlotter:
         if self.debug: print(f"{_P}queued band")
         return self
 
-    # ─────────────────────────────────────────────────────────────────────────
     # ══ 3D SURFACES ══
-    # ─────────────────────────────────────────────────────────────────────────
 
     def plot3d(self, f,
                x_range: Vec2 = None,
@@ -1372,9 +1358,7 @@ class MathPlotter:
         if self.debug: print(f"{_P}queued domain_color res={resolution}")
         return self
 
-    # ─────────────────────────────────────────────────────────────────────────
     # ══ VECTOR FIELDS ══
-    # ─────────────────────────────────────────────────────────────────────────
 
     def vector(self, v, origin=(0,0,0), **kw) -> 'MathPlotter':
         """Single vector arrow."""
@@ -1405,9 +1389,7 @@ class MathPlotter:
         if self.debug: print(f"{_P}queued streamline seed={seed}")
         return self
 
-    # ─────────────────────────────────────────────────────────────────────────
     # ══ GEOMETRIC ALGEBRA ══
-    # ─────────────────────────────────────────────────────────────────────────
 
     def ga_primitive(self, mv, origin: Vec3 = (0,0,0),
                      scale: float = 1.0, **kw) -> 'MathPlotter':
@@ -1486,9 +1468,7 @@ class MathPlotter:
         if self.debug: print(f"{_P}queued ga_spread max={max_subviews}")
         return self
 
-    # ─────────────────────────────────────────────────────────────────────────
     # ══ N-DIMENSIONAL ══
-    # ─────────────────────────────────────────────────────────────────────────
 
     def spread(self, fn, var_names: List[str], var_ranges: List[Vec2],
                max_subplots: int = 9, resolution: int = 32,
@@ -1508,9 +1488,7 @@ class MathPlotter:
             print(f"{_P}queued spread {len(var_names)}D -> {max_subplots} projections")
         return self
 
-    # ─────────────────────────────────────────────────────────────────────────
     # ══ AXES & DECORATION ══
-    # ─────────────────────────────────────────────────────────────────────────
 
     def grid(self, show: bool = True, spacing: float = 1.0,
              mode: str = '2d', **kw) -> 'MathPlotter':
@@ -1540,9 +1518,7 @@ class MathPlotter:
     def zlim(self, lo, hi) -> 'MathPlotter':
         self.bounds.z_range = (lo, hi); return self
 
-    # ─────────────────────────────────────────────────────────────────────────
     # ══ GGPLOT / GRAMMAR-OF-GRAPHICS ALIASES ══
-    # ─────────────────────────────────────────────────────────────────────────
 
     def aes(self, **kw) -> 'MathPlotter':
         """Stage aesthetic overrides for the next primitive."""
@@ -1570,9 +1546,7 @@ class MathPlotter:
     def geom_isosurface(self, f, **kw)        -> 'MathPlotter': return self.isosurface(f, **kw)
     def geom_wireframe(self, f, **kw)         -> 'MathPlotter': return self.wireframe(f, **kw)
 
-    # ─────────────────────────────────────────────────────────────────────────
     # ══ EXECUTION ══
-    # ─────────────────────────────────────────────────────────────────────────
 
     def show(self) -> 'MathPlotter':
         """Execute all queued drawing commands."""
@@ -1625,9 +1599,7 @@ class MathPlotter:
         if self.debug: print(f"{_P}cleared")
         return self
 
-    # ─────────────────────────────────────────────────────────────────────────
     # ══ INTERNAL RENDER DISPATCH ══
-    # ─────────────────────────────────────────────────────────────────────────
 
     def _render(self, item: Dict):
         t = item['type']
@@ -1669,7 +1641,7 @@ class MathPlotter:
         else:
             print(f"{_P}Unknown item type: '{t}'")
 
-    # ── 2D render methods ─────────────────────────────────────────────────────
+    # 2D render methods
 
     def _r_plot(self, item):
         fn      = item['fn']
@@ -1790,7 +1762,7 @@ class MathPlotter:
             self.factory.spawn_proc_mesh(mesh, style.color, style.opacity)
         if self.debug: print(f"{_P}  band: {len(verts)//2} quads")
 
-    # ── 3D surface render methods ─────────────────────────────────────────────
+    # 3D surface render methods
 
     def _r_plot3d(self, item):
         fn      = item['fn']
@@ -1961,7 +1933,7 @@ class MathPlotter:
         self.factory.spawn_proc_mesh(mesh, avg_color)
         if self.debug: print(f"{_P}  domain_color {img.shape}")
 
-    # ── Vector field render methods ───────────────────────────────────────────
+    # Vector field render methods
 
     def _r_vector(self, item):
         style = item['style']
@@ -2027,7 +1999,7 @@ class MathPlotter:
             [seg], b, style, mode=item['mode'])
         if self.debug: print(f"{_P}  streamline: {len(seg.points)} pts")
 
-    # ── GA render methods ─────────────────────────────────────────────────────
+    # GA render methods
 
     def _r_ga(self, item):
         mv     = item['mv']
@@ -2301,7 +2273,7 @@ class MathPlotter:
         if self.debug:
             print(f"{_P}  ga_spread: grade={grade}  {min(grade+1,max_subviews)} views")
 
-    # ── nD spread render ─────────────────────────────────────────────────────
+    # nD spread render
 
     def _r_spread(self, item):
         fn             = item['fn']
@@ -2344,9 +2316,7 @@ class MathPlotter:
             print(f"{_P}  spread: {len(projections)} projections rendered")
 
 
-# ============================================================================
 # CONVENIENCE FACTORY
-# ============================================================================
 
 def create_plotter(world=None,
                    origin: FVector = None,

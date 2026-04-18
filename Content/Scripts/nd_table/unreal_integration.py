@@ -69,7 +69,10 @@ class UnrealTableRenderer:
                  orientation_preset: str = 'wall_table',
                  text_mode: str = '3d',
                  debug: bool = False,
-                 aggressive_debug: bool = False):
+                 aggressive_debug: bool = False,
+                 enable_resize: bool = True,
+                 gridline_thickness: float = 0.04,
+                 player_controller=None):
         self.world = world
         self.base_cell_spacing = cell_spacing
         self.min_depth = min_depth
@@ -83,17 +86,40 @@ class UnrealTableRenderer:
         self.text_mode = text_mode
         self.debug = debug
         self.aggressive_debug = aggressive_debug
-        
+        self.enable_resize = enable_resize
+        self.gridline_thickness = gridline_thickness
+
         self.cell_actors = {}
         self.gridline_actors = []
-        
+        self.gridline_metadata = {}
+
         self.cell_width_per_row = {}
         self.cell_height_per_column = {}
         self.cell_depth_per_layer = {}
-        
+
+        self.user_cell_width_per_row = {}
+        self.user_cell_height_per_column = {}
+        self.user_cell_depth_per_layer = {}
+
         self.cylinder_mesh = None
         self.sphere_mesh = None
-        
+
+        self._last_table = None
+        self._last_world_location = None
+        self._last_render_gridlines = True
+        self._last_render_text = True
+
+        self.resize_controller = None
+        if enable_resize:
+            try:
+                from .resize_controller import GridlineResizeController
+                self.resize_controller = GridlineResizeController(
+                    self, player_controller=player_controller
+                )
+            except Exception as e:
+                if debug or aggressive_debug:
+                    ue.log_warning(f"Resize controller init failed: {e}")
+
         if world:
             self._load_resources()
     
@@ -114,14 +140,77 @@ class UnrealTableRenderer:
                     render_text: bool = True):
         if world_location is None:
             world_location = FVector(0, 0, 0)
-        
+
         if self.aggressive_debug:
             ue.log(f"[RENDER] {table.ndim}D table at {world_location}")
-        
+
+        self._last_table = table
+        self._last_world_location = world_location
+        self._last_render_gridlines = render_gridlines
+        self._last_render_text = render_text
+
         if table.ndim > 3:
             self._render_nd_table(table, world_location, render_gridlines, render_text)
         else:
             self._render_direct(table, world_location, render_gridlines, render_text)
+
+    def set_player_controller(self, pc):
+        if self.resize_controller is not None:
+            self.resize_controller.set_player_controller(pc)
+
+    def tick_resize(self, dt: float):
+        if self.resize_controller is not None:
+            self.resize_controller.tick(dt)
+
+    def set_user_size(self, axis: int, index, size: float):
+        if axis == 0:
+            self.user_cell_width_per_row[index] = size
+        elif axis == 1:
+            self.user_cell_height_per_column[index] = size
+        elif axis == 2:
+            self.user_cell_depth_per_layer[index] = size
+
+    def get_effective_size(self, axis: int, index) -> float:
+        if axis == 0:
+            return self.user_cell_width_per_row.get(
+                index, self.cell_width_per_row.get(index, self.base_cell_spacing)
+            )
+        if axis == 1:
+            return self.user_cell_height_per_column.get(
+                index, self.cell_height_per_column.get(index, self.base_cell_spacing)
+            )
+        if axis == 2:
+            return self.user_cell_depth_per_layer.get(
+                index, self.cell_depth_per_layer.get(index, self.base_cell_spacing)
+            )
+        return self.base_cell_spacing
+
+    def rerender_last(self):
+        if self._last_table is None:
+            return
+        self._destroy_actors(list(self.cell_actors.values()))
+        self.cell_actors = {}
+        self._destroy_actors(self.gridline_actors)
+        self.gridline_actors = []
+        self.gridline_metadata = {}
+        self.render_table(
+            self._last_table,
+            self._last_world_location,
+            self._last_render_gridlines,
+            self._last_render_text,
+        )
+
+    def _destroy_actors(self, actors):
+        for actor in actors:
+            if actor is None:
+                continue
+            try:
+                actor.actor_destroy()
+            except Exception:
+                try:
+                    actor.destroy_actor()
+                except Exception:
+                    pass
     
     def _render_direct(self, table: Table, world_location: FVector,
                       render_gridlines: bool, render_text: bool):
@@ -247,7 +336,11 @@ class UnrealTableRenderer:
             # Depth goes in X direction for wall_table
             actual_depth = max(self.min_depth, depth) if self.min_depth > 0 else depth
             self.cell_depth_per_layer[depth_idx] = actual_depth + self.padding_x_pos + self.padding_x_neg
-        
+
+        self.cell_width_per_row.update(self.user_cell_width_per_row)
+        self.cell_height_per_column.update(self.user_cell_height_per_column)
+        self.cell_depth_per_layer.update(self.user_cell_depth_per_layer)
+
         if self.aggressive_debug:
             ue.log(f"Row widths (Y): {self.cell_width_per_row}")
             ue.log(f"Column heights (Z): {self.cell_height_per_column}")
@@ -317,188 +410,257 @@ class UnrealTableRenderer:
     def _render_gridlines(self, table: Table, world_location: FVector, origin_cell: Tuple[int, ...]):
         if self.aggressive_debug:
             ue.log("Rendering gridlines")
-        
-        gridlines = self._compute_gridline_endpoints(table, world_location, origin_cell)
-        
-        for start, end in gridlines:
-            self._spawn_cylinder_between_points(start, end)
-        
+
+        self._destroy_actors(self.gridline_actors)
+        self.gridline_actors = []
+        self.gridline_metadata = {}
+        if self.resize_controller is not None:
+            self.resize_controller.clear_on_rerender()
+
+        segments = self._compute_gridline_segments(table, world_location, origin_cell)
+
+        for seg in segments:
+            actor = self._spawn_cylinder_between_points(seg['start'], seg['end'])
+            if actor is None:
+                continue
+            meta = seg.get('meta')
+            if meta is not None and self.enable_resize:
+                mid = FVector(
+                    (seg['start'].x + seg['end'].x) / 2,
+                    (seg['start'].y + seg['end'].y) / 2,
+                    (seg['start'].z + seg['end'].z) / 2,
+                )
+                meta['midpoint'] = mid
+                self.gridline_metadata[actor] = meta
+
         if self.aggressive_debug:
-            ue.log(f"Rendered {len(self.gridline_actors)} gridlines")
-    
-    def _compute_gridline_endpoints(self, table: Table, world_location: FVector,
-                                    origin_cell: Tuple[int, ...]) -> List[Tuple[FVector, FVector]]:
-        gridlines = []
+            ue.log(f"Rendered {len(self.gridline_actors)} gridlines "
+                   f"({len(self.gridline_metadata)} resizable)")
+
+    def _compute_gridline_segments(self, table: Table, world_location: FVector,
+                                   origin_cell: Tuple[int, ...]) -> List[Dict]:
+        segments = []
         num_visual_dims = min(3, table.ndim)
-        
+
         orient = []
         for i in range(3):
             orient.append(UnrealAxisPresets.get_orientation_vector(self.orientation_preset, i))
-        
+
+        def _seg(start, end, meta=None):
+            return {'start': start, 'end': end, 'meta': meta}
+
         if num_visual_dims == 1:
             axis0_indices = list(table.axes[0].indices)
-            
+
             start_idx = (axis0_indices[0],)
             start_pos = self._get_cell_world_position(table, start_idx, world_location, origin_cell)
-            
-            total_span = sum(self.cell_width_per_row.get(i, self.base_cell_spacing) 
+
+            total_span = sum(self.cell_width_per_row.get(i, self.base_cell_spacing)
                            for i in axis0_indices)
-            
+
             extend = FVector(orient[0].x * total_span, orient[0].y * total_span, orient[0].z * total_span)
             end_pos = FVector(start_pos.x + extend.x, start_pos.y + extend.y, start_pos.z + extend.z)
-            
-            gridlines.append((start_pos, end_pos))
-        
+
+            segments.append(_seg(start_pos, end_pos))
+
         elif num_visual_dims == 2:
             axis0_indices = list(table.axes[0].indices)
             axis1_indices = list(table.axes[1].indices)
-            
+
             n_rows = len(axis0_indices)
             n_cols = len(axis1_indices)
-            
+
             total_row_span = sum(self.cell_width_per_row.get(i, self.base_cell_spacing) for i in axis0_indices)
             total_col_span = sum(self.cell_height_per_column.get(j, self.base_cell_spacing) for j in axis1_indices)
-            
-            # HORIZONTAL (n_rows + 1)
+
+            # HORIZONTAL (n_rows + 1) — separate rows; drag along axis 0 resizes row above
             for i in range(n_rows + 1):
                 cumulative_row = sum(self.cell_width_per_row.get(axis0_indices[k], self.base_cell_spacing)
                                    for k in range(i) if k < n_rows)
-                
+
                 ref_idx = (axis0_indices[0], axis1_indices[0])
                 start_pos = self._get_cell_world_position(table, ref_idx, world_location, origin_cell)
-                
+
                 row_shift = FVector(orient[0].x * cumulative_row, orient[0].y * cumulative_row, orient[0].z * cumulative_row)
                 col_extend = FVector(orient[1].x * total_col_span, orient[1].y * total_col_span, orient[1].z * total_col_span)
-                
+
                 line_start = FVector(start_pos.x + row_shift.x, start_pos.y + row_shift.y, start_pos.z + row_shift.z)
                 line_end = FVector(line_start.x + col_extend.x, line_start.y + col_extend.y, line_start.z + col_extend.z)
-                
-                gridlines.append((line_start, line_end))
-            
-            # VERTICAL (n_cols + 1)
+
+                meta = None
+                if i > 0:
+                    meta = {
+                        'axis': 0,
+                        'resize_target_index': axis0_indices[i - 1],
+                        'direction': orient[0],
+                    }
+                segments.append(_seg(line_start, line_end, meta))
+
+            # VERTICAL (n_cols + 1) — separate columns; drag along axis 1 resizes column left
             for j in range(n_cols + 1):
                 cumulative_col = sum(self.cell_height_per_column.get(axis1_indices[k], self.base_cell_spacing)
                                    for k in range(j) if k < n_cols)
-                
+
                 ref_idx = (axis0_indices[0], axis1_indices[0])
                 start_pos = self._get_cell_world_position(table, ref_idx, world_location, origin_cell)
-                
+
                 col_shift = FVector(orient[1].x * cumulative_col, orient[1].y * cumulative_col, orient[1].z * cumulative_col)
                 row_extend = FVector(orient[0].x * total_row_span, orient[0].y * total_row_span, orient[0].z * total_row_span)
-                
+
                 line_start = FVector(start_pos.x + col_shift.x, start_pos.y + col_shift.y, start_pos.z + col_shift.z)
                 line_end = FVector(line_start.x + row_extend.x, line_start.y + row_extend.y, line_start.z + row_extend.z)
-                
-                gridlines.append((line_start, line_end))
+
+                meta = None
+                if j > 0:
+                    meta = {
+                        'axis': 1,
+                        'resize_target_index': axis1_indices[j - 1],
+                        'direction': orient[1],
+                    }
+                segments.append(_seg(line_start, line_end, meta))
         
         elif num_visual_dims == 3:
             axis0_indices = list(table.axes[0].indices)
             axis1_indices = list(table.axes[1].indices)
             axis2_indices = list(table.axes[2].indices)
-            
+
             n0, n1, n2 = len(axis0_indices), len(axis1_indices), len(axis2_indices)
-            
+
             total_row = sum(self.cell_width_per_row.get(i, self.base_cell_spacing) for i in axis0_indices)
             total_col = sum(self.cell_height_per_column.get(j, self.base_cell_spacing) for j in axis1_indices)
             total_depth = sum(self.cell_depth_per_layer.get(k, self.base_cell_spacing) for k in axis2_indices)
-            
+
             if self.aggressive_debug:
                 ue.log(f"3D spans - row:{total_row}, col:{total_col}, depth:{total_depth}")
                 ue.log(f"Expected gridlines: {(n1+1)*(n2+1)} + {(n0+1)*(n2+1)} + {(n0+1)*(n1+1)} = {(n1+1)*(n2+1) + (n0+1)*(n2+1) + (n0+1)*(n1+1)}")
-            
-            # Lines parallel to axis 0 (rows)
+
+            # Lines parallel to axis 0 (run along row direction, vary over (j, k))
+            # Resize tagging: front face k==0, j>0 => column resize; left edge j==0, k>0 => layer resize
             for j in range(n1 + 1):
-                cum_col = sum(self.cell_height_per_column.get(axis1_indices[k], self.base_cell_spacing) 
+                cum_col = sum(self.cell_height_per_column.get(axis1_indices[k], self.base_cell_spacing)
                            for k in range(min(j, n1)))
-                
+
                 for k in range(n2 + 1):
                     cum_depth = sum(self.cell_depth_per_layer.get(axis2_indices[m], self.base_cell_spacing)
                                  for m in range(min(k, n2)))
-                    
+
                     ref_idx = (axis0_indices[0], axis1_indices[0], axis2_indices[0])
                     start_pos = self._get_cell_world_position(table, ref_idx, world_location, origin_cell)
-                    
+
                     shifts = FVector(
                         orient[1].x * cum_col + orient[2].x * cum_depth,
                         orient[1].y * cum_col + orient[2].y * cum_depth,
                         orient[1].z * cum_col + orient[2].z * cum_depth
                     )
                     extend = FVector(orient[0].x * total_row, orient[0].y * total_row, orient[0].z * total_row)
-                    
+
                     line_start = FVector(start_pos.x + shifts.x, start_pos.y + shifts.y, start_pos.z + shifts.z)
                     line_end = FVector(line_start.x + extend.x, line_start.y + extend.y, line_start.z + extend.z)
-                    gridlines.append((line_start, line_end))
-            
-            # Lines parallel to axis 1 (columns)
+
+                    meta = None
+                    if k == 0 and j > 0:
+                        meta = {
+                            'axis': 1,
+                            'resize_target_index': axis1_indices[j - 1],
+                            'direction': orient[1],
+                        }
+                    elif j == 0 and k > 0:
+                        meta = {
+                            'axis': 2,
+                            'resize_target_index': axis2_indices[k - 1],
+                            'direction': orient[2],
+                        }
+                    segments.append(_seg(line_start, line_end, meta))
+
+            # Lines parallel to axis 1 (run along column direction, vary over (i, k))
+            # Resize tagging: front face k==0, i>0 => row resize; top edge i==0, k>0 => layer resize
             for i in range(n0 + 1):
                 cum_row = sum(self.cell_width_per_row.get(axis0_indices[k], self.base_cell_spacing)
                            for k in range(min(i, n0)))
-                
+
                 for k in range(n2 + 1):
                     cum_depth = sum(self.cell_depth_per_layer.get(axis2_indices[m], self.base_cell_spacing)
                                  for m in range(min(k, n2)))
-                    
+
                     ref_idx = (axis0_indices[0], axis1_indices[0], axis2_indices[0])
                     start_pos = self._get_cell_world_position(table, ref_idx, world_location, origin_cell)
-                    
+
                     shifts = FVector(
                         orient[0].x * cum_row + orient[2].x * cum_depth,
                         orient[0].y * cum_row + orient[2].y * cum_depth,
                         orient[0].z * cum_row + orient[2].z * cum_depth
                     )
                     extend = FVector(orient[1].x * total_col, orient[1].y * total_col, orient[1].z * total_col)
-                    
+
                     line_start = FVector(start_pos.x + shifts.x, start_pos.y + shifts.y, start_pos.z + shifts.z)
                     line_end = FVector(line_start.x + extend.x, line_start.y + extend.y, line_start.z + extend.z)
-                    gridlines.append((line_start, line_end))
-            
-            # Lines parallel to axis 2 (depth)
+
+                    meta = None
+                    if k == 0 and i > 0:
+                        meta = {
+                            'axis': 0,
+                            'resize_target_index': axis0_indices[i - 1],
+                            'direction': orient[0],
+                        }
+                    elif i == 0 and k > 0:
+                        meta = {
+                            'axis': 2,
+                            'resize_target_index': axis2_indices[k - 1],
+                            'direction': orient[2],
+                        }
+                    segments.append(_seg(line_start, line_end, meta))
+
+            # Lines parallel to axis 2 (run along depth direction)
+            # These don't uniquely bound any single axis — left untagged in v1.
             for i in range(n0 + 1):
                 cum_row = sum(self.cell_width_per_row.get(axis0_indices[k], self.base_cell_spacing)
                            for k in range(min(i, n0)))
-                
+
                 for j in range(n1 + 1):
                     cum_col = sum(self.cell_height_per_column.get(axis1_indices[k], self.base_cell_spacing)
                                for k in range(min(j, n1)))
-                    
+
                     ref_idx = (axis0_indices[0], axis1_indices[0], axis2_indices[0])
                     start_pos = self._get_cell_world_position(table, ref_idx, world_location, origin_cell)
-                    
+
                     shifts = FVector(
                         orient[0].x * cum_row + orient[1].x * cum_col,
                         orient[0].y * cum_row + orient[1].y * cum_col,
                         orient[0].z * cum_row + orient[1].z * cum_col
                     )
                     extend = FVector(orient[2].x * total_depth, orient[2].y * total_depth, orient[2].z * total_depth)
-                    
+
                     line_start = FVector(start_pos.x + shifts.x, start_pos.y + shifts.y, start_pos.z + shifts.z)
                     line_end = FVector(line_start.x + extend.x, line_start.y + extend.y, line_start.z + extend.z)
-                    gridlines.append((line_start, line_end))
-        
-        return gridlines
+
+                    segments.append(_seg(line_start, line_end))
+
+        return segments
     
     def _spawn_cylinder_between_points(self, start: FVector, end: FVector):
         if not self.cylinder_mesh:
-            return
-        
+            return None
+
         mid = FVector((start.x + end.x) / 2, (start.y + end.y) / 2, (start.z + end.z) / 2)
         distance = KismetMathLibrary.Vector_Distance(start, end)
-        
+
         if distance < 0.01:
-            return
-        
+            return None
+
         rotation = KismetMathLibrary.FindLookAtRotation(start, end)
         rotation.pitch += 90
-        
+
         cylinder = self.world.actor_spawn(StaticMeshActor)
         cylinder.StaticMeshComponent.SetStaticMesh(self.cylinder_mesh)
         cylinder.StaticMeshComponent.Mobility = EComponentMobility.Movable
-        
-        scale = FVector(0.02, 0.02, distance / 100.0)
+
+        thickness = self.gridline_thickness
+        scale = FVector(thickness, thickness, distance / 100.0)
         transform = FTransform(mid, rotation, scale)
         cylinder.set_actor_transform(transform)
-        
+
         self.gridline_actors.append(cylinder)
+        return cylinder
     
     def _render_nd_table(self, table: Table, base_location: FVector,
                         render_gridlines: bool, render_text: bool):

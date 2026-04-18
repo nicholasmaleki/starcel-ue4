@@ -52,13 +52,13 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import psutil
 
-# ── OS detection ─────────────────────────────────────────────────────────────
+# OS detection
 _OS       = platform.system()
 _IS_WIN   = _OS == "Windows"
 _IS_MAC   = _OS == "Darwin"
 _IS_LINUX = _OS == "Linux"
 
-# ── Windows-only imports ─────────────────────────────────────────────────────
+# Windows-only imports
 _WMI_OK = _GPUTIL_OK = _WINREG_OK = False
 _WMI = None
 
@@ -80,7 +80,7 @@ if _IS_WIN:
     except Exception:
         pass
 
-# ── cross-platform optional ──────────────────────────────────────────────────
+# cross-platform optional
 try:
     import cpuinfo as _cpuinfo
     _CPUINFO_OK = True
@@ -93,7 +93,7 @@ try:
 except Exception:
     _REQUESTS_OK = False
 
-# ── Everything (Windows) ─────────────────────────────────────────────────────
+# Everything (Windows)
 _EVERYTHING_OK = False
 _EVERYTHING = None
 if _IS_WIN:
@@ -104,10 +104,10 @@ if _IS_WIN:
     except Exception:
         pass
 
-# ── Update interval reference ────────────────────────────────────────────────
+# Update interval reference
 UPDATE_INTERVAL = 5  # seconds
 
-# ── Data directory for persistence ───────────────────────────────────────────
+# Data directory for persistence
 def _data_dir() -> Path:
     if _IS_WIN:
         base = Path(os.environ.get("APPDATA", Path.home()))
@@ -122,13 +122,11 @@ def _data_dir() -> Path:
 DATA_DIR      = _data_dir()
 SNAPSHOT_FILE = DATA_DIR / "snapshots.txt"
 
-# ── Activity tracker stats file ───────────────────────────────────────────────
+# Activity tracker stats file
 _ACTIVITY_STATS_FILE = DATA_DIR / "activity_stats.json"
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # UNIT HELPERS
-# ═══════════════════════════════════════════════════════════════════════════════
 
 def _c_to_f(c: float) -> float:
     return c * 9 / 5 + 32
@@ -186,9 +184,7 @@ def _run_ps(cmd: str, timeout: int = 5) -> str:
     return _run(["powershell", "-NoProfile", "-Command", cmd], timeout=timeout)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # CLIPBOARD
-# ═══════════════════════════════════════════════════════════════════════════════
 
 def _collect_clipboard() -> Dict[str, Any]:
     out: Dict[str, Any] = {
@@ -268,9 +264,7 @@ def _collect_clipboard() -> Dict[str, Any]:
     return out
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # NOTIFICATIONS
-# ═══════════════════════════════════════════════════════════════════════════════
 
 def _collect_notifications() -> Dict[str, Any]:
     out: Dict[str, Any] = {"count": "N/A", "items": [], "dnd_active": False}
@@ -322,9 +316,7 @@ def _collect_notifications() -> Dict[str, Any]:
     return out
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # OPEN APPLICATIONS
-# ═══════════════════════════════════════════════════════════════════════════════
 
 def _collect_open_apps() -> Dict[str, Any]:
     out: Dict[str, Any] = {"count": 0, "apps": []}
@@ -390,9 +382,7 @@ def _collect_open_apps() -> Dict[str, Any]:
     return out
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # ACTIVITY (reads from activity_tracker.py JSON file)
-# ═══════════════════════════════════════════════════════════════════════════════
 
 def _collect_activity(units: str) -> Dict[str, Any]:
     not_running = {
@@ -438,9 +428,7 @@ def _collect_activity(units: str) -> Dict[str, Any]:
     return out
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # SYSTEM
-# ═══════════════════════════════════════════════════════════════════════════════
 
 def _collect_system() -> Dict[str, Any]:
     out: Dict[str, Any] = {}
@@ -532,9 +520,7 @@ def _collect_system() -> Dict[str, Any]:
     return out
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # CPU
-# ═══════════════════════════════════════════════════════════════════════════════
 
 def _collect_cpu(units: str) -> Dict[str, Any]:
     out: Dict[str, Any] = {}
@@ -593,9 +579,7 @@ def _collect_cpu(units: str) -> Dict[str, Any]:
     return out
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # GPU
-# ═══════════════════════════════════════════════════════════════════════════════
 
 def _collect_gpu(units: str) -> List[Dict[str, Any]]:
     gpus: List[Dict[str, Any]] = []
@@ -671,9 +655,7 @@ def _collect_gpu(units: str) -> List[Dict[str, Any]]:
     return gpus
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # MEMORY
-# ═══════════════════════════════════════════════════════════════════════════════
 
 def _collect_memory(units: str) -> Dict[str, Any]:
     vm = psutil.virtual_memory()
@@ -712,9 +694,7 @@ def _collect_memory(units: str) -> Dict[str, Any]:
     return out
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # STORAGE
-# ═══════════════════════════════════════════════════════════════════════════════
 
 def _collect_storage(units: str) -> List[Dict[str, Any]]:
     drives = []
@@ -766,9 +746,7 @@ def _collect_storage(units: str) -> List[Dict[str, Any]]:
     return drives
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # NETWORK
-# ═══════════════════════════════════════════════════════════════════════════════
 
 def _collect_network(units: str) -> Dict[str, Any]:
     out: Dict[str, Any] = {}
@@ -862,9 +840,7 @@ def _collect_network(units: str) -> Dict[str, Any]:
     return out
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # DISPLAY
-# ═══════════════════════════════════════════════════════════════════════════════
 
 def _collect_display() -> List[Dict[str, Any]]:
     displays = []
@@ -897,9 +873,7 @@ def _collect_display() -> List[Dict[str, Any]]:
     return displays
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # AUDIO
-# ═══════════════════════════════════════════════════════════════════════════════
 
 def _collect_audio() -> Dict[str, Any]:
     out: Dict[str, Any] = {"output_device": "N/A", "input_device": "N/A", "master_volume": "N/A"}
@@ -933,9 +907,7 @@ def _collect_audio() -> Dict[str, Any]:
     return out
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # BATTERY
-# ═══════════════════════════════════════════════════════════════════════════════
 
 def _collect_battery() -> Optional[Dict[str, Any]]:
     battery = psutil.sensors_battery()
@@ -977,9 +949,7 @@ def _collect_battery() -> Optional[Dict[str, Any]]:
     return out
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # BLUETOOTH
-# ═══════════════════════════════════════════════════════════════════════════════
 
 def _collect_bluetooth() -> Dict[str, Any]:
     out: Dict[str, Any] = {"adapter_present": False, "adapter_name": "N/A", "devices": []}
@@ -1030,9 +1000,7 @@ def _collect_bluetooth() -> Dict[str, Any]:
     return out
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # WEATHER
-# ═══════════════════════════════════════════════════════════════════════════════
 
 def _collect_weather(units: str) -> Dict[str, Any]:
     if not _REQUESTS_OK:
@@ -1069,9 +1037,7 @@ def _collect_weather(units: str) -> Dict[str, Any]:
         return {"error": str(e)}
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # TOP PROCESSES
-# ═══════════════════════════════════════════════════════════════════════════════
 
 def _collect_processes(n: int = 10) -> List[Dict[str, Any]]:
     procs = []
@@ -1090,9 +1056,7 @@ def _collect_processes(n: int = 10) -> List[Dict[str, Any]]:
     return procs
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # FILE SYSTEM
-# ═══════════════════════════════════════════════════════════════════════════════
 
 def _collect_filesystem(units: str) -> Dict[str, Any]:
     out: Dict[str, Any] = {}
@@ -1153,9 +1117,7 @@ def _collect_filesystem(units: str) -> Dict[str, Any]:
     return out
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # COOLING
-# ═══════════════════════════════════════════════════════════════════════════════
 
 def _collect_cooling(units: str) -> Dict[str, Any]:
     out: Dict[str, Any] = {"fans": [], "all_temps": {}}
@@ -1189,9 +1151,7 @@ def _collect_cooling(units: str) -> Dict[str, Any]:
     return out
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # MODES
-# ═══════════════════════════════════════════════════════════════════════════════
 
 MODES: Dict[str, Dict[str, bool]] = {
     "normal": {
@@ -1237,9 +1197,7 @@ MODES: Dict[str, Dict[str, bool]] = {
 }
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # DICT OUTPUT
-# ═══════════════════════════════════════════════════════════════════════════════
 
 def get_info_dict(mode: str = "normal", units: str = "usa") -> Dict[str, Any]:
     """
@@ -1278,9 +1236,7 @@ def get_info_dict(mode: str = "normal", units: str = "usa") -> Dict[str, Any]:
     return data
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # STRING OUTPUT
-# ═══════════════════════════════════════════════════════════════════════════════
 
 def _heading(lines: List[str], title: str) -> None:
     lines.append("")
@@ -1544,7 +1500,7 @@ def _fmt_activity(info: dict, lines: List[str]) -> None:
     act = info["activity"]
     _heading(lines, "MOUSE & KEYBOARD ACTIVITY")
     if not act.get("tracker_running"):
-        lines.append(f"  ⚠  {act.get('note', 'Tracker not running.')}")
+        lines.append(f"    {act.get('note', 'Tracker not running.')}")
     else:
         _compact(lines, ("APM", act.get("actions_per_min")),
                  ("Clicks/min", act.get("clicks_per_min")),
@@ -1648,9 +1604,7 @@ def get_info_string(mode: str = "normal", units: str = "usa") -> str:
     return "\n".join(lines)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # SNAPSHOT SAVE / LOAD
-# ═══════════════════════════════════════════════════════════════════════════════
 
 def save_snapshot(
     path: Optional[str] = None,
@@ -1745,9 +1699,7 @@ def load_snapshots(path: Optional[str] = None) -> List[Dict[str, Any]]:
     return sorted(summaries, key=lambda x: x.get("ts", ""))
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
 # CLI SELF-TEST
-# ═══════════════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
     import argparse

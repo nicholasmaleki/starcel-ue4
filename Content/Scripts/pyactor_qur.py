@@ -3,6 +3,7 @@ from unreal_engine import FVector, FRotator, FTransform
 import random
 import pickle
 import os
+import re
 
 try:
     from unreal_engine.classes import StaticMeshActor, Blueprint, Material
@@ -15,7 +16,6 @@ try:
 except Exception:
     worldhello = None
 
-# ---------------------------------------------------------------------------
 # Python component for BP_Qur — spawns a Text3D quote every 60 seconds
 #
 # Blueprint requirements (BP_Qur):
@@ -24,7 +24,6 @@ except Exception:
 #
 # The quote text is spawned as a BP_Cell (Text3DComponent) actor above
 # the cat, using CatFont_Font, and replaced each interval.
-# ---------------------------------------------------------------------------
 
 QUOTES = [
     "Hello World",
@@ -32,7 +31,8 @@ QUOTES = [
 
 FONT_PATH = '/Game/Fonts/CatFont_Font'
 QUOTE_INTERVAL = 90.0   # 1.5 minutes between quote changes
-QUOTE_OFFSET   = FVector(0, 100, 200)  # to the right and up from the cat
+QUOTE_OFFSET   = FVector(0, 250, 700)  # to the right and up from the cat
+TEXT_LINE_LENGTH = 25
 
 
 class PyActorQur:
@@ -49,7 +49,7 @@ class PyActorQur:
         except Exception as e:
             ue.log_warning(f'PyActorQur: could not load font "{FONT_PATH}": {e}')
 
-        # ---- Load quotes from pickle (falls back to hardcoded QUOTES) ----
+        # Load quotes from pickle (falls back to hardcoded QUOTES)
         file_path = os.path.join(os.path.dirname(__file__), "quotes.pkl")
         self.__quotes = None
         try:
@@ -105,11 +105,11 @@ class PyActorQur:
 
             t3d = actor.get_actor_component('Text3DComponent')
             if t3d:
-                t3d.Text = quote
+                t3d.Text = re.sub(rf"(.{{1,{TEXT_LINE_LENGTH}}})(?:\s+|$)", r"\1\n", quote)
                 if self._font:
                     t3d.Font = self._font
                 # Small scale for readable text
-                transform = FTransform(spawn_loc, FRotator(0, 0, 90), FVector(2, 2, 2))
+                transform = FTransform(spawn_loc, FRotator(0, 0, 270), FVector(15, 15, 15))
                 actor.set_actor_transform(transform)
 
             # Attach so it follows the cat

@@ -183,9 +183,9 @@ class Main:
     # FooWorld = [IntProperty]
     # FooWorld = [17, 22, 30]
 
-    # # ------------------------------------------------------------
+    # #
     # # MULTICAST FLAG TEST
-    # # ------------------------------------------------------------
+    # #
     # def test_multicast_flag(self, msg):
     #     """
     #     If .multicast works, this should run on:
@@ -204,9 +204,9 @@ class Main:
     # test_multicast_flag.multicast = True
     # test_multicast_flag.reliable = True
     #
-    # # ------------------------------------------------------------
+    # #
     # # SERVER RPC – MANUAL MULTICAST
-    # # ------------------------------------------------------------
+    # #
     # def server_manual_multicast(self, msg):
     #     """
     #     Authoritative server RPC.
@@ -223,9 +223,9 @@ class Main:
     # server_manual_multicast.server = True
     # server_manual_multicast.reliable = True
     #
-    # # ------------------------------------------------------------
+    # #
     # # CLIENT RPC – MANUAL MULTICAST TARGET
-    # # ------------------------------------------------------------
+    # #
     # def client_receive_manual(self, msg):
     #     """
     #     Should only ever run on clients.
@@ -490,15 +490,15 @@ class Main:
         #
         #
         #
-        # # ============== CURSOR SETUP ==============
+        # # CURSOR SETUP
         # self.input.enable_mouse_events(True, True)
         # # self.input.show_cursor(True)
         # # self.input.set_cursor(EMouseCursor.GrabHand)
         #
-        # print("=== CURSOR INFO ===")
+        # print(" CURSOR INFO ")
         # self.input.print_cursor_info()
         #
-        # # ============== MOUSE AXIS TRACKING ==============
+        # # MOUSE AXIS TRACKING
         # # IMPORTANT: Use bind_axis_poll for MouseX/MouseY as bind_axis may not work reliably
         # # These will now properly track mouse movement
         # # self.input.bind_axis_poll("MouseX", lambda v: ue.log(f"MouseX: {v:.3f}"))
@@ -516,7 +516,7 @@ class Main:
         # # Mouse delta logging (uses timer)
         # self.input.log_mouse_delta_timer(rate=0.1)
         #
-        # # ============== BASIC KEY BINDINGS ==============
+        # # BASIC KEY BINDINGS
         # # Simple press bindings
         # # self.input.bind_press("K", self.on_key_k_pressed)
         # self.input.bind_press("L", lambda: ue.log("Pressed L"))
@@ -528,17 +528,17 @@ class Main:
         # # Toggle cursor with M key
         # self.input.bind_press("M", self.input.toggle_cursor)
         #
-        # # ============== MOUSE BINDINGS ==============
+        # # MOUSE BINDINGS
         # self.input.bind_press("LeftMouseButton", self.on_left_click)
         # self.input.bind_press("RightMouseButton", lambda: ue.log("Right click"))
         # self.input.bind_double_click("LeftMouseButton", lambda: ue.log("Double click!"))
         #
-        # # ============== REPEAT BINDINGS ==============
+        # # REPEAT BINDINGS
         # # These fire repeatedly while key is held
         # self.input.bind_repeat("W", lambda: ue.log("Holding W"))
         # self.input.bind_repeat("Ctrl+R", lambda: ue.log("Ctrl+R held"))
         #
-        # # ============== POLL-BASED CHECKING ==============
+        # # POLL-BASED CHECKING
         # # IMPORTANT: Use bind_poll for keys that have engine actions (like SpaceBar for Jump)
         # # This checks key state without binding, so it won't override Jump
         # self.input.bind_poll("SpaceBar", lambda: ue.log("Space is down (non-binding)"), rate=0.1)
@@ -546,7 +546,7 @@ class Main:
         # # You can also manually check key states
         # self.input.bind_press("P", self.check_key_states)
         #
-        # # ============== ENGINE ACTIONS ==============
+        # # ENGINE ACTIONS
         # # Bind to actions defined in your project's Input Settings
         # # This WON'T override the Jump action
         # self.input.bind_action(
@@ -555,21 +555,21 @@ class Main:
         #     released_cb=lambda: ue.log("Jump action released")
         # )
         #
-        # # ============== MOUSE POSITION BINDINGS ==============
+        # # MOUSE POSITION BINDINGS
         # # Get cursor info with world projection
         # self.input.bind_press("G", self.print_cursor_and_trace)
         #
         # # Set mouse position
         # self.input.bind_press("H", lambda: self.input.set_mouse_position(960, 540))
         #
-        # # ============== TRACE EXAMPLES ==============
+        # # TRACE EXAMPLES
         # # Trace from cursor
         # self.input.bind_press("T", self.trace_from_cursor)
         #
         # # Trace forward from camera
         # self.input.bind_press("F", self.trace_from_camera)
         #
-        # # ============== SEQUENCE BINDINGS ==============
+        # # SEQUENCE BINDINGS
         # # Execute callback after a sequence of keys
         # # self.input.bind_sequence(
         # #     ["Ctrl+K", "C"],
@@ -577,7 +577,7 @@ class Main:
         # #     timeout=2.0
         # # )
         #
-        # # ============== KEY REGISTRY ==============
+        # # KEY REGISTRY
         # # Print all registered bindings for a specific key
         # self.input.bind_press("F1", lambda: self.print_key_registry("W"))
 

@@ -30,7 +30,7 @@ import sys
 import traceback
 from typing import List
 
-# ── Try to import dependencies ────────────────────────────────────────────────
+# Try to import dependencies
 try:
     import numpy as np
     NUMPY_OK = True
@@ -57,7 +57,7 @@ except ImportError as e:
     traceback.print_exc()
     sys.exit(1)
 
-# ── Optional kingdon for GA tests ─────────────────────────────────────────────
+# Optional kingdon for GA tests
 try:
     from kingdon import Algebra
     KINGDON_OK = True
@@ -65,7 +65,7 @@ except ImportError:
     KINGDON_OK = False
     print("[examples] kingdon not installed — GA tests will use mock multivectors")
 
-# ── Optional sympy for symbolic tests ────────────────────────────────────────
+# Optional sympy for symbolic tests
 try:
     import sympy as sp
     SYMPY_OK = True
@@ -74,9 +74,7 @@ except ImportError:
     print("[examples] sympy not installed — symbolic tests will be skipped")
 
 
-# ============================================================================
 # TEST RUNNER
-# ============================================================================
 
 _PASS = 0
 _FAIL = 0
@@ -112,9 +110,7 @@ def _make(mode='2d',
     return p
 
 
-# ============================================================================
 # SECTION 1 — 2D PLOTS
-# ============================================================================
 
 def test_explicit_2d():
     """y = f(x) with various styles."""
@@ -201,9 +197,7 @@ def test_line_and_vector_2d():
     p.show()
 
 
-# ============================================================================
 # SECTION 2 — 3D SURFACES (focus area)
-# ============================================================================
 
 def test_explicit_surface_3d():
     """z = f(x,y) — multiple surfaces."""
@@ -388,9 +382,7 @@ def test_domain_color():
     p.show()
 
 
-# ============================================================================
 # SECTION 3 — VECTOR FIELDS & STREAMLINES
-# ============================================================================
 
 def test_vector_field_2d():
     p = _make()
@@ -428,9 +420,7 @@ def test_streamlines_3d():
     p.show()
 
 
-# ============================================================================
 # SECTION 4 — LINESTYLE COMBINATIONS
-# ============================================================================
 
 def test_all_linestyles():
     """Test every linewidth_mode, end_cap, shape, dash combination."""
@@ -477,9 +467,7 @@ _PALETTE = [
 ]
 
 
-# ============================================================================
 # SECTION 5 — SYMBOLIC (SymPy)
-# ============================================================================
 
 def test_sympy_expressions():
     if not SYMPY_OK:
@@ -502,9 +490,7 @@ def test_sympy_expressions():
     print("  sympy: compiled and queued OK")
 
 
-# ============================================================================
 # SECTION 6 — GEOMETRIC ALGEBRA
-# ============================================================================
 
 def _make_mock_mv(grade: int):
     """Create a minimal mock multivector when kingdon is unavailable."""
@@ -637,9 +623,7 @@ def test_ga_with_kingdon():
     print("  kingdon real algebra: OK")
 
 
-# ============================================================================
 # SECTION 7 — N-DIMENSIONAL SPREAD
-# ============================================================================
 
 def test_spread_4d():
     """4D function rendered as grid of 3D projections."""
@@ -671,9 +655,7 @@ def test_spread_5d():
     p.show()
 
 
-# ============================================================================
 # SECTION 8 — GRID MODES
-# ============================================================================
 
 def test_grid_2d():
     p = _make()
@@ -691,9 +673,7 @@ def test_grid_3d():
     p.show()
 
 
-# ============================================================================
 # SECTION 9 — COMBINED COMPLEX SCENES
-# ============================================================================
 
 def test_combined_2d_scene():
     """Multiple 2D primitives in one scene."""
@@ -775,9 +755,7 @@ def test_ga_full_scene():
     p.show()
 
 
-# ============================================================================
 # SECTION 10 — DEBUG LEVEL COMPARISON
-# ============================================================================
 
 def test_debug_off():
     """No debug output."""
@@ -808,9 +786,7 @@ def test_advanced_debug():
     p.show()
 
 
-# ============================================================================
 # TUBE MESH BUILDER — unit tests
-# ============================================================================
 
 def test_tube_mesh_builder():
     """Test TubeMeshBuilder directly for all cap / shape / dash combinations."""
@@ -839,9 +815,7 @@ def test_tube_mesh_builder():
         print(f"  TubeMesh {cfg}: {len(mesh.vertices)}v {len(mesh.indices)}t OK")
 
 
-# ============================================================================
 # MAIN
-# ============================================================================
 
 ALL_TESTS = [
     # 2D

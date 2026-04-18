@@ -35,7 +35,7 @@ from typing import (
 
 import numpy as np
 
-# ── Optional: SymPy ───────────────────────────────────────────────────────────
+# Optional: SymPy
 try:
     import sympy as sp
     from sympy.utilities.lambdify import lambdify as sp_lambdify
@@ -43,14 +43,14 @@ try:
 except ImportError:
     SYMPY_AVAILABLE = False
 
-# ── Optional: Kingdon (Geometric Algebra) ────────────────────────────────────
+# Optional: Kingdon (Geometric Algebra)
 try:
     from kingdon import Algebra as KingdonAlgebra
     KINGDON_AVAILABLE = True
 except ImportError:
     KINGDON_AVAILABLE = False
 
-# ── Type aliases ──────────────────────────────────────────────────────────────
+# Type aliases
 Vec2 = Tuple[float, float]
 Vec3 = Tuple[float, float, float]
 ScalarFn1 = Callable[[float], float]
@@ -64,9 +64,7 @@ _DBG_PREFIX    = "[Core]   "
 _DBG_ADV_PREFIX = "[Core++] "
 
 
-# ============================================================================
 # DEBUG HELPERS
-# ============================================================================
 
 def _dbg(msg: str, debug: bool):
     if debug:
@@ -91,9 +89,7 @@ def _timed(label: str, adv: bool):
     return _T()
 
 
-# ============================================================================
 # DATA STRUCTURES
-# ============================================================================
 
 @dataclass
 class CurvePoint:
@@ -132,9 +128,7 @@ class MeshData:
             self.uvs = np.asarray(self.uvs, dtype=float)
 
 
-# ============================================================================
 # SYMBOLIC COMPILER
-# ============================================================================
 
 class SymbolicCompiler:
     """Compile SymPy expressions to fast numpy callables."""
@@ -185,9 +179,7 @@ class SymbolicCompiler:
         return (dfx, dfy, dfz)
 
 
-# ============================================================================
 # ADAPTIVE SUBDIVIDER  (2D / 3D curves)
-# ============================================================================
 
 class AdaptiveSubdivider:
     """
@@ -240,7 +232,7 @@ class AdaptiveSubdivider:
         self.debug = debug
         self.adv   = advanced_debug
 
-    # ── helpers ─────────────────────────────────────────────────────────────
+    # helpers
 
     @staticmethod
     def _safe_eval(fn, x) -> Optional[float]:
@@ -263,7 +255,7 @@ class AdaptiveSubdivider:
         denom = abs(d1) + abs(d2) + 1e-30
         return cross / denom
 
-    # ── Explicit 2D: y = f(x) ───────────────────────────────────────────────
+    # Explicit 2D: y = f(x)
 
     def subdivide_explicit_2d(self,
                                fn: ScalarFn1,
@@ -355,7 +347,7 @@ class AdaptiveSubdivider:
               f"deep_zoom={deep_zoom}", self.adv)
         return segments
 
-    # ── Parametric 3D: (x,y,z)(t) ───────────────────────────────────────────
+    # Parametric 3D: (x,y,z)(t)
 
     def subdivide_parametric_3d(self,
                                  fx, fy, fz,
@@ -452,9 +444,7 @@ class AdaptiveSubdivider:
         return segments
 
 
-# ============================================================================
 # SURFACE SAMPLER  (z=f(x,y) and parametric)
-# ============================================================================
 
 class SurfaceSampler:
     """
@@ -470,7 +460,7 @@ class SurfaceSampler:
         self.debug = debug
         self.adv   = advanced_debug
 
-    # ── Explicit z = f(x,y) ─────────────────────────────────────────────────
+    # Explicit z = f(x,y)
 
     def explicit(self,
                  fn: ScalarFn2,
@@ -543,7 +533,7 @@ class SurfaceSampler:
         _adbg(f"explicit: {len(verts)} verts, {len(tris)} tris", self.adv)
         return mesh
 
-    # ── Parametric (x,y,z)(u,v) ─────────────────────────────────────────────
+    # Parametric (x,y,z)(u,v)
 
     def parametric(self,
                    fx, fy, fz,
@@ -576,7 +566,7 @@ class SurfaceSampler:
         _adbg(f"parametric: {len(verts)} verts, {len(tris)} tris", self.adv)
         return MeshData(verts_arr, tris, normals, uvs_arr)
 
-    # ── Helpers ──────────────────────────────────────────────────────────────
+    # Helpers
 
     @staticmethod
     def _grid_tris(Nu: int, Nv: int) -> np.ndarray:
@@ -631,9 +621,7 @@ class SurfaceSampler:
         return normals / norms
 
 
-# ============================================================================
 # MARCHING CUBES  (isosurface extraction)
-# ============================================================================
 
 class MarchingCubes:
     """
@@ -872,9 +860,7 @@ class MarchingCubes:
         return self._gradient_normals(verts, vol, xs, ys, zs)
 
 
-# ============================================================================
 # INTERSECTION CURVE FINDER
-# ============================================================================
 
 class IntersectionFinder:
     """
@@ -931,9 +917,7 @@ class IntersectionFinder:
         return mc.extract(diff_fn)
 
 
-# ============================================================================
 # RIEMANN SURFACE BUILDER
-# ============================================================================
 
 class RiemannSurfaceBuilder:
     """
@@ -1002,9 +986,7 @@ class RiemannSurfaceBuilder:
         return results
 
 
-# ============================================================================
 # VECTOR FIELD SAMPLER
-# ============================================================================
 
 class VectorFieldSampler:
     """Sample a vector field on a grid, returning Arrow objects."""
@@ -1065,9 +1047,7 @@ class VectorFieldSampler:
         return arrows
 
 
-# ============================================================================
 # INTEGRAL CURVE SOLVER  (streamlines)
-# ============================================================================
 
 class IntegralCurveSolver:
     """
@@ -1113,7 +1093,7 @@ class IntegralCurveSolver:
         self.debug     = debug
         self.adv       = advanced_debug
 
-    # ── 2-D ─────────────────────────────────────────────────────────────────
+    # 2-D
 
     def integrate_2d(self, F: VectorFn2, seed: Vec2) -> CurveSegment:
         pts = [CurvePoint(seed[0], seed[1])]
@@ -1164,7 +1144,7 @@ class IntegralCurveSolver:
             ks.append((h*float(vx), h*float(vy)))
         return ks
 
-    # ── 3-D ─────────────────────────────────────────────────────────────────
+    # 3-D
 
     def integrate_3d(self, F: VectorFn3, seed) -> CurveSegment:
         pts = [CurvePoint(*seed[:3])]
@@ -1227,9 +1207,7 @@ class IntegralCurveSolver:
         return (xb[0]<=x<=xb[1] and yb[0]<=y<=yb[1] and zb[0]<=z<=zb[1])
 
 
-# ============================================================================
 # DOMAIN COLORIZER  (complex analysis)
-# ============================================================================
 
 class DomainColorizer:
     """
@@ -1278,9 +1256,7 @@ class DomainColorizer:
         return [(v,t,p),(q,v,p),(p,v,t),(p,q,v),(t,p,v),(v,p,q)][i%6]
 
 
-# ============================================================================
 # GEOMETRIC ALGEBRA  (Kingdon integration)
-# ============================================================================
 
 class GABackend:
     """
@@ -1320,7 +1296,7 @@ class GABackend:
                 _dbg(f"GA algebra init failed ({e})", debug)
                 self.algebra = None
 
-    # ── Grade detection ──────────────────────────────────────────────────────
+    # Grade detection
 
     @staticmethod
     def detect_grade(mv) -> int:
@@ -1342,7 +1318,7 @@ class GABackend:
             return 1
         return 0
 
-    # ── Grade extraction ─────────────────────────────────────────────────────
+    # Grade extraction
 
     @staticmethod
     def extract_vector(mv) -> Vec3:
@@ -1427,9 +1403,7 @@ class GABackend:
             print(f"  scalar    = {self.extract_scalar(mv)}")
 
 
-# ============================================================================
 # SPREAD ENGINE  (nD → multiple 3D projections)
-# ============================================================================
 
 class SpreadEngine:
     """
@@ -1530,9 +1504,7 @@ class SpreadEngine:
         return results
 
 
-# ============================================================================
 # TUBE MESH BUILDER  (baked dash patterns, end caps, cross-section shapes)
-# ============================================================================
 
 class TubeMeshBuilder:
     """
@@ -1624,7 +1596,7 @@ class TubeMeshBuilder:
         _adbg(f"tube: {len(all_verts)} verts, {len(all_tris)} tris", self.adv)
         return mesh
 
-    # ── Parallel transport frame ────────────────────────────────────────────
+    # Parallel transport frame
 
     def _parallel_transport_frame(self, pts):
         """
@@ -1801,7 +1773,7 @@ class TubeMeshBuilder:
 
         return verts, norms, tris
 
-    # ── Dash pattern ────────────────────────────────────────────────────────
+    # Dash pattern
 
     def _apply_dash(self, pts: List[Vec3]) -> List[List[Vec3]]:
         """Split pts into solid sub-segments per dash pattern."""
@@ -1835,7 +1807,7 @@ class TubeMeshBuilder:
             result.append(current)
         return result or [pts]
 
-    # ── Geometry helpers ────────────────────────────────────────────────────
+    # Geometry helpers
 
     @staticmethod
     def _sub(a, b) -> Vec3:

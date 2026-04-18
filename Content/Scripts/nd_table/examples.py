@@ -38,7 +38,7 @@ def example_text_sizing_test():
         aggressive_debug=True
     )
     
-    # ===== TEST 1: VARYING TEXT LENGTHS WITH TABS AND NEWLINES =====
+    # TEST 1: VARYING TEXT LENGTHS WITH TABS AND NEWLINES
     print("\n[TEST 1] 2D - Tabs and newlines...")
     t_length = Table(shape=(3, 3), aggressive_debug=True)
     
@@ -58,9 +58,9 @@ def example_text_sizing_test():
     t_length[2, 2] = "The quick brown fox\n\n\njumps over the lazy dog"
     
     renderer.render_table(t_length, world_location=offset(0, 0, 100))
-    print("✓ 2D tab/newline test rendered\n")
+    print(" 2D tab/newline test rendered\n")
     
-    # ===== TEST 2: TABS =====
+    # TEST 2: TABS
     print("\n[TEST 2] Tabs - should expand to 4 char widths...")
     t_tabs = Table(shape=(5, 2), aggressive_debug=True)
     t_tabs[0, 0] = "No tab"
@@ -79,9 +79,9 @@ def example_text_sizing_test():
     t_tabs[4, 1] = "Data\tMore"
     
     renderer.render_table(t_tabs, world_location=offset(1000, 0, 100))
-    print("✓ Tabs rendered\n")
+    print(" Tabs rendered\n")
     
-    # ===== TEST 3: NEWLINES =====
+    # TEST 3: NEWLINES
     print("\n[TEST 3] Newlines - should increase cell height...")
     t_newlines = Table(shape=(5, 2), aggressive_debug=True)
     t_newlines[0, 0] = "Single"
@@ -100,9 +100,9 @@ def example_text_sizing_test():
     t_newlines[4, 1] = "Done"
     
     renderer.render_table(t_newlines, world_location=offset(2000, 0, 100))
-    print("✓ Newlines rendered\n")
+    print(" Newlines rendered\n")
     
-    # ===== TEST 4: COMBINED TABS AND NEWLINES =====
+    # TEST 4: COMBINED TABS AND NEWLINES
     print("\n[TEST 4] Combined tabs and newlines...")
     t_combined = Table(shape=(4, 3), aggressive_debug=True)
     
@@ -127,9 +127,9 @@ def example_text_sizing_test():
     t_combined[3, 2] = "Final\tCell"
     
     renderer.render_table(t_combined, world_location=offset(0, 1000, 100))
-    print("✓ Combined tabs/newlines rendered\n")
+    print(" Combined tabs/newlines rendered\n")
     
-    # ===== TEST 5: EDGE CASES =====
+    # TEST 5: EDGE CASES
     print("\n[TEST 5] Edge cases...")
     t_edge = Table(shape=(3, 3), aggressive_debug=True)
     t_edge[0, 0] = ""              # Empty string
@@ -145,7 +145,7 @@ def example_text_sizing_test():
     t_edge[2, 2] = "Regular"
     
     renderer.render_table(t_edge, world_location=offset(1000, 1000, 100))
-    print("✓ Edge cases rendered\n")
+    print(" Edge cases rendered\n")
     
     print("=" * 70)
     print("TEXT SIZING TESTS COMPLETE")
@@ -188,7 +188,7 @@ def test_nd_table_grid(base_location=None):
         aggressive_debug=True
     )
 
-    # ===== 2D TABLE (3x3) =====
+    # 2D TABLE (3x3)
     _log("\n[2D TEST] Creating 3x3 table...")
     t2d = Table(shape=(3, 3), aggressive_debug=True)
     for i in range(3):
@@ -200,7 +200,7 @@ def test_nd_table_grid(base_location=None):
     renderer.render_table(t2d, world_location=_off(0, 0, 100))
     _log("2D rendered\n")
 
-    # ===== 2D WITH NEGATIVES =====
+    # 2D WITH NEGATIVES
     _log("[2D NEGATIVE] Table with negative indices...")
     t2d_neg = Table(shape=[(-1, 1), (-1, 1)], aggressive_debug=True)
     for i in range(-1, 2):
@@ -209,7 +209,7 @@ def test_nd_table_grid(base_location=None):
     renderer.render_table(t2d_neg, world_location=_off(600, 0, 100))
     _log("2D negative rendered\n")
 
-    # ===== 3D TABLE =====
+    # 3D TABLE
     _log("[3D TEST] Creating 2x2x2 table...")
     t3d = Table(shape=(2, 2, 2), aggressive_debug=True)
     for i in range(2):
@@ -219,7 +219,7 @@ def test_nd_table_grid(base_location=None):
     renderer.render_table(t3d, world_location=_off(0, 600, 100))
     _log("3D rendered\n")
 
-    # ===== 3D WITH TABS AND NEWLINES =====
+    # 3D WITH TABS AND NEWLINES
     _log("[3D TAB/NEWLINE] Table with special characters...")
     t3d_special = Table(shape=(2, 2, 2), aggressive_debug=True)
     t3d_special[0, 0, 0] = "hello\nworld!"
@@ -233,7 +233,7 @@ def test_nd_table_grid(base_location=None):
     renderer.render_table(t3d_special, world_location=_off(600, 600, 100))
     _log("3D tab/newline rendered\n")
 
-    # ===== 3D WITH NEGATIVES =====
+    # 3D WITH NEGATIVES
     _log("[3D NEGATIVE] Table with negative indices...")
     t3d_neg = Table(shape=[(-1, 1), (-1, 1), (-1, 1)], aggressive_debug=True)
     for i in range(-1, 2):
@@ -243,7 +243,7 @@ def test_nd_table_grid(base_location=None):
     renderer.render_table(t3d_neg, world_location=_off(1200, 0, 100))
     _log("3D negative rendered\n")
 
-    # ===== 3D WITH FUNCTION =====
+    # 3D WITH FUNCTION
     _log("[3D FUNCTION] Table with callable function...")
     t3d_func = Table(shape=(2, 2, 2), aggressive_debug=True)
     for i in range(2):
@@ -256,7 +256,7 @@ def test_nd_table_grid(base_location=None):
     renderer.render_table(t3d_func, world_location=_off(1200, 600, 100))
     _log("3D function rendered\n")
 
-    # ===== 4D TABLE =====
+    # 4D TABLE
     _log("[4D TEST] Creating 2^4 table...")
     t4d = Table(shape=(2, 2, 2, 2), aggressive_debug=True)
     for i in range(2):
@@ -267,7 +267,7 @@ def test_nd_table_grid(base_location=None):
     renderer.render_table(t4d, world_location=_off(0, 1200, 100))
     _log("4D rendered\n")
 
-    # ===== 4D WITH NEGATIVE =====
+    # 4D WITH NEGATIVE
     _log("[4D NEGATIVE] Table with negative 4th dimension...")
     axes_4d = [
         Axis(start=0, end=1, name="dim0"),
@@ -284,7 +284,7 @@ def test_nd_table_grid(base_location=None):
     renderer.render_table(t4d_neg, world_location=_off(600, 1200, 100))
     _log("4D negative rendered\n")
 
-    # ===== 5D TABLE =====
+    # 5D TABLE
     _log("[5D TEST] Creating 2^5 table...")
     t5d = Table(shape=(2, 2, 2, 2, 2), aggressive_debug=True)
     for i in range(2):
@@ -296,7 +296,7 @@ def test_nd_table_grid(base_location=None):
     renderer.render_table(t5d, world_location=_off(0, 1800, 100))
     _log("5D rendered\n")
 
-    # ===== 6D TABLE (2^6 = 64 cells) =====
+    # 6D TABLE (2^6 = 64 cells)
     _log("[6D TEST] Creating 2^6 table (64 cells)...")
     t6d = Table(shape=(2, 2, 2, 2, 2, 2), aggressive_debug=True)
     count = 0

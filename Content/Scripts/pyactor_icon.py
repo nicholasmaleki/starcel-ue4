@@ -4,9 +4,7 @@ from unreal_engine import FVector, FRotator, FTransform
 from unreal_engine.enums import ECollisionChannel
 from unreal_engine_tools import find_component
 
-# ---------------------------------------------------------------------------
 # Python component: hover-shrink + clickable file-open for spawn_icon
-# ---------------------------------------------------------------------------
 #
 # CRASH NOTE: do NOT call `smc.bind_event('OnClicked', ...)` — two-param
 # sparse delegates crash UEP at UEPyModule.cpp:4502.
@@ -15,7 +13,6 @@ from unreal_engine_tools import find_component
 # (one-param sparse delegates work).  So we track _hovered state from those
 # callbacks and detect mouse-down during hover in tick().  No cursor trace
 # needed — the hover events tell us the cursor is already over our sphere.
-# ---------------------------------------------------------------------------
 
 
 def _open_with_chrome(path):
@@ -84,7 +81,7 @@ class IconSphere:
         ue.log(f'IconSphere: ready  owner={owner_name}  '
                f'smc={self.smc is not None}  pc={self.player_controller is not None}')
 
-    # ── Hover callbacks ───────────────────────────────────────────────────
+    # Hover callbacks
 
     def on_hover_begin(self, mesh):
         self._hovered = True
@@ -96,7 +93,7 @@ class IconSphere:
         self._hovered = False
         self.target_scale = self.base_scale
 
-    # ── Source path lookup ────────────────────────────────────────────────
+    # Source path lookup
 
     def _get_source_path(self):
         """Read source_path lazily from the owner actor (set after spawn)."""
@@ -106,7 +103,7 @@ class IconSphere:
                 return p
         return getattr(self.uobject, 'source_path', None)
 
-    # ── Mouse button check ────────────────────────────────────────────────
+    # Mouse button check
 
     def _is_mouse_down(self):
         if self.player_controller is None:
@@ -126,10 +123,10 @@ class IconSphere:
         except Exception:
             return False
 
-    # ── Tick ──────────────────────────────────────────────────────────────
+    # Tick
 
     def tick(self, dt):
-        # --- hover scale lerp ---
+        # hover scale lerp
         cur = self.uobject.get_actor_scale()
         tgt = self.target_scale
         a   = min(1.0, self.LERP_SPEED * dt)
@@ -139,7 +136,7 @@ class IconSphere:
             cur.z + (tgt.z - cur.z) * a,
         ))
 
-        # --- click = hovered + LMB rising edge ---
+        # click = hovered + LMB rising edge
         mouse_down = self._is_mouse_down()
         if mouse_down and not self._was_mouse_down and self._hovered:
             path = self._get_source_path()

@@ -27,7 +27,7 @@ from unreal_engine_tools import get_world
 
 world = get_world()
 
-# ── crash log ──────────────────────────────────────────────────────────────
+# crash log
 DESKTOP   = os.path.join(os.path.expanduser("~"), "Desktop")
 _log_file = open(os.path.join(DESKTOP, "gizmo_crash_log.txt"), "w", buffering=1)
 
@@ -35,7 +35,7 @@ def _log(msg):
     ue.log_warning(msg)
     _log_file.write(msg + "\n")
 
-# ── mesh paths  (BasicShapes – always have collision) ──────────────────────
+# mesh paths (BasicShapes – always have collision)
 SH_CONE = '/Engine/BasicShapes/Cone'
 SH_CYL  = '/Engine/BasicShapes/Cylinder'
 SH_CUBE = '/Engine/BasicShapes/Cube'
@@ -43,7 +43,7 @@ M_COLOR = '/Game/Materials/M_Color.M_Color'
 
 ORIGIN = FVector(0, 0, 0)
 
-# ── rotation helper ────────────────────────────────────────────────────────
+# rotation helper
 # BasicShapes Cone and Cylinder are both authored along +Z.
 # _rot(axis) returns the FRotator that makes the +Z axis point along *axis*.
 # This is identical to the test_cylinder pattern in main.py.
@@ -52,7 +52,7 @@ def _rot(axis):
     r.pitch += 90
     return r
 
-# ── axis / plane tables ────────────────────────────────────────────────────
+# axis / plane tables
 AXES6 = [
     # (label,  axis_vec,              (r,    g,    b   ))
     ('X',  FVector( 1, 0, 0), (1.00, 0.10, 0.10)),
@@ -74,7 +74,7 @@ PLANES = [
     ('YZ', FVector(1, 0, 0), (1.00, 0.10, 1.00), FVector(0,1,0), FVector(0,0,1)),
 ]
 
-# ── colour / hover state ───────────────────────────────────────────────────
+# colour / hover state
 _actor_mid    = {}   # actor → MID
 _actor_colors = {}   # actor → (r, g, b, emissive)
 _piece_off    = {}   # actor → FVector offset from target centre (world-space)
@@ -107,7 +107,7 @@ def _hover_exit(actor):
     if actor in _actor_colors:
         _set_color(actor, *_actor_colors[actor])
 
-# ── spawn helper ───────────────────────────────────────────────────────────
+# spawn helper
 def _spawn(path, loc, rot, sc, label, offset):
     """Spawn one BasicShape actor, record its offset from target."""
     mesh = ue.load_object(StaticMesh, path)
@@ -124,18 +124,24 @@ def _spawn(path, loc, rot, sc, label, offset):
     _piece_off[actor] = offset
     return actor
 
-# ── build ──────────────────────────────────────────────────────────────────
-def test_gizmos():
+# build
+def test_gizmos(location=None):
     """
     Spawn demo cylinder + full gizmo.
     Returns (target, gizmo_root, handles).
     gizmo_root is a dummy actor (not used for parenting).
     handles: actor → (kind, data)
+
+    location — FVector spawn position for the target cylinder.
+               Defaults to FVector(0, 0, 100).
     """
     _log("=== test_gizmos ===")
     _piece_off.clear()
     _actor_mid.clear()
     _actor_colors.clear()
+
+    if location is None:
+        location = FVector(0, 0, 100)
 
     # target cylinder
     target = world.actor_spawn(StaticMeshActor)
@@ -143,7 +149,7 @@ def test_gizmos():
         ue.load_object(StaticMesh, '/Engine/BasicShapes/Cylinder'))
     target.StaticMeshComponent.Mobility = EComponentMobility.Movable
     target.set_actor_transform(
-        FTransform(FVector(0, 0, 100), FRotator(0, 0, 0), FVector(0.5, 0.5, 1.0)))
+        FTransform(location, FRotator(0, 0, 0), FVector(0.5, 0.5, 1.0)))
     target.set_actor_label("GizmoTarget")
     target.SetActorEnableCollision(True)
 
@@ -204,7 +210,7 @@ def test_gizmos():
     _log(f"=== done: {len(handles)} handles ===")
     return target, gizmo_root, handles
 
-# ── interaction ────────────────────────────────────────────────────────────
+# interaction
 _st = {
     'down': False, 'drag': False,
     'kind': None,  'data': None,
@@ -229,12 +235,12 @@ def setup_gizmo_interaction(uobject, input_manager, target, gizmo_root, handles)
     _log("Interaction ready")
 
     def on_tick(delta_time):
-        # ── reposition every gizmo piece to follow the target ──────────
+        # reposition every gizmo piece to follow the target
         tgt = target.get_actor_location()
         for actor, off in _piece_off.items():
             actor.set_actor_location(tgt + off)
 
-        # ── cursor trace ───────────────────────────────────────────────
+        # cursor trace
         hit       = uobject.get_hit_result_under_cursor(ECollisionChannel.ECC_Visibility)
         hit_actor = hit.actor if hit else None
         on_gizmo  = hit_actor in all_actors

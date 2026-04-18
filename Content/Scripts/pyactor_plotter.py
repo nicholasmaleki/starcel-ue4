@@ -23,9 +23,7 @@ from unreal_engine_tools import get_world
 import math
 
 
-# ---------------------------------------------------------------------------
 # Expression compiler
-# ---------------------------------------------------------------------------
 
 _SAFE_MATH = {
     'sin': math.sin, 'cos': math.cos, 'tan': math.tan,
@@ -54,9 +52,7 @@ def _compile(expr):
         return lambda x, y: math.sin(x) + math.cos(y)
 
 
-# ---------------------------------------------------------------------------
 # PyActor component
-# ---------------------------------------------------------------------------
 
 class PyActorPlotter:
     """
@@ -93,7 +89,7 @@ class PyActorPlotter:
         self._plotter = None
         self.render()
 
-    # ------------------------------------------------------------------ #
+    # #
 
     def render(self):
         """Create plotter from current attributes and render."""
@@ -159,7 +155,7 @@ class PyActorPlotter:
         ue.log(f'PyActorPlotter: rendered "{self.function_expr}" as {pt} '
                f'res={self.resolution} @ {origin}')
 
-    # ------------------------------------------------------------------ #
+    # #
 
     def set_function(self, expr, plot_type=None, resolution=None):
         """

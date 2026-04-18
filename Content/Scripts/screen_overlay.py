@@ -29,7 +29,7 @@ except ImportError:
     find_component = pil_image_to_texture = get_world = None
 
 
-# ── Material loading ──────────────────────────────────────────────────────
+# Material loading
 
 def try_load_material(material_paths):
     """Try loading a Material from a list of asset paths.
@@ -48,7 +48,7 @@ def try_load_material(material_paths):
     return None, None
 
 
-# ── Textured plane spawning ──────────────────────────────────────────────
+# Textured plane spawning
 
 def spawn_textured_plane(uobject, pil_image, material_paths, param_name='Texture',
                          scale=None, caller_tag='screen_overlay'):
@@ -112,7 +112,7 @@ def spawn_textured_plane(uobject, pil_image, material_paths, param_name='Texture
     return actor, img_w, img_h
 
 
-# ── Crosshair overlay ────────────────────────────────────────────────────
+# Crosshair overlay
 
 DEFAULT_CROSSHAIR_MATS = (
     '/Game/Materials/M_Crosshair',
@@ -189,7 +189,7 @@ def spawn_crosshair(uobject, crosshair_path, screen_component_name='Screen',
     return actor
 
 
-# ── Debug text overlay (placeholder for future use) ──────────────────────
+# Debug text overlay (placeholder for future use)
 
 def spawn_debug_text(uobject, screen_component_name='Screen',
                      offset=None, caller_tag='debug_text'):
@@ -201,7 +201,7 @@ def spawn_debug_text(uobject, screen_component_name='Screen',
     pass
 
 
-# ── Generic icon overlay ─────────────────────────────────────────────────
+# Generic icon overlay
 
 def spawn_icon_overlay(uobject, pil_image, screen_component_name='Screen',
                        material_paths=None, param_name='Texture',
