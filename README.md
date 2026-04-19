@@ -1,6 +1,5 @@
-# Starcel <img src="images/branding/icon.png" alt="Logo" style="height:1em; vertical-align:middle;">
+# Starcel ![logo](Images/branding/icon-padded.png)
 Hi! I'm Nick, the developer of Starcel. 
-
 
 ## What is it? 
 A Python controlled 3D spreadsheet. A full Unreal Engine 4 instance with Chaos physics. Support for Client and Server. It can be used as a visualization or education tool.
