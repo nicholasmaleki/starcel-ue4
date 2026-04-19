@@ -1,4 +1,4 @@
-# Starcel
+# Starcel <img src="images/branding/icon.png" alt="Logo" style="height:1em; vertical-align:middle;">
 Hi! I'm Nick, the developer of Starcel. 
 
 
