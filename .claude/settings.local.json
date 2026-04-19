@@ -20,7 +20,8 @@
       "Bash(python -m py_compile \"C:/Users/nicho/Documents/Unreal Projects/Starcel9/Content/Scripts/ue_spawn.py\")",
       "Bash(python -c \"import ast; ast.parse\\(open\\(r'C:\\\\Users\\\\nicho\\\\Documents\\\\Unreal Projects\\\\Starcel9\\\\Content\\\\Scripts\\\\nd_table\\\\resize_controller.py'\\).read\\(\\)\\); print\\('resize_controller OK'\\)\")",
       "Bash(python -c \"import ast; ast.parse\\(open\\(r'C:\\\\Users\\\\nicho\\\\Documents\\\\Unreal Projects\\\\Starcel9\\\\Content\\\\Scripts\\\\nd_table\\\\unreal_integration.py'\\).read\\(\\)\\); print\\('unreal_integration OK'\\)\")",
-      "Bash(python -c \"import ast; ast.parse\\(open\\(r'C:/Users/nicho/Documents/Unreal Projects/Starcel9/Content/Scripts/test_spawn.py', encoding='utf-8'\\).read\\(\\)\\); print\\('OK'\\)\")"
+      "Bash(python -c \"import ast; ast.parse\\(open\\(r'C:/Users/nicho/Documents/Unreal Projects/Starcel9/Content/Scripts/test_spawn.py', encoding='utf-8'\\).read\\(\\)\\); print\\('OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\(r'C:/Users/nicho/Documents/Unreal Projects/Starcel9/Content/Scripts/ue_spawn.py', encoding='utf-8'\\).read\\(\\)\\); print\\('ok'\\)\")"
     ]
   }
 }

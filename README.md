@@ -1,5 +1,5 @@
 # Starcel
-Hi, I'm Nick, the developer of Starcel. 
+Hi! I'm Nick, the developer of Starcel. 
 
 
 ## What is it? 
@@ -188,6 +188,7 @@ Although you can work on anything you'd like, here are specific tasks I need hel
 - Integrate Starcel as a renderer for Manim
 - AI md files (anthropic, openai, gemini, etc.)
 - Continued server development
+- Someone to create example maps
 - 
 
 

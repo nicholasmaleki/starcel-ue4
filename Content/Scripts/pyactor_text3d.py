@@ -3,6 +3,39 @@ from unreal_engine import FVector, FRotator, FTransform
 from unreal_engine.enums import ECollisionChannel, EInputEvent
 from unreal_engine_tools import find_component
 
+
+class PyActorText3DGlobal:
+    """Singleton PyActor that runs one tick for ALL Text3D actors in the scene.
+
+    Replaces the per-frame closure that used to be returned by
+    test_spawn.test_text3d_click — global keyboard poll for typing, caret
+    blink, click rising-edge, focus management, highlight rendering.
+
+    Call set_tick_fn(fn) after spawn with the tick closure built by
+    test_text3d_click (which still owns the state machine via closures — a
+    future refactor could migrate that state onto this class directly).
+    """
+
+    def begin_play(self):
+        self._tick_fn = None
+        ue.log('PyActorText3DGlobal: ready (awaiting set_tick_fn)')
+
+    def set_tick_fn(self, fn):
+        self._tick_fn = fn
+        ue.log('PyActorText3DGlobal: tick function attached')
+
+    def tick(self, dt):
+        fn = self._tick_fn
+        if fn is None:
+            return
+        try:
+            fn(dt)
+        except Exception as e:
+            try:
+                ue.log_warning(f'PyActorText3DGlobal tick error: {e}')
+            except Exception:
+                pass
+
 try:
     from unreal_engine.classes import StaticMeshActor, StaticMesh, Material
     from unreal_engine.enums import EComponentMobility

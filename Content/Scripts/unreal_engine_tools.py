@@ -1,4 +1,5 @@
 import unreal_engine as ue
+from unreal_engine import FVector, FRotator, FTransform
 from unreal_engine.classes import Material, Texture, Texture2D, TextureCube, Blueprint
 from unreal_engine.enums import EPixelFormat, EComponentMobility
 import os, itertools, time, json
@@ -7,6 +8,8 @@ from PIL import Image
 import numpy as np
 from pathlib import Path
 import sys
+import dill
+
 try:
     from unreal_engine.enums import EWorldType
 except ImportError:
@@ -339,6 +342,25 @@ def get_world():
     return _world_cache
 
 
+def startup():
+    apply_material(
+        actor_name="StickManCharacter_C",  # runtime instance name (check via print)
+        component_name="SkeletalMeshOutline",
+        material_path="/Game/Materials/M_Outline.M_Outline",
+        params={
+            "Outline": 5.0,
+            "Color": (0, 0, 0, 1),
+        }
+    )
+    apply_material(
+        actor_name="StickManCharacter_C",  # runtime instance name (check via print)
+        component_name="SkeletalMesh",
+        material_path="/Game/Materials/M_Color.M_Color",
+        params={
+            "Color": (1, 1, 1, 1),
+        }
+    )
+
 def invalidate_world_cache():
     """Call when PIE stops/starts to force get_world() to re-scan."""
     global _world_cache
@@ -491,6 +513,8 @@ def set_starcel_as_desktop(disable_animations=None):
 # for c in actor.get_components():
 # for c in actor.get_components_by_type():
 # for c in actor.get_components_by_tag():
+
+
 
 
 def convert_image_to_hdr(filepath, output_dir=None):
@@ -955,3 +979,72 @@ def change_background(background="white", path="file://"):
         print("mode not found")
 
 
+# # Background swapping
+# Define the list of background types
+backgrounds = ["white", "black", "white_no_bloom", "white_no_emissive", "stars", "sky", "transparent", r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Images\duck.hdr"]
+
+global current_bg_index  # needed to modify the variable outside the function
+
+bg = backgrounds[current_bg_index]
+print(bg)
+change_background(bg)
+
+# Move to the next index, loop back to 0 if at the end
+current_bg_index += 1
+if current_bg_index >= len(backgrounds):
+    current_bg_index = 0
+
+
+def dump_module(module):
+    pickled_module = dill.dumps(module)
+    return pickled_module
+
+
+def dump_session(session = 'session_backup.pkl'):
+    dill.dump_module(session)
+
+
+def load_session(session = 'session_backup.pkl'):
+    dill.load_module(session)
+
+
+def rebuild_generated_modules():
+    libraries_to_build = [ # languages.py self builds
+        os.path.join(os.path.abspath(ue.get_content_dir()), "Scripts", "unreal_engine", "gen_autocomplete_stub.py"),
+        os.path.join(os.path.abspath(ue.get_content_dir()), "Scripts", "gen_cli.py")
+    ]
+    print("Building libraries:", libraries_to_build)
+    try:
+        for library in libraries_to_build:
+            print("Building library:", library)
+            ue.py_exec(library)
+        print("Finished building libraries")
+    except Exception as e:
+        print("Building libraries failed", e)
+
+    # from pickle import picklequotes
+    # picklequotes.pickle_quotes()
+
+
+def reset_pyactor(py_actor_name = "BP_PyActor"):
+    # TODO: maybe match old pyactors settings to new, like transform, module, and class
+    print("World", world)
+    # print_all_actors()
+    py_actor = find_actor(py_actor_name)
+    print("PyActor Found", py_actor)
+    old_py_actor_name = py_actor.get_name()
+    py_actor_class = py_actor.get_class().get_name()
+    py_actor.actor_destroy()
+    print("PyActor Destroyed", old_py_actor_name)
+    py_actor = world.actor_spawn(ue.find_class(py_actor_class), FVector(0,0,0), FRotator(0,0,0)) # .set_actor_transform(FTransform(location=FVector(0,0,0), rotation=FRotator(0,0,0), scale=FVector(1,1,1)))
+    py_actor.set_actor_label(old_py_actor_name)
+    py_actor.set_property("PythonModule", "main")
+    py_actor.set_property("PythonClass", "Main")
+    print("PyActor Spawned", py_actor)
+    # print_all_actors()
+
+
+def set_global_time_dilation(self, time_dilation = 1):
+    py_actor = find_actor("BP_PyActor")
+    py_actor.TimeDilation = time_dilation
+    py_actor.call_function('EventRunBlueprintFunctions')

@@ -20,8 +20,7 @@ from constants import Constants, WorldSize
 import constants, windowtool
 from languages import *
 from cli import *
-from hotreload import *
-import hotreload, unreal_engine_tools
+import unreal_engine_tools
 import asyncio, time
 from typing import List, Dict, Union, Optional
 import random
@@ -32,113 +31,15 @@ from input_devices import Keyboard, Mouse, HotkeyManager, TraceHelper
 from ue_spawn import spawn_icon
 from icon_to_image import extract_icon
 
-from gizmo import test_gizmos, setup_gizmo_interaction  # returns (target, gizmo_root, handles)
-
-from test_spawn import test_text3d_click, test_spawn_all
+from test_spawn import test_text3d_click, test_spawn_all, test_gizmo
 
 _main_begin_play_ran = False
 
 ue.log('Hello i am a Python module.')
 # Code placed outside the Main class will not run when connecting to a server.
 
-# TODO: Cleanup 0,0,0. Merge all dfb PR branches: https://github.com/dfb/UnrealEnginePython/tree/modus
-
 # # Keep track of the current index
 # current_bg_index = 0
-
-def spawn_icon2(pil_image, location=None, rotation=None, scale=None,
-                material_path='/Game/Materials/M_Icon.M_Icon',
-                param_name='Texture',
-                bp_path='/Game/Blueprints/Assets/BP_Icon.BP_Icon',
-                component_name='Sphere'):
-    """
-    Spawn a BP_Icon actor and apply *pil_image* as *param_name* texture.
-
-    BP_Icon should have:
-      • A StaticMeshComponent (sphere or any mesh)
-      • A Python component pointing to ue_components.IconHoverComponent
-        (hover-shrink effect is handled there)
-
-    The IconHoverComponent class is kept in ue_components.py but is also
-    defined below for reference — do not attach it again here.
-
-    Requires Pillow and a material at *material_path* with a
-    TextureSampleParameter2D named *param_name*.
-    """
-    if location is None:
-        location = FVector(0, 0, 0)
-    if rotation is None:
-        rotation = FRotator(0, 0, 0)
-    if scale is None:
-        scale = FVector(1, 1, 1)
-    world = get_world()
-    # print("ue_spawn.py world", world)
-
-    actor = None
-
-    # Spawn BP_Icon (hover effect comes from its Python component)
-    try:
-        bp = ue.load_object(Blueprint, bp_path)
-        actor = world.actor_spawn(bp.GeneratedClass)  # , location)
-        print("PRINTING ACTOR", actor)
-        actor.set_actor_transform(FTransform(location, rotation, scale))
-        target_comp = find_component(actor, component_name)
-    except Exception as e:
-        ue.log_warning(f'spawn_icon: could not load BP_Icon at "{bp_path}": {e}. '
-                       'Make sure BP_Icon exists in your project.')
-        return None
-
-    try:
-        tex = pil_image_to_texture(pil_image)
-    except Exception as e:
-        ue.log_warning(f'spawn_icon: could not convert that pil_image to texture: {e}')
-        return None
-
-    if tex:
-        mat = ue.load_object(Material, "/Game/Materials/M_Icon.M_Icon")
-        if not mat:
-            ue.log_warning(f"Material not found: {material_path}")
-
-        mid = target_comp.create_material_instance_dynamic(mat)
-
-        mid.set_material_texture_parameter(param_name, tex)
-        target_comp.set_material(0, mid)
-    else:
-        ue.log_warning(f"Could not load texture for param: {param_name}")
-
-    # tmp_path = os.path.join(tempfile.gettempdir(), 'ue_icon_tmp.png')
-    # pil_image.save(tmp_path)
-    #
-    # texture = None
-    # try:
-    #     from unreal_engine.classes import TextureFactory
-    #     tex_name = 'IconTex_' + str(abs(hash(tmp_path)))[:8]
-    #     texture = TextureFactory().factory_import_object(
-    #         tmp_path, f'/Game/IconTextures/{tex_name}')
-    # except Exception as e:
-    #     ue.log_warning(f'spawn_icon: texture import failed: {e}')
-
-    # Apply material + texture via dynamic material instance
-    # mat = ue.load_object(Material, material_path)
-    # if mat and texture:
-    #     try:
-    #         smc = actor.StaticMeshComponent
-    #         dmi = smc.CreateAndSetMaterialInstanceDynamic(0)
-    #         dmi.SetTextureParameterValue(param_name, texture)
-    #     except Exception as e:
-    #         ue.log_warning(f'spawn_icon: texture param failed: {e}')
-
-    # loc = location if location is not None else FVector(0, 0, 0)
-    # rot = rotation if rotation is not None else FRotator(0, 0, 0)
-    # scl = scale if scale is not None else FVector(1, 1, 1)
-    # actor.set_actor_location(loc)
-    # actor.set_actor_rotation(rot)
-    # actor.set_actor_scale(scl)
-
-    # _set_transform(actor, location, rotation, scale)
-    return actor
-
-
 
 
 # Stop the background music
@@ -164,6 +65,10 @@ find_actor("CellDriftLoop").SetActorHiddenInGame(True)
 RPC_ACTOR = None
 SERVER_HELPER = None  # Server-side helper
 CLIENT_HELPER = None  # Client-side helper
+
+
+
+
 
 class Main:
     # # this event will be run on the server and in reliable mode
@@ -672,16 +577,7 @@ class Main:
             else:
                 ue.log("CLIENT (no AuthorityGameMode) Client likely connected to dedicated server. ")
 
-            # Testing icon (the green sphere = GoogleDriveSetup.exe icon).
-            # source_path is attached to the actor so pyactor_icon.IconSphere
-            # can open it in Chrome on click via `cmd /c start chrome "<path>"`.
-            print("Testing icon")
-            _google_drive_exe = r"C:\Users\nicho\Downloads\GoogleDriveSetup.exe"
-            self.info = extract_icon(_google_drive_exe, preview=True, return_info=True)
-            self.icon = spawn_icon(self.info["image"],
-                                   location=FVector(310, 50, 400),
-                                   source_path=_google_drive_exe)
-            self.icon.get_actor_component('Sphere').SetSimulatePhysics(True)  # disabled: breaks click/hover detection
+            # .exe icon test moved to test_spawn.test_exe_icon (runs via test_spawn_all)
 
             # some kind of movability problem
             # self.monk = 0
@@ -796,8 +692,8 @@ class Main:
         # self.test_cylinder()
         # self.test_text()
         print("Testing gizmos")
-        # _gizmo_target, _gizmo_root, _gizmo_handles = test_gizmos()
-        # self._gizmo_tick = setup_gizmo_interaction(self.uobject, self.input, _gizmo_target, _gizmo_root, _gizmo_handles)
+        self._gizmo_target, self._gizmo_handles, self._gizmo_tick = test_gizmo(
+            uobject=self.uobject, input_manager=self.input)
         # nd_table grid test moved to test_spawn_all()
 
         self._t3d_actor, self._t3d_table, self._t3d_tick = test_text3d_click(

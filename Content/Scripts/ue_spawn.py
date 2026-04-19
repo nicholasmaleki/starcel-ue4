@@ -58,7 +58,8 @@ def _set_transform(actor, location, rotation, scale):
 
 def _spawn_pyactor(python_module, python_class,
                    location=None, rotation=None, scale=None,
-                   components=None):
+                   components=None,
+                   bp_path='/Game/Blueprints/Assets/BP_PyActorEmpty.BP_PyActorEmpty'):
     """
     Spawn a PyActor dynamically (no Blueprint required).
 
@@ -68,6 +69,8 @@ def _spawn_pyactor(python_module, python_class,
         mesh       : str  — optional mesh asset path to SetStaticMesh
         root       : bool — if True, use add_actor_root_component
 
+    *bp_path* — host Blueprint to spawn (default BP_PyActorEmpty).
+
     Returns the spawned actor.
     """
     world = _get_world()
@@ -75,7 +78,7 @@ def _spawn_pyactor(python_module, python_class,
     rot = rotation if rotation is not None else FRotator(0, 0, 0)
 
     # actor = world.actor_spawn(ue.find_class('PyActor'), loc, rot)
-    bp_pyactor = ue.load_object(Blueprint, '/Game/Blueprints/Assets/BP_PyActorEmpty.BP_PyActorEmpty')
+    bp_pyactor = ue.load_object(Blueprint, bp_path)
     actor = world.actor_spawn(bp_pyactor.GeneratedClass)
     transform = FTransform(location, rotation, scale)
     actor.set_actor_transform(transform)
@@ -99,6 +102,44 @@ def _spawn_pyactor(python_module, python_class,
     if scale is not None:
         _set_transform(actor, loc, rot, scale)
 
+    return actor
+
+
+def spawn_pyactor(python_module, python_class,
+                  location=None, rotation=None, scale=None,
+                  components=None,
+                  bp_path='/Game/Blueprints/Assets/BP_PyActorEmpty.BP_PyActorEmpty',
+                  source_path=None):
+    """
+    Spawn a PyActor with the given Python module/class attached.
+
+    Public counterpart of ``_spawn_pyactor``. Mirrors the spawn_icon
+    parameter style (location/rotation/scale + bp_path + source_path).
+
+    Parameters
+    ----------
+    python_module : str  — module name containing the Python class
+    python_class  : str  — class name to attach as the PythonClass
+    components    : list — optional component dicts; see _spawn_pyactor
+    bp_path       : str  — host Blueprint path (default BP_PyActorEmpty)
+    source_path   : str  — optional file path attached as ``actor.source_path``
+                           so click handlers (e.g. pyactor_icon) can open it.
+
+    Returns
+    -------
+    actor or None
+    """
+    actor = _spawn_pyactor(
+        python_module, python_class,
+        location=location, rotation=rotation, scale=scale,
+        components=components,
+        bp_path=bp_path,
+    )
+    if actor is not None and source_path is not None:
+        try:
+            actor.source_path = source_path
+        except Exception as e:
+            ue.log_warning(f'spawn_pyactor: could not attach source_path: {e}')
     return actor
 
 
@@ -1232,6 +1273,118 @@ def spawn_table(table, location=None, world_location=None,
     return renderer
 
 
+# spawn_nd_table — comprehensive nD table grid (2D 10x10 through 7D)
+
+def spawn_nd_table(location=None, rotation=None, scale=None,
+                   source_path=None):
+    """
+    Spawn the comprehensive nD table grid (2D through 7D).
+
+    Wraps ``nd_table.examples.test_nd_table_grid``.  Mirrors spawn_icon-style
+    inputs for consistency (location/rotation/scale ignored beyond
+    *location* — the grid lays itself out internally; the renderer is
+    returned so callers can post-transform if needed).
+
+    Parameters
+    ----------
+    location    : FVector  — base location for the grid (default (0, 0, 700))
+    source_path : str      — optional path attached to the renderer for
+                             downstream identification.
+
+    Returns
+    -------
+    UnrealTableRenderer (holds .cell_actors, .gridline_actors)
+    """
+    from nd_table.examples import test_nd_table_grid
+
+    if location is None:
+        location = FVector(0, 0, 700)
+
+    renderer = test_nd_table_grid(base_location=location)
+
+    if renderer is not None and source_path is not None:
+        try:
+            renderer.source_path = source_path
+        except Exception:
+            pass
+    return renderer
+
+
+# spawn_text3d — Text3D actor (BP_Cell) with arbitrary text
+
+def spawn_text3d(text='', location=None, rotation=None, scale=None,
+                 bp_path='/Game/Blueprints/Assets/BP_Cell.BP_Cell',
+                 component_name='Text3DComponent',
+                 source_path=None,
+                 generate_overlap_events=True,
+                 enable_collision=True):
+    """
+    Spawn a BP_Cell actor and set its Text3DComponent text.
+
+    Mirrors the spawn_icon parameter style: payload (text) + location/rotation
+    /scale + bp_path + component_name + source_path.
+
+    Parameters
+    ----------
+    text                    : str  — content for Text3DComponent.Text
+    bp_path                 : str  — Blueprint path (default BP_Cell)
+    component_name          : str  — Text3D component to find on the actor
+    source_path             : str  — optional file path attached as
+                                     ``actor.source_path`` for click handlers
+    generate_overlap_events : bool — enable overlap events on the Text3D
+                                     component (needed for click traces)
+    enable_collision        : bool — enable actor collision so the Text3D
+                                     bounds can be hit-traced
+
+    Returns
+    -------
+    actor or None
+    """
+    actor = spawn_blueprint(bp_path, location, rotation, scale)
+    if actor is None:
+        ue.log_warning(f'spawn_text3d: spawn_blueprint failed for "{bp_path}"')
+        return None
+
+    # Set Text3D content + collision
+    try:
+        t3d = actor.get_actor_component(component_name)
+    except Exception as e:
+        ue.log_warning(f'spawn_text3d: get_actor_component("{component_name}") failed: {e}')
+        t3d = None
+
+    if t3d is not None:
+        try:
+            t3d.Text = text
+        except Exception as e:
+            ue.log_warning(f'spawn_text3d: setting Text failed: {e}')
+        if generate_overlap_events:
+            try:
+                t3d.SetGenerateOverlapEvents(True)
+            except Exception:
+                pass
+            try:
+                t3d.bGenerateOverlapEvents = True
+            except Exception:
+                pass
+    else:
+        ue.log_warning(
+            f'spawn_text3d: no "{component_name}" component on "{bp_path}"')
+
+    if enable_collision:
+        try:
+            actor.SetActorEnableCollision(True)
+        except Exception:
+            pass
+
+    if source_path is not None:
+        try:
+            actor.source_path = source_path
+        except Exception as e:
+            ue.log_warning(f'spawn_text3d: could not attach source_path: {e}')
+
+    return actor
+
+
 # spawn_desktop_icons — grid of BP_Icon actors from a folder's shell icons
 
 def spawn_desktop_icons(location=None, desktop_path=None, spacing=150,
@@ -1468,13 +1621,72 @@ def spawn_plot(function_expr='sin(x)+cos(y)',
     return actor
 
 
+# spawn_gizmo — interactive transform gizmo (target + handles)
+
+def spawn_gizmo(location=None, rotation=None, scale=None,
+                uobject=None, input_manager=None,
+                source_path=None):
+    """
+    Spawn the interactive transform gizmo (target cylinder + move/rotate/
+    scale/plane handles) and optionally wire up drag interaction.
+
+    Mirrors spawn_icon-style inputs (location/rotation/scale + source_path).
+    Material/bp/component params don't apply — the gizmo's pieces are built
+    in code via primitives in ``gizmo.py``.
+
+    Parameters
+    ----------
+    location      : FVector  — target spawn position (default (0, 0, 100))
+    rotation      : FRotator — applied to the target after spawn
+    scale         : FVector  — applied to the target after spawn
+    uobject       : PyActor UObject — required for interactivity (cursor traces)
+    input_manager : InputManager   — required for interactivity (LMB binds)
+    source_path   : str            — optional path attached to ``target``
+
+    Returns
+    -------
+    (target_actor, handles_dict, tick_fn_or_None)
+    """
+    from gizmo import test_gizmos, setup_gizmo_interaction
+
+    if location is None:
+        location = FVector(0, 0, 100)
+
+    target, gizmo_root, handles = test_gizmos(location=location)
+
+    if rotation is not None or scale is not None:
+        try:
+            _set_transform(target, location, rotation, scale)
+        except Exception as e:
+            ue.log_warning(f'spawn_gizmo: post-spawn transform failed: {e}')
+
+    if source_path is not None and target is not None:
+        try:
+            target.source_path = source_path
+        except Exception as e:
+            ue.log_warning(f'spawn_gizmo: could not attach source_path: {e}')
+
+    tick_fn = None
+    if uobject is not None and input_manager is not None:
+        try:
+            tick_fn = setup_gizmo_interaction(
+                uobject, input_manager, target, gizmo_root, handles)
+        except Exception as e:
+            ue.log_warning(f'spawn_gizmo: setup_gizmo_interaction failed: {e}')
+
+    return target, handles, tick_fn
+
+
 # File-type detection — extended with new types
 
 TABLE_KEYWORDS   = {'table', 'nd_table', 'ndtable'}
 SYSMON_KEYWORDS  = {'sysmon', 'system_monitor', 'systemmonitor', 'monitor'}
 DESKTOP_KEYWORDS = {'desktop', 'desktop_icons', 'desktopicons'}
 PLOT_KEYWORDS    = {'plot', 'math_plot', 'mathplot', 'heatmap', 'surface', 'chart', 'graph'}
-
+GIZMO_KEYWORDS   = {'gizmo', 'transform_gizmo', 'transformgizmo'}
+TEXT3D_KEYWORDS  = {'text3d', 'text_3d', 'cell', 'bp_cell'}
+NDTABLE_KEYWORDS = {'nd_table_grid', 'ndtablegrid', 'nd_grid'}
+PYACTOR_KEYWORDS = {'pyactor', 'py_actor', 'pyactorempty'}
 
 def spawn_icon(pil_image, location=None, rotation=None, scale=None,
                material_path='/Game/Materials/M_Icon.M_Icon',
@@ -1577,6 +1789,50 @@ def spawn_icon(pil_image, location=None, rotation=None, scale=None,
     _set_transform(actor, location, rotation, scale)
     return actor
 
+
+def spawn_icon_from_path(path, location=None, rotation=None, scale=None,
+                         material_path='/Game/Materials/M_Icon.M_Icon',
+                         param_name='Texture',
+                         bp_path='/Game/Blueprints/Assets/BP_Icon.BP_Icon',
+                         component_name='Sphere',
+                         source_path=None,
+                         simulate_physics=True):
+    """Extract the Windows shell icon from *path* and spawn a BP_Icon for it.
+
+    Wraps ``extract_icon + spawn_icon``.  All spawn_icon-style parameters
+    (material_path, param_name, bp_path, component_name) are forwarded so
+    callers can swap the host Blueprint or its texture parameter.
+
+    The spawned actor gets ``source_path`` attached (defaults to *path*) so
+    pyactor_icon.IconSphere can open the file in Chrome on click.
+
+    Parameters
+    ----------
+    path             : str       filesystem path (e.g. an .exe)
+    simulate_physics : bool      enable physics on the *component_name*
+                                 component.  Note: enabling this can break
+                                 click/hover detection in some BPs.
+    source_path      : str|None  override what gets attached as
+                                 ``actor.source_path`` (defaults to *path*).
+    """
+    from icon_to_image import extract_icon
+    info = extract_icon(path, preview=True, return_info=True)
+    actor = spawn_icon(info["image"],
+                       location=location, rotation=rotation, scale=scale,
+                       material_path=material_path,
+                       param_name=param_name,
+                       bp_path=bp_path,
+                       component_name=component_name,
+                       source_path=source_path if source_path is not None else path)
+    if actor and simulate_physics:
+        try:
+            actor.get_actor_component(component_name).SetSimulatePhysics(True)
+        except Exception as e:
+            ue.log_warning(
+                f'spawn_icon_from_path: SetSimulatePhysics failed: {e}')
+    return actor
+
+
 # File-type detection
 
 IMAGE_EXTS  = {'.png', '.jpg', '.jpeg', '.bmp', '.tga', '.tiff', '.exr',
@@ -1599,9 +1855,13 @@ def _detect_type(path_or_name):
     if lower in CAMERA_PAWN_KEYWORDS: return 'camera_pawn'
     if lower in CAMERA_KEYWORDS:  return 'camera'
     if lower in EARTH_KEYWORDS:   return 'earth'
+    if lower in NDTABLE_KEYWORDS: return 'nd_table'
     if lower in TABLE_KEYWORDS:   return 'table'
     if lower in SYSMON_KEYWORDS:  return 'sysmon'
     if lower in DESKTOP_KEYWORDS: return 'desktop'
+    if lower in GIZMO_KEYWORDS:   return 'gizmo'
+    if lower in TEXT3D_KEYWORDS:  return 'text3d'
+    if lower in PYACTOR_KEYWORDS: return 'pyactor'
     ext = os.path.splitext(lower)[1]
     if ext in IMAGE_EXTS:         return 'image'
     if ext in VIDEO_EXTS:         return 'video'
@@ -1669,6 +1929,21 @@ def spawn(
     max_icons=50,
     # Sysmon
     sysmon_bp_path='/Game/Blueprints/Assets/BP_SysMon.BP_SysMon',
+    # Text3D / BP_Cell
+    text='',
+    text3d_bp_path='/Game/Blueprints/Assets/BP_Cell.BP_Cell',
+    text3d_component_name='Text3DComponent',
+    # PyActor
+    python_module=None,
+    python_class=None,
+    pyactor_components=None,
+    pyactor_bp_path='/Game/Blueprints/Assets/BP_PyActorEmpty.BP_PyActorEmpty',
+    # Gizmo
+    gizmo_uobject=None,
+    gizmo_input_manager=None,
+    # Common — applies to spawn_icon-style functions
+    component_name=None,
+    source_path=None,
 ):
     """
     Universal spawn function for UnrealEnginePython.
@@ -1819,6 +2094,34 @@ def spawn(
 
     elif detected == 'blueprint':
         return spawn_blueprint(path_or_type, location, rotation, scale)
+
+    elif detected == 'gizmo':
+        return spawn_gizmo(location=location, rotation=rotation, scale=scale,
+                           uobject=gizmo_uobject,
+                           input_manager=gizmo_input_manager,
+                           source_path=source_path)
+
+    elif detected == 'text3d':
+        return spawn_text3d(text=text,
+                            location=location, rotation=rotation, scale=scale,
+                            bp_path=text3d_bp_path,
+                            component_name=component_name or text3d_component_name,
+                            source_path=source_path)
+
+    elif detected == 'pyactor':
+        if python_module is None or python_class is None:
+            ue.log_warning(
+                'spawn: type="pyactor" requires python_module= and python_class= parameters.')
+            return None
+        return spawn_pyactor(python_module, python_class,
+                             location=location, rotation=rotation, scale=scale,
+                             components=pyactor_components,
+                             bp_path=pyactor_bp_path,
+                             source_path=source_path)
+
+    elif detected == 'nd_table':
+        return spawn_nd_table(location=location, rotation=rotation, scale=scale,
+                              source_path=source_path)
 
     else:
         ue.log_warning(f'spawn: unknown type "{detected}".')

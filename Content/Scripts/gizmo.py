@@ -20,9 +20,9 @@ Hover : emissive ×5 + RGB +0.5 while cursor is over a piece.
 
 import unreal_engine as ue
 from unreal_engine.classes import StaticMeshActor, StaticMesh, Material, KismetMathLibrary
-from unreal_engine.enums import EComponentMobility, ECollisionChannel
+from unreal_engine.enums import EComponentMobility
 from unreal_engine import FVector, FRotator, FTransform
-import os, math
+import os
 from unreal_engine_tools import get_world
 
 world = get_world()
@@ -210,126 +210,6 @@ def test_gizmos(location=None):
     _log(f"=== done: {len(handles)} handles ===")
     return target, gizmo_root, handles
 
-# interaction
-_st = {
-    'down': False, 'drag': False,
-    'kind': None,  'data': None,
-    'loc0': None,  'rot0': None, 'scl0': None,
-    'hit0': None,  'off0': None,
-    'hov':  None,
-}
-
-def setup_gizmo_interaction(uobject, input_manager, target, gizmo_root, handles):
-    """Returns on_tick(dt) callable for Main.tick()."""
-    all_actors = set(handles.keys()) | {target}
-
-    def _press():   _st['down'] = True
-    def _release():
-        _st['down'] = False
-        if _st['drag']:
-            _st['drag'] = False
-            _log(f"Drag end pos={target.get_actor_location()}")
-
-    input_manager.bind_press("LeftMouseButton",   _press)
-    input_manager.bind_release("LeftMouseButton", _release)
-    _log("Interaction ready")
-
-    def on_tick(delta_time):
-        # reposition every gizmo piece to follow the target
-        tgt = target.get_actor_location()
-        for actor, off in _piece_off.items():
-            actor.set_actor_location(tgt + off)
-
-        # cursor trace
-        hit       = uobject.get_hit_result_under_cursor(ECollisionChannel.ECC_Visibility)
-        hit_actor = hit.actor if hit else None
-        on_gizmo  = hit_actor in all_actors
-
-        # hover
-        new_hov = hit_actor if on_gizmo else None
-        if new_hov != _st['hov']:
-            if _st['hov']: _hover_exit(_st['hov'])
-            if new_hov:    _hover_enter(new_hov)
-            _st['hov'] = new_hov
-
-        # drag start
-        if on_gizmo and _st['down'] and not _st['drag'] and hit:
-            kind, data = handles.get(hit_actor, ('free', None))
-            _st.update({
-                'drag': True, 'kind': kind, 'data': data,
-                'loc0': target.get_actor_location(),
-                'rot0': target.get_actor_rotation(),
-                'scl0': target.GetActorScale3D(),
-                'hit0': hit.impact_point,
-                'off0': hit.impact_point - target.get_actor_location(),
-            })
-            _log(f"Drag start: {kind} on {hit_actor.get_name()}")
-
-        # drag update
-        if _st['drag'] and _st['down'] and hit:
-            cur  = hit.impact_point
-            loc0 = _st['loc0']
-            rot0 = _st['rot0']
-            hit0 = _st['hit0']
-            kind = _st['kind']
-            data = _st['data']
-
-            if kind == 'free':
-                target.set_actor_location(cur - _st['off0'])
-
-            elif kind == 'axis':
-                ax   = data
-                diff = cur - loc0
-                t    = diff.x*ax.x + diff.y*ax.y + diff.z*ax.z
-                target.set_actor_location(loc0 + ax * t)
-
-            elif kind == 'plane':
-                d1, d2 = data
-                diff   = cur - loc0
-                t1 = diff.x*d1.x + diff.y*d1.y + diff.z*d1.z
-                t2 = diff.x*d2.x + diff.y*d2.y + diff.z*d2.z
-                target.set_actor_location(loc0 + d1*t1 + d2*t2)
-
-            elif kind == 'rotate':
-                nrm = data
-                v1  = hit0 - loc0
-                v2  = cur  - loc0
-                # flatten onto the ring plane
-                d1 = v1.x*nrm.x + v1.y*nrm.y + v1.z*nrm.z
-                d2 = v2.x*nrm.x + v2.y*nrm.y + v2.z*nrm.z
-                v1 = FVector(v1.x-nrm.x*d1, v1.y-nrm.y*d1, v1.z-nrm.z*d1)
-                v2 = FVector(v2.x-nrm.x*d2, v2.y-nrm.y*d2, v2.z-nrm.z*d2)
-                l1 = math.sqrt(v1.x**2+v1.y**2+v1.z**2)
-                l2 = math.sqrt(v2.x**2+v2.y**2+v2.z**2)
-                if l1 > 0.1 and l2 > 0.1:
-                    v1 = FVector(v1.x/l1, v1.y/l1, v1.z/l1)
-                    v2 = FVector(v2.x/l2, v2.y/l2, v2.z/l2)
-                    dot = max(-1.0, min(1.0, v1.x*v2.x+v1.y*v2.y+v1.z*v2.z))
-                    cx = v1.y*v2.z-v1.z*v2.y
-                    cy = v1.z*v2.x-v1.x*v2.z
-                    cz = v1.x*v2.y-v1.y*v2.x
-                    sgn = 1.0 if cx*nrm.x+cy*nrm.y+cz*nrm.z > 0 else -1.0
-                    ang = math.degrees(math.acos(dot)) * sgn
-                    target.set_actor_rotation(FRotator(
-                        rot0.roll  + nrm.x * ang,
-                        rot0.pitch + nrm.y * ang,
-                        rot0.yaw   + nrm.z * ang,
-                    ))
-
-            elif kind == 'scale':
-                ax    = data
-                diff  = cur - hit0
-                # Project movement onto handle axis. abs() so both +X and -X
-                # handles increase scale.x when pulled away from centre.
-                delta = (diff.x*ax.x + diff.y*ax.y + diff.z*ax.z) * 0.01
-                s     = _st['scl0']
-                target.SetActorScale3D(FVector(
-                    max(0.05, s.x + abs(ax.x) * delta),
-                    max(0.05, s.y + abs(ax.y) * delta),
-                    max(0.05, s.z + abs(ax.z) * delta),
-                ))
-
-        if _st['drag'] and not _st['down']:
-            _st['drag'] = False
-
-    return on_tick
+# Interaction logic migrated to pyactor_gizmo.GizmoController.
+# Spawn via _spawn_pyactor('pyactor_gizmo', 'GizmoController') and call its
+# setup(uobject, input_manager, target, handles, piece_offsets=_piece_off).
