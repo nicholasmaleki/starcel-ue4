@@ -1,154 +1,40 @@
 import unreal_engine as ue
 import unreal_engine.classes
 from unreal_engine_tools import *
+import unreal_engine_tools
 import numpy as np
-import os
-import sys
-import subprocess
-import importlib
-import urllib.request
-import socket
-import math
-import sympy
-import fast_autocomplete
-import numba
-import kingdon
+import os, sys, subprocess, importlib, urllib.request, socket, math, sympy, fast_autocomplete, numba, kingdon, asyncio, time, random
 from unreal_engine import FVector, FRotator, FTransform, FHitResult, CLASS_CONFIG, CLASS_DEFAULT_CONFIG, CPF_CONFIG, CPF_GLOBAL_CONFIG, CPF_EXPOSE_ON_SPAWN, CPF_NET, CPF_REP_NOTIFY
-from unreal_engine.classes import Actor, Character, PlayerController, StaticMeshActor, KismetMathLibrary, KismetSystemLibrary, Object, StrProperty, IntProperty, Blueprint, Material, Texture, LargeStringAsync, LargeStringRPCActor, StaticMesh, StaticMeshActor
+from unreal_engine.classes import Actor, Character, PlayerController, StaticMeshActor, KismetMathLibrary, KismetSystemLibrary, Object, StrProperty, IntProperty, Blueprint, Material, Texture, LargeStringAsync, LargeStringRPCActor, StaticMesh, StaticMeshActor, AudioComponent
 from unreal_engine.enums import EInputEvent, ETraceTypeQuery, EDrawDebugTrace, EComponentMobility, EMouseCursor, ECollisionChannel
-from constants import Constants, WorldSize
 import constants, windowtool
+from constants import Constants, WorldSize
 from languages import *
 from cli import *
-import unreal_engine_tools
-import asyncio, time
+from hotreload import *
 from typing import List, Dict, Union, Optional
-import random
-
 from nd_table.examples import test_nd_table_grid
 from input_devices import Keyboard, Mouse, HotkeyManager, TraceHelper
-
 from ue_spawn import spawn_icon
 from icon_to_image import extract_icon
+from test_spawn import test_spawn_all
 
-from test_spawn import test_text3d_click, test_spawn_all, test_gizmo
 
 _main_begin_play_ran = False
 
-ue.log('Hello i am a Python module.')
 # Code placed outside the Main class will not run when connecting to a server.
-
-# # Keep track of the current index
-# current_bg_index = 0
-
-
-# Stop the background music
-find_actor("CellDriftLoop").SetActorHiddenInGame(True)
+ue.log('Hello i am a Python module.')
 
 # Use this if you want to rebuild the unreal_engine intellisense(.pyi, etc.) and cli
 # rebuild_generated_modules()
 
-# reload_all_modules() # TODO: Unstable. look into ue.load_package() or get_or_create()
-
-# reset_pyactor()
-
-
-# ret = ue.message_dialog_open(ue.APP_MSG_TYPE_YES_NO, "Do you want to shot ?")
+# ret = ue.message_dialog_open(ue.APP_MSG_TYPE_YES_NO, "Do you want to test dialogs?")
 # if ret == ue.APP_RETURN_TYPE_YES:
 #     ue.log('You choose "YES"')
 
-
 # help_cmd("ls")
 
-
-# Global Vars
-RPC_ACTOR = None
-SERVER_HELPER = None  # Server-side helper
-CLIENT_HELPER = None  # Client-side helper
-
-
-
-
-
 class Main:
-    # # this event will be run on the server and in reliable mode
-    # def server_event(self):
-    #     ue.log('server event called')
-    #     ue.log("hello from server")
-    #     print("hello from server" + self.uobject.get_uproperty('StringHelloWorldProperty'))
-    #     print("hello from server" + self.uobject.get_uproperty(
-    #         'StringHelloWorldProperty2'))  # .set_metadata('Category', 'CategoryTest001')
-    # server_event.event = True # expose event
-    # server_event.server = True
-    # server_event.reliable = True
-    # server_event.multicast = True # you can also simulate multicast like below:
-    # server_event.static = True # static methods will be available to blueprints
-    # server_event.pure = True # pure methods will be available to blueprints
-
-    # FooWorld = [IntProperty]
-    # FooWorld = [17, 22, 30]
-
-    # #
-    # # MULTICAST FLAG TEST
-    # #
-    # def test_multicast_flag(self, msg):
-    #     """
-    #     If .multicast works, this should run on:
-    #     - Dedicated Server
-    #     - All connected Clients
-    #
-    #     In practice (UE4Python), this usually runs server-only.
-    #     """
-    #     if KismetSystemLibrary.IsDedicatedServer():
-    #         ue.log(f"[multicast flag] SERVER executed: {msg}")
-    #     else:
-    #         ue.log(f"[multicast flag] CLIENT executed: {msg}")
-    #
-    # # Register as RPC
-    # test_multicast_flag.event = True
-    # test_multicast_flag.multicast = True
-    # test_multicast_flag.reliable = True
-    #
-    # #
-    # # SERVER RPC – MANUAL MULTICAST
-    # #
-    # def server_manual_multicast(self, msg):
-    #     """
-    #     Authoritative server RPC.
-    #     Explicitly calls a client RPC on every PlayerController.
-    #     """
-    #     ue.log("[manual multicast] SERVER executing")
-    #
-    #     for pc in self.uobject.get_world().all_actors():
-    #         if pc:
-    #             pc.client_receive_manual(msg)
-    #
-    # # Register as Server RPC
-    # server_manual_multicast.event = True
-    # server_manual_multicast.server = True
-    # server_manual_multicast.reliable = True
-    #
-    # #
-    # # CLIENT RPC – MANUAL MULTICAST TARGET
-    # #
-    # def client_receive_manual(self, msg):
-    #     """
-    #     Should only ever run on clients.
-    #     """
-    #     if KismetSystemLibrary.IsDedicatedServer():
-    #         ue.log("[manual multicast] ERROR: executed on server")
-    #     else:
-    #         ue.log(f"[manual multicast] CLIENT executed: {msg}")
-    #
-    # # Register as Client RPC
-    # client_receive_manual.event = True
-    # client_receive_manual.client = True
-    # client_receive_manual.reliable = True
-
-    def set_global_time_dilation(self, time_dilation = 1):
-        self.uobject.TimeDilation = time_dilation
-        self.uobject.call_function('EventRunBlueprintFunctions')
-
     def end_play(self, reason):
         global _main_begin_play_ran
         _main_begin_play_ran = False
@@ -163,28 +49,26 @@ class Main:
         if hasattr(self, 'input'):
             self.input.shutdown()
 
-    # def say_hi(self):
-    #     ue.log("Pressed G")
-    #
-    # def ctrl_shift_b(self):
-    #     ue.log("Pressed Ctrl+Shift+B")
-    #
-    # def left_click(self):
-    #     ue.log("Left mouse button")
-    #
-    # def mouse_wheel(self, value):
-    #     ue.log("Wheel: {}".format(value))
-    #
-    # def sequence_action(self):
-    #     ue.log("Sequence fired: Ctrl+K → MouseX → Click")
-    #
-    # def print_mouse_world(self):
-    #     data = self.input.get_mouse_position(deproject=True)
-    #     if not data:
-    #         return
-    #     x, y, world, dir = data
-    #     ue.log(f"Mouse {x},{y}")
-    #     ue.log(f"World {world} Dir {dir}")
+    def ctrl_shift_b(self):
+        ue.log("Pressed Ctrl+Shift+B")
+
+    def left_click(self):
+        ue.log("Left mouse button")
+
+    def mouse_wheel(self, value):
+        ue.log("Wheel: {}".format(value))
+
+    def sequence_action(self):
+        ue.log("Sequence fired: Ctrl+K → MouseX → Click")
+
+    def print_mouse_world(self):
+        data = self.input.get_mouse_position(deproject=True)
+        if not data:
+            return
+        x, y, world, dir = data
+        ue.log(f"Mouse {x},{y}")
+        ue.log(f"World {world} Dir {dir}")
+
     def on_move_forward(self, value):
         """Handle analog movement input"""
         if value != 0:
@@ -286,10 +170,10 @@ class Main:
             ue.log(f"  Type: {binding['type']}, Keys: {binding['keys']}, Callback: {binding['callback']}")
 
     def move_icon(self):
-        # self.icon.get_actor_component('PhysicsHandle').SetTargetLocation(FVector(random.randint(1, 100), random.randint(1, 100), random.randint(1, 100)))
-        # self.icon.get_actor_component('Sphere').SetSimulatePhysics(False)
+        # self.icon.get_actor_component('PhysicsHandle').SetTargetLocation(FVector(random.randint(1, 100), random.randint(1, 100), random.randint(1, 100))) # not needed
+        # self.icon.get_actor_component('Sphere').SetSimulatePhysics(False) # not needed
         self.icon.set_actor_transform(FTransform(FVector(random.randint(1, 100), random.randint(1, 100), random.randint(1, 100)), FRotator(0, 0, 0), FVector(1, 1, 1)))
-        # self.icon.get_actor_component('Sphere').SetSimulatePhysics(True)
+        # self.icon.get_actor_component('Sphere').SetSimulatePhysics(True) # not needed
 
     # this is called on game start
     def begin_play(self):
@@ -301,6 +185,13 @@ class Main:
         ue.log('Begin Play on Main class')
         #change_background("video", os.path.join(os.path.abspath(ue.get_content_dir()),"Movies", "psychedelic.mp4"))
         change_background("white")
+        ue.log('Running startup')
+        startup()
+
+        # Stop the background music
+        bg_music = find_actor("BackgroundMusic")
+        for ac in bg_music.get_components_by_type(AudioComponent):
+            ac.Stop()
 
         global world
         world = get_world()
@@ -309,11 +200,6 @@ class Main:
         # print(world)
         global tickers
         tickers = []
-
-        global RPC_ACTOR, CLIENT_HELPER
-
-        RPC_ACTOR = None
-        CLIENT_HELPER = None
 
         self.uobject.enable_input()
 
@@ -347,7 +233,7 @@ class Main:
         # self.input.bind_press("Ctrl+Shift+B", lambda: ue.log("Ctrl+Shift+B"))
         # self.input.bind_press("Ctrl+Shift+A", lambda: ue.log("Ctrl+Shift+A"))
         #
-        self.input.bind_press("M", self.input.toggle_cursor)
+        # self.input.bind_press("M", self.input.toggle_cursor)
         #
         # # Repeat
         # self.input.bind_repeat("W", lambda: ue.log("Holding W"))
@@ -363,129 +249,6 @@ class Main:
         # self.input.bind_press("G", self.print_mouse_world)
         # self.input.bind_press("H", lambda: self.input.set_mouse_position(200, 200))
 
-
-
-        # self.uobject.enable_input()
-        #
-        # self.keyboard = Keyboard()
-        # self.mouse = Mouse()
-        # self.input = HotkeyManager(self.uobject, self.keyboard, self.mouse)
-        # self.trace = TraceHelper(self.uobject)
-        #
-        # # Analog movement with deadzone
-        # # self.input.bind_axis_poll(
-        # #     "MoveForward",
-        # #     self.on_move_forward,
-        # #     deadzone=0.1,
-        # #     rate=0.016  # ~60 FPS
-        # # )
-        #
-        # # Multiple keys to same action
-        # self.input.bind_press("F", self.interact)
-        self.input.bind_press("L", self.move_icon)
-        #
-        # # Complex chord
-        # self.input.bind_press("Ctrl+Alt+Delete", lambda: ue.log("The forbidden combo!"))
-        #
-        # self.input.bind_press("Ctrl+MouseScrollUp", lambda: ue.log("The forbidden combB!"))
-        # self.input.bind_press("Shift+MouseScrollUp", lambda: ue.log("The forbidden combA!"))
-        #
-        # # Mouse button combinations
-        # self.input.bind_press("Shift+LeftMouseButton", self.shift_click)
-        #
-        #
-        #
-        # # CURSOR SETUP
-        # self.input.enable_mouse_events(True, True)
-        # # self.input.show_cursor(True)
-        # # self.input.set_cursor(EMouseCursor.GrabHand)
-        #
-        # print(" CURSOR INFO ")
-        # self.input.print_cursor_info()
-        #
-        # # MOUSE AXIS TRACKING
-        # # IMPORTANT: Use bind_axis_poll for MouseX/MouseY as bind_axis may not work reliably
-        # # These will now properly track mouse movement
-        # # self.input.bind_axis_poll("MouseX", lambda v: ue.log(f"MouseX: {v:.3f}"))
-        # # self.input.bind_axis_poll("MouseY", lambda v: ue.log(f"MouseY: {v:.3f}"))
-        # # self.input.bind_axis_poll("MouseWheelAxis", lambda v: ue.log(f"MouseWheel: {v:.3f}"))
-        # #
-        # # # These might work depending on your project's input settings
-        # # # If you have TurnRate and LookUpRate defined in your Input Settings, these should work
-        # # try:
-        # #     self.input.bind_axis_poll("TurnRate", lambda v: ue.log(f"TurnRate: {v:.3f}"))
-        # #     self.input.bind_axis_poll("LookUpRate", lambda v: ue.log(f"LookUpRate: {v:.3f}"))
-        # # except:
-        # #     ue.log_warning("TurnRate/LookUpRate axes not available in project settings")
-        #
-        # # Mouse delta logging (uses timer)
-        # self.input.log_mouse_delta_timer(rate=0.1)
-        #
-        # # BASIC KEY BINDINGS
-        # # Simple press bindings
-        # # self.input.bind_press("K", self.on_key_k_pressed)
-        # self.input.bind_press("L", lambda: ue.log("Pressed L"))
-        #
-        # # Chord bindings (key combinations)
-        # self.input.bind_press("Ctrl+Shift+B", self.on_ctrl_shift_b)
-        # self.input.bind_press("Ctrl+G", self.print_mouse_world)
-        #
-        # # Toggle cursor with M key
-        # self.input.bind_press("M", self.input.toggle_cursor)
-        #
-        # # MOUSE BINDINGS
-        # self.input.bind_press("LeftMouseButton", self.on_left_click)
-        # self.input.bind_press("RightMouseButton", lambda: ue.log("Right click"))
-        # self.input.bind_double_click("LeftMouseButton", lambda: ue.log("Double click!"))
-        #
-        # # REPEAT BINDINGS
-        # # These fire repeatedly while key is held
-        # self.input.bind_repeat("W", lambda: ue.log("Holding W"))
-        # self.input.bind_repeat("Ctrl+R", lambda: ue.log("Ctrl+R held"))
-        #
-        # # POLL-BASED CHECKING
-        # # IMPORTANT: Use bind_poll for keys that have engine actions (like SpaceBar for Jump)
-        # # This checks key state without binding, so it won't override Jump
-        # self.input.bind_poll("SpaceBar", lambda: ue.log("Space is down (non-binding)"), rate=0.1)
-        #
-        # # You can also manually check key states
-        # self.input.bind_press("P", self.check_key_states)
-        #
-        # # ENGINE ACTIONS
-        # # Bind to actions defined in your project's Input Settings
-        # # This WON'T override the Jump action
-        # self.input.bind_action(
-        #     "Jump",
-        #     pressed_cb=lambda: ue.log("Jump action pressed"),
-        #     released_cb=lambda: ue.log("Jump action released")
-        # )
-        #
-        # # MOUSE POSITION BINDINGS
-        # # Get cursor info with world projection
-        # self.input.bind_press("G", self.print_cursor_and_trace)
-        #
-        # # Set mouse position
-        # self.input.bind_press("H", lambda: self.input.set_mouse_position(960, 540))
-        #
-        # # TRACE EXAMPLES
-        # # Trace from cursor
-        # self.input.bind_press("T", self.trace_from_cursor)
-        #
-        # # Trace forward from camera
-        # self.input.bind_press("F", self.trace_from_camera)
-        #
-        # # SEQUENCE BINDINGS
-        # # Execute callback after a sequence of keys
-        # # self.input.bind_sequence(
-        # #     ["Ctrl+K", "C"],
-        # #     lambda: ue.log("Sequence completed: Ctrl+K then C"),
-        # #     timeout=2.0
-        # # )
-        #
-        # # KEY REGISTRY
-        # # Print all registered bindings for a specific key
-        # self.input.bind_press("F1", lambda: self.print_key_registry("W"))
-
         if KismetSystemLibrary.IsDedicatedServer():
             ue.log("BeginPlay on DEDICATED SERVER")
             print("using world", world.get_name())
@@ -493,7 +256,7 @@ class Main:
             # for actor in world.all_actors():
             #     print(actor.get_class().get_name())
             gm = find_actor("StarcelGameMode")
-            print("Gamemode", gm)
+            print("Gamemode: ", gm)
 
             def on_player_joined(player_controller):
                 ue.log_warning(f"[SERVER PY] Player joined: {player_controller}") # START HERE
@@ -546,13 +309,6 @@ class Main:
                         auto_send=False  # Server doesn't auto-send from OnChunksBuilt
                     )
                     ue.log_warning("[SERVER] Server rpc helper created and bound")
-
-                # rpc_actors = find_actors("LargeStringRPCActor")
-                # if rpc_actors:
-                #     for rpc_actor in rpc_actors:
-                #         print("Blueprint binding server_string_received event: ", rpc_actor)
-                #         rpc_actor.bind_event('OnServerStringReceived', server_on_full_string_received)
-
             if gm:
                 gm.bind_event("OnPlayerJoined", on_player_joined)
                 ue.log_warning("[SERVER] Bound OnPlayerJoined")
@@ -577,52 +333,7 @@ class Main:
             else:
                 ue.log("CLIENT (no AuthorityGameMode) Client likely connected to dedicated server. ")
 
-            # .exe icon test moved to test_spawn.test_exe_icon (runs via test_spawn_all)
 
-            # some kind of movability problem
-            # self.monk = 0
-            # def tick():
-            #     print("ticked")
-            #     self.monk += 1
-            #     if self.monk > 3:
-            #         print("monk bigger than one")
-            #         self.icon.set_actor_transform(FTransform(FVector(310, 50, 400), FRotator(0,0,0), FVector(1,1,1)))
-            #
-            #
-            # self.yuh = self.uobject.set_timer(0.5, ticke, True) # required to keep timer from being collected by gc
-            # print(self.yuh)
-            # yuh.start()
-            # try:
-            #     yuh.start()
-            # except Exception as e:
-            #     print(e)
-
-            # print("PRINTING RETURNED ACTOR", icon)
-            # print("main.py world", world)
-            # find_actor("BP_Icon").set_actor_transform(FTransform(FVector(310, 50, 400), FRotator(0,0,0), FVector(1,1,1)))
-            # if not icon:
-            #     print("not icon", icon)
-            # print("checked", icon.check())
-            # if not icon.is_valid():
-            #     print("Not valid", icon)
-            # # icon_transform = FTransform(FVector(310, 50, 400), FRotator(0,0,0), FVector(1,1,1))
-            # # icon.set_actor_transform(icon_transform)
-
-            # TESTING POSSESSION
-            print("TESTING POSSESSION")
-            bp_drone = ue.load_object(Blueprint, '/Game/Blueprints/Assets/DroneCharacter/BP_PyDroneCharacter.BP_PyDroneCharacter')
-            player = world.actor_spawn(bp_drone.GeneratedClass)
-            transform = FTransform(FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1))
-            player.set_actor_transform(transform)
-            # player.get_actor_component('Text3DComponent').Text = "HI"
-            self.uobject.get_player_controller().Possess(player)
-            py_player = player.get_py_proxy()
-            py_player._setup_input()
-
-            player_controller = self.uobject.get_player_controller()
-            pawn = player_controller.get_pawn()
-            print(player_controller)
-            print(pawn)
             apply_material(
                 actor_name="TestSphere",  # M_Color is default
                 material_path="/Game/Materials/M_Color.M_Color",
@@ -637,69 +348,20 @@ class Main:
                 }
             )
 
-            apply_material(
-                actor_name="StickManCharacter_C",  # runtime instance name (check via print)
-                component_name="SkeletalMeshOutline",
-                material_path="/Game/Materials/M_Outline.M_Outline",
-                params={
-                    "Outline": 5.0,
-                    "Color": (1, 1, 1, 1),
-                }
-            )
-            # pawn = player_controller.get_controlled_pawn()
 
-            # Client → Server → Clients
-            # ue.log("Calling server_manual_multicast() from client")
-            # self.server_manual_multicast("hello via manual multicast")
-
-        # ue.exec('Script.py') # run a Python script file by passing its name
-        # ue.log(self.uobject.get_world().call_function('IsDedicatedServer')) # ('GetNetMode'))
-        # if (self.uobject.get_world().IsServer()):
-        #     ue.log("hello from server")
-        # elif (self.uobject.get_world().IsClient()):
-        #     ue.log("hello from client")
-
-        # self.uobject.get_player_controller().ClientTravel()
-
-        # if KismetSystemLibrary.IsDedicatedServer():
-        #     ue.log("hello from server")
-        #
-        #     # print("hello from server" + self.uobject.get_uproperty('StringHelloWorldProperty'))
-        #     # print("hello from server" + self.uobject.get_uproperty('StringHelloWorldProperty2'))  # .set_metadata('Category', 'CategoryTest001')
-        # else:
-        #     ue.log("hello from client")
-
-            # self.uobject.StringHelloWorldProperty = StrProperty()
-            # self.uobject.StringHelloWorldProperty2 = StrProperty()
-            # KismetSystemLibrary.SetStringPropertyByName(self.uobject, 'StringHelloWorldProperty', 'Hello World 001')
-            # KismetSystemLibrary.SetStringPropertyByName(self.uobject, 'StringHelloWorldProperty2', 'Hello World 002')
-            #
-            # # CPF_REP_NOTIFY # requires CPF_Net to also be set
-            # self.uobject.add_property_flags('StringHelloWorldProperty', CPF_NET)
-            # #self.uobject.StringHelloWorldProperty = 'Hello World 001'
-            # self.uobject.add_property_flags('StringHelloWorldProperty2', CPF_NET)
-            # #self.uobject.set_property('StringHelloWorldProperty2', 'Hello World 002')
-            # print("hello from client" + self.uobject.get_uproperty('StringHelloWorldProperty'))
-            # print("hello from client" + self.uobject.get_uproperty('StringHelloWorldProperty2'))  # .set_metadata('Category', 'CategoryTest001')
+        print("Begin Drone Possession")
+        bp_drone = ue.load_object(Blueprint, '/Game/Blueprints/Assets/DroneCharacter/BP_PyDroneCharacter.BP_PyDroneCharacter')
+        player = world.actor_spawn(bp_drone.GeneratedClass)
+        transform = FTransform(FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1))
+        player.set_actor_transform(transform)
 
 
-
-        # is_hitting_something, hit_result = KismetSystemLibrary.LineTraceSingle_NEW(self.actor, self.actor.get_actor_location(),FVector(300, 300, 300), ETraceTypeQuery.TraceTypeQuery1,DrawDebugType=EDrawDebugTrace.ForOneFrame)
-        # if is_hitting_something:
-        #     ue.log(hit_result)
 
         self.test_kingdon()
         # self.test_cylinder()
         # self.test_text()
-        print("Testing gizmos")
-        self._gizmo_target, self._gizmo_handles, self._gizmo_tick = test_gizmo(
-            uobject=self.uobject, input_manager=self.input)
-        # nd_table grid test moved to test_spawn_all()
 
-        self._t3d_actor, self._t3d_table, self._t3d_tick = test_text3d_click(
-            uobject=self.uobject, input_manager=self.input)
-
-        results = test_spawn_all()
+        results = test_spawn_all(uobject=self.uobject, input_manager=self.input)
         print(results)
 
 
@@ -714,100 +376,9 @@ class Main:
 
         # self.input.print_cursor_info()
 
-        if hasattr(self, '_gizmo_tick'):
-            self._gizmo_tick(delta_time)
+        # Gizmo + Text3D ticks now run on their own PyActors
+        # (pyactor_gizmo.GizmoController, pyactor_text3d.PyActorText3DGlobal).
 
-        if hasattr(self, '_t3d_tick'):
-            self._t3d_tick(delta_time)
-
-
-    def you_pressed_K(self):
-        ue.log_warning("=== YOU PRESSED K ===")
-        global RPC_ACTOR, CLIENT_HELPER
-        if not RPC_ACTOR:
-            print("Pressed k didn't have an rpc actor")
-            RPC_ACTOR = find_actor("LargeStringRPCActor")
-            print("pressed k found rpc actor", RPC_ACTOR)
-        else:
-            print("pressed k already has an rpc actor", RPC_ACTOR)
-
-        print("Found LargeStringRPCActors in pressed k", find_actors("LargeStringRPCActor"))
-        if not RPC_ACTOR.LargeString:
-            ue.log_warning("Creating LargeString on client")
-            RPC_ACTOR.LargeString = ue.new_object(LargeStringAsync)
-            ue.log_warning("Created LargeString on client")
-        else:
-            ue.log_warning("LargeString already exists in RPC_ACTOR")
-
-
-        # Create helper if not exists
-        if not CLIENT_HELPER:
-            CLIENT_HELPER = LargeStringAsyncStandalone(
-                large_string_obj=RPC_ACTOR.LargeString,
-                rpc_actor=RPC_ACTOR,
-                on_received_callback=client_on_full_string_received,
-                on_server_received_callback=None, # Client doesn't need server callback
-                on_progress_callback=progress_callback,
-                auto_send=True
-            )
-            ue.log("Created LargeStringAsyncStandalone helper")
-        else:
-            print("pressed k already has a helper actor", CLIENT_HELPER)
-
-
-        # Prepare test string
-        test_string = "U" * 1 * 1024 * 1024 # 100 * 1024 * 1024  # 100MB
-        ue.log_warning(f"Starting async build, length={len(test_string)}")
-
-        # Build chunks asynchronously
-        try:
-            RPC_ACTOR.LargeString.SetFromStringAsync(test_string)
-        except Exception as e:
-            ue.log_error(f"SetFromStringAsync failed: {e}")
-
-
-
-        # Send the string through various modes
-
-        # # Client → Server only
-        # CLIENT_HELPER.send_string(mode="server_only")
-
-        # # Server → Multicast to All clients
-        # CLIENT_HELPER.send_string(mode="multicast")
-        #
-        # # Server → Specific client
-        # target_pc = self.uobject.get_player_controller()
-        # CLIENT_HELPER.send_string(mode="client", target_client=target_pc)
-        #
-        # # Server → Single client (Explicit)
-        # CLIENT_HELPER.send_string(mode="server_to_client", target_client=target_pc)
-        #
-        # Client → Server → Multicast to All Clients
-        CLIENT_HELPER.send_string(mode="client_to_server_then_multicast")
-
-
-        # # Background swapping
-        # # Define the list of background types
-        # backgrounds = ["white", "black", "white_no_bloom", "white_no_emissive", "stars", "sky", "transparent", r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Images\duck.hdr"]
-        #
-        # global current_bg_index  # needed to modify the variable outside the function
-        #
-        # bg = backgrounds[current_bg_index]
-        # print(bg)
-        # change_background(bg)
-        #
-        # # Move to the next index, loop back to 0 if at the end
-        # current_bg_index += 1
-        # if current_bg_index >= len(backgrounds):
-        #     current_bg_index = 0
-
-
-        # self.uobject.get_player_controller().ClientTravel("10.10.1.123:7777", ue.ETravelType.TRAVEL_Absolute)
-        # ue.log_warning('travel completed')
-        # ue.log("hello from client")
-        # self.server_event()
-        # print("hello from client" + self.uobject.get_uproperty('StringHelloWorldProperty'))
-        # print("hello from client" + self.uobject.get_uproperty('StringHelloWorldProperty2'))  # .set_metadata('Category', 'CategoryTest001')
 
     def test_kingdon(self):
         ue.log("testing kingdon:")
@@ -854,9 +425,3 @@ class Main:
         cell_actor.set_actor_transform(transform)
         cell_actor.get_actor_component('Text3DComponent').Text = "HI"
         # print(cell_actor.get_actor_rotation().quaternion())
-
-
-
-
-# https://github.com/kprimo/UEPyTutorials/blob/main/Content/Scripts/Basic/DynamicTexture/dynamic_texture.py
-# https://github.com/kprimo/UEPyTutorials/blob/main/Content/Scripts/Advanced/StableDiffusion/RuntimeImage/runtime_image.py
