@@ -21,7 +21,14 @@
       "Bash(python -c \"import ast; ast.parse\\(open\\(r'C:\\\\Users\\\\nicho\\\\Documents\\\\Unreal Projects\\\\Starcel9\\\\Content\\\\Scripts\\\\nd_table\\\\resize_controller.py'\\).read\\(\\)\\); print\\('resize_controller OK'\\)\")",
       "Bash(python -c \"import ast; ast.parse\\(open\\(r'C:\\\\Users\\\\nicho\\\\Documents\\\\Unreal Projects\\\\Starcel9\\\\Content\\\\Scripts\\\\nd_table\\\\unreal_integration.py'\\).read\\(\\)\\); print\\('unreal_integration OK'\\)\")",
       "Bash(python -c \"import ast; ast.parse\\(open\\(r'C:/Users/nicho/Documents/Unreal Projects/Starcel9/Content/Scripts/test_spawn.py', encoding='utf-8'\\).read\\(\\)\\); print\\('OK'\\)\")",
-      "Bash(python -c \"import ast; ast.parse\\(open\\(r'C:/Users/nicho/Documents/Unreal Projects/Starcel9/Content/Scripts/ue_spawn.py', encoding='utf-8'\\).read\\(\\)\\); print\\('ok'\\)\")"
+      "Bash(python -c \"import ast; ast.parse\\(open\\(r'C:/Users/nicho/Documents/Unreal Projects/Starcel9/Content/Scripts/ue_spawn.py', encoding='utf-8'\\).read\\(\\)\\); print\\('ok'\\)\")",
+      "Bash(git ls-tree *)",
+      "Bash(git branch *)",
+      "Bash(git filter-branch *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch --force --index-filter \"git rm --cached --ignore-unmatch 'Content/Models/PineTree/TwistedPineTree.uasset' 'Content/Models/PineTree/Scene.uasset'\" -- origin/upgrades..HEAD)",
+      "Bash(git stash *)"
     ]
   }
 }
