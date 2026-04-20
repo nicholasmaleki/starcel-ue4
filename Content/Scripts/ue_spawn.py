@@ -56,12 +56,13 @@ def _set_transform(actor, location, rotation, scale):
     actor.set_actor_transform(transform)
 
 
-def _spawn_pyactor(python_module, python_class,
-                   location=None, rotation=None, scale=None,
-                   components=None,
-                   bp_path='/Game/Blueprints/Assets/BP_PyActorEmpty.BP_PyActorEmpty'):
+def spawn_pyactor(python_module, python_class,
+                  location=None, rotation=None, scale=None,
+                  components=None,
+                  bp_path='/Game/Blueprints/Assets/BP_PyActorEmpty.BP_PyActorEmpty',
+                  source_path=None):
     """
-    Spawn a PyActor dynamically (no Blueprint required).
+    Spawn a PyActor dynamically with the given Python module/class attached.
 
     *components* is an optional list of dicts, each with:
         class_name : str  — UE component class (e.g. 'StaticMeshComponent')
@@ -70,6 +71,8 @@ def _spawn_pyactor(python_module, python_class,
         root       : bool — if True, use add_actor_root_component
 
     *bp_path* — host Blueprint to spawn (default BP_PyActorEmpty).
+    *source_path* — optional file path attached as ``actor.source_path``
+    so click handlers (e.g. pyactor_icon) can open it.
 
     Returns the spawned actor.
     """
@@ -77,13 +80,20 @@ def _spawn_pyactor(python_module, python_class,
     loc = location if location is not None else FVector(0, 0, 0)
     rot = rotation if rotation is not None else FRotator(0, 0, 0)
 
-    # actor = world.actor_spawn(ue.find_class('PyActor'), loc, rot)
     bp_pyactor = ue.load_object(Blueprint, bp_path)
-    actor = world.actor_spawn(bp_pyactor.GeneratedClass)
-    transform = FTransform(location, rotation, scale)
-    actor.set_actor_transform(transform)
+    # kwargs route UEP through SpawnActorDeferred -> set props -> FinishSpawning,
+    # so PythonModule/PythonClass are bound before BeginPlay fires.
+    actor = world.actor_spawn(
+        bp_pyactor.GeneratedClass, loc, rot,
+        PythonModule=python_module,
+        PythonClass=python_class,
+    )
 
-    # Add components before setting Python class (so begin_play sees them)ggb
+    if scale is not None:
+        actor.set_actor_transform(FTransform(loc, rot, scale))
+
+    # Components are added after BeginPlay — not visible in begin_play,
+    # accessible from first tick onward.
     if components:
         for comp in components:
             cls = ue.find_class(comp['class_name'])
@@ -96,50 +106,12 @@ def _spawn_pyactor(python_module, python_class,
                 c.SetStaticMesh(mesh_obj)
                 c.Mobility = EComponentMobility.Movable
 
-    actor.set_property('PythonModule', python_module)
-    actor.set_property('PythonClass', python_class)
-
-    if scale is not None:
-        _set_transform(actor, loc, rot, scale)
-
-    return actor
-
-
-def spawn_pyactor(python_module, python_class,
-                  location=None, rotation=None, scale=None,
-                  components=None,
-                  bp_path='/Game/Blueprints/Assets/BP_PyActorEmpty.BP_PyActorEmpty',
-                  source_path=None):
-    """
-    Spawn a PyActor with the given Python module/class attached.
-
-    Public counterpart of ``_spawn_pyactor``. Mirrors the spawn_icon
-    parameter style (location/rotation/scale + bp_path + source_path).
-
-    Parameters
-    ----------
-    python_module : str  — module name containing the Python class
-    python_class  : str  — class name to attach as the PythonClass
-    components    : list — optional component dicts; see _spawn_pyactor
-    bp_path       : str  — host Blueprint path (default BP_PyActorEmpty)
-    source_path   : str  — optional file path attached as ``actor.source_path``
-                           so click handlers (e.g. pyactor_icon) can open it.
-
-    Returns
-    -------
-    actor or None
-    """
-    actor = _spawn_pyactor(
-        python_module, python_class,
-        location=location, rotation=rotation, scale=scale,
-        components=components,
-        bp_path=bp_path,
-    )
     if actor is not None and source_path is not None:
         try:
             actor.source_path = source_path
         except Exception as e:
             ue.log_warning(f'spawn_pyactor: could not attach source_path: {e}')
+
     return actor
 
 
@@ -398,18 +370,15 @@ def spawn_image(path, location=None, rotation=None, scale=None,
     return actor
 
 
-def spawn_video_cube(video_path, location=None, rotation=None, scale=None,
+def spawn_video(video_path, location=None, rotation=None, scale=None,
                      material_path='/Game/Movies/M_VideoTexture_Video',
                      media_player_path='/Game/Movies/MP_VideoTexture'):
     """
-    Spawn a cube with the M_VideoTexture_Video material applied DIRECTLY
-    (no MID), then open the MediaPlayer asset with the given video path so
-    the existing MediaTexture → MediaPlayer wiring inside the material plays
-    the custom video.
-
-    Uses the same cube-plane shape as spawn_image (width x thin x height).
+    Spawn a thin cube with M_VideoTexture_Video applied directly, and call
+    OpenUrl on the MediaPlayer so the material's existing MediaTexture →
+    MediaPlayer wiring plays the given video file.
     """
-    from unreal_engine.classes import MediaPlayer, FileMediaSource
+    from unreal_engine.classes import MediaPlayer
 
     world = _get_world()
     video_path = _ensure_video(video_path)
@@ -429,88 +398,17 @@ def spawn_video_cube(video_path, location=None, rotation=None, scale=None,
     except Exception:
         pass
 
-    # spawn cube actor
     actor = world.actor_spawn(StaticMeshActor)
     smc   = actor.StaticMeshComponent
-    cube  = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube')
-    smc.SetStaticMesh(cube)
+    smc.SetStaticMesh(ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube'))
     smc.Mobility = EComponentMobility.Movable
+    smc.set_material(0, ue.load_object(Material, material_path))
 
-    # apply material DIRECTLY (no MID)
-    mat = ue.load_object(Material, material_path + '.' + material_path.split('/')[-1])
-    if mat is None:
-        mat = ue.load_object(Material, material_path)
-    if mat:
-        smc.set_material(0, mat)
-    else:
-        ue.log_warning(f'spawn_video_cube: could not load material at "{material_path}"')
+    mp = ue.load_object(MediaPlayer, media_player_path)
+    mp.OpenUrl('file://' + os.path.abspath(video_path).replace('\\', '/'))
 
-    # OpenSource on the MediaPlayer via FileMediaSource
-    try:
-        mp = ue.load_object(MediaPlayer,
-                            media_player_path + '.' + media_player_path.split('/')[-1])
-        if mp is None:
-            mp = ue.load_object(MediaPlayer, media_player_path)
-        if mp:
-            abs_path = os.path.abspath(video_path)
-
-            # Create a runtime FileMediaSource and set its FilePath struct
-            media_source = ue.new_object(FileMediaSource)
-            try:
-                media_source.set_property('FilePath', {'FilePath': abs_path})
-            except Exception:
-                try:
-                    media_source.FilePath = {'FilePath': abs_path}
-                except Exception:
-                    try:
-                        media_source.set_file_path(abs_path)
-                    except Exception as e:
-                        ue.log_warning(f'spawn_video_cube: could not set FilePath: {e}')
-
-            # Open + play
-            opened = False
-            for open_name in ('OpenSource', 'open_source'):
-                try:
-                    getattr(mp, open_name)(media_source)
-                    opened = True
-                    break
-                except Exception:
-                    continue
-            if not opened:
-                try:
-                    mp.call_function("OpenSource", media_source)
-                    opened = True
-                except Exception as e:
-                    ue.log_warning(f'spawn_video_cube: OpenSource call failed: {e}')
-
-            if opened:
-                ue.log(f'spawn_video_cube: OpenSource("{abs_path}") on {media_player_path}')
-                played = False
-                for play_name in ('Play', 'play'):
-                    try:
-                        getattr(mp, play_name)()
-                        played = True
-                        break
-                    except Exception:
-                        continue
-                if not played:
-                    try:
-                        mp.call_function("Play")
-                        played = True
-                    except Exception as e:
-                        ue.log_warning(f'spawn_video_cube: Play call failed: {e}')
-                if played:
-                    ue.log(f'spawn_video_cube: Play() called on {media_player_path}')
-        else:
-            ue.log_warning(f'spawn_video_cube: could not load MediaPlayer at "{media_player_path}"')
-    except Exception as e:
-        ue.log_warning(f'spawn_video_cube: media player setup failed: {e}')
-
-    # vertical picture-frame scaling: 1 px → 1 UU
     if scale is None:
         scale = FVector(vid_w / 100.0, 0.05, vid_h / 100.0)
-    ue.log(f'spawn_video_cube: "{os.path.basename(video_path)}" {int(vid_w)}x{int(vid_h)} px '
-           f'→ scale=({scale.x:.3f}, {scale.y:.3f}, {scale.z:.3f})')
     _set_transform(actor, location, rotation, scale)
     return actor
 
@@ -530,136 +428,202 @@ def spawn_video_cube(video_path, location=None, rotation=None, scale=None,
 # SetVideoBackground, then repositions and rescales the actor to act as a
 # flat video picture frame instead of a sky sphere.
 
-def spawn_video_plane(path, location=None, rotation=None, scale=None,
-                      bp_path='/Game/Blueprints/Assets/BP_VideoSkySphere.BP_VideoSkySphere'):
-    """
-    Spawn a BP_VideoSkySphere and call ``SetVideoBackground("file://..." + path)``
-    to play a video — the same proven method used by ``change_background("video", ...)``
-    for the psychedelic sky background.
-
-    The actor is repositioned to *location* and optionally rescaled to *scale*.
-    If *scale* is None, it is left at the Blueprint's default scale (sky sphere
-    sized).  Pass a small scale like ``FVector(0.01, 0.01, 0.01)`` to use it as
-    a room-scale video screen.
-
-    Parameters
-    ----------
-    path    : absolute filesystem path to an MP4 video
-    location: FVector world position (default origin)
-    rotation: FRotator (default identity)
-    scale   : FVector  (default None = Blueprint default)
-    bp_path : package path to the video-capable Blueprint
-
-    Returns
-    -------
-    actor   : the spawned BP_VideoSkySphere actor (holds MediaPlayer internally)
-    """
-    world = _get_world()
-    path  = _ensure_video(path)
-
-    # spawn the Blueprint
-    try:
-        bp = ue.load_object(Blueprint, bp_path)
-    except Exception as e:
-        ue.log_warning(f'spawn_video_plane: could not load "{bp_path}": {e}')
-        return None
-    if bp is None:
-        ue.log_warning(f'spawn_video_plane: Blueprint not found at "{bp_path}"')
-        return None
-
-    try:
-        actor = world.actor_spawn(bp.GeneratedClass)
-    except Exception as e:
-        ue.log_warning(f'spawn_video_plane: actor_spawn failed: {e}')
-        return None
-
-    # position / scale
-    _set_transform(actor, location, rotation, scale)
-
-    # play the video (same call as change_background("video", path))
-    ue_path = "file://" + os.path.abspath(path)
-    try:
-        actor.call_function("SetVideoBackground", ue_path)
-        ue.log(f'spawn_video_plane: SetVideoBackground("{os.path.basename(path)}") '
-               f'on {actor.get_name()}')
-    except Exception as e:
-        ue.log_warning(f'spawn_video_plane: SetVideoBackground failed: {e}')
-
-    return actor
+# def spawn_video_plane(path, location=None, rotation=None, scale=None,
+#                       bp_path='/Game/Blueprints/Assets/BP_VideoSkySphere.BP_VideoSkySphere'):
+#     """
+#     Spawn a BP_VideoSkySphere and call ``SetVideoBackground("file://..." + path)``
+#     to play a video — the same proven method used by ``change_background("video", ...)``
+#     for the psychedelic sky background.
+#
+#     The actor is repositioned to *location* and optionally rescaled to *scale*.
+#     If *scale* is None, it is left at the Blueprint's default scale (sky sphere
+#     sized).  Pass a small scale like ``FVector(0.01, 0.01, 0.01)`` to use it as
+#     a room-scale video screen.
+#
+#     Parameters
+#     ----------
+#     path    : absolute filesystem path to an MP4 video
+#     location: FVector world position (default origin)
+#     rotation: FRotator (default identity)
+#     scale   : FVector  (default None = Blueprint default)
+#     bp_path : package path to the video-capable Blueprint
+#
+#     Returns
+#     -------
+#     actor   : the spawned BP_VideoSkySphere actor (holds MediaPlayer internally)
+#     """
+#     world = _get_world()
+#     path  = _ensure_video(path)
+#
+#     # spawn the Blueprint
+#     try:
+#         bp = ue.load_object(Blueprint, bp_path)
+#     except Exception as e:
+#         ue.log_warning(f'spawn_video_plane: could not load "{bp_path}": {e}')
+#         return None
+#     if bp is None:
+#         ue.log_warning(f'spawn_video_plane: Blueprint not found at "{bp_path}"')
+#         return None
+#
+#     try:
+#         actor = world.actor_spawn(bp.GeneratedClass)
+#     except Exception as e:
+#         ue.log_warning(f'spawn_video_plane: actor_spawn failed: {e}')
+#         return None
+#
+#     # position / scale
+#     _set_transform(actor, location, rotation, scale)
+#
+#     # play the video (same call as change_background("video", path))
+#     ue_path = "file://" + os.path.abspath(path)
+#     try:
+#         actor.call_function("SetVideoBackground", ue_path)
+#         ue.log(f'spawn_video_plane: SetVideoBackground("{os.path.basename(path)}") '
+#                f'on {actor.get_name()}')
+#     except Exception as e:
+#         ue.log_warning(f'spawn_video_plane: SetVideoBackground failed: {e}')
+#
+#     return actor
 
 
 # spawn_video
+#
+# def spawn_video(path, location=None, rotation=None, scale=None,
+#                 material_path='/Game/Movies/M_VideoTexture_Video',
+#                 param_name='MediaTexture',
+#                 autoplay=True):
+#     """
+#     Spawn a thin cube (like image plane, scaled to video resolution) and
+#     drive it with a MediaPlayer + MediaTexture at runtime.
+#
+#     Unsupported video formats (.mov, .mkv, .webm, etc.) are auto-converted
+#     to MP4 via ffmpeg.
+#
+#     The material at *material_path* must have a TextureSampleParameter2D
+#     named *param_name* wired to a MediaTexture.
+#
+#     Returns (actor, media_player, media_texture) so callers can pause/seek.
+#     """
+#     from unreal_engine.classes import MediaPlayer, MediaTexture, FileMediaSource
+#
+#     world = _get_world()
+#     path = _ensure_video(path)
+#
+#     # Read video dimensions for aspect-ratio scale (via ffprobe)
+#     vid_w, vid_h = 192.0, 108.0  # default 16:9 fallback
+#     try:
+#         result = subprocess.run(
+#             ['ffprobe', '-v', 'error', '-select_streams', 'v:0',
+#              '-show_entries', 'stream=width,height', '-of', 'csv=p=0', path],
+#             capture_output=True, text=True,
+#             creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0),
+#         )
+#         parts = result.stdout.strip().split(',')
+#         if len(parts) == 2:
+#             vid_w, vid_h = float(parts[0]), float(parts[1])
+#     except Exception:
+#         pass
+#
+#     actor = world.actor_spawn(StaticMeshActor)
+#     smc = actor.StaticMeshComponent
+#     smc.SetStaticMesh(ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube'))
+#     smc.Mobility = EComponentMobility.Movable
+#
+#     # Create runtime media objects
+#     media_player  = ue.new_object(MediaPlayer)
+#     media_texture = ue.new_object(MediaTexture)
+#     media_source  = ue.new_object(FileMediaSource)
+#
+#     media_texture.set_media_player(media_player)
+#     media_source.set_file_path(path)
+#
+#     # Bind MediaTexture to material
+#     mat = ue.load_object(Material, material_path)
+#     if mat:
+#         try:
+#             dmi = smc.CreateAndSetMaterialInstanceDynamic(0)
+#             dmi.SetTextureParameterValue(param_name, media_texture)
+#         except Exception as e:
+#             ue.log_warning(f'spawn_video: material setup failed: {e}')
+#     else:
+#         ue.log_warning(
+#             f'spawn_video: material not found at "{material_path}". '
+#             f'Create a material with a TextureSampleParameter2D named "{param_name}".'
+#         )
+#
+#     if autoplay:
+#         media_player.open_source(media_source)
+#         media_player.play()
+#
+#     vid_scale = scale if scale is not None else FVector(vid_w / 100.0, vid_h / 100.0, 0.01)
+#     _set_transform(actor, location, rotation, vid_scale)
+#     return actor, media_player, media_texture
 
-def spawn_video(path, location=None, rotation=None, scale=None,
-                material_path='/Game/Movies/M_VideoTexture_Video',
-                param_name='MediaTexture',
-                autoplay=True):
+
+# Audio decode (arbitrary files -> s16le PCM via ffmpeg)
+
+AUDIO_FILE_EXTS = {'.wav', '.flac', '.mp3', '.ogg', '.m4a',
+                   '.aac', '.opus', '.wma', '.aif', '.aiff'}
+
+# Keep-alive registry: USoundWaveProcedural is garbage-collected the moment
+# no Python ref survives, which cuts playback mid-stream.
+_procedural_sounds = []
+
+
+def _decode_audio_to_pcm(path, target_rate=44100, target_channels=2):
+    """Decode any audio file to interleaved 16-bit signed PCM via ffmpeg.
+
+    Returns (pcm_bytes, sample_rate, num_channels) or (None, None, None).
+    Uses the same ffmpeg dependency as _ensure_video; no extra pip install.
     """
-    Spawn a thin cube (like image plane, scaled to video resolution) and
-    drive it with a MediaPlayer + MediaTexture at runtime.
-
-    Unsupported video formats (.mov, .mkv, .webm, etc.) are auto-converted
-    to MP4 via ffmpeg.
-
-    The material at *material_path* must have a TextureSampleParameter2D
-    named *param_name* wired to a MediaTexture.
-
-    Returns (actor, media_player, media_texture) so callers can pause/seek.
-    """
-    from unreal_engine.classes import MediaPlayer, MediaTexture, FileMediaSource
-
-    world = _get_world()
-    path = _ensure_video(path)
-
-    # Read video dimensions for aspect-ratio scale (via ffprobe)
-    vid_w, vid_h = 192.0, 108.0  # default 16:9 fallback
+    if not os.path.isfile(path):
+        return None, None, None
     try:
         result = subprocess.run(
-            ['ffprobe', '-v', 'error', '-select_streams', 'v:0',
-             '-show_entries', 'stream=width,height', '-of', 'csv=p=0', path],
-            capture_output=True, text=True,
+            ['ffmpeg', '-hide_banner', '-loglevel', 'error',
+             '-i', path,
+             '-f', 's16le', '-acodec', 'pcm_s16le',
+             '-ar', str(target_rate), '-ac', str(target_channels),
+             '-'],
+            capture_output=True, timeout=180,
             creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0),
         )
-        parts = result.stdout.strip().split(',')
-        if len(parts) == 2:
-            vid_w, vid_h = float(parts[0]), float(parts[1])
-    except Exception:
-        pass
+    except FileNotFoundError:
+        ue.log_warning('_decode_audio_to_pcm: ffmpeg not found on PATH.')
+        return None, None, None
+    except subprocess.TimeoutExpired:
+        ue.log_warning(f'_decode_audio_to_pcm: ffmpeg timeout on {path}')
+        return None, None, None
+    if result.returncode != 0:
+        ue.log_warning('_decode_audio_to_pcm: ffmpeg error:\n' +
+                       result.stderr.decode(errors='replace')[:500])
+        return None, None, None
+    return result.stdout, target_rate, target_channels
 
-    actor = world.actor_spawn(StaticMeshActor)
-    smc = actor.StaticMeshComponent
-    smc.SetStaticMesh(ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube'))
-    smc.Mobility = EComponentMobility.Movable
 
-    # Create runtime media objects
-    media_player  = ue.new_object(MediaPlayer)
-    media_texture = ue.new_object(MediaTexture)
-    media_source  = ue.new_object(FileMediaSource)
+def _play_audio_file(world, path, location, volume, pitch):
+    """Decode *path* and play it through a transient USoundWaveProcedural.
+    Returns the sound wave (held in _procedural_sounds so playback survives)."""
+    from unreal_engine.classes import SoundWaveProcedural
+    pcm, rate, channels = _decode_audio_to_pcm(path)
+    if not pcm:
+        return None
+    frames   = len(pcm) // (2 * channels)          # 2 bytes per s16 sample
+    duration = frames / float(rate)
 
-    media_texture.set_media_player(media_player)
-    media_source.set_file_path(path)
+    sw = ue.new_object(SoundWaveProcedural)
+    sw.SampleRate  = rate
+    sw.NumChannels = channels
+    sw.Duration    = duration + 1.0                # small safety margin
+    sw.SoundGroup  = 0                             # SOUNDGROUP_Default
+    sw.bLooping    = False
 
-    # Bind MediaTexture to material
-    mat = ue.load_object(Material, material_path)
-    if mat:
-        try:
-            dmi = smc.CreateAndSetMaterialInstanceDynamic(0)
-            dmi.SetTextureParameterValue(param_name, media_texture)
-        except Exception as e:
-            ue.log_warning(f'spawn_video: material setup failed: {e}')
-    else:
-        ue.log_warning(
-            f'spawn_video: material not found at "{material_path}". '
-            f'Create a material with a TextureSampleParameter2D named "{param_name}".'
-        )
-
-    if autoplay:
-        media_player.open_source(media_source)
-        media_player.play()
-
-    vid_scale = scale if scale is not None else FVector(vid_w / 100.0, vid_h / 100.0, 0.01)
-    _set_transform(actor, location, rotation, vid_scale)
-    return actor, media_player, media_texture
+    sw.queue_audio(pcm)
+    world.play_sound_at_location(sw, location, volume, pitch, 0.0)
+    _procedural_sounds.append(sw)
+    ue.log(f'_play_audio_file: queued {duration:.2f}s '
+           f'({len(pcm)} bytes, {rate}Hz x{channels}) from {path}')
+    return sw
 
 
 # spawn_sound
@@ -669,11 +633,25 @@ def spawn_sound(path, location=None, volume=1.0, pitch=1.0,
     """
     Play a sound immediately, or spawn a clickable/proximity sphere.
 
-    *path*: UE asset path ('/Game/Sounds/MySound') or filesystem .wav.
+    *path*:
+      • UE asset path  ('/Game/Sounds/MySound') -> resolved via load_object
+      • Filesystem file (.wav/.flac/.mp3/.ogg/.m4a/...) -> decoded via ffmpeg
+        into a USoundWaveProcedural and played in place.
+
     *as_actor=True*: spawns BP_SoundSphere (see SoundSphereActor below).
+    Filesystem audio + as_actor is not supported (SoundSphere needs a
+    persistent SoundBase asset, not a transient procedural wave).
     """
     world = _get_world()
     loc = location if location is not None else FVector(0, 0, 0)
+
+    # Filesystem audio file: decode and play via SoundWaveProcedural.
+    ext = os.path.splitext(path)[1].lower()
+    if ext in AUDIO_FILE_EXTS and os.path.isfile(path):
+        if as_actor:
+            ue.log_warning('spawn_sound: as_actor not supported for filesystem '
+                           'audio; playing at location instead.')
+        return _play_audio_file(world, path, loc, volume, pitch)
 
     sound = None
     try:
@@ -688,7 +666,7 @@ def spawn_sound(path, location=None, volume=1.0, pitch=1.0,
 
     if as_actor:
         try:
-            actor = _spawn_pyactor(
+            actor = spawn_pyactor(
                 'pyactor_sound', 'SoundSphere',
                 location=loc,
                 components=[dict(class_name='StaticMeshComponent',
@@ -1450,7 +1428,7 @@ def spawn_system_monitor(location=None, rotation=None, scale=None):
       - sysinfo.py in Scripts/
       - activity_tracker.py daemon running (optional; gracefully skipped)
     """
-    actor = _spawn_pyactor(
+    actor = spawn_pyactor(
         'pyactor_sysmon', 'PyActorSysmon',
         location=location, rotation=rotation, scale=scale,
         components=[dict(class_name='Text3DComponent',
@@ -1486,7 +1464,7 @@ def spawn_camera_actor(location=None, rotation=None,
     Returns the spawned actor; its Python component (PyActorCamera) handles
     lens/DOF settings automatically in begin_play.
     """
-    actor = _spawn_pyactor(
+    actor = spawn_pyactor(
         'pyactor_camera', 'PyActorCamera',
         location=location, rotation=rotation,
         components=[dict(class_name='CineCameraComponent',
@@ -1514,7 +1492,7 @@ def spawn_file_explorer(location=None, rotation=None,
       - Everything (Voidtools) running in background
       - Everything64.dll accessible
     """
-    actor = _spawn_pyactor(
+    actor = spawn_pyactor(
         'pyactor_file_explorer', 'FileExplorer',
         location=location, rotation=rotation)
     if actor is None:
@@ -1647,7 +1625,7 @@ def spawn_gizmo(location=None, rotation=None, scale=None,
     -------
     (target_actor, handles_dict, tick_fn_or_None)
     """
-    from gizmo import test_gizmos, setup_gizmo_interaction
+    from gizmo import test_gizmos
 
     if location is None:
         location = FVector(0, 0, 100)

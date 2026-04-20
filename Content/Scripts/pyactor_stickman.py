@@ -14,9 +14,7 @@ Blueprint requirements (StickManCharacter):
     camera (already exists)
 
 Material note:
-  Uses M_TexturePicture (or M_Icon as fallback) for the crosshair plane.
-  For best transparency, create M_Crosshair (Translucent, Unlit,
-  Texture→Opacity) and set material_path below.
+  Uses M_TexturePicture for the crosshair plane.
 """
 
 import os
@@ -123,7 +121,6 @@ class PyActorStickMan:
 
     crosshair_path = r'C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\Materials\crosshair.png'
     material_paths = (
-        '/Game/Materials/M_Crosshair',
         '/Game/Materials/M_TexturePicture',
         '/Game/Materials/M_TextureUnlit',
     )

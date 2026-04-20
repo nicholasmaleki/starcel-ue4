@@ -3,7 +3,11 @@ import unreal_engine.classes
 from unreal_engine_tools import *
 import unreal_engine_tools
 import numpy as np
-import os, sys, subprocess, importlib, urllib.request, socket, math, sympy, fast_autocomplete, numba, kingdon, asyncio, time, random
+import warnings as _warnings
+with _warnings.catch_warnings():
+    _warnings.filterwarnings('ignore', message='pkg_resources is deprecated', category=UserWarning)
+    import fast_autocomplete
+import os, sys, subprocess, importlib, urllib.request, socket, math, sympy, numba, kingdon, asyncio, time, random
 from unreal_engine import FVector, FRotator, FTransform, FHitResult, CLASS_CONFIG, CLASS_DEFAULT_CONFIG, CPF_CONFIG, CPF_GLOBAL_CONFIG, CPF_EXPOSE_ON_SPAWN, CPF_NET, CPF_REP_NOTIFY
 from unreal_engine.classes import Actor, Character, PlayerController, StaticMeshActor, KismetMathLibrary, KismetSystemLibrary, Object, StrProperty, IntProperty, Blueprint, Material, Texture, LargeStringAsync, LargeStringRPCActor, StaticMesh, StaticMeshActor, AudioComponent
 from unreal_engine.enums import EInputEvent, ETraceTypeQuery, EDrawDebugTrace, EComponentMobility, EMouseCursor, ECollisionChannel
@@ -11,7 +15,6 @@ import constants, windowtool
 from constants import Constants, WorldSize
 from languages import *
 from cli import *
-from hotreload import *
 from typing import List, Dict, Union, Optional
 from nd_table.examples import test_nd_table_grid
 from input_devices import Keyboard, Mouse, HotkeyManager, TraceHelper
@@ -22,7 +25,11 @@ from test_spawn import test_spawn_all
 
 _main_begin_play_ran = False
 
+# Warning:
+# BUG: imported classes are not reloaded, you need to restart the editor
 # Code placed outside the Main class will not run when connecting to a server.
+# You can ignore and delete .uasset files as you'd like. They are regenerated on run
+
 ue.log('Hello i am a Python module.')
 
 # Use this if you want to rebuild the unreal_engine intellisense(.pyi, etc.) and cli
@@ -191,7 +198,7 @@ class Main:
         # Stop the background music
         bg_music = find_actor("BackgroundMusic")
         for ac in bg_music.get_components_by_type(AudioComponent):
-            ac.Stop()
+            ac.call('Stop')
 
         global world
         world = get_world()
@@ -233,7 +240,7 @@ class Main:
         # self.input.bind_press("Ctrl+Shift+B", lambda: ue.log("Ctrl+Shift+B"))
         # self.input.bind_press("Ctrl+Shift+A", lambda: ue.log("Ctrl+Shift+A"))
         #
-        # self.input.bind_press("M", self.input.toggle_cursor)
+        self.input.bind_press("M", self.input.toggle_cursor)
         #
         # # Repeat
         # self.input.bind_repeat("W", lambda: ue.log("Holding W"))
@@ -249,7 +256,7 @@ class Main:
         # self.input.bind_press("G", self.print_mouse_world)
         # self.input.bind_press("H", lambda: self.input.set_mouse_position(200, 200))
 
-        if KismetSystemLibrary.IsDedicatedServer():
+        if KismetSystemLibrary.IsDedicatedServer(self.uobject): # WARNING, Only Client -> Server sending of Multi-GB strings currently implemented
             ue.log("BeginPlay on DEDICATED SERVER")
             print("using world", world.get_name())
             # print(world.all_actors())
@@ -271,8 +278,6 @@ class Main:
                 print(py_player.get_yo())
                 py_player._setup_input()
 
-
-
                 global RPC_ACTOR, SERVER_HELPER
 
                 if not RPC_ACTOR:
@@ -284,7 +289,7 @@ class Main:
                         RPC_ACTOR.LargeString = ue.new_object(LargeStringAsync)  # attach ULargeStringAsync
                         print("Created new LargeStringAsync instance", RPC_ACTOR, RPC_ACTOR.LargeString)
 
-                        # BIND THE C++ EVENT MANUALLY AFTER CREATING LARGESTRING
+                        # Bind the C++ event manually after creating LargeString
                         try:
                             RPC_ACTOR.LargeString.bind_event('OnFullyReceived', RPC_ACTOR.Server_OnFullStringReceived)
                             ue.log_warning("[SERVER] Manually bound OnFullyReceived to Server_OnFullStringReceived")
@@ -354,14 +359,16 @@ class Main:
         player = world.actor_spawn(bp_drone.GeneratedClass)
         transform = FTransform(FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1))
         player.set_actor_transform(transform)
-
+        self.uobject.get_player_controller().Possess(player)
+        py_player = player.get_py_proxy()
+        py_player._setup_input()
 
 
         self.test_kingdon()
         # self.test_cylinder()
         # self.test_text()
 
-        results = test_spawn_all(uobject=self.uobject, input_manager=self.input)
+        results = test_spawn_all(uobject=self.uobject, input_manager=self.input, tests=['test_system_monitor', 'test_pyactor_assign', 'test_sound'])
         print(results)
 
 

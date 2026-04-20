@@ -89,7 +89,6 @@ class PyPawnDrone:
 
     CROSSHAIR_PATH = r'C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\Materials\crosshair.png'
     CROSSHAIR_MATS = (
-        '/Game/Materials/M_Crosshair',
         '/Game/Materials/M_TexturePicture',
         '/Game/Materials/M_TextureUnlit',
     )

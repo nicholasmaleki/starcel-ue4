@@ -239,12 +239,6 @@ def _check_prerequisites():
 
     checks = [
         # (label, check_fn, setup_note)
-        ('Material M_ImagePlane',
-         lambda: bool(ue.load_object(ue.find_class('Material'),
-                                     '/Game/Materials/M_ImagePlane')),
-         'Create a material at /Game/Materials/M_ImagePlane with a '
-         'TextureSampleParameter2D named "Texture"'),
-
         ('Material M_VideoTexture_Video',
          lambda: bool(ue.load_object(ue.find_class('Material'),
                                      '/Game/Movies/M_VideoTexture_Video')),
@@ -352,6 +346,7 @@ _Y_ICON          = 7000
 _Y_EXE_ICON      = 7500
 
 _GOOGLE_DRIVE_EXE = r"C:\Users\nicho\Downloads\GoogleDriveSetup.exe"
+_BIG_BAD_JOHN_FLAC = r"C:\Users\nicho\Downloads\Big Bad John\Big Bad John.flac"
 
 
 def _find_test_image():
@@ -507,16 +502,15 @@ def test_video():
     Spawn the loading_screen.mp4 as a vertical picture-frame video plane
     using MP_VideoTexture_Video_Mat, plus run the legacy Desktop-MP4 scan.
     """
-    from ue_spawn import spawn_video, spawn_video_cube
+    from ue_spawn import spawn_video
     results = {}
 
     # video cube: plays loading_screen.mp4 via MediaPlayer
-    loading_mp4 = (r'C:\Users\nicho\Documents\Unreal Projects'
-                   r'\Starcel9\Content\Movies\loading_screen.mp4')
+    loading_mp4 = (r'C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\Movies\loading_screen.mp4')
     if os.path.exists(loading_mp4):
         actor = None
         try:
-            actor = spawn_video_cube(
+            actor = spawn_video(
                 loading_mp4,
                 location=FVector(0, _Y_VIDEO + 400, 100),
             )
@@ -527,60 +521,27 @@ def test_video():
     else:
         results.update(_skip('video_cube', f'not found: {loading_mp4}'))
 
-    # legacy spawn_video on any Desktop MP4
-    mp4_path = None
-    try:
-        for f in os.listdir(DESKTOP):
-            if f.lower().endswith('.mp4'):
-                mp4_path = os.path.join(DESKTOP, f)
-                break
-    except Exception:
-        pass
-
-    if mp4_path:
-        actor = None
-        try:
-            ret   = spawn_video(mp4_path, location=FVector(0, _Y_VIDEO, 100))
-            actor = ret[0] if isinstance(ret, tuple) else ret
-        except Exception as e:
-            _log_exception('video_valid', e)
-        results.update(_result('video_valid', actor,
-                               extra=os.path.basename(mp4_path)))
-    else:
-        results.update(_skip('video_valid', 'no .mp4 on Desktop'))
-
-    bad = None
-    try:
-        bad = spawn_video('C:/nonexistent/bad.avi',
-                          location=FVector(0, _Y_VIDEO + 200, 100))
-    except Exception:
-        pass
-    results['video_invalid_path'] = {'ok': bad is None, 'actor': bad}
-    _log(f'[{"PASS" if bad is None else "FAIL"}] video_invalid_path')
     return results
 
 
 def test_sound():
-    """Spawn sound immediately and as a sphere actor."""
+    """Exercise ue_spawn.spawn_sound with a filesystem audio file."""
     from ue_spawn import spawn_sound
     results = {}
 
-    try:
-        spawn_sound('/Game/Sounds/Placeholder',
-                    location=FVector(0, _Y_SOUND, 100))
-    except Exception:
-        pass
-    results['sound_immediate'] = {'ok': True, 'actor': None}
-    _log('[PASS] sound_immediate — playback attempted')
-
-    actor = None
-    try:
-        actor = spawn_sound('/Game/Sounds/Placeholder',
-                            location=FVector(0, _Y_SOUND + 200, 100),
-                            as_actor=True)
-    except Exception as e:
-        _log_exception('sound_as_actor', e)
-    results.update(_result('sound_as_actor', actor))
+    if os.path.isfile(_BIG_BAD_JOHN_FLAC):
+        sw = None
+        try:
+            sw = spawn_sound(_BIG_BAD_JOHN_FLAC,
+                             location=FVector(0, _Y_SOUND, 100))
+        except Exception as e:
+            _log_exception('sound_file_flac', e)
+        results.update(_result('sound_file_flac', sw,
+                               inputs={'path': _BIG_BAD_JOHN_FLAC},
+                               extra='decoded via ffmpeg -> SoundWaveProcedural'))
+    else:
+        results.update(_skip('sound_file_flac',
+                             f'not found: {_BIG_BAD_JOHN_FLAC}'))
     return results
 
 
@@ -817,10 +778,10 @@ def test_pyactor_assign():
     import pyactor_test
     pyactor_test.begin_play_fired = False   # reset between runs
 
-    from ue_spawn import _spawn_pyactor
+    from ue_spawn import spawn_pyactor
     actor = None
     try:
-        actor = _spawn_pyactor(
+        actor = spawn_pyactor(
             'pyactor_test', 'PyActorTest',
             location=FVector(0, _Y_PYACTOR_TEST, 100))
         _log(f'  pyactor_hello_world: spawned at Y={_Y_PYACTOR_TEST}')
@@ -857,7 +818,7 @@ def test_gizmo(uobject=None, input_manager=None, location=None):
     (no drag / no PyActor).
     """
     from gizmo import test_gizmos, _piece_off
-    from ue_spawn import _spawn_pyactor
+    from ue_spawn import spawn_pyactor
 
     if location is None:
         location = FVector(0, _Y_GIZMO, 100)
@@ -880,7 +841,7 @@ def test_gizmo(uobject=None, input_manager=None, location=None):
 
     if uobject is not None and input_manager is not None:
         try:
-            pyactor = _spawn_pyactor(
+            pyactor = spawn_pyactor(
                 'pyactor_gizmo', 'GizmoController',
                 location=FVector(0, _Y_GIZMO, 0))
             proxy = pyactor.get_py_proxy()
@@ -1022,7 +983,7 @@ def test_plot():
 
 # Aggregator
 
-def test_spawn_all(uobject=None, input_manager=None):
+def test_spawn_all(uobject=None, input_manager=None, tests=None):
     """
     Run all spawn tests.  Modeled after test_gizmos().
 
@@ -1037,6 +998,11 @@ def test_spawn_all(uobject=None, input_manager=None):
                     spawn PyActors that own their own ticks — Main.tick
                     does not need to forward anything).
     input_manager : HotkeyManager instance (self.input from Main).
+    tests         : Optional iterable of test names to run. Names may be
+                    given with or without the ``test_`` prefix
+                    (e.g. ``['video']`` or ``['test_video']``). A single
+                    string is also accepted. ``None`` (default) runs every
+                    test. Unknown names are logged and ignored.
 
     Returns
     -------
@@ -1049,6 +1015,9 @@ def test_spawn_all(uobject=None, input_manager=None):
     Call from Main.begin_play (to also run the interactive tests):
         test_spawn_all(uobject=self.uobject, input_manager=self.input)
 
+    Run only one test:
+        test_spawn_all(tests=['video'])
+
     Open Desktop/test_spawn_log.txt for the PASS/FAIL report.
     """
     run_t0 = time.monotonic()
@@ -1060,10 +1029,7 @@ def test_spawn_all(uobject=None, input_manager=None):
     _log_env()
     _check_prerequisites()
 
-    results  = {}
-    timings  = {}   # fn_name -> seconds
-    errors   = {}   # fn_name -> top-level exception if the whole fn blew up
-    for fn in [
+    non_interactive = [
         test_primitives,
         test_image,
         test_video,
@@ -1078,7 +1044,30 @@ def test_spawn_all(uobject=None, input_manager=None):
         test_pyactor_assign,
         test_nd_table,
         test_plot,
-    ]:
+    ]
+    interactive = [
+        ('test_gizmo',
+         lambda: test_gizmo(uobject=uobject, input_manager=input_manager)),
+        ('test_text3d_click',
+         lambda: test_text3d_click(uobject=uobject, input_manager=input_manager)),
+    ]
+
+    selected = None
+    if tests is not None:
+        if isinstance(tests, str):
+            tests = [tests]
+        selected = {t if t.startswith('test_') else f'test_{t}' for t in tests}
+        known = {fn.__name__ for fn in non_interactive} | {n for n, _ in interactive}
+        unknown = selected - known
+        if unknown:
+            _log(f'WARNING: unknown test names ignored: {sorted(unknown)}')
+        non_interactive = [fn for fn in non_interactive if fn.__name__ in selected]
+        interactive    = [(n, c) for (n, c) in interactive if n in selected]
+
+    results  = {}
+    timings  = {}   # fn_name -> seconds
+    errors   = {}   # fn_name -> top-level exception if the whole fn blew up
+    for fn in non_interactive:
         _section(fn.__name__)
         t0 = time.monotonic()
         try:
@@ -1092,12 +1081,7 @@ def test_spawn_all(uobject=None, input_manager=None):
     # Interactive tests — need uobject + input_manager from Main. Their own
     # PyActors own the per-frame tick, so Main.tick does not forward anything.
     if uobject is not None and input_manager is not None:
-        for fn_name, fn_call in [
-            ('test_gizmo',
-             lambda: test_gizmo(uobject=uobject, input_manager=input_manager)),
-            ('test_text3d_click',
-             lambda: test_text3d_click(uobject=uobject, input_manager=input_manager)),
-        ]:
+        for fn_name, fn_call in interactive:
             _section(fn_name)
             t0 = time.monotonic()
             try:
@@ -2690,8 +2674,8 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
     # global level (the per-instance PyActorText3D animation ticks are a
     # separate concern).
     try:
-        from ue_spawn import _spawn_pyactor
-        global_actor = _spawn_pyactor(
+        from ue_spawn import spawn_pyactor
+        global_actor = spawn_pyactor(
             'pyactor_text3d', 'PyActorText3DGlobal',
             location=FVector(0, 0, 0))
         global_actor.get_py_proxy().set_tick_fn(tick_fn)

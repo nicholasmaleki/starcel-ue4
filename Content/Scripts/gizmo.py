@@ -211,5 +211,5 @@ def test_gizmos(location=None):
     return target, gizmo_root, handles
 
 # Interaction logic migrated to pyactor_gizmo.GizmoController.
-# Spawn via _spawn_pyactor('pyactor_gizmo', 'GizmoController') and call its
+# Spawn via spawn_pyactor('pyactor_gizmo', 'GizmoController') and call its
 # setup(uobject, input_manager, target, handles, piece_offsets=_piece_off).

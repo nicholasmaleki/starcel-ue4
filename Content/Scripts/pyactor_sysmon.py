@@ -29,23 +29,20 @@ class PyActorSysmon:
         self._elapsed = 0.0
         self.text3d   = None
 
-        try:
-            self.text3d = find_component(self.uobject, 'Text3DComponent')
-        except Exception:
-            pass
-
-        if self.text3d is None:
-            ue.log_warning(
-                f'PyActorSysmon: Text3DComponent not found on '
-                f'{self.uobject.get_name()}. Monitor disabled.')
-            return
-
-        ue.log(f'PyActorSysmon: started on {self.uobject.get_name()}')
-        self._update()   # populate immediately; don't wait for first interval
-
     def tick(self, dt):
+        # Lazy component lookup — ue_spawn.spawn_pyactor adds components
+        # after BeginPlay, so the Text3DComponent may not exist until tick.
         if self.text3d is None:
+            try:
+                self.text3d = find_component(self.uobject, 'Text3DComponent')
+            except Exception:
+                pass
+            if self.text3d is None:
+                return
+            ue.log(f'PyActorSysmon: started on {self.uobject.get_name()}')
+            self._update()
             return
+
         self._elapsed += dt
         if self._elapsed >= self.UPDATE_INTERVAL:
             self._elapsed = 0.0

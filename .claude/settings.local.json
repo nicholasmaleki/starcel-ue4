@@ -30,7 +30,10 @@
       "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch --force --index-filter \"git rm --cached --ignore-unmatch 'Content/Models/PineTree/TwistedPineTree.uasset' 'Content/Models/PineTree/Scene.uasset'\" -- origin/upgrades..HEAD)",
       "Bash(git stash *)",
       "Bash(python -c \"from PIL import Image; img = Image.open\\('Images/branding/icon.png'\\); print\\(img.size, img.mode\\)\")",
-      "Bash(git reset *)"
+      "Bash(git reset *)",
+      "Bash(python -c ' *)",
+      "Bash(git -C \"/c/Users/nicho/Documents/Unreal Projects/Starcel9\" log --oneline -10 -- \"Content/Scripts/pyactor_qur.py\")",
+      "Bash(git -C \"/c/Users/nicho/Documents/Unreal Projects/Starcel9\" diff HEAD -- \"Content/Scripts/pyactor_qur.py\")"
     ]
   }
 }

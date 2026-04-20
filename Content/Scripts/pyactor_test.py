@@ -1,5 +1,5 @@
 """Minimal test PyActor — begin_play logs 'Pyactor: hello world' and flips
-a module-level flag so test_spawn can confirm _spawn_pyactor wired the
+a module-level flag so test_spawn can confirm spawn_pyactor wired the
 PythonModule/PythonClass correctly."""
 import unreal_engine as ue
 

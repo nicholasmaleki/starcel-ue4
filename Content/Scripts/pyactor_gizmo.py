@@ -6,11 +6,11 @@ logic that used to run via a tick closure called from Main.tick now runs on
 this single PyActor's tick(self, dt).
 
 Usage:
-    from ue_spawn import _spawn_pyactor
+    from ue_spawn import spawn_pyactor
     from gizmo import test_gizmos, _piece_off
 
     target, gizmo_root, handles = test_gizmos()
-    pyactor = _spawn_pyactor('pyactor_gizmo', 'GizmoController')
+    pyactor = spawn_pyactor('pyactor_gizmo', 'GizmoController')
     pyactor.get_py_proxy().setup(
         uobject=main.uobject,
         input_manager=main.input,

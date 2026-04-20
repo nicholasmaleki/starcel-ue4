@@ -318,22 +318,31 @@ def get_world():
     if _world_cache is not None:
         try:
             _world_cache.get_name()  # will raise if the UObject was GC'd
-            return _world_cache
+            t = _world_cache.get_world_type()
+            # Drop the cache if PIE started — editor world should no longer win.
+            if t == EWorldType.Editor:
+                for w in ue.all_worlds():
+                    if w.get_world_type() in (EWorldType.PIE, EWorldType.Game):
+                        _world_cache = None
+                        break
+            if _world_cache is not None:
+                return _world_cache
         except Exception:
             _world_cache = None
 
-    scmaps = []
-    for _world in ue.all_worlds():
-        if _world.get_name() == "StarcelExampleMap":
-            scmaps.append(_world)
+    # Prefer Game > PIE > Editor. Multiple worlds share the same name during PIE
+    # (editor copy + PIE copy), so name-matching alone picks the wrong one.
+    worlds_by_type = {}
+    for w in ue.all_worlds():
+        t = w.get_world_type()
+        if worlds_by_type.get(t) is None:
+            worlds_by_type[t] = w
 
-    if len(scmaps) > 1:
-        ue.log_warning("Found more than one StarcelExampleMap:")
-        print([w.get_name() for w in scmaps])
+    _world_cache = (worlds_by_type.get(EWorldType.Game)
+                    or worlds_by_type.get(EWorldType.PIE)
+                    or worlds_by_type.get(EWorldType.Editor))
 
-    if scmaps:
-        _world_cache = scmaps[0]
-    else:
+    if _world_cache is None:
         all_w = ue.all_worlds()
         if all_w:
             _world_cache = all_w[0]
@@ -348,35 +357,32 @@ def startup():
         component_name="SkeletalMeshOutline",
         material_path="/Game/Materials/M_Outline.M_Outline",
         params={
-            "Outline": 5.0,
+            "LineThickness": 3.0,
             "Color": (0, 0, 0, 1),
         }
     )
     apply_material(
         actor_name="StickManCharacter_C",  # runtime instance name (check via print)
-        component_name="SkeletalMesh",
-        material_path="/Game/Materials/M_Color.M_Color",
+        component_name="SkeletalMeshHeadlessOutline",
+        material_path="/Game/Materials/M_Outline.M_Outline",
         params={
-            "Color": (1, 1, 1, 1),
+            "LineThickness": 3.0,
+            "Color": (0, 0, 0, 1),
         }
     )
+    # apply_material(
+    #     actor_name="StickManCharacter_C",  # runtime instance name (check via print)
+    #     component_name="SkeletalMesh",
+    #     material_path="/Game/Materials/M_Color.M_Color",
+    #     params={
+    #         "Color": (1, 1, 1, 1),
+    #     }
+    # )
 
 def invalidate_world_cache():
     """Call when PIE stops/starts to force get_world() to re-scan."""
     global _world_cache
     _world_cache = None
-
-
-def _GetWorld(): # alternative from https://github.com/dfb/UnrealEnginePython/tree/modus
-    '''Returns the best guess of what the "current" world to use is'''
-    worlds = {} # worldType -> *first* world of that type
-    for w in ue.all_worlds():
-        t = w.get_world_type()
-        if worlds.get(t) is None:
-            worlds[t] = w
-        # print(w, w.get_world_type()) # seems to return number instead of enum
-
-    return worlds.get(EWorldType.Game) or worlds.get(EWorldType.PIE) or worlds.get(EWorldType.Editor)
 
 
 global world
@@ -810,7 +816,7 @@ def change_background(background="white", path="file://"):
         print(py_actor)
 
     # grab actors for background
-    sky = find_actor("SM_SkySphere")  # IDK why it got the name _2
+    sky = find_actor("SM_SkySphere_2")
     sky_white = find_actor("SM_SkySpherePureWhiteManualExposure")
     # sky_white_autoexposure = find_actor("SM_SkySpherePureWhite")
     sky_video = find_actor("BP_VideoSkySphere")  # IDK why it got the name _8
@@ -979,20 +985,22 @@ def change_background(background="white", path="file://"):
         print("mode not found")
 
 
-# # Background swapping
+# Background swapping
 # Define the list of background types
 backgrounds = ["white", "black", "white_no_bloom", "white_no_emissive", "stars", "sky", "transparent", r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Images\duck.hdr"]
+global current_bg_index
+current_bg_index = 0
 
-global current_bg_index  # needed to modify the variable outside the function
+def rotate_background():
+    global current_bg_index
+    bg = backgrounds[current_bg_index]
+    print(bg)
+    change_background(bg)
 
-bg = backgrounds[current_bg_index]
-print(bg)
-change_background(bg)
-
-# Move to the next index, loop back to 0 if at the end
-current_bg_index += 1
-if current_bg_index >= len(backgrounds):
-    current_bg_index = 0
+    # Move to the next index, loop back to 0 if at the end
+    current_bg_index += 1
+    if current_bg_index >= len(backgrounds):
+        current_bg_index = 0
 
 
 def dump_module(module):

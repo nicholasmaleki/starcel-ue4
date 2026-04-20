@@ -31,7 +31,7 @@ QUOTES = [
 
 FONT_PATH = '/Game/Fonts/CatFont_Font'
 QUOTE_INTERVAL = 90.0   # 1.5 minutes between quote changes
-QUOTE_OFFSET   = FVector(0, 250, 700)  # to the right and up from the cat
+QUOTE_OFFSET   = FVector(-55, -10, -35)  # to the right and up from the cat
 TEXT_LINE_LENGTH = 25
 
 
@@ -98,6 +98,7 @@ class PyActorQur:
                                 '/Game/Blueprints/Assets/BP_Cell.BP_Cell')
             world = self.uobject.get_world()
             loc = self.uobject.get_actor_location()
+            print("QUR LOC", loc)
             spawn_loc = FVector(loc.x + QUOTE_OFFSET.x,
                                 loc.y + QUOTE_OFFSET.y,
                                 loc.z + QUOTE_OFFSET.z)
@@ -109,16 +110,17 @@ class PyActorQur:
                 if self._font:
                     t3d.Font = self._font
                 # Small scale for readable text
-                transform = FTransform(spawn_loc, FRotator(0, 0, 270), FVector(15, 15, 15))
+                transform = FTransform(spawn_loc, FRotator(0, 0, 0), FVector(.2, .2, .2))
                 actor.set_actor_transform(transform)
 
-            # Attach so it follows the cat
-            owner = self.uobject.get_owner()
-            try:
-                actor.K2_AttachToActor(owner)
-            except Exception:
-                pass
-            actor.K2_SetActorRelativeLocation(QUOTE_OFFSET)
+            # # Attach so it follows the cat
+            # owner = self.uobject.get_owner()
+            # try:
+            #     actor.K2_AttachToActor(owner)
+            # except Exception:
+            #     pass
+            # print("QUR QUOTE LOC", spawn_loc)
+            # actor.RelativeLocation = spawn_loc
 
             self._quote_actor = actor
             ue.log(f'PyActorQur: "{quote[:30]}..."')

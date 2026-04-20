@@ -115,9 +115,8 @@ def spawn_textured_plane(uobject, pil_image, material_paths, param_name='Texture
 # Crosshair overlay
 
 DEFAULT_CROSSHAIR_MATS = (
-    '/Game/Materials/M_Crosshair',
-    '/Game/Materials/M_TextureUnlit',
     '/Game/Materials/M_TexturePicture',
+    '/Game/Materials/M_TextureUnlit',
 )
 
 

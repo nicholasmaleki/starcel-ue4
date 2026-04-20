@@ -1,11 +1,28 @@
 import unreal_engine as ue
 from unreal_engine.enums import EMouseCursor, ECollisionChannel
-from unreal_engine.classes import StarcelHelper
+from unreal_engine.classes import StarcelHelper, InputSettings
 import time
 
 
 def _clean(s: str):
     return s.replace(" ", "").replace("_", "").lower()
+
+
+def _load_project_input_names():
+    """Read axis/action mapping names from Project Settings > Input.
+    Returns (axis_map, action_map): lowercase token -> canonical name."""
+    axis_map, action_map = {}, {}
+    try:
+        settings = ue.get_mutable_default(InputSettings)
+        for n in settings.GetAxisNames():
+            name = str(n)
+            axis_map[_clean(name)] = name
+        for n in settings.GetActionNames():
+            name = str(n)
+            action_map[_clean(name)] = name
+    except Exception as e:
+        ue.log_warning(f'input_devices: could not read project input settings: {e}')
+    return axis_map, action_map
 
 
 class Keyboard:
@@ -366,7 +383,32 @@ class HotkeyManager:
         self._key_registry = {}  # For future keyboard visualization
         self._is_shutting_down = False
 
+        self._axis_names, self._action_names = _load_project_input_names()
+
         self.player_controller = self.uobject.get_player_controller()
+
+    def resolve_axis_name(self, token):
+        """Look up token case-insensitively in project axis mappings.
+        Returns the canonical axis name, or None (with warning) on typo."""
+        if not token:
+            return None
+        canonical = self._axis_names.get(_clean(token))
+        if canonical is None:
+            ue.log_warning(
+                f"bind_axis: '{token}' is not a defined axis mapping. "
+                f"Check Project Settings > Input > Axis Mappings.")
+        return canonical
+
+    def resolve_action_name(self, token):
+        """Look up token case-insensitively in project action mappings."""
+        if not token:
+            return None
+        canonical = self._action_names.get(_clean(token))
+        if canonical is None:
+            ue.log_warning(
+                f"bind_action: '{token}' is not a defined action mapping. "
+                f"Check Project Settings > Input > Action Mappings.")
+        return canonical
 
     # Shutdown
     def shutdown(self):
@@ -424,7 +466,9 @@ class HotkeyManager:
     def toggle_cursor(self):
         """Toggle cursor visibility"""
         self.show_cursor(not self._cursor_visible)
+        print("attempting to force a click")
         StarcelHelper.ClickLMB() # force a click
+        print("attempt to force a click finished")
 
     def print_cursor_info(self):
         """Print cursor configuration information"""
@@ -687,7 +731,9 @@ class HotkeyManager:
         """Bind an axis input to a callback
         Note: For MouseX/MouseY, use bind_axis_poll instead as bind_axis may not work reliably
         """
-        axis = self.normalize_input_token(axis_name)
+        axis = self.resolve_axis_name(axis_name)
+        if axis is None:
+            return
 
         def _handler(v):
             if abs(v) < deadzone:
@@ -718,7 +764,9 @@ class HotkeyManager:
         """Bind an axis using only polling (more reliable for MouseX/MouseY)
         Use this for mouse movement tracking
         """
-        axis = self.normalize_input_token(axis_name)
+        axis = self.resolve_axis_name(axis_name)
+        if axis is None:
+            return
         poll_rate = rate if rate is not None else self.poll_rate
 
         def poller(dt):
@@ -754,7 +802,9 @@ class HotkeyManager:
 
     def bind_axis_for_sequence(self, axis_name, condition_fn, callback):
         """Internal: bind axis for sequence detection"""
-        axis = self.normalize_input_token(axis_name)
+        axis = self.resolve_axis_name(axis_name)
+        if axis is None:
+            return
 
         def _handler(v):
             if condition_fn(v):
@@ -765,11 +815,14 @@ class HotkeyManager:
     # Actions
     def bind_action(self, name, pressed_cb=None, released_cb=None):
         """Bind an action defined in project input settings"""
+        action = self.resolve_action_name(name)
+        if action is None:
+            return
         if pressed_cb:
-            self.uobject.bind_action(name, ue.IE_PRESSED, pressed_cb)
+            self.uobject.bind_action(action, ue.IE_PRESSED, pressed_cb)
         if released_cb:
-            self.uobject.bind_action(name, ue.IE_RELEASED, released_cb)
-        self._register_binding((name,), "action", pressed_cb.__name__ if pressed_cb and hasattr(pressed_cb, '__name__') else None)
+            self.uobject.bind_action(action, ue.IE_RELEASED, released_cb)
+        self._register_binding((action,), "action", pressed_cb.__name__ if pressed_cb and hasattr(pressed_cb, '__name__') else None)
 
     def is_action_pressed(self, name):
         """Check if action is currently pressed"""
