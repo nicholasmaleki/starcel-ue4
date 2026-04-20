@@ -2,12 +2,12 @@ import unreal_engine as ue
 from unreal_engine import FVector, FRotator
 from unreal_engine_tools import find_component
 
-# Python component: full camera control for BP_PyCamera
+# Python component: full camera control
 #
-# Blueprint requirements (BP_PyCamera):
-#   - CineCameraComponent as root (or added component), name: 'CineCameraComponent'
-#   - Python component → pyactor_camera.PyActorCamera
-#   - Blueprint string variable named 'camera_type' (Instance Editable, default "normal")
+# Spawn via spawn_camera_actor(...) in ue_spawn.py — dynamic PyActor, no
+# Blueprint placeholder required. A CineCameraComponent is added as root
+# after BeginPlay by spawn_pyactor(components=...); ``camera_type`` is
+# set on the actor before begin_play selects a preset.
 #
 # Camera types:
 #   'normal'        Standard 35mm full-frame
@@ -62,7 +62,7 @@ _PROJ_ORTHOGRAPHIC  = 1
 
 class PyActorCamera:
     """
-    Full camera control PyActor component for BP_PyCamera.
+    Full camera control PyActor component.
     Applies preset lens/DOF settings from ue_spawn.CAMERA_PRESETS and
     provides runtime methods for projection, Panini, and view transfer.
     """

@@ -16,10 +16,9 @@ except Exception:
 
 # Python component: file browser backed by EverythingAPI + nd_table
 #
-# Blueprint requirements (BP_FileExplorer):
-#   - Python component → pyactor_file_explorer.FileExplorer
-#   - No mesh required; actor is a Python host only
-#   - Project Settings → Input → Enable Click Events = ON
+# Spawn via spawn_file_explorer(...) in ue_spawn.py — dynamic PyActor, no
+# Blueprint placeholder required. Click events must be enabled once at
+# Project Settings → Input → Enable Click Events.
 #
 # Dependencies:
 #   everything_api.py       EverythingAPI — requires Everything daemon + DLL

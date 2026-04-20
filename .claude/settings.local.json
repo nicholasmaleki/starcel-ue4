@@ -33,7 +33,9 @@
       "Bash(git reset *)",
       "Bash(python -c ' *)",
       "Bash(git -C \"/c/Users/nicho/Documents/Unreal Projects/Starcel9\" log --oneline -10 -- \"Content/Scripts/pyactor_qur.py\")",
-      "Bash(git -C \"/c/Users/nicho/Documents/Unreal Projects/Starcel9\" diff HEAD -- \"Content/Scripts/pyactor_qur.py\")"
+      "Bash(git -C \"/c/Users/nicho/Documents/Unreal Projects/Starcel9\" diff HEAD -- \"Content/Scripts/pyactor_qur.py\")",
+      "Bash(xargs wc *)",
+      "Bash(python -c 'import ast, sys *)"
     ]
   }
 }

@@ -1,11 +1,11 @@
 import unreal_engine as ue
 from unreal_engine_tools import find_component
 
-# Python component: live system monitor for BP_SysMon
+# Python component: live system monitor
 #
-# Blueprint requirements (BP_SysMon):
-#   - Text3DComponent (name: 'Text3DComponent', default text: "Loading...")
-#   - Python component → pyactor_sysmon.PyActorSysmon
+# Spawn via spawn_system_monitor(...) in ue_spawn.py — dynamic PyActor,
+# no Blueprint placeholder required. The Text3DComponent is added after
+# BeginPlay by spawn_pyactor(components=...).
 #
 # Data sources:
 #   sysinfo.py          get_info_string(mode='minimal', units='usa')

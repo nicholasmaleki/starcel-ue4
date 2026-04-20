@@ -1,8 +1,8 @@
 """
 pyactor_plotter.py — PyActor component for MathPlotter
 =======================================================
-Attach to BP_MathPlot (any empty Actor Blueprint with just this Python component).
-No Blueprint variables needed — everything is configured in Python.
+Spawn via spawn_plot(...) in ue_spawn.py — dynamic PyActor, no Blueprint
+placeholder required. Everything is configured in Python on the proxy.
 
 The actor's world location is used as the plot origin.
 
@@ -10,11 +10,9 @@ Usage from PIE console:
     from ue_spawn import spawn_plot
     actor = spawn_plot('sin(x)+cos(y)', location=FVector(0, 500, 0))
 
-Change function at runtime:
-    from unreal_engine_tools import find_actor
-    a = find_actor('BP_MathPlot_C')   # or keep a reference
-    a.get_component('Python').set_function('x**2 - y**2')
-    a.get_component('Python').set_function('sin(sqrt(x**2+y**2))', plot_type='heatmap')
+Change function at runtime (keep a reference to the returned actor):
+    actor.get_py_proxy().set_function('x**2 - y**2')
+    actor.get_py_proxy().set_function('sin(sqrt(x**2+y**2))', plot_type='heatmap')
 """
 
 import unreal_engine as ue

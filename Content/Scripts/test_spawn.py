@@ -577,7 +577,7 @@ def test_earth():
 
 
 def test_system_monitor():
-    """Spawn BP_SysMon actor."""
+    """Spawn a PyActorSysmon dynamically (no Blueprint placeholder)."""
     from ue_spawn import spawn_system_monitor
     actor = None
     try:
@@ -874,8 +874,8 @@ def test_plot():
 
     sphere_lines variants accept an optional point_mesh path (default: Sphere).
 
-    First tries spawn_plot() (full Blueprint path via BP_MathPlot).
-    Falls back to create_plotter() directly if the Blueprint is missing.
+    Uses spawn_plot() — a dynamic PyActorPlotter spawned via spawn_pyactor.
+    Falls back to create_plotter() directly if spawn_plot errors out.
     """
     import math
     results = {}
@@ -896,7 +896,7 @@ def test_plot():
         actor = None
         name  = v['name']
 
-        # try Blueprint path
+        # Primary path: PyActorPlotter via spawn_plot
         try:
             from ue_spawn import spawn_plot
             actor = spawn_plot(
@@ -908,7 +908,7 @@ def test_plot():
                 mesh_mode     = v.get('mesh_mode', 'triangles'),
             )
         except Exception as e:
-            _log(f'  {name}: spawn_plot Blueprint path failed ({e}), trying direct plotter...')
+            _log(f'  {name}: spawn_plot failed ({e}), trying direct plotter...')
 
         # fallback: create_plotter directly (debug=True shows mesh errors)
         if actor is None:

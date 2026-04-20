@@ -60,7 +60,8 @@ def spawn_pyactor(python_module, python_class,
                   location=None, rotation=None, scale=None,
                   components=None,
                   bp_path='/Game/Blueprints/Assets/BP_PyActorEmpty.BP_PyActorEmpty',
-                  source_path=None):
+                  source_path=None,
+                  name=None):
     """
     Spawn a PyActor dynamically with the given Python module/class attached.
 
@@ -73,6 +74,8 @@ def spawn_pyactor(python_module, python_class,
     *bp_path* — host Blueprint to spawn (default BP_PyActorEmpty).
     *source_path* — optional file path attached as ``actor.source_path``
     so click handlers (e.g. pyactor_icon) can open it.
+    *name* — optional editor label (set via set_actor_label). Defaults to
+    ``python_class`` so each spawned actor gets a readable outliner name.
 
     Returns the spawned actor.
     """
@@ -111,6 +114,12 @@ def spawn_pyactor(python_module, python_class,
             actor.source_path = source_path
         except Exception as e:
             ue.log_warning(f'spawn_pyactor: could not attach source_path: {e}')
+
+    if actor is not None:
+        try:
+            actor.set_actor_label(name if name else python_class)
+        except Exception:
+            pass
 
     return actor
 
@@ -1251,6 +1260,44 @@ def spawn_table(table, location=None, world_location=None,
     return renderer
 
 
+# spawn_table_actor — PyActor-hosted table with per-frame resize tick
+
+def spawn_table_actor(table=None, location=None, rotation=None,
+                      orientation='wall_table', cell_spacing=100.0,
+                      render_gridlines=True, render_text=True,
+                      enable_resize=True, name=None):
+    """
+    Spawn a PyActorTable that owns an UnrealTableRenderer and ticks its
+    gridline-resize controller every frame — no Main.tick forwarding.
+
+    If *table* is supplied it is rendered immediately. Otherwise call
+    ``actor.get_py_proxy().set_table(t)`` once the Table is ready.
+
+    Returns the PyActor. Access the underlying renderer via
+    ``actor.get_py_proxy().renderer`` or the convenience proxies
+    ``cell_actors`` / ``gridline_actors``.
+    """
+    actor = spawn_pyactor(
+        'pyactor_table', 'PyActorTable',
+        location=location, rotation=rotation,
+        name=name if name else 'Table')
+    if actor is None:
+        return None
+    try:
+        proxy = actor.get_py_proxy()
+        if proxy is not None:
+            proxy.orientation      = orientation
+            proxy.cell_spacing     = cell_spacing
+            proxy.render_gridlines = render_gridlines
+            proxy.render_text      = render_text
+            proxy.enable_resize    = enable_resize
+            if table is not None:
+                proxy.set_table(table)
+    except Exception as e:
+        ue.log_warning(f'spawn_table_actor: configure failed: {e}')
+    return actor
+
+
 # spawn_nd_table — comprehensive nD table grid (2D 10x10 through 7D)
 
 def spawn_nd_table(location=None, rotation=None, scale=None,
@@ -1417,9 +1464,10 @@ def spawn_desktop_icons(location=None, desktop_path=None, spacing=150,
     return actors
 
 
-# spawn_system_monitor — BP_SysMon with live sysinfo ticker
+# spawn_system_monitor — dynamic PyActor hosting a live sysinfo ticker
 
-def spawn_system_monitor(location=None, rotation=None, scale=None):
+def spawn_system_monitor(location=None, rotation=None, scale=None,
+                         name='SysMon'):
     """
     Spawn a system monitor PyActor with Text3DComponent.
     The Python component updates its text every 2 seconds automatically.
@@ -1432,7 +1480,8 @@ def spawn_system_monitor(location=None, rotation=None, scale=None):
         'pyactor_sysmon', 'PyActorSysmon',
         location=location, rotation=rotation, scale=scale,
         components=[dict(class_name='Text3DComponent',
-                         name='Text3DComponent', root=True)])
+                         name='Text3DComponent', root=True)],
+        name=name)
     # Set default text while waiting for first update
     try:
         t3d = find_component(actor, 'Text3DComponent')
@@ -1443,10 +1492,10 @@ def spawn_system_monitor(location=None, rotation=None, scale=None):
     return actor
 
 
-# spawn_camera_actor — BP_PyCamera with PyActorCamera component
+# spawn_camera_actor — dynamic PyActor hosting a CineCameraComponent
 
 def spawn_camera_actor(location=None, rotation=None,
-                       camera_type='normal'):
+                       camera_type='normal', name=None):
     """
     Spawn a camera PyActor with CineCameraComponent.
 
@@ -1468,7 +1517,8 @@ def spawn_camera_actor(location=None, rotation=None,
         'pyactor_camera', 'PyActorCamera',
         location=location, rotation=rotation,
         components=[dict(class_name='CineCameraComponent',
-                         name='CineCameraComponent', root=True)])
+                         name='CineCameraComponent', root=True)],
+        name=name if name else f'Camera_{camera_type}')
     if actor is None:
         return None
     try:
@@ -1478,12 +1528,12 @@ def spawn_camera_actor(location=None, rotation=None,
     return actor
 
 
-# spawn_file_explorer — BP_FileExplorer with FileExplorer Python component
+# spawn_file_explorer — dynamic PyActor hosting the FileExplorer component
 
 def spawn_file_explorer(location=None, rotation=None,
-                        initial_path=None):
+                        initial_path=None, name=None):
     """
-    Spawn a FileExplorer PyActor (no Blueprint required).
+    Spawn a FileExplorer PyActor directly — no Blueprint placeholder required.
 
     The Python component (FileExplorer) calls refresh() in begin_play,
     which populates a table of files using EverythingAPI + UnrealTableRenderer.
@@ -1492,9 +1542,15 @@ def spawn_file_explorer(location=None, rotation=None,
       - Everything (Voidtools) running in background
       - Everything64.dll accessible
     """
+    if name is None:
+        if initial_path:
+            leaf = os.path.basename(initial_path.rstrip('\\/')) or initial_path
+            name = f'FileExplorer_{leaf}'
+        else:
+            name = 'FileExplorer'
     actor = spawn_pyactor(
         'pyactor_file_explorer', 'FileExplorer',
-        location=location, rotation=rotation)
+        location=location, rotation=rotation, name=name)
     if actor is None:
         return None
     if initial_path is not None:
@@ -1505,7 +1561,7 @@ def spawn_file_explorer(location=None, rotation=None,
     return actor
 
 
-# spawn_plot — BP_MathPlot with PyActorPlotter component
+# spawn_plot — dynamic PyActor hosting pyactor_plotter.PyActorPlotter
 
 def spawn_plot(function_expr='sin(x)+cos(y)',
                plot_type='surface',
@@ -1519,9 +1575,10 @@ def spawn_plot(function_expr='sin(x)+cos(y)',
                show_grid=True,
                location=None,
                rotation=None,
-               bp_path='/Game/Blueprints/Assets/BP_MathPlot.BP_MathPlot'):
+               name=None):
     """
-    Spawn a BP_MathPlot actor and render *function_expr* as a 3D plot.
+    Spawn a PyActorPlotter dynamically and render *function_expr* as a 3D plot.
+    No Blueprint placeholder required — uses BP_PyActorEmpty via spawn_pyactor.
 
     Parameters
     ----------
@@ -1551,48 +1608,39 @@ def spawn_plot(function_expr='sin(x)+cos(y)',
         Draw axis grid lines.
     location / rotation : FVector / FRotator
         World transform.
-    bp_path : str
-        Path to BP_MathPlot Blueprint.
+    name : str
+        Optional editor label. Defaults to ``Plot_<function_expr>``.
 
     Returns
     -------
     actor | None
-
-    Blueprint setup (do once in UE Editor)
-    ---------------------------------------
-    1. Create Actor Blueprint: Content/Blueprints/Assets/BP_MathPlot
-    2. Add Python component, set module.class = pyactor_plotter.PyActorPlotter
-    3. Add String variables (Instance Editable, Expose on Spawn):
-         function_expr  default "sin(x)+cos(y)"
-         plot_type      default "surface"
-         orientation    default "ground_table"
-    4. Add Integer variable: resolution  default 32
-    5. Add Float variables: x_min=-3.14, x_max=3.14, y_min=-3.14, y_max=3.14,
-                            z_min=-2.0, z_max=2.0, units_per_uu=100.0
-    6. Add Boolean variable: show_grid  default True
     """
-    actor = spawn_blueprint(bp_path, location, rotation)
+    # PyActorPlotter.begin_play calls render() with whatever attributes are
+    # set on the instance. Attributes are best applied before the tick — so
+    # we patch the proxy immediately after spawn and re-render to guarantee
+    # the requested params take effect (begin_play may have already fired
+    # with defaults by the time we reach here).
+    actor = spawn_pyactor(
+        'pyactor_plotter', 'PyActorPlotter',
+        location=location, rotation=rotation,
+        name=name if name else f'Plot_{function_expr}')
     if actor is None:
         return None
 
-    # Set parameters on the PyActorPlotter component directly — no Blueprint
-    # variables needed.  begin_play already ran, so call render() after patching.
     try:
-        pc = actor.get_component('Python')
-        if pc is not None:
-            pycomp = pc.get_python_object()   # the PyActorPlotter instance
-            if pycomp is not None:
-                pycomp.function_expr = function_expr
-                pycomp.plot_type     = plot_type
-                pycomp.mesh_mode     = mesh_mode
-                pycomp.orientation   = orientation
-                pycomp.resolution    = resolution
-                pycomp.x_range       = x_range
-                pycomp.y_range       = y_range
-                pycomp.z_range       = z_range
-                pycomp.units_per_uu  = units_per_uu
-                pycomp.show_grid     = show_grid
-                pycomp.render()
+        proxy = actor.get_py_proxy()
+        if proxy is not None:
+            proxy.function_expr = function_expr
+            proxy.plot_type     = plot_type
+            proxy.mesh_mode     = mesh_mode
+            proxy.orientation   = orientation
+            proxy.resolution    = resolution
+            proxy.x_range       = x_range
+            proxy.y_range       = y_range
+            proxy.z_range       = z_range
+            proxy.units_per_uu  = units_per_uu
+            proxy.show_grid     = show_grid
+            proxy.render()
     except Exception as e:
         ue.log_warning(f'spawn_plot: could not configure PyActorPlotter: {e}')
 
@@ -1600,17 +1648,21 @@ def spawn_plot(function_expr='sin(x)+cos(y)',
 
 
 # spawn_gizmo — interactive transform gizmo (target + handles)
+#
+# The per-frame drag/hover tick now lives on a pyactor_gizmo.GizmoController
+# PyActor, so no Main.tick forwarding is required.
 
 def spawn_gizmo(location=None, rotation=None, scale=None,
                 uobject=None, input_manager=None,
-                source_path=None):
+                source_path=None, name=None):
     """
     Spawn the interactive transform gizmo (target cylinder + move/rotate/
     scale/plane handles) and optionally wire up drag interaction.
 
     Mirrors spawn_icon-style inputs (location/rotation/scale + source_path).
-    Material/bp/component params don't apply — the gizmo's pieces are built
-    in code via primitives in ``gizmo.py``.
+    The gizmo's geometry pieces are built in code via primitives in
+    ``gizmo.py``; the interaction tick is hosted by a GizmoController
+    PyActor spawned via spawn_pyactor.
 
     Parameters
     ----------
@@ -1620,12 +1672,15 @@ def spawn_gizmo(location=None, rotation=None, scale=None,
     uobject       : PyActor UObject — required for interactivity (cursor traces)
     input_manager : InputManager   — required for interactivity (LMB binds)
     source_path   : str            — optional path attached to ``target``
+    name          : str            — optional editor label on the controller
 
     Returns
     -------
-    (target_actor, handles_dict, tick_fn_or_None)
+    (target_actor, handles_dict, gizmo_controller_actor_or_None)
+      — the third value is the spawned GizmoController PyActor when
+        uobject + input_manager were supplied, else None (static gizmo).
     """
-    from gizmo import test_gizmos
+    from gizmo import test_gizmos, _piece_off
 
     if location is None:
         location = FVector(0, 0, 100)
@@ -1644,15 +1699,25 @@ def spawn_gizmo(location=None, rotation=None, scale=None,
         except Exception as e:
             ue.log_warning(f'spawn_gizmo: could not attach source_path: {e}')
 
-    tick_fn = None
+    pyactor = None
     if uobject is not None and input_manager is not None:
         try:
-            tick_fn = setup_gizmo_interaction(
-                uobject, input_manager, target, gizmo_root, handles)
+            pyactor = spawn_pyactor(
+                'pyactor_gizmo', 'GizmoController',
+                location=location,
+                name=name if name else 'GizmoController')
+            proxy = pyactor.get_py_proxy()
+            proxy.setup(
+                uobject=uobject,
+                input_manager=input_manager,
+                target=target,
+                handles=handles,
+                piece_offsets=_piece_off,
+            )
         except Exception as e:
-            ue.log_warning(f'spawn_gizmo: setup_gizmo_interaction failed: {e}')
+            ue.log_warning(f'spawn_gizmo: GizmoController setup failed: {e}')
 
-    return target, handles, tick_fn
+    return target, handles, pyactor
 
 
 # File-type detection — extended with new types
@@ -1905,8 +1970,6 @@ def spawn(
     desktop_path=None,
     icon_spacing=150,
     max_icons=50,
-    # Sysmon
-    sysmon_bp_path='/Game/Blueprints/Assets/BP_SysMon.BP_SysMon',
     # Text3D / BP_Cell
     text='',
     text3d_bp_path='/Game/Blueprints/Assets/BP_Cell.BP_Cell',
@@ -2057,8 +2120,7 @@ def spawn(
                            cell_spacing=cell_spacing)
 
     elif detected == 'sysmon':
-        return spawn_system_monitor(location, rotation, scale,
-                                    bp_path=sysmon_bp_path)
+        return spawn_system_monitor(location, rotation, scale)
 
     elif detected == 'desktop':
         return spawn_desktop_icons(location, desktop_path=desktop_path,
