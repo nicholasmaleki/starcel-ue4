@@ -14,3 +14,13 @@
 /Content/Models/PineTree/TwistedPineTree.uasset
 /Content/Models/PineTree/Scene.uasset
 /Content/Maps/PineTreeMap/
+
+# Nested starcel-installer pip-package repo (has its own git init)
+/starcel-installer/
+
+# Release artifacts (uploaded to GitHub Releases, not tracked in git)
+/release-artifacts/
+starcel-windows-client-v*.zip
+starcel-windows-client-v*.zip.sha256
+
+.claude/

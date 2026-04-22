@@ -10,7 +10,7 @@ Currently, Starcel is an Unreal Engine 4.27Chaos Client and Server which can be 
 This project is intended for content creators, hobbyists, developers, spreadsheet users, physicists, engineers, scientists, gamers, unreal engine prototypes, and more. 
 
 
-## Please donate to keep this project running!
+## Please [donate](https://www.patreon.com/RecursionIs) to keep this project running!
 You can donate on [Paypal](https://www.paypal.com/paypalme/RecursionIs) or [Patreon](https://www.patreon.com/RecursionIs)
 
 
@@ -54,7 +54,7 @@ Anything else can be asked in our Discord. We are a community of volunteers so w
 
 
 ## Are public Starcel servers safe? 
-Local use is as safe as local Python. Utilize a whitelist system to stay safe. 
+Local use is as safe as local Python. Utilize a whitelist system to stay safe when using servers. 
 
 
 ## How do I use a server? 
@@ -81,7 +81,7 @@ Starcel is currently Windows only. It can be compiled on other operating systems
 
 
 ## Is the program stable? 
-Not currently, expect crashes and lost work. Eventually we will release a stable update. 
+Not currently, eventually there will be a stable update. 
 
 
 ## AR/VR integration? 
@@ -89,16 +89,15 @@ Not currently, expect crashes and lost work. Eventually we will release a stable
 
 
 ## Can I make a 2D UI? 
-It is not recommended to control any elements in Starcel with a 2D UI. You can build a UI out of 3D elements in the 3D space and make it always display flat on the included screen which I have added as a component to each Pawn's camera. In theory, anything you make in 2D, including websites, you can make exactly the same in 3D. Despite the recommendation, UnrealEnginePython has built in support for QT in Engine using Slate, which renders directly on top of the existing Starcel viewport. If you need, you could use Tkinter, QT, etc. to make a 2D UI outside the game window.
+It is not recommended to control any elements in Starcel with a 2D UI. You can build a UI out of 3D elements in the 3D space and make it always display flat on the included screen which I have added as a component to each Pawn's camera. In theory, anything you make in 2D, including websites, you can make exactly the same in 3D. Despite that, UnrealEnginePython has built in support for QT in Engine using Slate, which renders directly on top of the existing Starcel viewport. If you need, you could use Tkinter, QT, etc. to make a 2D UI outside the game window.
 
 
 ## UE5 and Python upgrade? 
-You can use the included interop.py to help run newer Python versions with this version, but it will be slow and you will have to add workarounds for using functions like begin_play and tick. You will need to have both versions of Python installed. The latest edition of Starcel is written in Python 3.9 and Unreal Engine 4.27Chaos. This likely will not change for a while as Python's C++ bindings have been deprecated and changed in Python 3.10. This could take a month or few to upgrade. An [Unreal Engine 5 upgrade of the UnrealEnginePython plugin](https://github.com/20tab/UnrealEnginePython/pull/880) will require header, module, and api changes. This could take a month to upgrade. If you plan on working on this, message me for some info that should help you begin. 
-I do not plan on upgrading the project myself unless this project receives a lot of support and use. 
+You can use the included interop.py(untested) to help run newer Python versions with this version, but it will be slow and you will have to add workarounds for using functions like begin_play and tick. You will need to have both versions of Python installed. The latest edition of Starcel is written in Python 3.9 and Unreal Engine 4.27Chaos. This likely will not change for a while as Python's C++ bindings have been deprecated and changed in Python 3.10. This could take a month or few to upgrade. An [Unreal Engine 5 upgrade of the UnrealEnginePython plugin](https://github.com/20tab/UnrealEnginePython/pull/880) will require header, module, and api changes. This could take a month to upgrade. If you plan on working on this, message me for some info that should help you begin. 
 
 
 ## What happened to the last Starcel and its features? 
-All of the features from the last version will return to this one, with many features and new functionality added. The last Starcel release was written in the newest Python at the time, Python 3.8, and the newest Unreal Engine release, UE5.1. Any Python build could be used, but I was using PyPy for its performance with the GARAMON 10 dimensional geometric algebra, which has now been replaced with a more feature-rich library, Kingdon. 
+It was too buggy and I didn't want new users to be disappointed, so I removed the download link.
 
 
 ## What new features are planned
@@ -175,7 +174,7 @@ Although you can work on anything you'd like, here are specific tasks I need hel
 - AI md files (anthropic, openai, gemini, etc.)
 - Continued server development
 - Someone to create example maps
-- 
+- UE5 and Python Upgrade
 
 
 ## Why Unreal? 
