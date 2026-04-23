@@ -1,3 +1,4 @@
+import os
 import subprocess
 import unreal_engine as ue
 from unreal_engine import FVector, FRotator, FTransform
@@ -15,16 +16,21 @@ from unreal_engine_tools import find_component
 # needed — the hover events tell us the cursor is already over our sphere.
 
 
-def _open_with_chrome(path):
+def _open_with_default_app(path):
+    """Open *path* with the OS's default handler, the same as a Windows
+    Explorer double-click — the "open" verb for that file type."""
     try:
-        subprocess.Popen(
-            ['cmd', '/c', 'start', 'chrome', path],
-            shell=False,
-            creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0),
-        )
+        if hasattr(os, 'startfile'):
+            os.startfile(path)
+        else:
+            subprocess.Popen(
+                ['cmd', '/c', 'start', '', path],
+                shell=False,
+                creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0),
+            )
         ue.log(f'IconSphere: opened "{path}"')
     except Exception as e:
-        ue.log_warning(f'IconSphere: chrome launch failed: {e}')
+        ue.log_warning(f'IconSphere: open failed for "{path}": {e}')
 
 
 class IconSphere:
@@ -142,7 +148,7 @@ class IconSphere:
             path = self._get_source_path()
             if path:
                 ue.log(f'IconSphere: CLICK → "{path}"')
-                _open_with_chrome(path)
+                _open_with_default_app(path)
             else:
                 ue.log('IconSphere: CLICK (no source_path)')
         self._was_mouse_down = mouse_down

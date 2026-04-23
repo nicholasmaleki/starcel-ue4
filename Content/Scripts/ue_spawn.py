@@ -610,13 +610,13 @@ def _decode_audio_to_pcm(path, target_rate=44100, target_channels=2):
     return result.stdout, target_rate, target_channels
 
 
-def _play_audio_file(world, path, location, volume, pitch):
-    """Decode *path* and play it through a transient USoundWaveProcedural.
-    Returns the sound wave (held in _procedural_sounds so playback survives)."""
+def _build_procedural_wave(path):
+    """Decode *path* to PCM and wrap it in a fresh USoundWaveProcedural.
+    Returns (sound_wave, duration_sec) or (None, 0)."""
     from unreal_engine.classes import SoundWaveProcedural
     pcm, rate, channels = _decode_audio_to_pcm(path)
     if not pcm:
-        return None
+        return None, 0
     frames   = len(pcm) // (2 * channels)          # 2 bytes per s16 sample
     duration = frames / float(rate)
 
@@ -626,13 +626,81 @@ def _play_audio_file(world, path, location, volume, pitch):
     sw.Duration    = duration + 1.0                # small safety margin
     sw.SoundGroup  = 0                             # SOUNDGROUP_Default
     sw.bLooping    = False
-
     sw.queue_audio(pcm)
+    ue.log(f'_build_procedural_wave: queued {duration:.2f}s '
+           f'({len(pcm)} bytes, {rate}Hz x{channels}) from {path}')
+    return sw, duration
+
+
+def _play_audio_file(world, path, location, volume, pitch):
+    """Decode *path* and play it through a transient USoundWaveProcedural.
+    Returns the sound wave (held in _procedural_sounds so playback survives)."""
+    sw, _ = _build_procedural_wave(path)
+    if sw is None:
+        return None
     world.play_sound_at_location(sw, location, volume, pitch, 0.0)
     _procedural_sounds.append(sw)
-    ue.log(f'_play_audio_file: queued {duration:.2f}s '
-           f'({len(pcm)} bytes, {rate}Hz x{channels}) from {path}')
     return sw
+
+
+def _play_audio_file_as_actor(path, location, volume, pitch):
+    """Decode *path* and attach it to a visible BP_PyActorEmpty host via an
+    AudioComponent.  Returns the spawned actor (or None on failure).
+
+    The host mounts a sphere mesh for visibility and a looping=False
+    AudioComponent that plays on spawn.  The SoundWaveProcedural lifetime is
+    covered by both the AudioComponent's Sound ref and the Python proxy
+    (ProceduralSoundHost) — no global keep-alive list needed for this path."""
+    from unreal_engine.classes import AudioComponent
+    sw, duration = _build_procedural_wave(path)
+    if sw is None:
+        return None
+
+    actor = spawn_pyactor(
+        'pyactor_sound', 'ProceduralSoundHost',
+        location=location,
+        components=[dict(class_name='StaticMeshComponent',
+                         name='Sphere', root=True,
+                         mesh='/Engine/BasicShapes/Sphere.Sphere')],
+        name=os.path.basename(path),
+        source_path=path)
+    if actor is None:
+        _procedural_sounds.append(sw)
+        ue.log_warning('_play_audio_file_as_actor: spawn_pyactor returned None; '
+                       'falling back to world playback.')
+        _get_world().play_sound_at_location(sw, location, volume, pitch, 0.0)
+        return None
+
+    # spawn_pyactor's root=True component replaces BP_PyActorEmpty's default
+    # root post-spawn, which resets the actor transform to identity.  Restore
+    # the requested location here so the sound plays where the caller asked.
+    try:
+        actor.set_actor_location(location)
+    except Exception:
+        pass
+
+    try:
+        ac = actor.add_actor_component(AudioComponent, 'Audio')
+        ac.call_function('SetSound', sw)
+        ac.call_function('SetVolumeMultiplier', float(volume))
+        ac.call_function('SetPitchMultiplier', float(pitch))
+        ac.call_function('Play', 0.0)
+    except Exception as e:
+        ue.log_warning(f'_play_audio_file_as_actor: AudioComponent setup failed '
+                       f'({e}); falling back to world playback.')
+        _procedural_sounds.append(sw)
+        _get_world().play_sound_at_location(sw, location, volume, pitch, 0.0)
+        return actor
+
+    # Tie the wave to the Python proxy so GC follows the actor's lifetime.
+    try:
+        proxy = actor.get_py_proxy()
+        if proxy is not None:
+            proxy.sound_wave      = sw
+            proxy.audio_component = ac
+    except Exception:
+        pass
+    return actor
 
 
 # spawn_sound
@@ -647,9 +715,11 @@ def spawn_sound(path, location=None, volume=1.0, pitch=1.0,
       • Filesystem file (.wav/.flac/.mp3/.ogg/.m4a/...) -> decoded via ffmpeg
         into a USoundWaveProcedural and played in place.
 
-    *as_actor=True*: spawns BP_SoundSphere (see SoundSphereActor below).
-    Filesystem audio + as_actor is not supported (SoundSphere needs a
-    persistent SoundBase asset, not a transient procedural wave).
+    *as_actor=True*:
+      • UE asset  -> spawns BP_SoundSphere (see SoundSphereActor).
+      • Filesystem audio -> spawns BP_PyActorEmpty with a sphere mesh and an
+        AudioComponent bound to a transient USoundWaveProcedural (plays on
+        spawn, actor stays in the outliner and moves sound with it).
     """
     world = _get_world()
     loc = location if location is not None else FVector(0, 0, 0)
@@ -658,8 +728,7 @@ def spawn_sound(path, location=None, volume=1.0, pitch=1.0,
     ext = os.path.splitext(path)[1].lower()
     if ext in AUDIO_FILE_EXTS and os.path.isfile(path):
         if as_actor:
-            ue.log_warning('spawn_sound: as_actor not supported for filesystem '
-                           'audio; playing at location instead.')
+            return _play_audio_file_as_actor(path, loc, volume, pitch)
         return _play_audio_file(world, path, loc, volume, pitch)
 
     sound = None
@@ -992,10 +1061,7 @@ def spawn_camera(location=None, rotation=None,
     if set_view_target:
         try:
             pc = _get_world().get_player_controller(0)
-            if view_blend_time > 0:
-                pc.SetViewTargetWithBlend(actor, view_blend_time)
-            else:
-                pc.SetViewTarget(actor)
+            pc.SetViewTargetWithBlend(actor, max(view_blend_time, 0.0))
         except Exception as e:
             ue.log_warning(f'spawn_camera: SetViewTarget failed: {e}')
 
@@ -1516,8 +1582,13 @@ def spawn_camera_actor(location=None, rotation=None,
     actor = spawn_pyactor(
         'pyactor_camera', 'PyActorCamera',
         location=location, rotation=rotation,
-        components=[dict(class_name='CineCameraComponent',
-                         name='CineCameraComponent', root=True)],
+        components=[
+            dict(class_name='CineCameraComponent',
+                 name='CineCameraComponent', root=True),
+            dict(class_name='StaticMeshComponent',
+                 name='ClickProxy',
+                 mesh='/Engine/BasicShapes/Cube.Cube'),
+        ],
         name=name if name else f'Camera_{camera_type}')
     if actor is None:
         return None
@@ -1532,15 +1603,17 @@ def spawn_camera_actor(location=None, rotation=None,
 
 def spawn_file_explorer(location=None, rotation=None,
                         initial_path=None, name=None):
-    """
-    Spawn a FileExplorer PyActor directly — no Blueprint placeholder required.
+    """Spawn a FileExplorer PyActor that renders a file browser table.
 
-    The Python component (FileExplorer) calls refresh() in begin_play,
-    which populates a table of files using EverythingAPI + UnrealTableRenderer.
+    The Python component populates a Name/Size/Date/Type table via
+    EverythingAPI + UnrealTableRenderer, then spawns one BP_Icon in the
+    leftmost column per file row.  BP_Icon's IconSphere handles clicks
+    and opens the file with the OS default handler.
 
     Requires:
       - Everything (Voidtools) running in background
-      - Everything64.dll accessible
+      - Everything64.dll next to everything_api.py
+      - BP_Icon at /Game/Blueprints/Assets/BP_Icon.BP_Icon
     """
     if name is None:
         if initial_path:
@@ -1680,7 +1753,7 @@ def spawn_gizmo(location=None, rotation=None, scale=None,
       — the third value is the spawned GizmoController PyActor when
         uobject + input_manager were supplied, else None (static gizmo).
     """
-    from gizmo import test_gizmos, _piece_off
+    from gizmo import test_gizmos, _piece_off, _bbox_dynamic
 
     if location is None:
         location = FVector(0, 0, 100)
@@ -1713,6 +1786,7 @@ def spawn_gizmo(location=None, rotation=None, scale=None,
                 target=target,
                 handles=handles,
                 piece_offsets=_piece_off,
+                bbox_dynamic=_bbox_dynamic,
             )
         except Exception as e:
             ue.log_warning(f'spawn_gizmo: GizmoController setup failed: {e}')
@@ -1754,8 +1828,9 @@ def spawn_icon(pil_image, location=None, rotation=None, scale=None,
         Filesystem path the icon represents (e.g. the .exe or .png the
         PIL image was extracted from).  If provided, the path is attached
         to the spawned actor as ``actor.source_path`` so that
-        ``pyactor_icon.IconSphere.on_clicked`` can open it in Chrome via
-        ``cmd /c start chrome "<path>"``.
+        ``pyactor_icon.IconSphere`` can open it on click using the OS
+        default handler (``os.startfile`` on Windows — same as a Windows
+        Explorer double-click).
     """
     if location is None:
         location = FVector(0, 0, 0)
@@ -1847,7 +1922,8 @@ def spawn_icon_from_path(path, location=None, rotation=None, scale=None,
     callers can swap the host Blueprint or its texture parameter.
 
     The spawned actor gets ``source_path`` attached (defaults to *path*) so
-    pyactor_icon.IconSphere can open the file in Chrome on click.
+    pyactor_icon.IconSphere can open the file with the OS default handler
+    on click (same as a Windows Explorer double-click).
 
     Parameters
     ----------

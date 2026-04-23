@@ -115,3 +115,16 @@ class SoundSphere:
                 ue.log_warning(f'SoundSphere: play_sound_at_location failed: {e}')
         else:
             ue.log_warning('SoundSphere: no Sound asset assigned.')
+
+
+class ProceduralSoundHost:
+    """
+    Minimal host for a transient USoundWaveProcedural attached to BP_PyActorEmpty.
+
+    ue_spawn._play_audio_file_as_actor sets `self.uobject.sound_wave` and the
+    AudioComponent after spawn; this proxy exists so the wave has a Python-side
+    ref attached to the actor's lifetime (UEP releases Python attrs with the
+    actor, so the wave survives until the actor is destroyed).
+    """
+    def begin_play(self):
+        pass

@@ -381,8 +381,12 @@ def startup():
 
 def invalidate_world_cache():
     """Call when PIE stops/starts to force get_world() to re-scan."""
-    global _world_cache
+    global _world_cache, _actor_lookup_cache
     _world_cache = None
+    _actor_lookup_cache = {}
+
+
+_actor_lookup_cache = {}
 
 
 global world
@@ -390,54 +394,63 @@ world = get_world()
 print("ue tools world", world)
 
 
-def find_actor(name):
-    print("Finding actor by name", name)
-    actor_list = []
+def find_actor(name, *, fuzzy=True, use_cache=True):
+    """Find a single actor by name. Single pass over all_actors().
+    fuzzy=True falls back to substring match when no exact match exists.
+    Cached by name; cache cleared on PIE stop/start via invalidate_world_cache()."""
+    if use_cache:
+        cached = _actor_lookup_cache.get(name)
+        if cached is not None:
+            try:
+                cached.get_name()  # raises if GC'd
+                return cached
+            except Exception:
+                _actor_lookup_cache.pop(name, None)
+
+    exact, contains = [], []
     for a in world.all_actors():
-        if a.get_name() == name:
-            actor_list.append(a)
+        n = a.get_name()
+        if n == name:
+            exact.append(a)
+        elif fuzzy and name in n:
+            contains.append(a)
+
+    actor_list = exact if exact else contains
     if not actor_list:
-        print("No exact match found, finding any actor with name that contains", name)
-        for a in world.all_actors():
-            if name in a.get_name():
-                actor_list.append(a)
-
-    # print(type(actor))
-    # print(actor.__class__.__name__)
-    if not actor_list or actor_list.__class__.__name__ == 'NoneType':
-        ue.log_error(f"Actor not found: {name}: {[a.get_name() for a in actor_list]}")
+        ue.log_error(f"Actor not found: {name}")
         return None
-    else:
-        if len(actor_list) > 1:
-            ue.log_warning(f"Found more than one actor: {[a.get_name() for a in actor_list]}")
+    if not exact and fuzzy:
+        ue.log(f"find_actor: fuzzy fallback for '{name}' -> '{actor_list[0].get_name()}'")
+    if len(actor_list) > 1:
+        ue.log_warning(f"Found more than one actor for '{name}': {[a.get_name() for a in actor_list]}")
 
-        return actor_list[0]
+    result = actor_list[0]
+    if use_cache:
+        _actor_lookup_cache[name] = result
+    return result
 
 
 global py_actor
 py_actor = find_actor("BP_PyActor")
-print("ue tools world", world)
 
 
-def find_actors(name):
-    print("Finding actors by name", name)
-    actor_list = []
+def find_actors(name, *, fuzzy=True):
+    """Find all actors by name. Single pass; fuzzy fallback only if no exact matches."""
+    exact, contains = [], []
     for a in world.all_actors():
-        if a.get_name() == name:
-            actor_list.append(a)
+        n = a.get_name()
+        if n == name:
+            exact.append(a)
+        elif fuzzy and name in n:
+            contains.append(a)
+
+    actor_list = exact if exact else contains
     if not actor_list:
-        print("No exact matches found, finding any actors with name that contains", name)
-        for a in world.all_actors():
-            if name in a.get_name():
-                actor_list.append(a)
-    # print(type(actor))
-    # print(actor.__class__.__name__)
-    if not actor_list or actor_list.__class__.__name__ == 'NoneType': # (actor_list[0].__class__.__name__ == 'NoneType')
-        ue.log_warning(f"Actor not found: {name}: {[a.get_name() for a in actor_list]}")
+        ue.log_warning(f"Actor not found: {name}")
         return None
-    else:
-        print("Found actors:", actor_list)
-        return actor_list
+    if not exact and fuzzy:
+        ue.log(f"find_actors: fuzzy fallback for '{name}' -> {[a.get_name() for a in actor_list]}")
+    return actor_list
 
 
 
@@ -739,6 +752,124 @@ def apply_material(
     # Assign the MID if no HDR parameters (they handle assignment asynchronously)
     if not any(isinstance(v, str) and v.lower().endswith(".hdr") for v in params.values()):
         target_comp.set_material(material_index, mid)
+
+    return mid
+
+
+# Text3DComponent material slots — ordered to match the Details panel image.
+# "Outline" uses slot 0 when bOutline is enabled; the remaining four are
+# always present. Each entry: (slot_name, setter_method, property_name).
+_TEXT3D_SLOTS = (
+    ('Front',   'SetFrontMaterial',   'FrontMaterial'),
+    ('Bevel',   'SetBevelMaterial',   'BevelMaterial'),
+    ('Extrude', 'SetExtrudeMaterial', 'ExtrudeMaterial'),
+    ('Back',    'SetBackMaterial',    'BackMaterial'),
+)
+
+
+def apply_text3d_material(
+    actor=None,
+    actor_name=None,
+    component_name='Text3DComponent',
+    material_path="/Game/Materials/M_Color.M_Color",
+    params=None,
+    slots=('Front', 'Bevel', 'Extrude', 'Back'),
+    include_outline=True,
+):
+    """
+    Apply one material (as a single shared MID) to every Text3D material slot.
+
+    Text3DComponent exposes four explicit slots — Front, Bevel, Extrude, Back —
+    plus an Outline slot that appears at index 0 when bOutline is enabled.
+    This function mirrors `apply_material` but uses Text3D's per-slot setters
+    instead of `set_material(index, ...)` so the slots reflect correctly in
+    the details panel.
+
+    params example:
+        {
+            "Color": (0, 1, 0, 1),
+            "Emissive Multiplier": 10.0,
+            "Texture": "/Game/Textures/MyTex",
+        }
+
+    slots         : which named slots to write (Front / Bevel / Extrude / Back)
+    include_outline: if True and the component has an outline slot at index 0,
+                     also assign the MID there via set_material(0, mid)
+    """
+    params = params or {}
+
+    if actor is None and (actor_name is None or not actor_name):
+        ue.log_warning("apply_text3d_material: no actor or actor_name provided")
+        return None
+
+    if actor is None:
+        actor = find_actor(actor_name)
+    if actor is None:
+        ue.log_warning(f"apply_text3d_material: actor not found: {actor_name}")
+        return None
+
+    text3d = find_component(actor, component_name)
+    if text3d is None:
+        ue.log_warning(
+            f"apply_text3d_material: '{component_name}' not found on "
+            f"{actor.get_name()}")
+        return None
+
+    mat = ue.load_object(Material, material_path)
+    if not mat:
+        ue.log_warning(f"apply_text3d_material: material not found: {material_path}")
+        return None
+
+    mid = text3d.create_material_instance_dynamic(mat)
+
+    for pname, v in params.items():
+        if isinstance(v, (int, float)):
+            mid.set_material_scalar_parameter(pname, float(v))
+        elif isinstance(v, (tuple, list)) and len(v) >= 3:
+            mid.set_material_vector_parameter(pname, ue.FVector(v[0], v[1], v[2]))
+        elif isinstance(v, str):
+            tex = load_texture_any(v)
+            if tex:
+                mid.set_material_texture_parameter(pname, tex)
+            else:
+                ue.log_warning(f"apply_text3d_material: could not load texture for "
+                               f"param: {pname} = {v}")
+        elif hasattr(v, "get_class") and "Texture" in v.get_class().get_name():
+            mid.set_material_texture_parameter(pname, v)
+        else:
+            ue.log_warning(f"apply_text3d_material: unsupported param type: "
+                           f"{pname} = {type(v)}")
+
+    want = set(slots)
+    for slot_name, setter, prop in _TEXT3D_SLOTS:
+        if slot_name not in want:
+            continue
+        applied = False
+        try:
+            getattr(text3d, setter)(mid)
+            applied = True
+        except Exception as e_call:
+            try:
+                setattr(text3d, prop, mid)
+                applied = True
+            except Exception as e_prop:
+                ue.log_warning(
+                    f"apply_text3d_material: failed to set {slot_name} "
+                    f"(call: {e_call}; prop: {e_prop})")
+        if applied:
+            ue.log(f"apply_text3d_material: set {slot_name} on {actor.get_name()}")
+
+    if include_outline:
+        try:
+            has_outline = bool(getattr(text3d, 'bOutline', False))
+        except Exception:
+            has_outline = False
+        if has_outline:
+            try:
+                text3d.set_material(0, mid)
+                ue.log(f"apply_text3d_material: set Outline on {actor.get_name()}")
+            except Exception as e:
+                ue.log_warning(f"apply_text3d_material: failed to set Outline: {e}")
 
     return mid
 

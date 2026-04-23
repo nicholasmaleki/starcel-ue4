@@ -33,7 +33,7 @@ _main_begin_play_ran = False
 ue.log('Hello i am a Python module.')
 
 # Use this if you want to rebuild the unreal_engine intellisense(.pyi, etc.) and cli
-# rebuild_generated_modules()
+rebuild_generated_modules()
 
 # ret = ue.message_dialog_open(ue.APP_MSG_TYPE_YES_NO, "Do you want to test dialogs?")
 # if ret == ue.APP_RETURN_TYPE_YES:
@@ -332,11 +332,10 @@ class Main:
             # self.test_multicast_flag("hello via multicast flag")
 
         else:
-            ue.log("BeginPlay on CLIENT")
-            if world.AuthorityGameMode:
-                ue.log("SERVER (AuthorityGameMode exists). Client likely connected to internal server. ")
+            if self.uobject.has_authority():
+                ue.log("BeginPlay on LISTEN SERVER / STANDALONE (has authority)")
             else:
-                ue.log("CLIENT (no AuthorityGameMode) Client likely connected to dedicated server. ")
+                ue.log("BeginPlay on CLIENT (connected to remote server)")
 
 
             apply_material(
@@ -368,7 +367,7 @@ class Main:
         # self.test_cylinder()
         # self.test_text()
 
-        results = test_spawn_all(uobject=self.uobject, input_manager=self.input, tests=['test_system_monitor', 'test_pyactor_assign', 'test_sound'])
+        results = test_spawn_all(uobject=self.uobject, input_manager=self.input, tests=['test_system_monitor', 'test_sound', 'test_cameras', 'test_desktop_icons', 'test_file_explorer', 'test_gizmo', 'test_text3d_click'])
         print(results)
 
 
@@ -388,12 +387,13 @@ class Main:
 
 
     def test_kingdon(self):
+        import unicodedata
         ue.log("testing kingdon:")
         from kingdon import Algebra
         alg = Algebra(3, 0, 1)
         locals().update(alg.blades)
         b = alg.bivector(name='b')
-        ue.log(b)
+        ue.log(unicodedata.normalize('NFKC', str(b)))
 
     def test_cylinder(self): # TODO: use instanced static meshes for the gridlines
         ue.log("testing cylinder:")

@@ -272,7 +272,7 @@ def gen_intellisense_stubs_structs():
 
     print("Stub generation complete:", stubFilePath)
 
-# TODO: EBlendMode, EPixelFormat, EMouseCursor etc.
+# TODO: EPixelFormat etc.
 def gen_intellisense_stubs_enums():
     ENGINE_ENUMS = [
         # Collision / tracing
@@ -299,6 +299,7 @@ def gen_intellisense_stubs_enums():
         "EControllerHand",
         "EUserInterfaceActionType",
         "EInputEvent",
+        "EMouseCursor",
 
         # Physics
         "EPhysicalSurface",

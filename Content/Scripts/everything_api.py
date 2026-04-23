@@ -89,8 +89,8 @@ class EverythingAPI:
         d.Everything_GetResultPathW.restype  = ctypes.c_wchar_p
         d.Everything_GetResultSize.argtypes  = [ctypes.c_uint, ctypes.POINTER(ctypes.c_ulonglong)]
         d.Everything_GetResultSize.restype   = ctypes.c_bool
-        d.Everything_IsResultFolder.argtypes = [ctypes.c_uint]
-        d.Everything_IsResultFolder.restype  = ctypes.c_bool
+        d.Everything_IsFolderResult.argtypes = [ctypes.c_uint]
+        d.Everything_IsFolderResult.restype  = ctypes.c_bool
 
     def _query(self, query: str, max_results: int = 1,
                flags: int = REQ_FILE_NAME | REQ_PATH | REQ_SIZE) -> None:
@@ -120,6 +120,6 @@ class EverythingAPI:
                 "path":      path,
                 "full_path": os.path.join(path, name),
                 "size":      size_buf.value,
-                "is_folder": self._dll.Everything_IsResultFolder(i),
+                "is_folder": self._dll.Everything_IsFolderResult(i),
             })
         return results

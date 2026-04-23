@@ -22,6 +22,8 @@ All actors are placed at X=0, spread along the Y axis in bands:
   Y 10500         plot tan(x) 2D curve
   Y 11000         transform gizmo (test_gizmo only)
   Y 12000+        nd_table grid (2D 10x10 through 7D)
+  Y 14000         file explorer (Everything-backed, BP_Icon column)
+  Y 15000         3D resizable table (drag row/col/slice gridlines)
 
 Usage (PIE Python console):
     from test_spawn import test_spawn_all
@@ -255,8 +257,8 @@ def _check_prerequisites():
                                      '/Game/Blueprints/Assets/BP_Cell')),
          'Requires Text3D plugin + BP_Cell Blueprint with Text3DComponent'),
 
-        # BP_Icon, BP_SoundSphere, BP_SysMon, BP_PyCamera, BP_FileExplorer
-        # now use dynamic PyActor spawning — no Blueprint needed.
+        # BP_Icon, BP_SoundSphere, BP_SysMon, BP_PyCamera now use dynamic
+        # PyActor spawning — no Blueprint needed.
 
         ('Blueprint BP_CesiumEarth',
          lambda: bool(ue.load_object(ue.find_class('Blueprint'),
@@ -525,7 +527,8 @@ def test_video():
 
 
 def test_sound():
-    """Exercise ue_spawn.spawn_sound with a filesystem audio file."""
+    """Exercise ue_spawn.spawn_sound with a filesystem audio file, in both
+    world-playback and actor-hosted modes."""
     from ue_spawn import spawn_sound
     results = {}
 
@@ -539,21 +542,36 @@ def test_sound():
         results.update(_result('sound_file_flac', sw,
                                inputs={'path': _BIG_BAD_JOHN_FLAC},
                                extra='decoded via ffmpeg -> SoundWaveProcedural'))
+
+        actor = None
+        try:
+            actor = spawn_sound(_BIG_BAD_JOHN_FLAC,
+                                location=FVector(0, _Y_SOUND + 200, 100),
+                                volume=0.0,       # silent: audible test already above
+                                as_actor=True)
+        except Exception as e:
+            _log_exception('sound_file_flac_as_actor', e)
+        results.update(_result('sound_file_flac_as_actor', actor,
+                               inputs={'path': _BIG_BAD_JOHN_FLAC,
+                                       'as_actor': True},
+                               extra='BP_PyActorEmpty + AudioComponent host'))
     else:
         results.update(_skip('sound_file_flac',
+                             f'not found: {_BIG_BAD_JOHN_FLAC}'))
+        results.update(_skip('sound_file_flac_as_actor',
                              f'not found: {_BIG_BAD_JOHN_FLAC}'))
     return results
 
 
 def test_cameras():
-    """Spawn each camera preset along Y."""
-    from ue_spawn import spawn_camera, CAMERA_PRESETS
+    """Spawn each camera preset along Y. Click the proxy cube to possess."""
+    from ue_spawn import spawn_camera_actor, CAMERA_PRESETS
     results = {}
     for i, preset_name in enumerate(CAMERA_PRESETS):
         loc   = FVector(0, _Y_CAMERAS + i * 200, 300)
         actor = None
         try:
-            actor = spawn_camera(location=loc, preset=preset_name)
+            actor = spawn_camera_actor(location=loc, camera_type=preset_name)
         except Exception as e:
             _log_exception(f'camera_{preset_name}', e)
         results.update(_result(f'camera_{preset_name}', actor))
@@ -768,33 +786,73 @@ def test_nd_table():
 _Y_PLOT = 9000
 
 
-_Y_PYACTOR_TEST = 7500
+# File explorer test  (Y 14000)
+# Spawns a FileExplorer PyActor that builds a Name/Size/Date/Type table
+# and a leftmost column of BP_Icons.  BP_Icon's IconSphere handles clicks
+# (opens the file with the OS default handler — Windows Explorer behavior).
+
+_Y_FILE_EXPLORER = 14000
 
 
-def test_pyactor_assign():
-    """Spawn a BP_PyActor with pyactor_test.PyActorTest and verify its
-    begin_play actually ran (logs 'Pyactor: hello world').
-    PASS = actor spawned AND begin_play_fired flag is set."""
-    import pyactor_test
-    pyactor_test.begin_play_fired = False   # reset between runs
+def test_file_explorer():
+    """Spawn a FileExplorer PyActor populated via EverythingAPI.
 
-    from ue_spawn import spawn_pyactor
+    Requires Everything (Voidtools) running and Everything64.dll reachable.
+    PASS = PyActor spawned; table + icons are rendered asynchronously in
+    the component's begin_play and logged to UE output."""
+    from ue_spawn import spawn_file_explorer
     actor = None
     try:
-        actor = spawn_pyactor(
-            'pyactor_test', 'PyActorTest',
-            location=FVector(0, _Y_PYACTOR_TEST, 100))
-        _log(f'  pyactor_hello_world: spawned at Y={_Y_PYACTOR_TEST}')
+        actor = spawn_file_explorer(
+            location=FVector(0, _Y_FILE_EXPLORER, 100))
     except Exception as e:
-        _log_exception('pyactor_hello_world', e)
+        _log_exception('file_explorer', e)
+    return _result('file_explorer', actor,
+                   extra='needs Everything daemon + Everything64.dll')
 
-    fired = pyactor_test.begin_play_fired
-    ok    = actor is not None and fired
-    _log(f'  pyactor_hello_world: spawned={actor is not None}, '
-         f'begin_play_fired={fired}')
-    return _result('pyactor_hello_world',
-                   actor if ok else None,
-                   extra='expects "Pyactor: hello world" from begin_play')
+
+# 3D resizable table test  (Y 15000)
+# Uses spawn_table_actor so the renderer's gridline resize controller is
+# ticked by a PyActor — LMB-drag on any gridline resizes that row (axis 0),
+# column (axis 1), or slice/layer (axis 2).
+
+_Y_3D = 15000
+
+
+def test_3d():
+    """Spawn a 3x3x3 resizable table for trying out row/col/slice drag-resize.
+
+    Hover a gridline, then LMB-drag to resize the adjacent row (axis 0),
+    column (axis 1), or slice/layer (axis 2). The cursor changes to
+    ResizeUpDown / ResizeLeftRight / CardinalCross to indicate the axis.
+    """
+    from ue_spawn import spawn_table_actor
+    actor = None
+    try:
+        from nd_table.ndtable import Table
+        t = Table(shape=(3, 3, 3))
+        for i in range(3):
+            for j in range(3):
+                for k in range(3):
+                    t[i, j, k] = f'r{i}c{j}s{k}'
+        actor = spawn_table_actor(
+            t,
+            location=FVector(0, _Y_3D, 500),
+            enable_resize=True,
+        )
+    except Exception as e:
+        _log_exception('3d', e)
+    extra = 'drag gridlines: row/col/slice resize'
+    try:
+        if actor is not None:
+            proxy = actor.get_py_proxy()
+            if proxy is not None and proxy.renderer is not None:
+                n_cells = len(proxy.renderer.cell_actors)
+                n_lines = len(proxy.renderer.gridline_actors)
+                extra = f'{n_cells} cells, {n_lines} gridlines (drag to resize row/col/slice)'
+    except Exception:
+        pass
+    return _result('3d', actor, extra=extra)
 
 
 _Y_GIZMO = 11000
@@ -806,19 +864,11 @@ def test_gizmo(uobject=None, input_manager=None, location=None):
     rotate rings, scale handles, plane squares) and wire up drag interaction.
     Returns (target, handles, pyactor).
 
-    uobject       — the PyActor UObject (self.uobject from Main); used for
-                    get_hit_result_under_cursor traces inside GizmoController.
-    input_manager — self.input from Main; used for bind_press/bind_release
-                    on LeftMouseButton inside GizmoController.
-    location      — FVector spawn position for the target cylinder.
-                    Defaults to FVector(0, _Y_GIZMO, 100).
-
-    The returned pyactor owns its own tick — main.py does NOT need to forward
-    delta_time. Omitting uobject/input_manager spawns the gizmo statically
-    (no drag / no PyActor).
+    Delegates to ue_spawn.spawn_gizmo so the GizmoController is hosted on a
+    BP_PyActorEmpty (the canonical spawn_pyactor default). Omitting uobject
+    /input_manager spawns the gizmo statically (no drag / no PyActor).
     """
-    from gizmo import test_gizmos, _piece_off
-    from ue_spawn import spawn_pyactor
+    from ue_spawn import spawn_gizmo
 
     if location is None:
         location = FVector(0, _Y_GIZMO, 100)
@@ -826,35 +876,26 @@ def test_gizmo(uobject=None, input_manager=None, location=None):
     _log('--- test_gizmo ---')
     _log(f'Spawning gizmo target at {location}')
 
-    target      = None
-    gizmo_root  = None
-    handles     = None
-    pyactor     = None
-
     try:
-        target, gizmo_root, handles = test_gizmos(location=location)
-        _log(f'test_gizmo: spawned target + {len(handles)} handles')
+        target, handles, pyactor = spawn_gizmo(
+            location=location,
+            uobject=uobject,
+            input_manager=input_manager,
+        )
     except Exception as e:
         _log(f'test_gizmo: spawn failed: {e}')
         _result('gizmo', None, extra=str(e))
         return None, None, None
 
+    if handles is not None:
+        _log(f'test_gizmo: spawned target + {len(handles)} handles')
+
     if uobject is not None and input_manager is not None:
-        try:
-            pyactor = spawn_pyactor(
-                'pyactor_gizmo', 'GizmoController',
-                location=FVector(0, _Y_GIZMO, 0))
-            proxy = pyactor.get_py_proxy()
-            proxy.setup(
-                uobject=uobject,
-                input_manager=input_manager,
-                target=target,
-                handles=handles,
-                piece_offsets=_piece_off,
-            )
-            _log('test_gizmo: GizmoController PyActor spawned + wired (drag LMB on any handle)')
-        except Exception as e:
-            _log(f'test_gizmo: GizmoController setup failed: {e}')
+        if pyactor is not None:
+            _log('test_gizmo: GizmoController PyActor spawned + wired '
+                 '(drag LMB on any handle)')
+        else:
+            _log('test_gizmo: GizmoController setup failed')
     else:
         _log('test_gizmo: WARNING — no uobject/input_manager; '
              'gizmo will be static (no drag). Pass self.uobject and '
@@ -1041,9 +1082,10 @@ def test_spawn_all(uobject=None, input_manager=None, tests=None):
         test_desktop_icons,
         test_icon,
         test_exe_icon,
-        test_pyactor_assign,
         test_nd_table,
         test_plot,
+        test_file_explorer,
+        test_3d,
     ]
     interactive = [
         ('test_gizmo',

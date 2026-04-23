@@ -124,8 +124,9 @@ class PyActorStickMan:
         '/Game/Materials/M_TexturePicture',
         '/Game/Materials/M_TextureUnlit',
     )
-    param_name     = 'Texture'
-    component_name = 'Screen'
+    param_name       = 'Texture'
+    component_name   = 'Screen'
+    CROSSHAIR_SCALE  = 3.0   # world-size multiplier (1 UU per pixel × this)
 
     def begin_play(self):
         self.crosshair_comp = None
@@ -187,17 +188,31 @@ class PyActorStickMan:
             mid.set_material_texture_parameter(self.param_name, tex)
             smc.set_material(0, mid)
 
-            # Attach first, then set relative scale (so it's relative to Screen)
             actor.attach_to_component(screen)
-            # Scale: img pixels / viewport pixels (so the crosshair occupies
-            # that fraction of the Screen's visible area)
+
+            # Target WORLD scale: square aspect preserved regardless of
+            # Screen's own (possibly non-uniform) scale. 1 UU per pixel ×
+            # CROSSHAIR_SCALE, divided by parent scale to yield the relative.
             try:
-                actor.set_actor_relative_scale(
-                    FVector(img_w / 1920.0, 0.01, img_h / 1080.0))
+                p = screen.get_world_scale()
+                px = abs(p.x) or 1e-6
+                py = abs(p.y) or 1e-6
+                pz = abs(p.z) or 1e-6
             except Exception:
-                actor.set_actor_scale(
-                    FVector(img_w / 1920.0, 0.01, img_h / 1080.0))
-            actor.K2_SetActorRelativeLocation(FVector(0, -55.0, 0))
+                px = py = pz = 1.0
+            tgt_wx = img_w * self.CROSSHAIR_SCALE / 100.0
+            tgt_wz = img_h * self.CROSSHAIR_SCALE / 100.0
+            rel_scale = FVector(tgt_wx / px, 0.001 / py, tgt_wz / pz)
+            try:
+                actor.set_actor_relative_scale(rel_scale)
+            except Exception:
+                actor.set_actor_scale(rel_scale)
+
+            # Front face of default cube is at local Y = -50. Add a small
+            # world-space epsilon (scaled to local by parent Y) to avoid
+            # z-fighting with the Screen plane.
+            y_rel = -(50.0 + 0.5 / py)
+            actor.K2_SetActorRelativeLocation(FVector(0, y_rel, 0))
 
             self.crosshair_comp = actor
             ue.log(f'PyActorStickMan: crosshair {int(img_w)}x{int(img_h)} px '

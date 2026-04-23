@@ -2,7 +2,7 @@
 
 Consolidates the identical _is_mouse_down(), cursor_hit_actor(), and
 player-controller setup code that was copy-pasted across pyactor_icon,
-pyactor_sound, pyactor_text3d, pyactor_file_explorer, and gizmo.
+pyactor_sound, pyactor_text3d, and gizmo.
 """
 from __future__ import annotations
 

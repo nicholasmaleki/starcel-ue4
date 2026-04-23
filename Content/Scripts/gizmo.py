@@ -74,10 +74,23 @@ PLANES = [
     ('YZ', FVector(1, 0, 0), (1.00, 0.10, 1.00), FVector(0,1,0), FVector(0,0,1)),
 ]
 
+# bounding box — 8 corners, 12 edges (each edge stored as (axis_idx, dj, dk))
+# dj/dk are ±1 positions along the two axes perpendicular to axis_idx.
+BBOX_CORNERS = [(dx, dy, dz)
+                for dx in (-1, 1)
+                for dy in (-1, 1)
+                for dz in (-1, 1)]
+BBOX_EDGES = [(ai, dj, dk)
+              for ai in (0, 1, 2)
+              for dj in (-1, 1)
+              for dk in (-1, 1)]
+BBOX_LOCAL_EXTENT = 50.0  # BasicShapes half-extent; multiplied by actor scale
+
 # colour / hover state
 _actor_mid    = {}   # actor → MID
 _actor_colors = {}   # actor → (r, g, b, emissive)
 _piece_off    = {}   # actor → FVector offset from target centre (world-space)
+_bbox_dynamic = {}   # actor → ('corner', (dx,dy,dz)) | ('edge', ai,dj,dk) | ('wire', ai,dj,dk)
 
 def _set_color(actor, red, green, blue, emissive):
     mid = _actor_mid.get(actor)
@@ -124,6 +137,79 @@ def _spawn(path, loc, rot, sc, label, offset):
     _piece_off[actor] = offset
     return actor
 
+# bbox helpers
+def _component(v, i):
+    return v.x if i == 0 else (v.y if i == 1 else v.z)
+
+def _vec_from_components(c0, c1, c2):
+    return FVector(c0, c1, c2)
+
+def bbox_world_half_extent(target):
+    """Half-extent of the target's oriented bbox (local-axis aligned),
+    pre-rotation. Scaled by actor scale."""
+    try:
+        s = target.GetActorScale3D()
+    except Exception:
+        s = target.get_actor_scale()
+    return FVector(BBOX_LOCAL_EXTENT * s.x,
+                   BBOX_LOCAL_EXTENT * s.y,
+                   BBOX_LOCAL_EXTENT * s.z)
+
+def _rotate_local(rotation, local_vec):
+    q = rotation.quaternion()
+    return KismetMathLibrary.Quat_RotateVector(q, local_vec)
+
+def bbox_piece_world_transform(target, kind, data):
+    """Return (world_loc, world_rot, world_scale) for a dynamic bbox piece."""
+    loc  = target.get_actor_location()
+    rot  = target.get_actor_rotation()
+    h    = bbox_world_half_extent(target)
+
+    if kind == 'corner':
+        dx, dy, dz = data
+        local_off = FVector(dx * h.x, dy * h.y, dz * h.z)
+        world_off = _rotate_local(rot, local_off)
+        return (loc + world_off, rot, FVector(0.20, 0.20, 0.20))
+
+    if kind == 'edge':
+        ai, dj, dk = data
+        others = [i for i in (0, 1, 2) if i != ai]
+        comps  = [0.0, 0.0, 0.0]
+        comps[others[0]] = dj * _component(h, others[0])
+        comps[others[1]] = dk * _component(h, others[1])
+        local_off = _vec_from_components(*comps)
+        world_off = _rotate_local(rot, local_off)
+        return (loc + world_off, rot, FVector(0.16, 0.16, 0.16))
+
+    if kind == 'wire':
+        ai, dj, dk = data
+        others = [i for i in (0, 1, 2) if i != ai]
+        comps  = [0.0, 0.0, 0.0]
+        comps[others[0]] = dj * _component(h, others[0])
+        comps[others[1]] = dk * _component(h, others[1])
+        local_off = _vec_from_components(*comps)
+        world_off = _rotate_local(rot, local_off)
+        axis_vec   = [FVector(1,0,0), FVector(0,1,0), FVector(0,0,1)][ai]
+        axis_rot   = _rot(axis_vec)
+        combined   = KismetMathLibrary.ComposeRotators(axis_rot, rot)
+        length     = 2.0 * _component(h, ai)
+        return (loc + world_off, combined,
+                FVector(0.03, 0.03, length / 100.0))
+
+    return (loc, rot, FVector(1, 1, 1))
+
+def update_bbox_piece(actor, target):
+    """Reposition + re-orient + re-scale a bbox piece to follow target."""
+    spec = _bbox_dynamic.get(actor)
+    if not spec:
+        return
+    kind, data = spec
+    try:
+        wloc, wrot, wscale = bbox_piece_world_transform(target, kind, data)
+        actor.set_actor_transform(FTransform(wloc, wrot, wscale))
+    except Exception as e:
+        _log(f"bbox update fail: {e}")
+
 # build
 def test_gizmos(location=None):
     """
@@ -139,6 +225,7 @@ def test_gizmos(location=None):
     _piece_off.clear()
     _actor_mid.clear()
     _actor_colors.clear()
+    _bbox_dynamic.clear()
 
     if location is None:
         location = FVector(0, 0, 100)
@@ -181,7 +268,7 @@ def test_gizmos(location=None):
         off = FVector(0, 0, 0)
         a   = _spawn(SH_CYL, base, _rot(ax), FVector(1.8, 1.8, 0.10), f"GR_{name}", off)
         if a:
-            _apply_color(a, *rgb, em=1.8)
+            _apply_color(a, *rgb, emissive=1.8)
             handles[a] = ('rotate', ax)
 
     # ── scale handles  (small Cube, 175 uu along axis past arrows)
@@ -191,7 +278,7 @@ def test_gizmos(location=None):
         a   = _spawn(SH_CUBE, base + off, FRotator(0, 0, 0),
                      FVector(0.18, 0.18, 0.18), f"GS_{name}", off)
         if a:
-            _apply_color(a, *rgb, em=1.0)
+            _apply_color(a, *rgb, emissive=1.0)
             handles[a] = ('scale', ax)
 
     # ── plane handles  (flat Cube at the corner between each axis pair)
@@ -204,10 +291,49 @@ def test_gizmos(location=None):
         a   = _spawn(SH_CUBE, base + off, _rot(normal),
                      FVector(0.28, 0.28, 0.05), f"GP_{pname}", off)
         if a:
-            _apply_color(a, *rgb, em=1.5)
+            _apply_color(a, *rgb, emissive=1.5)
             handles[a] = ('plane', (d1, d2))
 
-    _log(f"=== done: {len(handles)} handles ===")
+    # ── bounding box wireframe + corner/edge handles
+    # Wireframe edges are non-interactive (thin cylinders along each bbox edge).
+    # Corner handles resize along all 3 local axes (opposite corner anchors).
+    # Edge handles resize along the 2 perpendicular axes (opposite edge anchors).
+    # Modifiers (handled in pyactor_gizmo):
+    #   Ctrl  → lock aspect ratio (uniform scale)
+    #   Shift → scale symmetrically from center (center stays, both sides move)
+    #   Alt   → fine-grained (0.1× delta)
+    _log("-- bbox --")
+    for ai, dj, dk in BBOX_EDGES:
+        a = _spawn(SH_CYL, base, FRotator(0, 0, 0),
+                   FVector(0.03, 0.03, 0.5),
+                   f"GBB_W_{ai}{dj:+d}{dk:+d}", FVector(0, 0, 0))
+        if a:
+            _apply_color(a, 0.95, 0.95, 0.95, emissive=0.8)
+            try:
+                a.SetActorEnableCollision(False)
+            except Exception:
+                pass
+            _bbox_dynamic[a] = ('wire', (ai, dj, dk))
+
+    for dx, dy, dz in BBOX_CORNERS:
+        a = _spawn(SH_CUBE, base, FRotator(0, 0, 0),
+                   FVector(0.20, 0.20, 0.20),
+                   f"GBB_C_{dx:+d}{dy:+d}{dz:+d}", FVector(0, 0, 0))
+        if a:
+            _apply_color(a, 1.00, 1.00, 0.20, emissive=1.5)
+            handles[a] = ('bbox_corner', (dx, dy, dz))
+            _bbox_dynamic[a] = ('corner', (dx, dy, dz))
+
+    for ai, dj, dk in BBOX_EDGES:
+        a = _spawn(SH_CUBE, base, FRotator(0, 0, 0),
+                   FVector(0.16, 0.16, 0.16),
+                   f"GBB_E_{ai}{dj:+d}{dk:+d}", FVector(0, 0, 0))
+        if a:
+            _apply_color(a, 1.00, 0.70, 0.20, emissive=1.3)
+            handles[a] = ('bbox_edge', (ai, dj, dk))
+            _bbox_dynamic[a] = ('edge', (ai, dj, dk))
+
+    _log(f"=== done: {len(handles)} handles, {len(_bbox_dynamic)} bbox pieces ===")
     return target, gizmo_root, handles
 
 # Interaction logic migrated to pyactor_gizmo.GizmoController.

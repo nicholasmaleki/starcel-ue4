@@ -6,6 +6,7 @@ class FVector:
     Z: float
 
 class FRotator:
+    __init__(self, roll: float = 0.0, pitch: float = 0.0, yaw: float = 0.0) -> None: ...
     Pitch: float
     Yaw: float
     Roll: float

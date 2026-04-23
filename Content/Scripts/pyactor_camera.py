@@ -1,6 +1,7 @@
 import unreal_engine as ue
 from unreal_engine import FVector, FRotator
 from unreal_engine_tools import find_component
+from click_helpers import setup_player_controller, is_mouse_down, cursor_hit_actor
 
 # Python component: full camera control
 #
@@ -67,10 +68,17 @@ class PyActorCamera:
     provides runtime methods for projection, Panini, and view transfer.
     """
 
+    PROXY_SCALE = 0.3
+
     def begin_play(self):
-        self.uobject.enable_input()
+        self.player_controller = setup_player_controller(self.uobject)
         self._cam = None
+        self._click_proxy = None
+        self._proxy_configured = False
         self._current_type = 'normal'
+        self._was_mouse_down = False
+        self._is_active_view = False
+        self._previous_view_target = None
 
         # Find CineCameraComponent
         try:
@@ -110,7 +118,11 @@ class PyActorCamera:
             self.set_projection('orthographic')
             return
 
-        preset_key = _TYPE_TO_PRESET.get(lower, 'default')
+        preset_key = _TYPE_TO_PRESET.get(lower)
+        if preset_key is None and lower in CAMERA_PRESETS:
+            preset_key = lower
+        if preset_key is None:
+            preset_key = 'default'
         cfg = CAMERA_PRESETS.get(preset_key)
         if cfg is None:
             ue.log_warning(f'PyActorCamera.set_type: unknown type "{type_name}"')
@@ -203,13 +215,95 @@ class PyActorCamera:
         Make this camera the active view target for player 0.
         blend_time=0.0 is instant; pass a positive value for a smooth transition.
         """
+        self._enter_view(blend_time=blend_time)
+
+    def _enter_view(self, blend_time=0.2):
+        pc = self.player_controller or ue.get_player_controller(0)
+        if pc is None:
+            return
         try:
-            pc = ue.get_player_controller(0)
+            self._previous_view_target = pc.get_view_target()
+        except Exception:
+            try:
+                self._previous_view_target = pc.GetViewTarget()
+            except Exception:
+                self._previous_view_target = None
+        try:
             pc.SetViewTargetWithBlend(self.uobject, blend_time)
-            ue.log(f'PyActorCamera: transferred view to {self.uobject.get_name()} '
-                   f'(blend={blend_time}s)')
+            self._is_active_view = True
+            self._set_proxy_visible(False)
+            ue.log(f'PyActorCamera: entered view {self.uobject.get_name()}')
         except Exception as e:
-            ue.log_warning(f'PyActorCamera.transfer_to_player: {e}')
+            ue.log_warning(f'PyActorCamera._enter_view: {e}')
+
+    def _leave_view(self, blend_time=0.2):
+        pc = self.player_controller or ue.get_player_controller(0)
+        if pc is None:
+            return
+        target = self._previous_view_target
+        if target is None:
+            try:
+                target = pc.get_pawn()
+            except Exception:
+                target = None
+        if target is None:
+            ue.log_warning('PyActorCamera._leave_view: no previous target')
+            return
+        try:
+            pc.SetViewTargetWithBlend(target, blend_time)
+            self._is_active_view = False
+            self._set_proxy_visible(True)
+            ue.log('PyActorCamera: left view')
+        except Exception as e:
+            ue.log_warning(f'PyActorCamera._leave_view: {e}')
+
+    def toggle_view(self):
+        if self._is_active_view:
+            self._leave_view()
+        else:
+            self._enter_view()
+
+    # Click proxy
+
+    def _configure_click_proxy(self):
+        try:
+            self._click_proxy = find_component(self.uobject, 'ClickProxy')
+        except Exception:
+            self._click_proxy = None
+        if self._click_proxy is not None:
+            try:
+                self._click_proxy.set_relative_scale(FVector(
+                    self.PROXY_SCALE, self.PROXY_SCALE, self.PROXY_SCALE))
+            except Exception as e:
+                ue.log_warning(f'PyActorCamera: proxy scale failed: {e}')
+        self._proxy_configured = True
+
+    def _set_proxy_visible(self, visible):
+        if self._click_proxy is None:
+            return
+        try:
+            self._click_proxy.SetVisibility(bool(visible))
+        except Exception:
+            try:
+                self._click_proxy.SetHiddenInGame(not visible)
+            except Exception as e:
+                ue.log_warning(f'PyActorCamera: visibility toggle failed: {e}')
+
+    # Tick — click-to-toggle possession
+
+    def tick(self, dt):
+        if not self._proxy_configured:
+            self._configure_click_proxy()
+
+        mouse_down = is_mouse_down(self.player_controller)
+        if mouse_down and not self._was_mouse_down:
+            if self._is_active_view:
+                self._leave_view()
+            else:
+                hit = cursor_hit_actor(self.uobject, self.player_controller)
+                if hit is not None and hit == self.uobject:
+                    self._enter_view()
+        self._was_mouse_down = mouse_down
 
     # Convenience accessors
 

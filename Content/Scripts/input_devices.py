@@ -423,19 +423,16 @@ class HotkeyManager:
 
         Always returns the token (or its canonical-case form) so that
         UE's own bind_axis can resolve it — unknown tokens are silently
-        ignored by UE, matching the pre-validation behavior. When the
-        project's axis table is populated and the token looks like a
-        typo, an informational warning is logged, but the binding still
-        proceeds using the raw token."""
+        ignored by UE, matching the pre-validation behavior. The local
+        _axis_names table is only used for case-normalization; on UE 4.27
+        the InputSettings reflection is unreliable, so a missing entry
+        is not treated as an error."""
         if not token:
             return None
         if self._axis_names:
             canonical = self._axis_names.get(_clean(token))
             if canonical is not None:
                 return canonical
-            ue.log_warning(
-                f"bind_axis: '{token}' is not a defined axis mapping. "
-                f"Check Project Settings > Input > Axis Mappings.")
         return token
 
     def resolve_action_name(self, token):
