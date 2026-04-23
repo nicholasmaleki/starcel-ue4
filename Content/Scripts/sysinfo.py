@@ -107,6 +107,10 @@ if _IS_WIN:
 # Update interval reference
 UPDATE_INTERVAL = 5  # seconds
 
+# When True, collectors skip WMI / subprocess branches and stick to psutil/stdlib.
+# Set by get_info_dict when mode == "minimal".
+_MINIMAL = False
+
 # Data directory for persistence
 def _data_dir() -> Path:
     if _IS_WIN:
@@ -172,15 +176,24 @@ def _safe(func, default=None):
     except Exception:
         return default
 
+# Suppress child-process console windows on Windows.
+# Without this, every subprocess.check_output call flashes a cmd/powershell window.
+_SUBPROC_KWARGS: Dict[str, Any] = {}
+if _IS_WIN:
+    _SUBPROC_KWARGS["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+
 def _run(cmd: List[str], timeout: int = 5) -> str:
     try:
         return subprocess.check_output(
-            cmd, text=True, stderr=subprocess.DEVNULL, timeout=timeout
+            cmd, text=True, stderr=subprocess.DEVNULL, timeout=timeout,
+            **_SUBPROC_KWARGS,
         ).strip()
     except Exception:
         return ""
 
 def _run_ps(cmd: str, timeout: int = 5) -> str:
+    if _MINIMAL:
+        return ""
     return _run(["powershell", "-NoProfile", "-Command", cmd], timeout=timeout)
 
 
@@ -480,7 +493,9 @@ def _collect_system() -> Dict[str, Any]:
     out["startup_programs"] = startup
 
     # Power plan
-    if _IS_WIN:
+    if _MINIMAL:
+        out["power_plan"] = "N/A"
+    elif _IS_WIN:
         r = _run(["powercfg", "/getactivescheme"])
         m = re.search(r"\((.+)\)", r)
         out["power_plan"] = m.group(1) if m else r or "N/A"
@@ -490,14 +505,14 @@ def _collect_system() -> Dict[str, Any]:
         out["power_plan"] = "N/A"
 
     # Secure boot
-    if _IS_WIN:
+    if _IS_WIN and not _MINIMAL:
         r = _run_ps("Confirm-SecureBootUEFI 2>$null")
         out["secure_boot"] = "Enabled" if "True" in r else "Disabled"
     else:
         out["secure_boot"] = "N/A"
 
     # BIOS / Board
-    if _IS_WIN and _WMI_OK:
+    if _IS_WIN and _WMI_OK and not _MINIMAL:
         try:
             bios  = _WMI.Win32_BIOS()[0]
             board = _WMI.Win32_BaseBoard()[0]
@@ -566,7 +581,7 @@ def _collect_cpu(units: str) -> Dict[str, Any]:
         if m:
             out["cpu_temp_avg_c"] = out["cpu_temp_max_c"] = float(m.group(1))
 
-    if _IS_WIN and _WMI_OK:
+    if _IS_WIN and _WMI_OK and not _MINIMAL:
         try:
             proc = _WMI.Win32_Processor()[0]
             out["virtualization"] = bool(getattr(proc, "VirtualizationFirmwareEnabled", False))
@@ -672,7 +687,7 @@ def _collect_memory(units: str) -> Dict[str, Any]:
         "speed_mhz":    "N/A", "slots_used": "N/A",
         "slots_total":  "N/A", "form_factor": "N/A",
     }
-    if _IS_WIN and _WMI_OK:
+    if _IS_WIN and _WMI_OK and not _MINIMAL:
         try:
             chips = _WMI.Win32_PhysicalMemory()
             speeds = [int(c.Speed) for c in chips if getattr(c, "Speed", None)]
@@ -718,7 +733,7 @@ def _collect_storage(units: str) -> List[Dict[str, Any]]:
             if _IS_WIN else part.mountpoint == "/"
         )
 
-        if _IS_WIN and _WMI_OK:
+        if _IS_WIN and _WMI_OK and not _MINIMAL:
             try:
                 ld = _WMI.Win32_LogicalDisk(DeviceID=part.mountpoint.rstrip("\\"))
                 if ld:
@@ -925,7 +940,7 @@ def _collect_battery() -> Optional[Dict[str, Any]]:
     else:
         out["time_remaining"] = "Plugged in" if battery.power_plugged else "Calculating..."
 
-    if _IS_WIN and _WMI_OK:
+    if _IS_WIN and _WMI_OK and not _MINIMAL:
         try:
             b = _WMI.Win32_Battery()[0]
             d = int(getattr(b, "DesignCapacity", 0) or 0)
@@ -1154,6 +1169,26 @@ def _collect_cooling(units: str) -> Dict[str, Any]:
 # MODES
 
 MODES: Dict[str, Dict[str, bool]] = {
+    "minimal": {
+        "system":        True,
+        "cpu":           True,
+        "gpu":           False,
+        "memory":        True,
+        "storage":       True,
+        "network":       False,
+        "display":       False,
+        "audio":         False,
+        "battery":       True,
+        "bluetooth":     False,
+        "weather":       False,
+        "clipboard":     False,
+        "notifications": False,
+        "open_apps":     False,
+        "activity":      True,
+        "processes":     False,
+        "filesystem":    False,
+        "cooling":       False,
+    },
     "normal": {
         "system":        True,
         "cpu":           True,
@@ -1208,6 +1243,8 @@ def get_info_dict(mode: str = "normal", units: str = "usa") -> Dict[str, Any]:
     mode  : 'normal' | 'advanced'
     units : 'usa' | 'metric'
     """
+    global _MINIMAL
+    _MINIMAL = (mode == "minimal")
     sections = MODES.get(mode, MODES["normal"])
     data: Dict[str, Any] = {
         "_mode":      mode,

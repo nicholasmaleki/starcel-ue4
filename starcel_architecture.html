@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Starcel 9 — Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,700;1,9..144,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0e1420;
+  --ink:#eae2cf;
+  --ink-dim:#b9b09a;
+  --grid:rgba(234,226,207,.06);
+  --grid-strong:rgba(234,226,207,.12);
+  --rule:#6e6652;
+  --paper:#141b2a;
+  --paper-2:#182133;
+  --accent:#f0a04b;      /* amber  — python layer */
+  --accent-2:#7fbf9f;    /* sage   — C++ / engine */
+  --accent-3:#d8627a;    /* rose   — network / rpc */
+  --accent-4:#8ab4f8;    /* indigo — math / data */
+  --accent-5:#c9a8e2;    /* lilac  — installer */
+  --accent-6:#e8c873;    /* wheat  — assets */
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:"Fraunces",Georgia,serif;font-feature-settings:"ss01","liga"}
+body{
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+    radial-gradient(ellipse at 20% 0%, rgba(240,160,75,.07), transparent 55%),
+    radial-gradient(ellipse at 80% 100%, rgba(138,180,248,.06), transparent 55%);
+  background-size: 32px 32px, 32px 32px, 100% 100%, 100% 100%;
+}
+.wrap{max-width:1480px;margin:0 auto;padding:56px 48px 96px}
+
+/* ---------- masthead ---------- */
+.mast{
+  display:grid;grid-template-columns:1fr auto;gap:32px;
+  border-top:1px solid var(--rule);
+  border-bottom:1px solid var(--rule);
+  padding:22px 0 26px;margin-bottom:40px;
+}
+.eyebrow{
+  font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.32em;
+  color:var(--ink-dim);text-transform:uppercase;margin:0 0 10px
+}
+h1{
+  font-family:"Fraunces",serif;font-weight:400;font-style:italic;
+  font-variation-settings:"opsz" 144;
+  font-size:clamp(44px, 6vw, 78px);letter-spacing:-.02em;line-height:.95;margin:0;
+}
+h1 .no{font-style:normal;font-weight:500;color:var(--accent)}
+h1 em{font-style:normal;font-weight:500;color:var(--ink)}
+.mast .meta{
+  font-family:"JetBrains Mono",monospace;font-size:11px;line-height:1.8;
+  color:var(--ink-dim);text-align:right;align-self:end;
+}
+.mast .meta b{color:var(--ink);font-weight:500}
+
+/* ---------- section frame ---------- */
+.section{margin:56px 0 0}
+.section-head{
+  display:flex;align-items:baseline;gap:16px;margin:0 0 18px;
+  border-bottom:1px dashed var(--rule);padding-bottom:10px
+}
+.section-head .num{
+  font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.2em;
+  color:var(--accent);
+}
+.section-head h2{
+  font-family:"Fraunces",serif;font-weight:500;font-size:24px;letter-spacing:-.01em;
+  margin:0;color:var(--ink)
+}
+.section-head .tail{flex:1;height:1px;background:var(--rule);opacity:.4;margin-left:12px}
+.caption{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--ink-dim);letter-spacing:.05em}
+
+/* ---------- stack diagram ---------- */
+.stack{position:relative;display:flex;flex-direction:column;gap:14px}
+.layer{
+  position:relative;border:1px solid var(--rule);background:var(--paper);
+  border-radius:2px;padding:18px 22px 20px;
+}
+.layer.accent-py   { border-left:3px solid var(--accent) }
+.layer.accent-cpp  { border-left:3px solid var(--accent-2) }
+.layer.accent-eng  { border-left:3px solid var(--ink-dim) }
+.layer.accent-os   { border-left:3px solid var(--ink-dim); background:var(--paper-2) }
+
+.layer-head{
+  display:flex;align-items:baseline;justify-content:space-between;gap:18px;margin-bottom:12px;
+}
+.layer-title{
+  font-family:"Fraunces",serif;font-weight:500;font-size:18px;margin:0;
+}
+.layer-title .tag{
+  font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.2em;
+  color:var(--ink-dim);margin-left:10px;text-transform:uppercase;font-weight:400
+}
+.layer-meta{
+  font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--ink-dim);
+  letter-spacing:.06em
+}
+.cells{display:grid;gap:8px}
+.cells.c4{grid-template-columns:repeat(4,1fr)}
+.cells.c5{grid-template-columns:repeat(5,1fr)}
+.cells.c6{grid-template-columns:repeat(6,1fr)}
+.cells.c3{grid-template-columns:repeat(3,1fr)}
+.cell{
+  border:1px solid var(--rule);background:rgba(234,226,207,.02);
+  padding:10px 12px;border-radius:2px;min-height:64px;
+  display:flex;flex-direction:column;gap:4px;
+}
+.cell .name{font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--ink)}
+.cell .desc{font-family:"Fraunces",serif;font-size:13px;color:var(--ink-dim);line-height:1.35;font-style:italic}
+.cell.hi{background:linear-gradient(180deg, rgba(240,160,75,.08), rgba(240,160,75,.02));border-color:rgba(240,160,75,.35)}
+.cell.cpp{background:linear-gradient(180deg, rgba(127,191,159,.08), rgba(127,191,159,.02));border-color:rgba(127,191,159,.35)}
+.cell.rpc{background:linear-gradient(180deg, rgba(216,98,122,.08), rgba(216,98,122,.02));border-color:rgba(216,98,122,.35)}
+.cell.math{background:linear-gradient(180deg, rgba(138,180,248,.08), rgba(138,180,248,.02));border-color:rgba(138,180,248,.35)}
+
+/* ---------- split row ---------- */
+.split{display:grid;grid-template-columns:1.6fr 1fr;gap:24px;margin-top:14px}
+@media(max-width:1100px){.split{grid-template-columns:1fr}}
+
+/* ---------- subsystem cards ---------- */
+.card{
+  border:1px solid var(--rule);background:var(--paper);border-radius:2px;
+  padding:18px 20px;
+}
+.card h3{
+  margin:0 0 4px;font-family:"Fraunces",serif;font-weight:500;font-size:17px;color:var(--ink)
+}
+.card .sub{
+  font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--ink-dim);
+  letter-spacing:.12em;margin-bottom:14px;text-transform:uppercase
+}
+.card .file{
+  font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--ink);
+  padding:4px 0;border-bottom:1px dotted rgba(234,226,207,.12);display:flex;justify-content:space-between;gap:10px
+}
+.card .file:last-child{border-bottom:0}
+.card .file .n{color:var(--accent)}
+.card .file .d{color:var(--ink-dim);font-style:italic;font-family:"Fraunces",serif;font-size:12px;text-align:right;flex:1}
+.card.py h3::before{content:"• ";color:var(--accent)}
+.card.cpp h3::before{content:"• ";color:var(--accent-2)}
+.card.rpc h3::before{content:"• ";color:var(--accent-3)}
+.card.math h3::before{content:"• ";color:var(--accent-4)}
+.card.install h3::before{content:"• ";color:var(--accent-5)}
+.card.asset h3::before{content:"• ";color:var(--accent-6)}
+
+/* ---------- pyactor fan ---------- */
+.fan{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:8px
+}
+.pill{
+  border:1px solid var(--rule);border-left:2px solid var(--accent);
+  padding:8px 10px;border-radius:2px;
+  font-family:"JetBrains Mono",monospace;font-size:11px;
+  display:flex;flex-direction:column;gap:2px;
+}
+.pill .pn{color:var(--ink)}
+.pill .pd{color:var(--ink-dim);font-family:"Fraunces",serif;font-size:12px;font-style:italic;line-height:1.3}
+
+/* ---------- network diagram ---------- */
+.net{
+  display:grid;grid-template-columns:1fr auto 1fr;gap:24px;align-items:center;
+  padding:28px 24px;border:1px solid var(--rule);background:var(--paper-2);border-radius:2px;
+  margin-top:14px
+}
+.node{
+  border:1px solid var(--rule);background:var(--paper);border-radius:2px;padding:16px 18px;
+  position:relative
+}
+.node h4{
+  margin:0 0 6px;font-family:"Fraunces",serif;font-weight:500;font-size:16px;
+}
+.node h4::before{
+  content:"";display:inline-block;width:8px;height:8px;border-radius:50%;
+  background:var(--accent-3);margin-right:10px;vertical-align:middle
+}
+.node.server h4::before{background:var(--accent-4)}
+.node ul{margin:6px 0 0;padding-left:16px;font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--ink-dim);line-height:1.7}
+.node ul li b{color:var(--ink);font-weight:500}
+.pipe{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:200px}
+.pipe .arrow{
+  width:100%;height:34px;position:relative;
+}
+.pipe .arrow svg{width:100%;height:100%}
+.pipe .lbl{
+  font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--ink-dim);
+  letter-spacing:.1em;text-align:center;line-height:1.5
+}
+.pipe .lbl b{color:var(--accent-3);font-weight:500}
+
+/* ---------- data flow arrow ---------- */
+.flow-arrow{
+  position:absolute;left:50%;transform:translateX(-50%);
+  font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--ink-dim);
+  letter-spacing:.2em;text-transform:uppercase;
+  display:flex;align-items:center;gap:8px;
+}
+.flow-arrow.down{bottom:-20px}
+.flow-arrow svg{opacity:.5}
+
+/* ---------- legend ---------- */
+.legend{
+  display:flex;flex-wrap:wrap;gap:18px;margin-top:24px;
+  padding:14px 18px;border:1px dashed var(--rule);border-radius:2px;
+  font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--ink-dim);letter-spacing:.06em;
+}
+.legend span{display:flex;align-items:center;gap:8px}
+.legend .sw{width:14px;height:3px;border-radius:1px}
+.sw.py{background:var(--accent)}
+.sw.cpp{background:var(--accent-2)}
+.sw.rpc{background:var(--accent-3)}
+.sw.math{background:var(--accent-4)}
+.sw.install{background:var(--accent-5)}
+.sw.asset{background:var(--accent-6)}
+
+/* footer */
+.foot{
+  margin-top:72px;padding-top:18px;border-top:1px solid var(--rule);
+  display:flex;justify-content:space-between;
+  font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--ink-dim);letter-spacing:.1em
+}
+.foot em{color:var(--accent);font-style:normal}
+
+/* decorative corners */
+.corner{position:fixed;width:28px;height:28px;opacity:.5;pointer-events:none}
+.corner.tl{top:16px;left:16px;border-top:1px solid var(--rule);border-left:1px solid var(--rule)}
+.corner.tr{top:16px;right:16px;border-top:1px solid var(--rule);border-right:1px solid var(--rule)}
+.corner.bl{bottom:16px;left:16px;border-bottom:1px solid var(--rule);border-left:1px solid var(--rule)}
+.corner.br{bottom:16px;right:16px;border-bottom:1px solid var(--rule);border-right:1px solid var(--rule)}
+</style>
+</head>
+<body>
+<div class="corner tl"></div><div class="corner tr"></div>
+<div class="corner bl"></div><div class="corner br"></div>
+
+<div class="wrap">
+
+  <!-- ─── MASTHEAD ─── -->
+  <header class="mast">
+    <div>
+      <p class="eyebrow">Architecture Diagram · System Map · Rev.&nbsp;9</p>
+      <h1><span class="no">Starcel</span> <em>9</em><br><span style="font-style:italic;color:var(--ink-dim);font-size:.45em;letter-spacing:0">a python-controlled 3d spreadsheet, running inside Unreal Engine 4.27</span></h1>
+    </div>
+    <div class="meta">
+      <b>ENGINE</b>&nbsp;&nbsp;Unreal&nbsp;Engine&nbsp;4.27&nbsp;(Chaos)<br>
+      <b>RUNTIME</b>&nbsp;Python&nbsp;3.9&nbsp;·&nbsp;C++&nbsp;17<br>
+      <b>BRIDGE</b>&nbsp;&nbsp;UnrealEnginePython&nbsp;plugin<br>
+      <b>SCALE</b>&nbsp;&nbsp;~50k&nbsp;LOC&nbsp;py&nbsp;·&nbsp;~2k&nbsp;LOC&nbsp;cpp<br>
+      <b>TARGET</b>&nbsp;&nbsp;Windows&nbsp;(client&nbsp;+&nbsp;dedicated&nbsp;server)
+    </div>
+  </header>
+
+  <!-- ─── 01. THE STACK ─── -->
+  <section class="section">
+    <div class="section-head">
+      <span class="num">01 /</span>
+      <h2>The stack — from silicon up</h2>
+      <span class="tail"></span>
+      <span class="caption">layered · top calls down</span>
+    </div>
+
+    <div class="stack">
+
+      <!-- Python entry point -->
+      <div class="layer accent-py">
+        <div class="layer-head">
+          <h3 class="layer-title">Main.py <span class="tag">entry class · begin_play / tick</span></h3>
+          <span class="layer-meta">Content/Scripts/main.py</span>
+        </div>
+        <div class="cells c4">
+          <div class="cell hi">
+            <span class="name">Main.begin_play()</span>
+            <span class="desc">spawns drone pawn, wires input, branches on IsDedicatedServer()</span>
+          </div>
+          <div class="cell hi">
+            <span class="name">Main.tick(Δt)</span>
+            <span class="desc">per-frame callback for the root actor</span>
+          </div>
+          <div class="cell hi">
+            <span class="name">Main.end_play()</span>
+            <span class="desc">tears down tickers, input, world cache</span>
+          </div>
+          <div class="cell hi">
+            <span class="name">startup()</span>
+            <span class="desc">background / music / material bootstrap</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Python subsystems -->
+      <div class="layer accent-py">
+        <div class="layer-head">
+          <h3 class="layer-title">Python runtime · subsystems <span class="tag">Content/Scripts/*</span></h3>
+          <span class="layer-meta">3.9 · numpy · sympy · numba · kingdon · PIL · scikit-image</span>
+        </div>
+        <div class="cells c5">
+          <div class="cell"><span class="name" style="color:var(--accent-4)">ue_math_*</span><span class="desc">math core, unified plotter, examples — sampling · marching cubes · ODE</span></div>
+          <div class="cell"><span class="name" style="color:var(--accent-4)">nd_table/</span><span class="desc">multi-dim spreadsheet · spread engine · PGA integration · Unreal binding</span></div>
+          <div class="cell"><span class="name">ue_spawn.py</span><span class="desc">universal spawn() — images, video, icons, 3D, sound, plots</span></div>
+          <div class="cell"><span class="name">unreal_engine_tools</span><span class="desc">world/actor helpers, materials, LargeStringAsyncStandalone</span></div>
+          <div class="cell"><span class="name">input_devices.py</span><span class="desc">Keyboard · Mouse · HotkeyManager · TraceHelper</span></div>
+
+          <div class="cell"><span class="name">cli.py / gen_cli.py</span><span class="desc">shell bridge — run ps/cmd/powershell from py</span></div>
+          <div class="cell"><span class="name">sysinfo.py</span><span class="desc">CPU/GPU/mem/net — psutil · wmi · GPUtil</span></div>
+          <div class="cell"><span class="name">windowtool.py</span><span class="desc">native window capture &amp; transparency (pywin32)</span></div>
+          <div class="cell"><span class="name">icon_to_image.py</span><span class="desc">extract OS icons → UE textures</span></div>
+          <div class="cell"><span class="name">everything_search.py</span><span class="desc">Everything64.dll file index bindings</span></div>
+
+          <div class="cell"><span class="name">constants.py</span><span class="desc">alphabets, prefixes, symbols, WorldSize</span></div>
+          <div class="cell"><span class="name">languages.py</span><span class="desc">token tables, 27K stub — multi-lang surface</span></div>
+          <div class="cell"><span class="name">metadata.py</span><span class="desc">symbol + identity metadata registry</span></div>
+          <div class="cell"><span class="name">interop.py</span><span class="desc">cross-python-version bridge (3.10+ fallback)</span></div>
+          <div class="cell"><span class="name">history.py · hotreload.py</span><span class="desc">undo log + live script reload</span></div>
+        </div>
+      </div>
+
+      <!-- PyActor layer -->
+      <div class="layer accent-py">
+        <div class="layer-head">
+          <h3 class="layer-title">PyActor / PyPawn proxies <span class="tag">python classes attached to UE actors</span></h3>
+          <span class="layer-meta">one file per actor behavior · loaded by *.uasset Blueprint wrappers</span>
+        </div>
+        <div class="fan">
+          <div class="pill"><span class="pn">pypawn_drone</span><span class="pd">first-person drone controller w/ W·A·S·D + mouse</span></div>
+          <div class="pill"><span class="pn">pyactor_plotter</span><span class="pd">math plot actor — consumes ue_math_*</span></div>
+          <div class="pill"><span class="pn">pyactor_table</span><span class="pd">3-D spreadsheet actor — nd_table bridge</span></div>
+          <div class="pill"><span class="pn">pyactor_text3d</span><span class="pd">Text3D billboards, global tick</span></div>
+          <div class="pill"><span class="pn">pyactor_gizmo</span><span class="pd">transform gizmo controller</span></div>
+          <div class="pill"><span class="pn">pyactor_camera</span><span class="pd">view &amp; spring-arm modes</span></div>
+          <div class="pill"><span class="pn">pyactor_icon</span><span class="pd">IconSphere — hover-shrink, click-to-open</span></div>
+          <div class="pill"><span class="pn">pyactor_file_explorer</span><span class="pd">3-D file browser over Everything search</span></div>
+          <div class="pill"><span class="pn">pyactor_sysmon</span><span class="pd">live system stats display</span></div>
+          <div class="pill"><span class="pn">pyactor_stickman</span><span class="pd">skeletal mannequin demo</span></div>
+          <div class="pill"><span class="pn">pyactor_sound</span><span class="pd">SoundSphere — overlap &amp; click playback</span></div>
+          <div class="pill"><span class="pn">pyactor_qur</span><span class="pd">query / utility pyactor</span></div>
+        </div>
+      </div>
+
+      <!-- Bridge -->
+      <div class="layer accent-eng">
+        <div class="layer-head">
+          <h3 class="layer-title">UnrealEnginePython · bridge <span class="tag">marshals calls py ↔ UE reflection</span></h3>
+          <span class="layer-meta">Plugins/UnrealEnginePython · HaiyiMei 4.27 port, patched to py 3.9</span>
+        </div>
+        <div class="cells c4">
+          <div class="cell cpp"><span class="name">unreal_engine</span><span class="desc">py module — FVector · FRotator · actor/world api</span></div>
+          <div class="cell cpp"><span class="name">.pyi + classes.py</span><span class="desc">8.9&nbsp;MB autogenerated stubs for full UE reflection</span></div>
+          <div class="cell cpp"><span class="name">PyActor / PyPawn</span><span class="desc">C++ UObjects that call begin_play/tick on py classes</span></div>
+          <div class="cell cpp"><span class="name">py.console</span><span class="desc">in-engine REPL, triggered via &nbsp;` &nbsp;key</span></div>
+        </div>
+      </div>
+
+      <!-- C++ project + plugins -->
+      <div class="layer accent-cpp">
+        <div class="layer-head">
+          <h3 class="layer-title">C++ game module + custom plugins <span class="tag">Source/Starcel9 · Plugins/*</span></h3>
+          <span class="layer-meta">Visual Studio 2019 · UE 4.27 build tool</span>
+        </div>
+        <div class="cells c5">
+          <div class="cell cpp"><span class="name">StarcelGameMode</span><span class="desc">spawns players, fires OnPlayerJoined event</span></div>
+          <div class="cell cpp"><span class="name">StarcelHelper</span><span class="desc">misc BPFL static helpers bound from py</span></div>
+          <div class="cell cpp"><span class="name">WindowTransparency BPFL</span><span class="desc">Win32 window styling — transparent viewport</span></div>
+          <div class="cell cpp"><span class="name">LargeData plugin</span><span class="desc">LargeStringAsync / LargeStringRPCActor · chunked GB-scale replication</span></div>
+          <div class="cell cpp"><span class="name">Text3D plugin</span><span class="desc">Epic&rsquo;s 3-D glyph mesh generator</span></div>
+        </div>
+      </div>
+
+      <!-- Engine -->
+      <div class="layer accent-eng">
+        <div class="layer-head">
+          <h3 class="layer-title">Unreal Engine 4.27 Chaos <span class="tag">rendering · physics · networking · replication</span></h3>
+          <span class="layer-meta">~16M LOC · client + dedicated server targets</span>
+        </div>
+        <div class="cells c6">
+          <div class="cell"><span class="name">Slate / UMG</span><span class="desc">2-D UI (used minimally)</span></div>
+          <div class="cell"><span class="name">Chaos physics</span><span class="desc">rigid body · hit traces</span></div>
+          <div class="cell"><span class="name">Renderer</span><span class="desc">DX11/12 · materials · mesh instancing</span></div>
+          <div class="cell"><span class="name">Net driver</span><span class="desc">actor replication · RPC · Multicast</span></div>
+          <div class="cell"><span class="name">Asset / Blueprint</span><span class="desc">.uasset registry &amp; virtual machine</span></div>
+          <div class="cell"><span class="name">Kismet libs</span><span class="desc">KismetMathLibrary, KismetSystemLibrary</span></div>
+        </div>
+      </div>
+
+      <!-- OS -->
+      <div class="layer accent-os">
+        <div class="layer-head">
+          <h3 class="layer-title">Host OS <span class="tag">Windows 10 / 11 · x64</span></h3>
+          <span class="layer-meta">pywin32 · wmi · Everything64.dll · DX11 · pynput</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="legend">
+      <span><span class="sw py"></span>Python layer</span>
+      <span><span class="sw cpp"></span>C++ / engine module</span>
+      <span><span class="sw rpc"></span>Network / RPC path</span>
+      <span><span class="sw math"></span>Math &amp; data subsystems</span>
+      <span><span class="sw install"></span>Installer &amp; tooling</span>
+      <span><span class="sw asset"></span>Content &amp; assets</span>
+    </div>
+  </section>
+
+  <!-- ─── 02. FEATURE SUBSYSTEMS ─── -->
+  <section class="section">
+    <div class="section-head">
+      <span class="num">02 /</span>
+      <h2>Feature subsystems · unpacked</h2>
+      <span class="tail"></span>
+      <span class="caption">where the interesting code lives</span>
+    </div>
+
+    <div class="split">
+
+      <div class="card math">
+        <h3>Math visualization framework</h3>
+        <p class="sub">UE_MATH_CORE · UE_MATH_PLOTTER · PYACTOR_PLOTTER</p>
+        <div class="file"><span class="n">ue_math_core.py</span><span class="d">sympy → numeric compile · 2D/3D/parametric sampling · marching cubes · Dormand-Prince RK4(5) ODE · domain colouring · GA (kingdon) · tube meshes</span></div>
+        <div class="file"><span class="n">ue_math_plotter.py</span><span class="d">unified plotter — plot · plot3d · parametric_surface · vector_field · streamline · implicit · isosurface · riemann_surface · spread</span></div>
+        <div class="file"><span class="n">ue_math_examples.py</span><span class="d">gallery of calls against the plotter — curves, surfaces, fields, GA</span></div>
+        <div class="file"><span class="n">pyactor_plotter.py</span><span class="d">PyActor proxy wrapping plotter; hover / click interaction in-world</span></div>
+        <div class="file"><span class="n">DualContourer · JobardLeferSeeder · MeshSimplifier</span><span class="d">recent algorithmic upgrades in core</span></div>
+      </div>
+
+      <div class="card math">
+        <h3>nD spreadsheet (nd_table)</h3>
+        <p class="sub">Content/Scripts/nd_table/</p>
+        <div class="file"><span class="n">ndtable.py</span><span class="d">Table + Axis + CellReference — formulas, undo/redo, cross-table refs, numpy backend</span></div>
+        <div class="file"><span class="n">spread_engine.py</span><span class="d">spatial projection: 0D→1D→2D→3D replication &amp; slicing</span></div>
+        <div class="file"><span class="n">unreal_integration.py</span><span class="d">spawn cells as StaticMeshActors w/ Text3D, gridlines via InstancedStaticMesh</span></div>
+        <div class="file"><span class="n">pga_integration.py</span><span class="d">projective geometric algebra rendering hooks</span></div>
+        <div class="file"><span class="n">resize_controller.py</span><span class="d">drag handles, live re-layout</span></div>
+      </div>
+
+    </div>
+
+    <div class="split">
+      <div class="card rpc">
+        <h3>Large-data replication</h3>
+        <p class="sub">Plugins/LargeData · multi-GB client → server transfer</p>
+        <div class="file"><span class="n">LargeStringAsync.cpp</span><span class="d">chunks a huge string, fires OnChunksBuilt / OnFullyReceived</span></div>
+        <div class="file"><span class="n">LargeStringRPCActor.cpp</span><span class="d">Server_* RPC surface, per-client ownership</span></div>
+        <div class="file"><span class="n">LargeStringAsyncStandalone</span><span class="d">py wrapper (in unreal_engine_tools.py) with ticker-based, rate-limited sending</span></div>
+        <div class="file"><span class="n">xtensor · hdf5 · boost · gmp · mpfr</span><span class="d">bundled C++ libs for on-server numerics (Plugins/LargeData/ThirdParty)</span></div>
+      </div>
+
+      <div class="card py">
+        <h3>Input &amp; interaction</h3>
+        <p class="sub">input_devices.py</p>
+        <div class="file"><span class="n">Keyboard · Mouse</span><span class="d">low-level key / mouse state, ProjectSettings axis + action sync</span></div>
+        <div class="file"><span class="n">HotkeyManager</span><span class="d">bind_press · bind_repeat · bind_action · chord detection (Ctrl+Shift+…)</span></div>
+        <div class="file"><span class="n">TraceHelper</span><span class="d">trace_cursor · trace_forward — world picks &amp; hit actor info</span></div>
+        <div class="file"><span class="n">gizmo.py</span><span class="d">3-D transform manipulator shared by plotter &amp; table</span></div>
+      </div>
+    </div>
+
+    <div class="split">
+      <div class="card asset">
+        <h3>Content &amp; assets</h3>
+        <p class="sub">Content/ · Blueprints · Materials · Maps · Models · Fonts · Movies</p>
+        <div class="file"><span class="n">BP_PyDroneCharacter</span><span class="d">Blueprint wrapper → pypawn_drone</span></div>
+        <div class="file"><span class="n">BP_Cell</span><span class="d">Text3D spreadsheet cell prefab</span></div>
+        <div class="file"><span class="n">BP_Icon · BP_SoundSphere</span><span class="d">hover-clickable spheres — file opener &amp; audio</span></div>
+        <div class="file"><span class="n">BP_StarcelGameMode</span><span class="d">wraps StarcelGameMode C++ class · OnPlayerJoined</span></div>
+        <div class="file"><span class="n">M_Color · mannequin · starter level</span><span class="d">parametric material + demo geometry</span></div>
+      </div>
+
+      <div class="card install">
+        <h3>Installer &amp; tooling</h3>
+        <p class="sub">starcel-installer/ · separate pip package</p>
+        <div class="file"><span class="n">bootstrap.py</span><span class="d">self-unpacks, locates python, kicks launcher</span></div>
+        <div class="file"><span class="n">launcher.py · launch_options.py</span><span class="d">chooses client / server / no-editor target</span></div>
+        <div class="file"><span class="n">downloader · env · firewall · prereqs</span><span class="d">fetches builds, sets UE_PYTHON_DIR, opens ports, checks VS/Python</span></div>
+        <div class="file"><span class="n">ue_source.py · vs_installer.py</span><span class="d">optional Unreal source + VS 2019 install flow</span></div>
+        <div class="file"><span class="n">post_install · shortcuts · donations</span><span class="d">start-menu shortcuts &amp; patreon prompt</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 03. NETWORK TOPOLOGY ─── -->
+  <section class="section">
+    <div class="section-head">
+      <span class="num">03 /</span>
+      <h2>Network topology · client ⇄ dedicated server</h2>
+      <span class="tail"></span>
+      <span class="caption">same main.py runs on both sides · branches on IsDedicatedServer()</span>
+    </div>
+
+    <div class="net">
+      <div class="node">
+        <h4>Client</h4>
+        <ul>
+          <li><b>main.py</b> · begin_play branch</li>
+          <li>spawns <b>BP_PyDroneCharacter</b>, possesses</li>
+          <li>wires <b>HotkeyManager</b> / mouse / traces</li>
+          <li>renders PyActors locally · math plots, tables, icons</li>
+          <li>send side of <b>LargeStringAsyncStandalone</b></li>
+        </ul>
+      </div>
+
+      <div class="pipe">
+        <div class="lbl"><b>RPC · replication · multicast</b><br>Actor spawn → server · Multicast RPC → all clients</div>
+        <div class="arrow">
+          <svg viewBox="0 0 200 34" preserveAspectRatio="none">
+            <defs>
+              <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d8627a"/></marker>
+              <marker id="al" viewBox="0 0 10 10" refX="1"  refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M10,0 L0,5 L10,10 z" fill="#d8627a"/></marker>
+            </defs>
+            <line x1="10" y1="10" x2="190" y2="10" stroke="#d8627a" stroke-width="1.4" marker-end="url(#ar)"/>
+            <line x1="190" y1="24" x2="10" y2="24" stroke="#d8627a" stroke-width="1.4" marker-end="url(#al)"/>
+          </svg>
+        </div>
+        <div class="lbl" style="color:var(--ink-dim)">chunked · ticker-rate-limited<br>LargeStringRPCActor · 8&nbsp;KB frames</div>
+      </div>
+
+      <div class="node server">
+        <h4>Dedicated server</h4>
+        <ul>
+          <li><b>main.py</b> · server branch (<i>IsDedicatedServer=true</i>)</li>
+          <li>binds <b>OnPlayerJoined</b> on StarcelGameMode</li>
+          <li>per join → spawn drone, Possess, create RPC_ACTOR</li>
+          <li>receive side of <b>LargeStringAsync</b></li>
+          <li>advertises <b>LAN + public IP</b> (api.ipify.org)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 04. RUNTIME LIFECYCLE ─── -->
+  <section class="section">
+    <div class="section-head">
+      <span class="num">04 /</span>
+      <h2>Runtime lifecycle · what happens on play</h2>
+      <span class="tail"></span>
+      <span class="caption">call order, top to bottom</span>
+    </div>
+
+    <div class="stack">
+      <div class="layer accent-py">
+        <div class="layer-head">
+          <h3 class="layer-title">① Map loads</h3>
+          <span class="layer-meta">default level contains a PyActor configured to <code style="font-family:inherit">main.Main</code></span>
+        </div>
+      </div>
+      <div class="layer accent-py">
+        <div class="layer-head">
+          <h3 class="layer-title">② PyActor constructs · imports main.py</h3>
+          <span class="layer-meta">modules loaded: constants · languages · cli · nd_table · input_devices · ue_spawn · icon_to_image · test_spawn</span>
+        </div>
+      </div>
+      <div class="layer accent-py">
+        <div class="layer-head">
+          <h3 class="layer-title">③ Main.begin_play()</h3>
+          <span class="layer-meta">world cache → keyboard/mouse → HotkeyManager → TraceHelper → branch on server/client</span>
+        </div>
+      </div>
+      <div class="layer accent-cpp">
+        <div class="layer-head">
+          <h3 class="layer-title">④ Drone spawn &amp; possession</h3>
+          <span class="layer-meta">world.actor_spawn(BP_PyDroneCharacter) → PlayerController.Possess() → py_proxy._setup_input()</span>
+        </div>
+      </div>
+      <div class="layer accent-py">
+        <div class="layer-head">
+          <h3 class="layer-title">⑤ Demo suite</h3>
+          <span class="layer-meta">test_kingdon() · test_spawn_all(system_monitor · pyactor_assign · sound)</span>
+        </div>
+      </div>
+      <div class="layer accent-eng">
+        <div class="layer-head">
+          <h3 class="layer-title">⑥ Tick loop</h3>
+          <span class="layer-meta">UE ticks PyActors → Main.tick(Δt) + pyactor_*.tick(Δt); ue.add_ticker(…) used for async work</span>
+        </div>
+      </div>
+      <div class="layer accent-py">
+        <div class="layer-head">
+          <h3 class="layer-title">⑦ end_play</h3>
+          <span class="layer-meta">remove tickers · release_mouse · invalidate world cache · input.shutdown()</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span><em>STARCEL&nbsp;9</em> · architecture map</span>
+    <span>generated from source · Content/Scripts · Source/ · Plugins/</span>
+    <span>nick @ recursion.is</span>
+  </footer>
+
+</div>
+</body>
+</html>

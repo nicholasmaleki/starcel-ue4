@@ -26,6 +26,8 @@ You can manually install the necessary packages directly using `python.exe -m pi
 
 The default Unreal Engine map contains a PyActor which loads main.py and the class Main when the map starts up. Both the server and the client will run this file separately. The line ``if KismetSystemLibrary.IsDedicatedServer():`` lets you define client and server specific code. You can create more PyActors or even use Python from the UE console by clicking ` and typing "py.". 
 
+Use `spawn_pyactor` to create an object that runs a Python class. 
+
 Create a Text object by double clicking Enter. Once created, you can use =py() to run any Python command. 
 
 The state of the world is not saved in main.py or elsewhere, you will need to make changes there directly or copy your changes from the world elsewhere to save. This will be changed in the future.
@@ -85,7 +87,7 @@ Not currently, eventually there will be a stable update.
 
 
 ## AR/VR integration? 
-[Starcel-Panda3D](https://github.com/nicholasmaleki/starcel-panda3d) had some [integration for AR glasses](https://github.com/nickmaleki/TCLRayneoAir2SDK). This functionality will return and there will be more functionality for VR soon. If you plan on setting the rotation of the player to a quaternion that comes from a AR/VR device, make sure your quaternion apis match and your coordinate systems match(UE uses left-handed Z-up). Hand-tracking is in development. 
+I am working on integration for [AR glasses](https://github.com/nickmaleki/TCLRayneoAir2SDK). Glove-based hand-tracking is in development. If you plan on setting the rotation of the player to a quaternion that comes from a AR/VR device, make sure your quaternion apis match and your coordinate systems match(UE uses left-handed Z-up). 
 
 
 ## Can I make a 2D UI? 
@@ -125,6 +127,7 @@ It was too buggy and I didn't want new users to be disappointed, so I removed th
 	- Monadic, diadic, triadic, and n-adic chains https://github.com/codereport/jello (extend to Applicatives and Functors)
 	- Combinatorial exploration: permutations of functions
 	- LLM code translation and live code explanation
+	- Use eml function for expression reduction and expansion https://explorer-taupe-five.vercel.app/ https://github.com/almaguer1986/monogate
 	- Fun stuff
 		- C to Assembly
 		- C to lambda calculus with function labels https://github.com/woodrush/lambda-8cc Lambda calculus to binary https://justine.lol/lambda/
@@ -207,9 +210,8 @@ I prefer to be reached via Discord, but if you need or if you are looking to don
 
 
 ## Social
-https://discord.gg/nAfm6knz
-
-https://recursion.is/youtube
+- https://discord.gg/nAfm6knz
+- https://recursion.is/youtube
 
 
 ## Donate

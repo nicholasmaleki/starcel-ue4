@@ -10,18 +10,49 @@ def _clean(s: str):
 
 def _load_project_input_names():
     """Read axis/action mapping names from Project Settings > Input.
-    Returns (axis_map, action_map): lowercase token -> canonical name."""
+    Returns (axis_map, action_map): lowercase token -> canonical name.
+
+    Tries GetAxisNames/GetActionNames first, then falls back to iterating
+    the AxisMappings/ActionMappings UPROPERTY arrays. UnrealEnginePython's
+    binding for the output-param Get*Names variants can return empty on UE 4.27.
+    """
     axis_map, action_map = {}, {}
     try:
         settings = ue.get_mutable_default(InputSettings)
-        for n in settings.GetAxisNames():
-            name = str(n)
-            axis_map[_clean(name)] = name
-        for n in settings.GetActionNames():
-            name = str(n)
-            action_map[_clean(name)] = name
     except Exception as e:
         ue.log_warning(f'input_devices: could not read project input settings: {e}')
+        return axis_map, action_map
+
+    def _add(m, name):
+        if name:
+            m[_clean(name)] = name
+
+    # Preferred: GetAxisNames / GetActionNames (may be empty on 4.27).
+    try:
+        for n in (settings.GetAxisNames() or []):
+            _add(axis_map, str(n))
+    except Exception:
+        pass
+    try:
+        for n in (settings.GetActionNames() or []):
+            _add(action_map, str(n))
+    except Exception:
+        pass
+
+    # Fallback: iterate mapping arrays directly.
+    if not axis_map:
+        try:
+            for m in (settings.AxisMappings or []):
+                _add(axis_map, str(getattr(m, 'AxisName', '') or ''))
+        except Exception:
+            pass
+    if not action_map:
+        try:
+            for m in (settings.ActionMappings or []):
+                _add(action_map, str(getattr(m, 'ActionName', '') or ''))
+        except Exception:
+            pass
+
     return axis_map, action_map
 
 
@@ -388,27 +419,38 @@ class HotkeyManager:
         self.player_controller = self.uobject.get_player_controller()
 
     def resolve_axis_name(self, token):
-        """Look up token case-insensitively in project axis mappings.
-        Returns the canonical axis name, or None (with warning) on typo."""
+        """Return the canonical axis name for *token*.
+
+        Always returns the token (or its canonical-case form) so that
+        UE's own bind_axis can resolve it — unknown tokens are silently
+        ignored by UE, matching the pre-validation behavior. When the
+        project's axis table is populated and the token looks like a
+        typo, an informational warning is logged, but the binding still
+        proceeds using the raw token."""
         if not token:
             return None
-        canonical = self._axis_names.get(_clean(token))
-        if canonical is None:
+        if self._axis_names:
+            canonical = self._axis_names.get(_clean(token))
+            if canonical is not None:
+                return canonical
             ue.log_warning(
                 f"bind_axis: '{token}' is not a defined axis mapping. "
                 f"Check Project Settings > Input > Axis Mappings.")
-        return canonical
+        return token
 
     def resolve_action_name(self, token):
-        """Look up token case-insensitively in project action mappings."""
+        """Return the canonical action name for *token*. Same fallback
+        behavior as resolve_axis_name."""
         if not token:
             return None
-        canonical = self._action_names.get(_clean(token))
-        if canonical is None:
+        if self._action_names:
+            canonical = self._action_names.get(_clean(token))
+            if canonical is not None:
+                return canonical
             ue.log_warning(
                 f"bind_action: '{token}' is not a defined action mapping. "
                 f"Check Project Settings > Input > Action Mappings.")
-        return canonical
+        return token
 
     # Shutdown
     def shutdown(self):

@@ -23,7 +23,7 @@ class PyActorSysmon:
     Tick-based system monitor that writes live metrics to a Text3DComponent.
     """
 
-    UPDATE_INTERVAL = 2.0    # seconds between refreshes
+    UPDATE_INTERVAL = 300.0  # seconds between refreshes (5 minutes)
 
     def begin_play(self):
         self._elapsed = 0.0
