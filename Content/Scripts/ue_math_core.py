@@ -60,7 +60,7 @@ VectorFn2 = Callable[[float, float], Vec2]
 VectorFn3 = Callable[[float, float, float], Vec3]
 ComplexFn = Callable[[complex], complex]
 
-_DBG_PREFIX    = "[Core]   "
+_DBG_PREFIX = "[Core]   "
 _DBG_ADV_PREFIX = "[Core++] "
 
 
@@ -120,8 +120,8 @@ class MeshData:
 
     def __post_init__(self):
         self.vertices = np.asarray(self.vertices, dtype=float)
-        self.indices  = np.asarray(self.indices,  dtype=int)
-        self.normals  = np.asarray(self.normals,  dtype=float)
+        self.indices = np.asarray(self.indices,  dtype=int)
+        self.normals = np.asarray(self.normals,  dtype=float)
         if len(self.uvs) == 0:
             self.uvs = np.zeros((len(self.vertices), 2), dtype=float)
         else:
@@ -225,12 +225,12 @@ class AdaptiveSubdivider:
                  disc_factor: float = 3.0,
                  debug: bool = False,
                  advanced_debug: bool = False):
-        self.zoom  = max(zoom, 1e-6)
-        self.tol   = tolerance / self.zoom
+        self.zoom = max(zoom, 1e-6)
+        self.tol = tolerance / self.zoom
         self.depth = min(max(max_depth, 4), 14)
-        self.disc  = disc_factor
+        self.disc = disc_factor
         self.debug = debug
-        self.adv   = advanced_debug
+        self.adv = advanced_debug
 
     # helpers
 
@@ -270,7 +270,7 @@ class AdaptiveSubdivider:
         • Deep-zoom catastrophic-cancellation guard (shifted-origin eval).
         """
         x_span = max(abs(x1 - x0), 1e-300)
-        x_ctr  = (x0 + x1) * 0.5
+        x_ctr = (x0 + x1) * 0.5
 
         # Deep-zoom guard: if the visible window is very narrow, shift x so
         # that we evaluate f relative to the window centre, avoiding
@@ -278,8 +278,8 @@ class AdaptiveSubdivider:
         deep_zoom = x_span < 1e-6
         if deep_zoom:
             shifted_fn = lambda dx, _fn=fn, _c=x_ctr: _fn(_c + dx)
-            eval_fn    = shifted_fn
-            ex0, ex1   = x0 - x_ctr, x1 - x_ctr
+            eval_fn = shifted_fn
+            ex0, ex1 = x0 - x_ctr, x1 - x_ctr
         else:
             eval_fn = fn
             ex0, ex1 = x0, x1
@@ -294,7 +294,7 @@ class AdaptiveSubdivider:
             raw.append((xr, self._safe_eval(eval_fn, xr)))
 
         segments: List[CurveSegment] = []
-        current:  List[CurvePoint]   = []
+        current:  List[CurvePoint] = []
 
         def _commit():
             if len(current) >= 2:
@@ -378,7 +378,7 @@ class AdaptiveSubdivider:
         # Estimate scene scale for relative tolerance
         valid_pts = [p for _, p in raw if p is not None]
         if valid_pts:
-            arr  = np.array(valid_pts)
+            arr = np.array(valid_pts)
             diag = float(np.linalg.norm(arr.max(0) - arr.min(0))) + 1e-12
         else:
             diag = 1.0
@@ -396,7 +396,7 @@ class AdaptiveSubdivider:
             return math.sqrt(1.0 - dot*dot)  # sin(angle)
 
         segments: List[CurveSegment] = []
-        current:  List[CurvePoint]   = []
+        current:  List[CurvePoint] = []
 
         def _commit():
             if len(current) >= 2:
@@ -458,7 +458,7 @@ class SurfaceSampler:
                  advanced_debug: bool = False):
         self.res = resolution
         self.debug = debug
-        self.adv   = advanced_debug
+        self.adv = advanced_debug
 
     # Explicit z = f(x,y)
 
@@ -474,7 +474,7 @@ class SurfaceSampler:
           (not just 2), averaged with area weighting for smoother shading.
         """
         with _timed("surface.explicit sample", self.adv):
-            N  = self.res
+            N = self.res
             xs = np.linspace(x_range[0], x_range[1], N)
             ys = np.linspace(y_range[0], y_range[1], N)
             XX, YY = np.meshgrid(xs, ys)  # shape (N, N)
@@ -525,9 +525,9 @@ class SurfaceSampler:
                 uvs.append([j/(N-1), i/(N-1)])
 
         verts_arr = np.array(verts)
-        uvs_arr   = np.array(uvs)
-        normals   = self._normals_grid_smooth(verts_arr, N, N)
-        tris      = self._grid_tris(N, N)
+        uvs_arr = np.array(uvs)
+        normals = self._normals_grid_smooth(verts_arr, N, N)
+        tris = self._grid_tris(N, N)
 
         mesh = MeshData(verts_arr, tris, normals, uvs_arr)
         _adbg(f"explicit: {len(verts)} verts, {len(tris)} tris", self.adv)
@@ -539,7 +539,7 @@ class SurfaceSampler:
                    fx, fy, fz,
                    u_range: Vec2 = (0.0, 1.0),
                    v_range: Vec2 = (0.0, 1.0)) -> MeshData:
-        N  = self.res
+        N = self.res
         us = np.linspace(u_range[0], u_range[1], N)
         vs = np.linspace(v_range[0], v_range[1], N)
         verts, uvs = [], []
@@ -558,9 +558,9 @@ class SurfaceSampler:
                              (v-v_range[0])/(v_range[1]-v_range[0]+1e-12)])
 
         verts_arr = np.array(verts)
-        uvs_arr   = np.array(uvs)
-        normals   = self._normals_grid(verts_arr, N, N)
-        tris      = self._grid_tris(N, N)
+        uvs_arr = np.array(uvs)
+        normals = self._normals_grid(verts_arr, N, N)
+        tris = self._grid_tris(N, N)
 
         _dbg(f"parametric surface {N}×{N}, {bad} eval errors", self.debug)
         _adbg(f"parametric: {len(verts)} verts, {len(tris)} tris", self.adv)
@@ -584,12 +584,12 @@ class SurfaceSampler:
         for i in range(Nu):
             for j in range(Nv):
                 idx = i*Nv+j
-                ip  = min(i+1, Nu-1); im = max(i-1, 0)
-                jp  = min(j+1, Nv-1); jm = max(j-1, 0)
-                du  = verts[ip*Nv+j] - verts[im*Nv+j]
-                dv  = verts[i*Nv+jp] - verts[i*Nv+jm]
-                n   = np.cross(du, dv)
-                nm  = np.linalg.norm(n) + 1e-12
+                ip = min(i+1, Nu-1); im = max(i-1, 0)
+                jp = min(j+1, Nv-1); jm = max(j-1, 0)
+                du = verts[ip*Nv+j] - verts[im*Nv+j]
+                dv = verts[i*Nv+jp] - verts[i*Nv+jm]
+                n = np.cross(du, dv)
+                nm = np.linalg.norm(n) + 1e-12
                 normals[idx] = n / nm
         return normals
 
@@ -638,17 +638,17 @@ class MarchingCubes:
                  smooth_iterations: int = 0,
                  debug: bool = False,
                  advanced_debug: bool = False):
-        self.x_range   = x_range
-        self.y_range   = y_range
-        self.z_range   = z_range
-        self.res       = resolution
-        self.iso       = iso_value
-        self.smooth    = smooth_iterations
-        self.debug     = debug
-        self.adv       = advanced_debug
+        self.x_range = x_range
+        self.y_range = y_range
+        self.z_range = z_range
+        self.res = resolution
+        self.iso = iso_value
+        self.smooth = smooth_iterations
+        self.debug = debug
+        self.adv = advanced_debug
 
     def extract(self, fn: ScalarFn3) -> MeshData:
-        N  = self.res
+        N = self.res
         xs = np.linspace(self.x_range[0], self.x_range[1], N)
         ys = np.linspace(self.y_range[0], self.y_range[1], N)
         zs = np.linspace(self.z_range[0], self.z_range[1], N)
@@ -750,8 +750,8 @@ class MarchingCubes:
 
         def interp(p0, p1, v0, v1):
             dv = v1 - v0
-            t  = 0.5 if abs(dv) < 1e-10 else (-v0 / dv)
-            t  = max(0.0, min(1.0, t))
+            t = 0.5 if abs(dv) < 1e-10 else (-v0 / dv)
+            t = max(0.0, min(1.0, t))
             return (p0[0]+t*(p1[0]-p0[0]),
                     p0[1]+t*(p1[1]-p0[1]),
                     p0[2]+t*(p1[2]-p0[2]))
@@ -807,10 +807,10 @@ class MarchingCubes:
                     else:
                         # Centroid fan
                         pts = [verts_out[vi] for vi in ev_list]
-                        cx  = sum(p[0] for p in pts)/n
-                        cy  = sum(p[1] for p in pts)/n
-                        cz  = sum(p[2] for p in pts)/n
-                        ci  = cache_vert((cx, cy, cz))
+                        cx = sum(p[0] for p in pts)/n
+                        cy = sum(p[1] for p in pts)/n
+                        cz = sum(p[2] for p in pts)/n
+                        ci = cache_vert((cx, cy, cz))
                         for k in range(n):
                             faces_out.append((ci, ev_list[k], ev_list[(k+1)%n]))
 
@@ -873,13 +873,13 @@ class IntersectionFinder:
                  resolution: int = 80,
                  debug: bool = False,
                  advanced_debug: bool = False):
-        self.res   = resolution
+        self.res = resolution
         self.debug = debug
-        self.adv   = advanced_debug
+        self.adv = advanced_debug
 
     def find_2d(self, F1: ScalarFn2, F2: ScalarFn2,
                 x_range: Vec2, y_range: Vec2) -> List[CurveSegment]:
-        N  = self.res
+        N = self.res
         xs = np.linspace(x_range[0], x_range[1], N)
         ys = np.linspace(y_range[0], y_range[1], N)
 
@@ -932,10 +932,10 @@ class RiemannSurfaceBuilder:
                  debug: bool = False,
                  advanced_debug: bool = False):
         self.r_range = r_range
-        self.res     = resolution
-        self.gap     = sheet_gap
-        self.debug   = debug
-        self.adv     = advanced_debug
+        self.res = resolution
+        self.gap = sheet_gap
+        self.debug = debug
+        self.adv = advanced_debug
 
     def build_sqrt(self)  -> List[Tuple[MeshData,int]]: return self._power(1, 2)
     def build_cbrt(self)  -> List[Tuple[MeshData,int]]: return self._power(1, 3)
@@ -943,7 +943,7 @@ class RiemannSurfaceBuilder:
 
     def build_log(self, n_sheets: int = 3) -> List[Tuple[MeshData,int]]:
         res = self.res
-        rs  = np.linspace(self.r_range[0], self.r_range[1], res)
+        rs = np.linspace(self.r_range[0], self.r_range[1], res)
         ths = np.linspace(0.0, 2*math.pi, res)
         results = []
         for sheet in range(n_sheets):
@@ -963,7 +963,7 @@ class RiemannSurfaceBuilder:
 
     def _power(self, p: int, q: int) -> List[Tuple[MeshData,int]]:
         res = self.res
-        rs  = np.linspace(self.r_range[0], self.r_range[1], res)
+        rs = np.linspace(self.r_range[0], self.r_range[1], res)
         ths = np.linspace(0.0, 2*math.pi, res)
         exp = p / q
         results = []
@@ -975,7 +975,7 @@ class RiemannSurfaceBuilder:
                     x = r*math.cos(th); y = r*math.sin(th)
                     full_arg = th + sheet*2*math.pi
                     w_arg = full_arg * exp
-                    w_r   = r ** exp
+                    w_r = r ** exp
                     z = w_r * math.sin(w_arg) + z_off
                     verts.append([x,y,z]); uvs.append([i/(res-1),j/(res-1)])
             va = np.array(verts); ua = np.array(uvs)
@@ -997,11 +997,11 @@ class VectorFieldSampler:
                  scale: float = 1.0,
                  debug: bool = False,
                  advanced_debug: bool = False):
-        self.density   = density
+        self.density = density
         self.normalize = normalize
-        self.scale     = scale
-        self.debug     = debug
-        self.adv       = advanced_debug
+        self.scale = scale
+        self.debug = debug
+        self.adv = advanced_debug
 
     def sample_2d(self, F: VectorFn2,
                   x_range: Vec2, y_range: Vec2) -> List[Arrow]:
@@ -1025,7 +1025,7 @@ class VectorFieldSampler:
 
     def sample_3d(self, F: VectorFn3,
                   x_range, y_range, z_range) -> List[Arrow]:
-        d  = max(2, int(self.density**(1/1.5)))
+        d = max(2, int(self.density**(1/1.5)))
         xs = np.linspace(x_range[0], x_range[1], d)
         ys = np.linspace(y_range[0], y_range[1], d)
         zs = np.linspace(z_range[0], z_range[1], d)
@@ -1065,8 +1065,8 @@ class IntegralCurveSolver:
     """
 
     # Butcher tableau for RK4(5) Cash-Karp coefficients
-    _A  = [0, 1/5, 3/10, 3/5, 1, 7/8]
-    _B  = [[], [1/5], [3/40,9/40], [3/10,-9/10,6/5],
+    _A = [0, 1/5, 3/10, 3/5, 1, 7/8]
+    _B = [[], [1/5], [3/40,9/40], [3/10,-9/10,6/5],
            [-11/54, 5/2, -70/27, 35/27],
            [1631/55296, 175/512, 575/13824, 44275/110592, 253/4096]]
     _C4 = [37/378, 0, 250/621, 125/594, 0, 512/1771]       # 4th-order weights
@@ -1083,15 +1083,15 @@ class IntegralCurveSolver:
                  bounds=None,
                  debug: bool = False,
                  advanced_debug: bool = False):
-        self.step      = step_size
-        self.max       = max_steps
-        self.tol       = tol
-        self.h_min     = h_min
-        self.h_max     = h_max
+        self.step = step_size
+        self.max = max_steps
+        self.tol = tol
+        self.h_min = h_min
+        self.h_max = h_max
         self.direction = direction   # +1 forward, -1 backward
-        self.bounds    = bounds
-        self.debug     = debug
-        self.adv       = advanced_debug
+        self.bounds = bounds
+        self.debug = debug
+        self.adv = advanced_debug
 
     # 2-D
 
@@ -1221,15 +1221,15 @@ class DomainColorizer:
                  y_range: Vec2 = (-3,3),
                  debug: bool = False,
                  advanced_debug: bool = False):
-        self.res   = resolution
+        self.res = resolution
         self.x_range = x_range
         self.y_range = y_range
         self.debug = debug
-        self.adv   = advanced_debug
+        self.adv = advanced_debug
 
     def compute(self, fn: ComplexFn) -> np.ndarray:
         """Returns (H, W, 4) float array in [0,1]."""
-        N  = self.res
+        N = self.res
         xs = np.linspace(self.x_range[0], self.x_range[1], N)
         ys = np.linspace(self.y_range[0], self.y_range[1], N)
         img = np.zeros((N, N, 4), dtype=float)
@@ -1286,7 +1286,7 @@ class GABackend:
                  advanced_debug: bool = False):
         self.backend_name = backend
         self.debug = debug
-        self.adv   = advanced_debug
+        self.adv = advanced_debug
         self.algebra = custom_algebra
         if KINGDON_AVAILABLE and custom_algebra is None:
             spec = self.BACKENDS.get(backend, self.BACKENDS['vga'])
@@ -1380,7 +1380,7 @@ class GABackend:
             e23 = float(getattr(rotor, 'e23', 0) or 0)
             e13 = float(getattr(rotor, 'e13', 0) or 0)
             axis = (e23, -e13, e12)
-            nm   = math.sqrt(sum(a**2 for a in axis)) + 1e-12
+            nm = math.sqrt(sum(a**2 for a in axis)) + 1e-12
             axis = tuple(a/nm for a in axis)
             return (axis, angle)
         except Exception:
@@ -1391,8 +1391,8 @@ class GABackend:
         if not self.adv:
             return
         grade = self.detect_grade(mv)
-        vec   = self.extract_vector(mv)
-        bvn   = self.extract_bivector_normal(mv)
+        vec = self.extract_vector(mv)
+        bvn = self.extract_bivector_normal(mv)
         print(f"{_DBG_ADV_PREFIX}GA {label}:")
         print(f"  backend   = {self.backend_name}")
         print(f"  str       = {str(mv)[:80]}")
@@ -1425,14 +1425,14 @@ class SpreadEngine:
                  resolution: int = 32,
                  debug: bool = False,
                  advanced_debug: bool = False):
-        self.fn              = fn
-        self.var_names       = var_names
-        self.var_ranges      = var_ranges
-        self.max_subplots    = max_subplots
+        self.fn = fn
+        self.var_names = var_names
+        self.var_ranges = var_ranges
+        self.max_subplots = max_subplots
         self.subplot_spacing = subplot_spacing
-        self.resolution      = resolution
-        self.debug           = debug
-        self.adv             = advanced_debug
+        self.resolution = resolution
+        self.debug = debug
+        self.adv = advanced_debug
 
     def generate_projections(self) -> List[Dict]:
         """
@@ -1450,7 +1450,7 @@ class SpreadEngine:
         midpoints = [(r[0]+r[1])/2 for r in self.var_ranges]
 
         results = []
-        cols    = int(math.ceil(math.sqrt(len(triples))))
+        cols = int(math.ceil(math.sqrt(len(triples))))
         sampler = SurfaceSampler(resolution=self.resolution,
                                  debug=self.debug,
                                  advanced_debug=self.adv)
@@ -1526,13 +1526,13 @@ class TubeMeshBuilder:
                  end_cap: str = 'flat',           # 'flat'|'none'|'sphere'|'cone'
                  debug: bool = False,
                  advanced_debug: bool = False):
-        self.radius   = radius
-        self.sides    = max(3, sides)
-        self.shape    = shape
-        self.dash     = dash_pattern
-        self.end_cap  = end_cap
-        self.debug    = debug
-        self.adv      = advanced_debug
+        self.radius = radius
+        self.sides = max(3, sides)
+        self.shape = shape
+        self.dash = dash_pattern
+        self.end_cap = end_cap
+        self.debug = debug
+        self.adv = advanced_debug
 
     def build(self, pts: List[Vec3]) -> MeshData:
         """Build tube mesh from a list of (x,y,z) points."""
@@ -1603,9 +1603,9 @@ class TubeMeshBuilder:
         Returns list of (tangent, normal, binormal) per point.
         Uses parallel transport to avoid twisting.
         """
-        n  = len(pts)
+        n = len(pts)
         frames = []
-        tangs  = []
+        tangs = []
         for i in range(n):
             if i < n-1:
                 d = self._sub(pts[i+1], pts[i])
@@ -1673,8 +1673,8 @@ class TubeMeshBuilder:
 
     def _flat_cap(self, pt, norml, binom, is_start: bool, v_off: int):
         sides = self.sides if self.shape == 'cylinder' else 4
-        step  = 2*math.pi/sides
-        tang  = (0,0,0)  # unused but needed by frame
+        step = 2*math.pi/sides
+        tang = (0,0,0)  # unused but needed by frame
         cap_verts, cap_norms, cap_tris = [], [], []
         # Centre vertex
         cap_verts.append(tuple(pt))
@@ -1717,15 +1717,15 @@ class TubeMeshBuilder:
 
         prev_ring = None
         for li in range(1, n_lat+1):
-            phi   = math.pi/2 * li/n_lat   # 0 … π/2
-            ring  = []
+            phi = math.pi/2 * li/n_lat   # 0 … π/2
+            ring = []
             sides = max(4, self.sides)
             for s in range(sides):
                 theta = 2*math.pi*s/sides
                 nx = math.cos(phi)*math.cos(theta)
                 ny = math.cos(phi)*math.sin(theta)
                 nz = math.sin(phi)
-                v  = (pt[0]+r*nx, pt[1]+r*ny, pt[2]+r*nz)
+                v = (pt[0]+r*nx, pt[1]+r*ny, pt[2]+r*nz)
                 ring.append(add(v, (nx,ny,nz)))
             if prev_ring:
                 for s in range(sides):
@@ -1742,15 +1742,15 @@ class TubeMeshBuilder:
     def _cone_cap(self, pt, tangent, v_off: int):
         """Cone arrowhead."""
         verts, norms, tris = [], [], []
-        r    = self.radius * 2.0
-        h    = self.radius * 3.0
-        tip  = (pt[0]+tangent[0]*h, pt[1]+tangent[1]*h, pt[2]+tangent[2]*h)
+        r = self.radius * 2.0
+        h = self.radius * 3.0
+        tip = (pt[0]+tangent[0]*h, pt[1]+tangent[1]*h, pt[2]+tangent[2]*h)
         sides = self.sides
 
         # Arbitrary normal to tangent
         up = (0,0,1) if abs(tangent[2]) < 0.9 else (1,0,0)
         binom = self._cross(tangent, up)
-        nm    = self._norm(binom)+1e-12
+        nm = self._norm(binom)+1e-12
         binom = tuple(x/nm for x in binom)
         norml = self._cross(binom, tangent)
 
@@ -1790,10 +1790,10 @@ class TubeMeshBuilder:
             return [pts]
 
         result: List[List[Vec3]] = []
-        current: List[Vec3]      = []
+        current: List[Vec3] = []
 
         for i in range(len(pts)):
-            s     = arc[i]
+            s = arc[i]
             phase = s % period
             solid = phase < on_len
             if solid:

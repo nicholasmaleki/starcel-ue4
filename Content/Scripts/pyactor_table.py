@@ -34,17 +34,17 @@ class PyActorTable:
 
     # Class-level defaults — override on the instance after spawn_pyactor
     # returns, before calling set_table().
-    orientation      = 'wall_table'
-    cell_spacing     = 100.0
+    orientation = 'wall_table'
+    cell_spacing = 100.0
     render_gridlines = True
-    render_text      = True
-    enable_resize    = True
-    auto_size        = True
-    table            = None
+    render_text = True
+    enable_resize = True
+    auto_size = True
+    table = None
 
     def begin_play(self):
-        self.renderer  = None
-        self._table    = self.table        # lock in class attr snapshot
+        self.renderer = None
+        self._table = self.table        # lock in class attr snapshot
         self._location = self.uobject.get_actor_location()
 
         # Enable click events for the resize controller's cursor traces.
@@ -53,7 +53,7 @@ class PyActorTable:
             self.uobject.enable_input()
             self._pc = self.uobject.get_player_controller()
             if self._pc is not None:
-                self._pc.bEnableClickEvents     = True
+                self._pc.bEnableClickEvents = True
                 self._pc.bEnableMouseOverEvents = True
         except Exception as e:
             ue.log_warning(f'PyActorTable: click setup failed: {e}')
@@ -67,7 +67,7 @@ class PyActorTable:
     def set_table(self, table, render=True):
         """Swap in a new Table and (optionally) re-render immediately."""
         self._table = table
-        self.table  = table
+        self.table = table
         if render:
             self._render()
 
@@ -103,7 +103,7 @@ class PyActorTable:
                         a.actor_destroy()
                     except Exception:
                         pass
-                self.renderer.cell_actors     = {}
+                self.renderer.cell_actors = {}
                 self.renderer.gridline_actors = []
                 self.renderer.gridline_metadata = {}
             except Exception:

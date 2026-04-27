@@ -32,15 +32,15 @@ from typing import Any, Dict, List, Optional
 from utils import filetime_to_dt as _filetime_to_dt
 
 
-REQ_FILE_NAME    = 0x00000001
-REQ_PATH         = 0x00000002
-REQ_SIZE         = 0x00000010
+REQ_FILE_NAME = 0x00000001
+REQ_PATH = 0x00000002
+REQ_SIZE = 0x00000010
 REQ_DATE_CREATED = 0x00000020
 REQ_DATE_MODIFIED= 0x00000040
-REQ_ATTRIBUTES   = 0x00000100
+REQ_ATTRIBUTES = 0x00000100
 
-SORT_NAME_ASC    = 1
-SORT_SIZE_DESC   = 6
+SORT_NAME_ASC = 1
+SORT_SIZE_DESC = 6
 
 
 class EverythingAPI:
@@ -69,28 +69,28 @@ class EverythingAPI:
 
     def _setup(self) -> None:
         d = self._dll
-        d.Everything_SetSearchW.argtypes    = [ctypes.c_wchar_p]
-        d.Everything_SetSearchW.restype     = None
+        d.Everything_SetSearchW.argtypes = [ctypes.c_wchar_p]
+        d.Everything_SetSearchW.restype = None
         d.Everything_SetRequestFlags.argtypes = [ctypes.c_uint]
-        d.Everything_SetRequestFlags.restype  = None
-        d.Everything_SetSort.argtypes       = [ctypes.c_uint]
-        d.Everything_SetSort.restype        = None
-        d.Everything_SetMax.argtypes        = [ctypes.c_uint]
-        d.Everything_SetMax.restype         = None
-        d.Everything_QueryW.argtypes        = [ctypes.c_bool]
-        d.Everything_QueryW.restype         = ctypes.c_bool
+        d.Everything_SetRequestFlags.restype = None
+        d.Everything_SetSort.argtypes = [ctypes.c_uint]
+        d.Everything_SetSort.restype = None
+        d.Everything_SetMax.argtypes = [ctypes.c_uint]
+        d.Everything_SetMax.restype = None
+        d.Everything_QueryW.argtypes = [ctypes.c_bool]
+        d.Everything_QueryW.restype = ctypes.c_bool
         d.Everything_GetNumResults.argtypes = []
-        d.Everything_GetNumResults.restype  = ctypes.c_uint
+        d.Everything_GetNumResults.restype = ctypes.c_uint
         d.Everything_GetTotResults.argtypes = []
-        d.Everything_GetTotResults.restype  = ctypes.c_uint
+        d.Everything_GetTotResults.restype = ctypes.c_uint
         d.Everything_GetResultFileNameW.argtypes = [ctypes.c_uint]
-        d.Everything_GetResultFileNameW.restype  = ctypes.c_wchar_p
+        d.Everything_GetResultFileNameW.restype = ctypes.c_wchar_p
         d.Everything_GetResultPathW.argtypes = [ctypes.c_uint]
-        d.Everything_GetResultPathW.restype  = ctypes.c_wchar_p
-        d.Everything_GetResultSize.argtypes  = [ctypes.c_uint, ctypes.POINTER(ctypes.c_ulonglong)]
-        d.Everything_GetResultSize.restype   = ctypes.c_bool
+        d.Everything_GetResultPathW.restype = ctypes.c_wchar_p
+        d.Everything_GetResultSize.argtypes = [ctypes.c_uint, ctypes.POINTER(ctypes.c_ulonglong)]
+        d.Everything_GetResultSize.restype = ctypes.c_bool
         d.Everything_IsFolderResult.argtypes = [ctypes.c_uint]
-        d.Everything_IsFolderResult.restype  = ctypes.c_bool
+        d.Everything_IsFolderResult.restype = ctypes.c_bool
 
     def _query(self, query: str, max_results: int = 1,
                flags: int = REQ_FILE_NAME | REQ_PATH | REQ_SIZE) -> None:

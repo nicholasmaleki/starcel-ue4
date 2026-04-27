@@ -31,9 +31,9 @@ from unreal_engine.enums import ECollisionChannel
 #   Ctrl  → lock aspect ratio (uniform scale by dominant factor)
 #   Shift → scale symmetrically around center (center stays fixed)
 #   Alt   → fine-grained (0.1× delta)
-_MOD_CTRL  = ("LeftControl", "RightControl")
+_MOD_CTRL = ("LeftControl", "RightControl")
 _MOD_SHIFT = ("LeftShift",   "RightShift")
-_MOD_ALT   = ("LeftAlt",     "RightAlt")
+_MOD_ALT = ("LeftAlt",     "RightAlt")
 
 
 def _any_down(uobject_ref, keys):
@@ -81,14 +81,14 @@ class GizmoController:
     """
 
     def begin_play(self):
-        self._ready          = False
-        self._uobject_ref    = None
+        self._ready = False
+        self._uobject_ref = None
         self._player_controller = None
-        self._target         = None
-        self._handles        = None
-        self._piece_offsets  = None
-        self._bbox_dynamic   = None
-        self._all_actors     = set()
+        self._target = None
+        self._handles = None
+        self._piece_offsets = None
+        self._bbox_dynamic = None
+        self._all_actors = set()
 
         self._down = False
         self._drag = False
@@ -100,7 +100,7 @@ class GizmoController:
         self._hit0 = None
         self._off0 = None
         self._plane_normal = None
-        self._hov  = None
+        self._hov = None
 
     def setup(self, uobject, input_manager, target, handles, piece_offsets,
               bbox_dynamic=None):
@@ -111,15 +111,15 @@ class GizmoController:
         bbox_dynamic: optional dict of {actor: (kind, data)} for bounding-box
         pieces whose world transform must be recomputed each tick from the
         target's current scale/rotation."""
-        self._uobject_ref   = uobject
-        self._target        = target
-        self._handles       = handles
+        self._uobject_ref = uobject
+        self._target = target
+        self._handles = handles
         self._piece_offsets = piece_offsets
-        self._bbox_dynamic  = bbox_dynamic or {}
+        self._bbox_dynamic = bbox_dynamic or {}
         # Only handle actors (interactable) + target participate in hover/drag.
         # Wireframe pieces live in _bbox_dynamic but have collision disabled,
         # so they won't appear as cursor hits anyway.
-        self._all_actors    = set(handles.keys()) | {target}
+        self._all_actors = set(handles.keys()) | {target}
 
         try:
             self._player_controller = uobject.get_player_controller()
@@ -192,8 +192,8 @@ class GizmoController:
             if L < 1e-3:
                 # camera ~parallel to axis — pick any vector perp to ax
                 fb = FVector(0, 0, 1) if abs(ax.x) > 0.9 else FVector(1, 0, 0)
-                d  = ax.x * fb.x + ax.y * fb.y + ax.z * fb.z
-                n  = FVector(fb.x - ax.x * d, fb.y - ax.y * d, fb.z - ax.z * d)
+                d = ax.x * fb.x + ax.y * fb.y + ax.z * fb.z
+                n = FVector(fb.x - ax.x * d, fb.y - ax.y * d, fb.z - ax.z * d)
             return self._normalize_vec(n)
 
         if kind == 'plane':
@@ -268,7 +268,7 @@ class GizmoController:
         except Exception:
             hit = None
         hit_actor = hit.actor if hit else None
-        on_gizmo  = hit_actor in self._all_actors
+        on_gizmo = hit_actor in self._all_actors
 
         # Hover (emissive bump via gizmo._hover_enter/_exit)
         new_hov = hit_actor if on_gizmo else None
@@ -317,22 +317,22 @@ class GizmoController:
                     target.set_actor_location(cur - self._off0)
 
                 elif kind == 'axis':
-                    ax   = data
+                    ax = data
                     diff = cur - loc0
-                    t    = diff.x*ax.x + diff.y*ax.y + diff.z*ax.z
+                    t = diff.x*ax.x + diff.y*ax.y + diff.z*ax.z
                     target.set_actor_location(loc0 + ax * t)
 
                 elif kind == 'plane':
                     d1, d2 = data
-                    diff   = cur - loc0
+                    diff = cur - loc0
                     t1 = diff.x*d1.x + diff.y*d1.y + diff.z*d1.z
                     t2 = diff.x*d2.x + diff.y*d2.y + diff.z*d2.z
                     target.set_actor_location(loc0 + d1*t1 + d2*t2)
 
                 elif kind == 'rotate':
                     nrm = data
-                    v1  = hit0 - loc0
-                    v2  = cur  - loc0
+                    v1 = hit0 - loc0
+                    v2 = cur  - loc0
                     d1 = v1.x*nrm.x + v1.y*nrm.y + v1.z*nrm.z
                     d2 = v2.x*nrm.x + v2.y*nrm.y + v2.z*nrm.z
                     v1 = FVector(v1.x-nrm.x*d1, v1.y-nrm.y*d1, v1.z-nrm.z*d1)
@@ -364,17 +364,17 @@ class GizmoController:
                         #         rot0.yaw   + nrm.z * ang,
                         #     ))
                         delta = FRotator(0, 0, 0)
-                        delta.roll  = nrm.x * ang
+                        delta.roll = nrm.x * ang
                         delta.pitch = nrm.y * ang
-                        delta.yaw   = nrm.z * ang
+                        delta.yaw = nrm.z * ang
                         target.set_actor_rotation(
                             KismetMathLibrary.ComposeRotators(rot0, delta))
 
                 elif kind == 'scale':
-                    ax    = data
-                    diff  = cur - hit0
+                    ax = data
+                    diff = cur - hit0
                     delta = (diff.x*ax.x + diff.y*ax.y + diff.z*ax.z) * 0.01
-                    s     = self._scl0
+                    s = self._scl0
                     target.SetActorScale3D(FVector(
                         max(0.05, s.x + abs(ax.x) * delta),
                         max(0.05, s.y + abs(ax.y) * delta),
@@ -412,9 +412,9 @@ class GizmoController:
         # imported mesh). h0 = local extent × original scale = original world
         # half-extent in the actor-local frame.
         from gizmo import local_half_extent
-        le  = local_half_extent(target)
-        h0  = FVector(le.x * s0.x, le.y * s0.y, le.z * s0.z)
-        dp  = cur - hit0
+        le = local_half_extent(target)
+        h0 = FVector(le.x * s0.x, le.y * s0.y, le.z * s0.z)
+        dp = cur - hit0
         dpl = _inverse_rotate(rot0, dp)
 
         if _any_down(self._uobject_ref, _MOD_ALT):
@@ -428,7 +428,7 @@ class GizmoController:
             fx = new_hx / h0.x if h0.x > 1e-6 else 1.0
             fy = new_hy / h0.y if h0.y > 1e-6 else 1.0
             fz = new_hz / h0.z if h0.z > 1e-6 else 1.0
-            f  = max((fx, fy, fz), key=lambda v: abs(v - 1.0))
+            f = max((fx, fy, fz), key=lambda v: abs(v - 1.0))
             new_hx, new_hy, new_hz = h0.x * f, h0.y * f, h0.z * f
 
         mn = self._MIN_HALF_EXTENT
@@ -455,11 +455,11 @@ class GizmoController:
         loc0, rot0, s0, hit0 = self._loc0, self._rot0, self._scl0, self._hit0
 
         from gizmo import local_half_extent
-        le      = local_half_extent(target)
+        le = local_half_extent(target)
         le_list = [le.x, le.y, le.z]
         h0_list = [le.x * s0.x, le.y * s0.y, le.z * s0.z]
-        dp      = cur - hit0
-        dpl     = _inverse_rotate(rot0, dp)
+        dp = cur - hit0
+        dpl = _inverse_rotate(rot0, dp)
         dp_list = [dpl.x, dpl.y, dpl.z]
 
         if _any_down(self._uobject_ref, _MOD_ALT):
@@ -477,7 +477,7 @@ class GizmoController:
         if _any_down(self._uobject_ref, _MOD_CTRL):
             fs = [new_h[i] / h0_list[i] if h0_list[i] > 1e-6 else 1.0
                   for i in others]
-            f  = max(fs, key=lambda v: abs(v - 1.0))
+            f = max(fs, key=lambda v: abs(v - 1.0))
             for i in others:
                 new_h[i] = h0_list[i] * f
 

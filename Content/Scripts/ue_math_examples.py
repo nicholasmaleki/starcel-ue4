@@ -100,11 +100,11 @@ def _make(mode='2d',
           x=(-5,5), y=(-5,5), z=(-5,5)) -> MathPlotter:
     """Create a test plotter (offline mode)."""
     p = create_plotter(
-        world          = None,   # offline — no UE
-        x_range        = x,
-        y_range        = y,
-        z_range        = z,
-        debug          = debug,
+        world = None,   # offline — no UE
+        x_range = x,
+        y_range = y,
+        z_range = z,
+        debug = debug,
         advanced_debug = advanced_debug,
     )
     return p
@@ -548,7 +548,7 @@ def test_ga_higher_grade():
 
 def test_ga_rotor():
     p = _make()
-    mv   = _make_mock_mv(1)  # the vector to rotate
+    mv = _make_mock_mv(1)  # the vector to rotate
 
     class MockRotor:
         """R = cos(π/4) + sin(π/4)*e12  (90° rotation in xy plane)"""
@@ -632,7 +632,7 @@ def test_spread_4d():
     def f4d(x1, x2, x3, x4):
         return math.sin(x1)*math.cos(x2) + math.sin(x3)*x4/5
 
-    p.spread(fn       = f4d,
+    p.spread(fn = f4d,
              var_names= ['x1','x2','x3','x4'],
              var_ranges= [(-math.pi,math.pi)]*4,
              max_subplots= 6,
@@ -647,7 +647,7 @@ def test_spread_5d():
     def f5d(a,b,c,d,e):
         return math.sin(a+b) * math.cos(c) * (d**2+e**2) / 20
 
-    p.spread(fn       = f5d,
+    p.spread(fn = f5d,
              var_names= list('abcde'),
              var_ranges= [(-2,2)]*5,
              max_subplots= 9,

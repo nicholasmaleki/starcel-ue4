@@ -90,16 +90,16 @@ from PIL import Image
 
 # Constants
 
-SHGFI_ICON              = 0x0000_0100
-SHGFI_LARGEICON         = 0x0000_0000
-SHGFI_SYSICONINDEX      = 0x0000_4000
+SHGFI_ICON = 0x0000_0100
+SHGFI_LARGEICON = 0x0000_0000
+SHGFI_SYSICONINDEX = 0x0000_4000
 SHGFI_USEFILEATTRIBUTES = 0x0000_0010
-FILE_ATTRIBUTE_NORMAL   = 0x80
+FILE_ATTRIBUTE_NORMAL = 0x80
 FILE_ATTRIBUTE_DIRECTORY= 0x10
 
-SHIL_LARGE      = 0x0   # 32×32
+SHIL_LARGE = 0x0   # 32×32
 SHIL_EXTRALARGE = 0x2   # 48×48
-SHIL_JUMBO      = 0x4   # 256×256
+SHIL_JUMBO = 0x4   # 256×256
 
 PREVIEW_EXTENSIONS = {
     ".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tiff", ".tif", ".webp",
@@ -132,9 +132,9 @@ ASSOCIATED_EXTENSIONS = {
 
 # Globals
 
-_DEBUG         = False
+_DEBUG = False
 _INKSCAPE_PATH = None
-_comctl32      = None
+_comctl32 = None
 
 def _dbg(*args):
     if _DEBUG:
@@ -204,37 +204,37 @@ def _stat_info(input_path):
           size_bytes, size, date_modified, date_created, date_accessed.
     """
     full_path = input_path
-    is_real   = os.path.exists(input_path)
+    is_real = os.path.exists(input_path)
 
     if is_real:
-        name      = os.path.basename(input_path.rstrip("/\\")) or input_path
+        name = os.path.basename(input_path.rstrip("/\\")) or input_path
         stem, ext = os.path.splitext(name)
-        is_dir    = os.path.isdir(input_path)
+        is_dir = os.path.isdir(input_path)
     elif input_path == "<folder>":
         name, stem, ext, is_dir = "<folder>", "<folder>", "", True
     else:
         # bare extension or unrecognised token
         _, ext = os.path.splitext(input_path)
-        ext    = (ext or ("." + input_path.lstrip("."))).lower()
-        name   = input_path
-        stem   = os.path.splitext(input_path)[0]
+        ext = (ext or ("." + input_path.lstrip("."))).lower()
+        name = input_path
+        stem = os.path.splitext(input_path)[0]
         is_dir = False
 
     size_bytes = date_modified = date_created = date_accessed = None
     if is_real and not is_dir:
         try:
-            st             = os.stat(input_path)
-            size_bytes     = st.st_size
-            date_modified  = datetime.datetime.fromtimestamp(st.st_mtime)
-            date_created   = datetime.datetime.fromtimestamp(st.st_ctime)   # creation on Windows
-            date_accessed  = datetime.datetime.fromtimestamp(st.st_atime)
+            st = os.stat(input_path)
+            size_bytes = st.st_size
+            date_modified = datetime.datetime.fromtimestamp(st.st_mtime)
+            date_created = datetime.datetime.fromtimestamp(st.st_ctime)   # creation on Windows
+            date_accessed = datetime.datetime.fromtimestamp(st.st_atime)
         except OSError:
             pass
     elif is_real and is_dir:
         try:
-            st            = os.stat(input_path)
+            st = os.stat(input_path)
             date_modified = datetime.datetime.fromtimestamp(st.st_mtime)
-            date_created  = datetime.datetime.fromtimestamp(st.st_ctime)
+            date_created = datetime.datetime.fromtimestamp(st.st_ctime)
             date_accessed = datetime.datetime.fromtimestamp(st.st_atime)
         except OSError:
             pass
@@ -268,8 +268,8 @@ def _build_info_dict(input_path, img, is_pil):
     Combine _stat_info() with the extracted PIL image and derived fields.
     Returns the complete info dict described in _ICON_INFO_FIELDS.
     """
-    info              = _stat_info(input_path)
-    info["image"]     = img
+    info = _stat_info(input_path)
+    info["image"] = img
     info["is_preview"]= bool(is_pil)
     info["cost_tier"] = _COST_NAMES.get(_path_cost(input_path), "icon")
     return info
@@ -540,9 +540,9 @@ def _pdf_preview(path):
     try:
         import fitz
         _dbg("    pdf: using pymupdf")
-        doc  = fitz.open(path)
+        doc = fitz.open(path)
         page = doc[0]
-        pix  = page.get_pixmap(matrix=fitz.Matrix(3, 3), alpha=False)
+        pix = page.get_pixmap(matrix=fitz.Matrix(3, 3), alpha=False)
         doc.close()
         return _fit_256(
             Image.frombytes("RGB", (pix.width, pix.height), pix.samples).convert("RGBA"))
@@ -648,9 +648,9 @@ def _svg_via_aggdraw(path):
     import xml.etree.ElementTree as ET
     import re
 
-    root   = ET.parse(path).getroot()
+    root = ET.parse(path).getroot()
     SVG_NS = "http://www.w3.org/2000/svg"
-    vb     = root.get("viewBox", "")
+    vb = root.get("viewBox", "")
     if vb:
         parts = [float(x) for x in re.split(r"[\s,]+", vb.strip()) if x]
         vb_w, vb_h = parts[2], parts[3]
@@ -658,9 +658,9 @@ def _svg_via_aggdraw(path):
         vb_w = float(re.sub(r"[^\d.]", "", root.get("width",  "256")) or 256)
         vb_h = float(re.sub(r"[^\d.]", "", root.get("height", "256")) or 256)
 
-    scale  = min(256 / max(vb_w, 1), 256 / max(vb_h, 1))
+    scale = min(256 / max(vb_w, 1), 256 / max(vb_h, 1))
     canvas = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
-    draw   = aggdraw.Draw(canvas)
+    draw = aggdraw.Draw(canvas)
 
     def parse_color(s):
         if not s or s in ("none", "transparent"):
@@ -756,8 +756,8 @@ def _shell_thumbnail(path, require_thumbnail=True):
             _fields_ = [("cx", ctypes.c_long), ("cy", ctypes.c_long)]
 
         flags = 0x2 if require_thumbnail else 0x0
-        sz    = SIZE(256, 256)
-        hbmp  = ctypes.c_size_t()
+        sz = SIZE(256, 256)
+        hbmp = ctypes.c_size_t()
 
         vtbl = ctypes.cast(factory, ctypes.POINTER(ctypes.c_void_p)).contents.value
         vptr = ctypes.cast(ctypes.c_void_p(vtbl), ctypes.POINTER(ctypes.c_void_p))
@@ -797,17 +797,17 @@ def _shell_thumbnail(path, require_thumbnail=True):
             ]
 
         bih = BITMAPINFOHEADER()
-        bih.biSize        = ctypes.sizeof(BITMAPINFOHEADER)
-        bih.biWidth       = w
-        bih.biHeight      = -h
-        bih.biPlanes      = 1
-        bih.biBitCount    = 32
+        bih.biSize = ctypes.sizeof(BITMAPINFOHEADER)
+        bih.biWidth = w
+        bih.biHeight = -h
+        bih.biPlanes = 1
+        bih.biBitCount = 32
         bih.biCompression = 0
 
-        buf   = (ctypes.c_byte * (w * h * 4))()
+        buf = (ctypes.c_byte * (w * h * 4))()
         hdc_s = win32gui.GetDC(0)
-        hdc   = win32ui.CreateDCFromHandle(hdc_s)
-        rows  = ctypes.windll.gdi32.GetDIBits(
+        hdc = win32ui.CreateDCFromHandle(hdc_s)
+        rows = ctypes.windll.gdi32.GetDIBits(
             hdc.GetSafeHdc(), hbmp_int, 0, h, buf,
             ctypes.byref(bih), 0,
         )
@@ -820,9 +820,9 @@ def _shell_thumbnail(path, require_thumbnail=True):
             return None
 
         import numpy as np
-        arr           = np.frombuffer(bytes(buf), dtype=np.uint8).reshape(h, w, 4).copy()
+        arr = np.frombuffer(bytes(buf), dtype=np.uint8).reshape(h, w, 4).copy()
         alpha_channel = arr[:, :, 3]
-        rgb_channel   = arr[:, :, :3]
+        rgb_channel = arr[:, :, :3]
         _dbg("    bitmap alpha min={} max={} rgb_max={}".format(
             int(alpha_channel.min()), int(alpha_channel.max()), int(rgb_channel.max())))
         if alpha_channel.max() == 0:
@@ -830,18 +830,18 @@ def _shell_thumbnail(path, require_thumbnail=True):
                 _dbg("    bitmap: zero-alpha detected, treating as opaque RGB")
                 arr[:, :, 3] = 255
         else:
-            a    = alpha_channel.astype(np.float32) / 255.0
+            a = alpha_channel.astype(np.float32) / 255.0
             mask = a > 0
             for c in range(3):
-                channel       = arr[:, :, c].astype(np.float32)
+                channel = arr[:, :, c].astype(np.float32)
                 channel[mask] = np.clip(channel[mask] / a[mask], 0, 255)
-                arr[:, :, c]  = channel.astype(np.uint8)
+                arr[:, :, c] = channel.astype(np.uint8)
         arr = arr[:, :, [2, 1, 0, 3]]
         img = Image.fromarray(arr.astype(np.uint8))
 
         opaque = arr[:, :, 3] > 128
         if opaque.sum() > 0:
-            dark       = ((arr[:, :, 0] < 8) & (arr[:, :, 1] < 8) & (arr[:, :, 2] < 8) & opaque)
+            dark = ((arr[:, :, 0] < 8) & (arr[:, :, 1] < 8) & (arr[:, :, 2] < 8) & opaque)
             dark_ratio = dark.sum() / opaque.sum()
             _dbg("    bitmap dark_ratio={:.3f}".format(float(dark_ratio)))
             if dark_ratio > 0.98:
@@ -891,9 +891,9 @@ def _lnk_icon(lnk_path):
     _dbg("  resolving .lnk: {}".format(lnk_path))
     try:
         import win32com.client
-        shell    = win32com.client.Dispatch("WScript.Shell")
-        lnk      = shell.CreateShortcut(lnk_path)
-        target   = lnk.TargetPath.strip()   if lnk.TargetPath   else ""
+        shell = win32com.client.Dispatch("WScript.Shell")
+        lnk = shell.CreateShortcut(lnk_path)
+        target = lnk.TargetPath.strip()   if lnk.TargetPath   else ""
         icon_loc = lnk.IconLocation.strip() if lnk.IconLocation else ""
         _dbg("  lnk target={!r}  iconloc={!r}".format(target, icon_loc))
 
@@ -974,7 +974,7 @@ def _parse_lnk_binary(lnk_path):
         data = f.read()
     if len(data) < 76 or data[:4] != b"\x4c\x00\x00\x00":
         return "", "", 0
-    flags  = struct.unpack_from("<I", data, 20)[0]
+    flags = struct.unpack_from("<I", data, 20)[0]
     offset = 76
     if flags & 0x01:
         if offset + 2 > len(data):
@@ -997,7 +997,7 @@ def _parse_lnk_binary(lnk_path):
         return data[off:off+count].decode("cp1252", errors="replace"), off + count
 
     icon_path = ""
-    icon_idx  = 0
+    icon_idx = 0
     for section, flag in [("relative",0x08),("workdir",0x10),("args",0x20),("icon",0x40)]:
         if flags & flag:
             s, offset = read_str(offset)
@@ -1070,7 +1070,7 @@ def _extension_icon(ext):
     h1, s1 = _registry_icon(ext)
     _dbg("    registry result: h={} s={}".format(h1, s1))
 
-    fake   = "C:\\fakefile{}".format(ext)
+    fake = "C:\\fakefile{}".format(ext)
     h2, s2 = _imagelist_icon(fake, FILE_ATTRIBUTE_NORMAL, use_attrs=True)
     _dbg("    imagelist (fake) result: h={} s={}".format(h2, s2))
 
@@ -1129,7 +1129,7 @@ def _registry_icon(ext):
             exe = os.path.expandvars(cmd.split()[0])
         return exe if exe and os.path.isfile(exe) else None
 
-    prog_id  = rget(ext)
+    prog_id = rget(ext)
     _dbg("    registry: ext={} progid={}".format(ext, prog_id))
     icon_str = icon_str_for_progid(prog_id) if prog_id else None
     _dbg("    registry: DefaultIcon={}".format(icon_str))
@@ -1211,7 +1211,7 @@ def _get_comctl32():
     global _comctl32
     if _comctl32 is None:
         _comctl32 = ctypes.windll.comctl32
-        _comctl32.ImageList_GetIcon.restype  = ctypes.c_size_t
+        _comctl32.ImageList_GetIcon.restype = ctypes.c_size_t
         _comctl32.ImageList_GetIcon.argtypes = [
             ctypes.c_void_p,
             ctypes.c_int,
@@ -1222,7 +1222,7 @@ def _get_comctl32():
 
 def _imagelist_icon(path, file_attributes, use_attrs=False):
     try:
-        shfi  = SHFILEINFO()
+        shfi = SHFILEINFO()
         flags = SHGFI_SYSICONINDEX | SHGFI_LARGEICON
         if use_attrs:
             flags |= SHGFI_USEFILEATTRIBUTES
@@ -1236,7 +1236,7 @@ def _imagelist_icon(path, file_attributes, use_attrs=False):
             return 0, 0
 
         icon_index = shfi.iIcon
-        comctl32   = _get_comctl32()
+        comctl32 = _get_comctl32()
 
         for shil, nominal_px in [(SHIL_JUMBO, 256), (SHIL_EXTRALARGE, 48), (SHIL_LARGE, 32)]:
             jumbo_himl = ctypes.c_void_p()
@@ -1266,9 +1266,9 @@ def _imagelist_icon(path, file_attributes, use_attrs=False):
 
 def _private_extract(path, index):
     for size in [256, 128, 64, 48, 32]:
-        hicon  = ctypes.wintypes.HANDLE(0)
-        hidx   = ctypes.wintypes.UINT(0)
-        count  = ctypes.windll.user32.PrivateExtractIconsW(
+        hicon = ctypes.wintypes.HANDLE(0)
+        hidx = ctypes.wintypes.UINT(0)
+        count = ctypes.windll.user32.PrivateExtractIconsW(
             path, index, size, size,
             ctypes.byref(hicon), ctypes.byref(hidx), 1, 0,
         )
@@ -1282,7 +1282,7 @@ def _private_extract(path, index):
 def _icon_size(hicon):
     try:
         info = win32gui.GetIconInfo(hicon)
-        hbm  = info[4] or info[3]
+        hbm = info[4] or info[3]
         if hbm:
             return win32ui.CreateBitmapFromHandle(hbm).GetInfo()["bmWidth"]
     except Exception:
@@ -1293,7 +1293,7 @@ def _icon_size(hicon):
 # SHGetFileInfo direct icon (32px fallback)
 
 def _shgetfileinfo_icon(path, file_attributes, use_attrs=False):
-    shfi  = SHFILEINFO()
+    shfi = SHFILEINFO()
     flags = SHGFI_ICON | SHGFI_LARGEICON
     if use_attrs:
         flags |= SHGFI_USEFILEATTRIBUTES
@@ -1310,17 +1310,17 @@ def _hicon_to_pil(hicon, size):
     # 64-bit Windows — without this, large handle values overflow c_int.
     _GetIconInfo = ctypes.windll.user32.GetIconInfo
     _GetIconInfo.argtypes = [ctypes.c_void_p, ctypes.POINTER(_ICONINFO)]
-    _GetIconInfo.restype  = ctypes.wintypes.BOOL
+    _GetIconInfo.restype = ctypes.wintypes.BOOL
     if not hicon or not _GetIconInfo(hicon, ctypes.byref(_ICONINFO())):
         raise RuntimeError("Invalid icon handle: {}".format(hicon))
 
     draw_size = 256
     _dbg("  _hicon_to_pil: nominal={} draw={}".format(size, draw_size))
 
-    hdc_s   = win32gui.GetDC(0)
-    hdc     = win32ui.CreateDCFromHandle(hdc_s)
+    hdc_s = win32gui.GetDC(0)
+    hdc = win32ui.CreateDCFromHandle(hdc_s)
     hdc_mem = hdc.CreateCompatibleDC()
-    bmp     = win32ui.CreateBitmap()
+    bmp = win32ui.CreateBitmap()
     bmp.CreateCompatibleBitmap(hdc, draw_size, draw_size)
     hdc_mem.SelectObject(bmp)
     hdc_mem.FillSolidRect((0, 0, draw_size, draw_size), 0x00000000)
@@ -1340,10 +1340,10 @@ def _hicon_to_pil(hicon, size):
     rows_with_content = np.any(rgb_max > 8, axis=1)
     cols_with_content = np.any(rgb_max > 8, axis=0)
     if rows_with_content.any():
-        top    = int(np.argmax(rows_with_content))
+        top = int(np.argmax(rows_with_content))
         bottom = int(len(rows_with_content) - np.argmax(rows_with_content[::-1]))
-        left   = int(np.argmax(cols_with_content))
-        right  = int(len(cols_with_content) - np.argmax(cols_with_content[::-1]))
+        left = int(np.argmax(cols_with_content))
+        right = int(len(cols_with_content) - np.argmax(cols_with_content[::-1]))
         content_w = right - left
         content_h = bottom - top
         _dbg("  _hicon_to_pil: content box=({},{},{},{}) size={}x{}".format(
@@ -1352,10 +1352,10 @@ def _hicon_to_pil(hicon, size):
             sq = max(content_w, content_h)
             cx = (left + right) // 2
             cy = (top + bottom) // 2
-            half      = (sq + 1) // 2
-            sq_left   = max(0, cx - half)
-            sq_top    = max(0, cy - half)
-            sq_right  = min(draw_size, sq_left + sq)
+            half = (sq + 1) // 2
+            sq_left = max(0, cx - half)
+            sq_top = max(0, cy - half)
+            sq_right = min(draw_size, sq_left + sq)
             sq_bottom = min(draw_size, sq_top  + sq)
             _dbg("  _hicon_to_pil: upscaling {}x{} stamp -> 256x256".format(
                 content_w, content_h))
@@ -1492,7 +1492,7 @@ class IconQueue:
     """
 
     def __init__(self):
-        self._items   = []
+        self._items = []
         self._counter = 0
 
     def add(self, path, priority=0):
@@ -1592,18 +1592,18 @@ class IconQueue:
         dict {str: info_dict}   if return_info=True
         """
         os.makedirs(output_dir, exist_ok=True)
-        saved   = []
-        infos   = {}
+        saved = []
+        infos = {}
         for path, result in self.process(preview=preview, debug=debug,
                                          return_info=return_info):
             if return_info:
-                img  = result["image"]
+                img = result["image"]
                 info = result
             else:
-                img  = result
+                img = result
 
             name = os.path.basename(path) or path.strip(".\\/") or "icon"
-            out  = os.path.join(output_dir, name + ".png")
+            out = os.path.join(output_dir, name + ".png")
             img.save(out, "PNG")
             saved.append(out)
             if return_info:

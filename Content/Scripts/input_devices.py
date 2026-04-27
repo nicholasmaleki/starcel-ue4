@@ -407,7 +407,6 @@ class HotkeyManager:
         self.sequence_progress = {}
         self._axis_handlers = {}
         self._last_axis_values = {}
-        self._cursor_visible = True
         self.poll_rate = poll_rate
         self._repeat_bindings = []
         self._pollers = []
@@ -417,6 +416,13 @@ class HotkeyManager:
         self._axis_names, self._action_names = _load_project_input_names()
 
         self.player_controller = self.uobject.get_player_controller()
+
+        # Seed from PC so toggle_cursor() doesn't no-op on first call when
+        # bShowMouseCursor is False but our flag would default to True.
+        try:
+            self._cursor_visible = bool(self.player_controller.bShowMouseCursor)
+        except Exception:
+            self._cursor_visible = False
 
     def resolve_axis_name(self, token):
         """Return the canonical axis name for *token*.

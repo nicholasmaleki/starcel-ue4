@@ -25,9 +25,9 @@ try:
     from unreal_engine.classes import StaticMeshActor, StaticMesh, Material
     from unreal_engine.enums import EComponentMobility
 except Exception:
-    StaticMeshActor    = None
-    StaticMesh         = None
-    Material           = None
+    StaticMeshActor = None
+    StaticMesh = None
+    Material = None
     EComponentMobility = None
 
 from unreal_engine_tools import find_component
@@ -59,8 +59,8 @@ def _spawn_crosshair_plane(world, crosshair_path, material_path, fallback_mat,
 
     # Spawn cube actor
     actor = world.actor_spawn(StaticMeshActor)
-    smc   = actor.StaticMeshComponent
-    cube  = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube')
+    smc = actor.StaticMeshComponent
+    cube = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube')
     smc.SetStaticMesh(cube)
     smc.Mobility = EComponentMobility.Movable
 
@@ -124,9 +124,9 @@ class PyActorStickMan:
         '/Game/Materials/M_TexturePicture',
         '/Game/Materials/M_TextureUnlit',
     )
-    param_name       = 'Texture'
-    component_name   = 'Screen'
-    CROSSHAIR_SCALE  = 3.0   # world-size multiplier (1 UU per pixel × this)
+    param_name = 'Texture'
+    component_name = 'Screen'
+    CROSSHAIR_SCALE = 3.0   # world-size multiplier (1 UU per pixel × this)
 
     def begin_play(self):
         self.crosshair_comp = None
@@ -179,8 +179,8 @@ class PyActorStickMan:
             from unreal_engine_tools import get_world
             world = self.uobject.get_world() or get_world()
             actor = world.actor_spawn(StaticMeshActor)
-            smc   = actor.StaticMeshComponent
-            cube  = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube')
+            smc = actor.StaticMeshComponent
+            cube = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube')
             smc.SetStaticMesh(cube)
             smc.Mobility = EComponentMobility.Movable
 

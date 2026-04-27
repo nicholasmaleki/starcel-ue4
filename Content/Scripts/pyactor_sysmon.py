@@ -22,11 +22,11 @@ from unreal_engine_tools import find_component
 # when our PID dies so it doesn't leak on editor crash.
 
 
-_SCRIPT_DIR  = Path(__file__).resolve().parent
-_DATA_DIR    = Path(os.environ.get("APPDATA", str(Path.home()))) / "sysinfo"
+_SCRIPT_DIR = Path(__file__).resolve().parent
+_DATA_DIR = Path(os.environ.get("APPDATA", str(Path.home()))) / "sysinfo"
 _RESULT_FILE = _DATA_DIR / "sysmon_text.txt"
-_PID_FILE    = _DATA_DIR / "sysmon_worker.pid"
-_WORKER_PY   = _SCRIPT_DIR / "sysinfo_worker.py"
+_PID_FILE = _DATA_DIR / "sysmon_worker.pid"
+_WORKER_PY = _SCRIPT_DIR / "sysinfo_worker.py"
 
 
 def _find_python():
@@ -82,9 +82,9 @@ class PyActorSysmon:
 
     def begin_play(self):
         self._elapsed = 0.0
-        self.text3d   = None
-        self._proc    = None
-        self._mtime   = 0.0
+        self.text3d = None
+        self._proc = None
+        self._mtime = 0.0
 
         py = _find_python()
         if py is None:

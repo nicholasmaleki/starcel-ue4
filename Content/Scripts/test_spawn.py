@@ -14,23 +14,23 @@ origin instead of being pushed to the cameras' old fixed Y=2200, and
 no two tests ever share a Y band regardless of which subset you pick.
 
 Default Y spans (full-suite layout — see ``_TEST_Y_SPAN``):
-  primitives     1000  (5 shapes, stride 200)
-  image           600  (valid + invalid path)
-  video           600
-  sound           400
-  cameras        4000  (8 presets, stride 500)
-  earth          1000  (2 presets, stride 500)
-  system_monitor  500
-  table          1000  (basic + formulas, formulas offset on X)
-  desktop_icons  1000
-  icon            500
-  exe_icon        500
-  nd_table       2000  (2D 10x10 through 7D)
-  plot           2000  (4 plots, stride 500)
-  file_explorer  1000  (Everything-backed)
-  3d             1000  (drag row/col/slice gridlines)
-  gizmo          1000  (interactive — only with uobject+input_manager)
-  text3d_click   1000  (interactive — only with uobject+input_manager)
+  primitives     1500  (5 shapes, stride 200)
+  image          1000  (valid + invalid path)
+  video          1000
+  sound           800
+  cameras        4500  (8 presets, stride 500)
+  earth          1500  (2 presets, stride 500)
+  system_monitor 2800  (multi-line Text3D, long stat lines extend +Y)
+  table          1800  (basic + formulas, formulas offset on X)
+  desktop_icons  1500
+  icon            800
+  exe_icon        800
+  nd_table       4000  (2D 10x10 through 7D)
+  plot           2700  (4 plots, stride 600, half-width offset 260)
+  file_explorer  3500  (21 rows × 120 cell_spacing)
+  3d             2000  (drag row/col/slice gridlines)
+  gizmo           800  (interactive — only with uobject+input_manager)
+  text3d_click   1500  (interactive — only with uobject+input_manager)
 
 Usage (PIE Python console):
     from test_spawn import test_spawn_all
@@ -70,7 +70,7 @@ from unreal_engine_tools import get_world
 #   - PASS/FAIL line + per-test elapsed time
 # Final summary: env info, per-test table, total pass/fail counts.
 
-DESKTOP   = os.path.join(os.path.expanduser('~'), 'Desktop')
+DESKTOP = os.path.join(os.path.expanduser('~'), 'Desktop')
 _LOG_PATH = os.path.join(DESKTOP, 'test_spawn_log.txt')
 _log_file = open(_LOG_PATH, 'w', buffering=1, encoding='utf-8')
 
@@ -178,7 +178,7 @@ def _result(name, actor_or_value, extra='', expected=None, inputs=None,
       - elapsed  : seconds the spawn call took (logged + stored on result dict)
       - status   : PASS/FAIL line
     """
-    ok     = actor_or_value is not None
+    ok = actor_or_value is not None
     status = 'PASS' if ok else 'FAIL'
     if inputs is not None:
         _log(f'  inputs:   {inputs}')
@@ -353,24 +353,28 @@ def _check_ffmpeg():
 # subset like tests=['cameras','earth'] is packed sequentially from Y=0
 # rather than leaving big gaps.  Each test_* function takes a base_y kwarg
 # and lays its own actors out within that band.
+#
+# Spans are sized with a buffer so even when adjacent tests have content
+# that auto-sizes wider than expected (e.g. file_explorer's Name column
+# holding long file paths) they don't bleed into the next band.
 _TEST_Y_SPAN = {
-    'test_primitives':     1000,   # 5 shapes × 200 stride                  (0..800)
-    'test_image':           600,   # valid at 0, invalid at +400
-    'test_video':           600,
-    'test_sound':           400,   # at 0 and +200
-    'test_cameras':        4000,   # 8 presets × 500 stride                 (0..3500)
-    'test_earth':          1000,   # 2 presets × 500
-    'test_system_monitor':  500,
-    'test_table':          1000,   # basic + formulas (formulas offset on X)
-    'test_desktop_icons':  1000,
-    'test_icon':            500,
-    'test_exe_icon':        500,
-    'test_nd_table':       2000,
-    'test_plot':           2000,   # 4 plots × 500 stride
-    'test_file_explorer':  1000,
-    'test_3d':             1000,
-    'test_gizmo':          1000,
-    'test_text3d_click':   1000,
+    'test_primitives':     1500,   # 5 shapes × 200 stride (0..800) + ~100 actor + buffer
+    'test_image':          1000,   # 2 spawns at 0 and +400 (image planes are Y-thin)
+    'test_video':          1000,   # 1 spawn at +400
+    'test_sound':           800,   # 2 spheres at 0 and +200
+    'test_cameras':        4500,   # 8 presets × 500 (0..3500) + drone mesh + buffer
+    'test_earth':          1500,   # 2 presets × 500 (earths scaled to ~1 UU)
+    'test_system_monitor': 2800,   # multi-line Text3D — long stat lines extend far +Y
+    'test_table':          1800,   # basic 3-row at 0 + formula 8-row at +400 (~1200 actual)
+    'test_desktop_icons':  1500,   # 3-col grid × 150 spacing (~450 actual)
+    'test_icon':            800,   # single sphere
+    'test_exe_icon':        800,   # single sphere
+    'test_nd_table':       4000,   # 2D..6D grid extends to base_y + ~3000 UU
+    'test_plot':           2700,   # 4 plots × 600 stride (each plot ~502 UU wide)
+    'test_file_explorer':  3500,   # 21 rows × 120 cell_spacing = 2520 actual
+    'test_3d':             2000,   # 3x3x3 cells (~300) + axis labels can extend past 1000
+    'test_gizmo':           800,   # cylinder + handles ±200 from center
+    'test_text3d_click':   3000,   # text (~500 wide) + 5x5x5 table @ 400 UU at +400 (~2000 along Y)
 }
 
 _GOOGLE_DRIVE_EXE = r"C:\Users\nicho\Downloads\GoogleDriveSetup.exe"
@@ -412,7 +416,7 @@ def test_primitives(base_y=0):
     results = {}
     shapes = ['cube', 'sphere', 'cylinder', 'cone', 'plane']
     for i, shape in enumerate(shapes):
-        loc   = FVector(0, base_y + i * 200, 100)
+        loc = FVector(0, base_y + i * 200, 100)
         actor = None
         t0 = time.monotonic()
         try:
@@ -475,7 +479,7 @@ def test_image(base_y=0):
         try:
             from PIL import Image as PILImage, ImageDraw
             img = PILImage.new('RGB', (320, 180), color=(30, 30, 30))
-            d   = ImageDraw.Draw(img)
+            d = ImageDraw.Draw(img)
             # red border so we can see the aspect ratio instantly in-world
             d.rectangle([0, 0, 319, 179],      outline=(255, 0, 0), width=6)
             d.rectangle([20, 20, 299, 159],    outline=(0, 255, 0), width=3)
@@ -608,7 +612,7 @@ def test_cameras(base_y=0):
     from ue_spawn import spawn_camera_actor, CAMERA_PRESETS
     results = {}
     for i, preset_name in enumerate(CAMERA_PRESETS):
-        loc   = FVector(0, base_y + i * 500, 300)
+        loc = FVector(0, base_y + i * 500, 300)
         actor = None
         t0 = time.monotonic()
         try:
@@ -625,7 +629,7 @@ def test_earth(base_y=0):
     from ue_spawn import spawn_earth
     results = {}
     for i, preset in enumerate(['satellite', 'night']):
-        loc   = FVector(0, base_y + i * 500, 0)
+        loc = FVector(0, base_y + i * 500, 0)
         actor = None
         t0 = time.monotonic()
         try:
@@ -639,12 +643,17 @@ def test_earth(base_y=0):
 
 
 def test_system_monitor(base_y=0):
-    """Spawn a PyActorSysmon dynamically (no Blueprint placeholder)."""
+    """Spawn a PyActorSysmon dynamically (no Blueprint placeholder).
+
+    Spawned at Z=2500 because the Text3D component renders multi-line stats
+    output, with each new line stepping down in -Z; lower spawn heights
+    left most rows near the floor or occluded by other test geometry.
+    """
     from ue_spawn import spawn_system_monitor
     actor = None
     t0 = time.monotonic()
     try:
-        actor = spawn_system_monitor(location=FVector(0, base_y, 100))
+        actor = spawn_system_monitor(location=FVector(0, base_y, 2500))
     except Exception as e:
         _log_exception('system_monitor', e)
     return _result('system_monitor', actor, elapsed=time.monotonic() - t0)
@@ -841,6 +850,12 @@ def test_nd_table(base_y=0):
 def test_file_explorer(base_y=0):
     """Spawn a FileExplorer PyActor populated via EverythingAPI.
 
+    Spawned at Z=1500 because the wall_table renderer steps each row down
+    in -Z; in practice Everything returns ~5-10 files for the default folder
+    (~1200 UU tall), so the table sits comfortably above ground. With the
+    full MAX_FILES=20 the lowest rows can clip the floor — acceptable
+    tradeoff for keeping the visible top close to other tests' altitude.
+
     Requires Everything (Voidtools) running and Everything64.dll reachable.
     PASS = PyActor spawned; table + icons are rendered asynchronously in
     the component's begin_play and logged to UE output."""
@@ -849,7 +864,9 @@ def test_file_explorer(base_y=0):
     t0 = time.monotonic()
     try:
         actor = spawn_file_explorer(
-            location=FVector(0, base_y, 100))
+            location=FVector(0, base_y, 1500),
+            initial_path=os.path.dirname(
+                os.path.abspath(ue.get_content_dir())))
     except Exception as e:
         _log_exception('file_explorer', e)
     return _result('file_explorer', actor,
@@ -912,7 +929,9 @@ def test_gizmo(uobject=None, input_manager=None, location=None, base_y=0):
     from ue_spawn import spawn_gizmo
 
     if location is None:
-        location = FVector(0, base_y, 100)
+        # Z=250 keeps the scale handles (which extend ±175 UU around the
+        # target) from sitting underground.
+        location = FVector(0, base_y, 250)
 
     _log('--- test_gizmo ---')
     _log(f'Spawning gizmo target at {location}')
@@ -952,11 +971,14 @@ def test_gizmo(uobject=None, input_manager=None, location=None, base_y=0):
 
 def test_plot(base_y=0):
     """
-    Four plot tests spread along Y from *base_y*:
-      base_y      — colormap surface, spheres (reference)
-      base_y + 500  — colormap surface, sphere_lines
-      base_y + 1000 — spherical ripple sphere_lines
-      base_y + 1500 — 2D tan(x) curve
+    Four plot tests spread along Y from *base_y*. Each plot's x_range=(-π,π)
+    × units_per_uu=80 makes it ~502 UU wide, so origins are stepped by 600
+    and shifted by +260 so the leftmost edge of plot 0 sits at ~base_y
+    (instead of bleeding −251 UU into the previous test's band):
+      base_y +  260 — colormap surface, spheres
+      base_y +  860 — colormap surface, sphere_lines
+      base_y + 1460 — spherical ripple sphere_lines
+      base_y + 2060 — 2D tan(x) curve
 
     Uses spawn_plot() — a dynamic PyActorPlotter spawned via spawn_pyactor.
     Falls back to create_plotter() directly if spawn_plot errors out.
@@ -964,33 +986,36 @@ def test_plot(base_y=0):
     import math
     results = {}
 
+    PLOT_HALF_WIDTH = 260   # ≈ π × units_per_uu (80) — covers ±251 UU plot extent
+    PLOT_STRIDE     = 600   # one full plot width (~502) + small gutter
+
     variants = [
         dict(name='plot_spheres',        func='sin(x)+cos(y)',
              plot_type='surface',   mesh_mode='spheres',      orientation='ground_table',
-             location=FVector(0, base_y,        0)),
+             location=FVector(0, base_y + PLOT_HALF_WIDTH + 0 * PLOT_STRIDE, 0)),
         dict(name='plot_sphere_lines',   func='sin(x)+cos(y)',
              plot_type='surface',   mesh_mode='sphere_lines', orientation='ground_table',
-             location=FVector(0, base_y + 500,  0)),
+             location=FVector(0, base_y + PLOT_HALF_WIDTH + 1 * PLOT_STRIDE, 0)),
         dict(name='plot_ripple_sphere_lines', func='sin(sqrt(x**2+y**2))',
              plot_type='surface',   mesh_mode='sphere_lines', orientation='ground_table',
-             location=FVector(0, base_y + 1000, 0)),
+             location=FVector(0, base_y + PLOT_HALF_WIDTH + 2 * PLOT_STRIDE, 0)),
     ]
 
     for v in variants:
         actor = None
-        name  = v['name']
-        t0    = time.monotonic()
+        name = v['name']
+        t0 = time.monotonic()
 
         # Primary path: PyActorPlotter via spawn_plot
         try:
             from ue_spawn import spawn_plot
             actor = spawn_plot(
                 function_expr = v['func'],
-                plot_type     = v['plot_type'],
-                orientation   = v['orientation'],
-                resolution    = 32,
-                location      = v['location'],
-                mesh_mode     = v.get('mesh_mode', 'triangles'),
+                plot_type = v['plot_type'],
+                orientation = v['orientation'],
+                resolution = 32,
+                location = v['location'],
+                mesh_mode = v.get('mesh_mode', 'triangles'),
             )
         except Exception as e:
             _log(f'  {name}: spawn_plot failed ({e}), trying direct plotter...')
@@ -1000,14 +1025,14 @@ def test_plot(base_y=0):
             try:
                 from ue_math_plotter import create_plotter
                 p = create_plotter(
-                    world        = get_world(),
-                    origin       = v['location'],
-                    x_range      = (-3.14159, 3.14159),
-                    y_range      = (-3.14159, 3.14159),
-                    z_range      = (-2.0,  2.0),
+                    world = get_world(),
+                    origin = v['location'],
+                    x_range = (-3.14159, 3.14159),
+                    y_range = (-3.14159, 3.14159),
+                    z_range = (-2.0,  2.0),
                     units_per_uu = 80.0,
-                    orientation  = v['orientation'],
-                    debug        = True,
+                    orientation = v['orientation'],
+                    debug = True,
                 )
                 p.mesh_mode = v.get('mesh_mode', 'triangles')
                 if 'point_mesh' in v:
@@ -1046,14 +1071,14 @@ def test_plot(base_y=0):
             return v
 
         p = create_plotter(
-            world        = get_world(),
-            origin       = FVector(0, base_y + 1500, 0),
-            x_range      = (-3.14159, 3.14159),
-            y_range      = (-5.0, 5.0),
-            z_range      = (-5.0, 5.0),
+            world = get_world(),
+            origin = FVector(0, base_y + PLOT_HALF_WIDTH + 3 * PLOT_STRIDE, 0),
+            x_range = (-3.14159, 3.14159),
+            y_range = (-5.0, 5.0),
+            z_range = (-5.0, 5.0),
             units_per_uu = 80.0,
-            orientation  = 'wall_table',
-            debug        = True,
+            orientation = 'wall_table',
+            debug = True,
         )
         p.labs(title='tan(x)', x='x', y='y')
         p.grid(True)
@@ -1161,12 +1186,12 @@ def test_spawn_all(uobject=None, input_manager=None, tests=None):
         if unknown:
             _log(f'WARNING: unknown test names ignored: {sorted(unknown)}')
         non_interactive = [(n, fn) for (n, fn) in non_interactive if n in selected]
-        interactive    = [(n, c)  for (n, c)  in interactive    if n in selected]
+        interactive = [(n, c)  for (n, c)  in interactive    if n in selected]
 
-    results  = {}
-    timings  = {}   # fn_name -> seconds (whole-fn wall time)
-    layout   = {}   # fn_name -> base_y allocated
-    errors   = {}   # fn_name -> top-level exception if the whole fn blew up
+    results = {}
+    timings = {}   # fn_name -> seconds (whole-fn wall time)
+    layout = {}   # fn_name -> base_y allocated
+    errors = {}   # fn_name -> top-level exception if the whole fn blew up
     y_cursor = 0    # next available Y (sequential allocation)
 
     def _run(fn_name, fn_call):
@@ -1370,7 +1395,7 @@ def _resolve_char_fixed_width(local_pt, text_content):
     Fallback: fixed-width grid (CHAR_WIDTH=50, CHAR_HEIGHT=50).
     Returns (char_index, letter, col, row).
     """
-    CHAR_WIDTH  = 50.0
+    CHAR_WIDTH = 50.0
     CHAR_HEIGHT = 50.0
     col = int(local_pt.y / CHAR_WIDTH)
     row = int(-local_pt.z / CHAR_HEIGHT)
@@ -1403,9 +1428,9 @@ def _world_to_local(actor, world_pt):
         delta = FVector(world_pt.x - loc.x,
                         world_pt.y - loc.y,
                         world_pt.z - loc.z)
-        yaw   = math.radians(-rot.yaw)
+        yaw = math.radians(-rot.yaw)
         pitch = math.radians(-rot.pitch)
-        roll  = math.radians(-rot.roll)
+        roll = math.radians(-rot.roll)
         cy, sy = math.cos(yaw), math.sin(yaw)
         x1 =  cy * delta.x + sy * delta.y
         y1 = -sy * delta.x + cy * delta.y
@@ -1464,11 +1489,11 @@ def _log_click_on_actor_from_hit(actor, hit, text_content=None):
     if mesh_idx is not None and mesh_idx >= 0:
         method = 'CharacterMeshes'
         letter = mesh_letter
-        idx    = mesh_idx
+        idx = mesh_idx
     else:
         method = 'fixed-width'
         letter = fw_letter
-        idx    = fw_idx
+        idx = fw_idx
 
     local_str = ''
     if local_pt is not None:
@@ -1494,8 +1519,8 @@ def _spawn_highlight_box(world):
         from unreal_engine.enums import EComponentMobility
 
         actor = world.actor_spawn(StaticMeshActor)
-        smc   = actor.StaticMeshComponent
-        cube  = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube')
+        smc = actor.StaticMeshComponent
+        cube = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube')
         smc.SetStaticMesh(cube)
         smc.SetMobility(EComponentMobility.Movable)
 
@@ -1556,7 +1581,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0)
     from ue_spawn import spawn_blueprint, spawn_table_actor
 
     if location is None:
-        location = FVector(400, base_y, 150)
+        location = FVector(400, base_y, 450)
 
     _log('--- test_text3d_click ---')
     _log(f'Spawning at {location}  (table at Y+400)')
@@ -1593,17 +1618,18 @@ def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0)
     except Exception as e:
         _log(f'text3d_click: single actor spawn failed: {e}')
 
-    # 3x3x3 test table — uses spawn_table_actor so the renderer's gridline
+    # 5x5x5 test table — uses spawn_table_actor so the renderer's gridline
     # resize controller is ticked every frame (LMB-drag a gridline to resize
     # row/col/slice; cursor changes on hover).
-    SLICE_SPACING = 600.0
+    CELL_SIZE = 400.0  # uniform row width / column height / slice depth
+    GRID_N = 5
     table_renderer = None
     try:
         from nd_table.ndtable import Table
-        t = Table(shape=(3, 3, 3))
-        for i in range(3):
-            for j in range(3):
-                for k in range(3):
+        t = Table(shape=(GRID_N, GRID_N, GRID_N))
+        for i in range(GRID_N):
+            for j in range(GRID_N):
+                for k in range(GRID_N):
                     t[(i, j, k)] = f'r{i}c{j}s{k}'
         # Front slice (k=0) keeps the original "Col A / Hello / Click" content
         # used by the typing test for click-to-edit.
@@ -1619,15 +1645,18 @@ def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0)
         if table_actor is not None:
             proxy = table_actor.get_py_proxy()
             if proxy is not None and proxy.renderer is not None:
-                # Large slice (depth/layer) spacing — push k=0,1,2 apart
-                # along the depth axis so each layer is clearly visible.
-                proxy.renderer.min_depth = SLICE_SPACING
+                # Force every row/column/slice to the same size so the grid
+                # is a true cube. set_user_size wins over auto-size in
+                # recompute_layout.
+                for axis in (0, 1, 2):
+                    for idx in range(GRID_N):
+                        proxy.renderer.set_user_size(axis, idx, CELL_SIZE)
                 proxy.renderer.recompute_layout()
                 table_renderer = proxy.renderer
         if table_renderer is not None:
             _log(f'text3d_click: spawned 3D resizable table '
                  f'({len(table_renderer.cell_actors)} cells, '
-                 f'slice spacing={SLICE_SPACING:.0f})')
+                 f'{GRID_N}x{GRID_N}x{GRID_N} @ {CELL_SIZE:.0f} UU)')
     except Exception as e:
         _log(f'text3d_click: table spawn failed: {e}')
 
@@ -1666,7 +1695,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0)
             pass
     if _pc is not None:
         try:
-            _pc.bEnableClickEvents     = True
+            _pc.bEnableClickEvents = True
             _pc.bEnableMouseOverEvents = True
             _pc.CurrentClickTraceChannel = ECollisionChannel.ECC_Visibility
             _log('text3d_click: player controller configured '
@@ -1793,7 +1822,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0)
     def _unfocus():
         _set_focused_actor(None)
         _focus_state['string_idx'] = 0
-        _focus_state['anchor']     = 0
+        _focus_state['anchor'] = 0
         _hide_cursor()
         _hide_highlights()
 
@@ -1814,7 +1843,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0)
             return
         sg = _string_idx_to_glyph(text, seg_start)
         eg = _string_idx_to_glyph(text, seg_end)
-        left  = _get_cursor_placement(actor, sg)
+        left = _get_cursor_placement(actor, sg)
         right = _get_cursor_placement(actor, eg)
         if left is None or right is None:
             try:
@@ -1898,7 +1927,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0)
                 pass
 
         kernings = None
-        meshes   = None
+        meshes = None
         if t3d is not None:
             try:
                 kernings = t3d.CharacterKernings
@@ -1923,7 +1952,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0)
                     pass
             _set_focused_actor(hit_actor)
             _focus_state['string_idx'] = len(text)
-            _focus_state['anchor']     = len(text)
+            _focus_state['anchor'] = len(text)
             _hide_highlights()
             return
 
@@ -1965,7 +1994,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0)
                 try:
                     r = kernings[clicked_glyph].get_relative_location()
                     mid_y = r.y + glyph_w_local / 2.0
-                    side  = 'left' if local_pt.y < mid_y else 'right'
+                    side = 'left' if local_pt.y < mid_y else 'right'
                 except Exception:
                     pass
 
@@ -1977,7 +2006,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0)
         _set_focused_actor(hit_actor)
         new_idx = _glyph_to_string_idx(text, target_glyph)
         _focus_state['string_idx'] = new_idx
-        _focus_state['anchor']     = new_idx
+        _focus_state['anchor'] = new_idx
         _hide_highlights()
         # If the previous focus was in an auto-sizing table, that table
         # just refit and may have shifted hit_actor's position. Re-show
@@ -2011,7 +2040,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0)
             text = text[:start] + text[end:]
             idx = start
             _focus_state['string_idx'] = idx
-            _focus_state['anchor']     = idx
+            _focus_state['anchor'] = idx
             if ch == '\b':
                 # Selection-backspace just deletes the selection, no further delete.
                 try:
@@ -2043,7 +2072,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0)
 
         watched[actor] = text
         _focus_state['string_idx'] = idx
-        _focus_state['anchor']     = idx
+        _focus_state['anchor'] = idx
 
         target_glyph = _string_idx_to_glyph(text, idx)
         _show_cursor_at_glyph(actor, target_glyph)
@@ -2058,11 +2087,11 @@ def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0)
         _user32 = _ctypes.WinDLL('user32', use_last_error=True)
         _kernel32 = _ctypes.WinDLL('kernel32', use_last_error=True)
         _user32.GetAsyncKeyState.argtypes = [_ctypes.c_int]
-        _user32.GetAsyncKeyState.restype  = _ctypes.c_short
-        _user32.GetKeyState.argtypes      = [_ctypes.c_int]
-        _user32.GetKeyState.restype       = _ctypes.c_short
-        _user32.MapVirtualKeyW.argtypes   = [_ctypes.c_uint, _ctypes.c_uint]
-        _user32.MapVirtualKeyW.restype    = _ctypes.c_uint
+        _user32.GetAsyncKeyState.restype = _ctypes.c_short
+        _user32.GetKeyState.argtypes = [_ctypes.c_int]
+        _user32.GetKeyState.restype = _ctypes.c_short
+        _user32.MapVirtualKeyW.argtypes = [_ctypes.c_uint, _ctypes.c_uint]
+        _user32.MapVirtualKeyW.restype = _ctypes.c_uint
         _user32.ToUnicode.argtypes = [
             _ctypes.c_uint, _ctypes.c_uint,
             _ctypes.POINTER(_ctypes.c_ubyte), _ctypes.c_wchar_p,
@@ -2070,26 +2099,26 @@ def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0)
         ]
         _user32.ToUnicode.restype = _ctypes.c_int
         # Clipboard API
-        _user32.OpenClipboard.argtypes    = [_ctypes.c_void_p]
-        _user32.OpenClipboard.restype     = _ctypes.c_int
-        _user32.CloseClipboard.argtypes   = []
-        _user32.CloseClipboard.restype    = _ctypes.c_int
-        _user32.EmptyClipboard.argtypes   = []
-        _user32.EmptyClipboard.restype    = _ctypes.c_int
+        _user32.OpenClipboard.argtypes = [_ctypes.c_void_p]
+        _user32.OpenClipboard.restype = _ctypes.c_int
+        _user32.CloseClipboard.argtypes = []
+        _user32.CloseClipboard.restype = _ctypes.c_int
+        _user32.EmptyClipboard.argtypes = []
+        _user32.EmptyClipboard.restype = _ctypes.c_int
         _user32.GetClipboardData.argtypes = [_ctypes.c_uint]
-        _user32.GetClipboardData.restype  = _ctypes.c_void_p
+        _user32.GetClipboardData.restype = _ctypes.c_void_p
         _user32.SetClipboardData.argtypes = [_ctypes.c_uint, _ctypes.c_void_p]
-        _user32.SetClipboardData.restype  = _ctypes.c_void_p
+        _user32.SetClipboardData.restype = _ctypes.c_void_p
         _user32.IsClipboardFormatAvailable.argtypes = [_ctypes.c_uint]
-        _user32.IsClipboardFormatAvailable.restype  = _ctypes.c_int
-        _kernel32.GlobalAlloc.argtypes  = [_ctypes.c_uint, _ctypes.c_size_t]
-        _kernel32.GlobalAlloc.restype   = _ctypes.c_void_p
-        _kernel32.GlobalLock.argtypes   = [_ctypes.c_void_p]
-        _kernel32.GlobalLock.restype    = _ctypes.c_void_p
+        _user32.IsClipboardFormatAvailable.restype = _ctypes.c_int
+        _kernel32.GlobalAlloc.argtypes = [_ctypes.c_uint, _ctypes.c_size_t]
+        _kernel32.GlobalAlloc.restype = _ctypes.c_void_p
+        _kernel32.GlobalLock.argtypes = [_ctypes.c_void_p]
+        _kernel32.GlobalLock.restype = _ctypes.c_void_p
         _kernel32.GlobalUnlock.argtypes = [_ctypes.c_void_p]
-        _kernel32.GlobalUnlock.restype  = _ctypes.c_int
-        _kernel32.GlobalSize.argtypes   = [_ctypes.c_void_p]
-        _kernel32.GlobalSize.restype    = _ctypes.c_size_t
+        _kernel32.GlobalUnlock.restype = _ctypes.c_int
+        _kernel32.GlobalSize.argtypes = [_ctypes.c_void_p]
+        _kernel32.GlobalSize.restype = _ctypes.c_size_t
         _WIN32_TYPING_OK = True
     except Exception as _win_err:
         _WIN32_TYPING_OK = False
@@ -2178,7 +2207,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0)
         if direction < 0:
             if line_start == 0:
                 return 0
-            prev_end   = line_start - 1
+            prev_end = line_start - 1
             prev_start = _line_edge(text, prev_end, -1)
             return min(prev_start + col, prev_end)
         # direction > 0
@@ -2186,7 +2215,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0)
         if line_end == n:
             return n
         next_start = line_end + 1
-        next_end   = _line_edge(text, next_start, +1)
+        next_end = _line_edge(text, next_start, +1)
         return min(next_start + col, next_end)
 
     def _move_caret_to(new_idx, extend):
@@ -2302,7 +2331,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0)
             return False
         watched[actor] = new_text
         _focus_state['string_idx'] = start
-        _focus_state['anchor']     = start
+        _focus_state['anchor'] = start
         _show_cursor_at_glyph(actor, _string_idx_to_glyph(new_text, start))
         _update_highlight()
         return True
@@ -2322,7 +2351,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0)
             text = str(t3d.Text or '')
         except Exception:
             return
-        _focus_state['anchor']     = 0
+        _focus_state['anchor'] = 0
         _focus_state['string_idx'] = len(text)
         _show_cursor_at_glyph(actor, _string_idx_to_glyph(text, len(text)))
         _update_highlight()
@@ -2415,10 +2444,10 @@ def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0)
         else:
             i = 0
         new_actor = ordered[i]
-        new_text  = watched.get(new_actor, '')
+        new_text = watched.get(new_actor, '')
         _set_focused_actor(new_actor)
         _focus_state['string_idx'] = len(new_text)
-        _focus_state['anchor']     = len(new_text)
+        _focus_state['anchor'] = len(new_text)
         _show_cursor_at_glyph(new_actor, _string_idx_to_glyph(new_text, len(new_text)))
         _hide_highlights()
 
@@ -2540,7 +2569,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0)
         # Advance caret past the reserved spaces.
         new_idx = idx + n_spaces
         _focus_state['string_idx'] = new_idx
-        _focus_state['anchor']     = new_idx
+        _focus_state['anchor'] = new_idx
         _show_cursor_at_glyph(actor, _string_idx_to_glyph(new_text, new_idx))
         _update_highlight()
 
@@ -2550,10 +2579,10 @@ def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0)
         if _focus_state['actor'] is None:
             return
 
-        ctrl  = _ctrl_down()
+        ctrl = _ctrl_down()
         shift = _shift_held()
-        alt   = _alt_down()
-        win   = _win_down()
+        alt = _alt_down()
+        win = _win_down()
 
         # Notepad parity: Alt+key (Alt+Tab window switch, Alt+Enter properties,
         # Alt+F4 close, Alt+Backspace undo, etc.) and Win+key (shell shortcuts)
@@ -2579,7 +2608,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0)
             actor = _focus_state['actor']
             t3d = actor.get_actor_component('Text3DComponent') if actor else None
             text = str(t3d.Text or '') if t3d else ''
-            idx  = _focus_state['string_idx']
+            idx = _focus_state['string_idx']
             if vk == 0x25:    # Ctrl+Left  — prev word
                 _move_caret_to(_word_boundary(text, idx, -1), shift); return
             if vk == 0x27:    # Ctrl+Right — next word
@@ -2594,7 +2623,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0)
             actor = _focus_state['actor']
             t3d = actor.get_actor_component('Text3DComponent') if actor else None
             text = str(t3d.Text or '') if t3d else ''
-            idx  = _focus_state['string_idx']
+            idx = _focus_state['string_idx']
             if vk == 0x25:    # Left
                 if _has_sel() and not shift:
                     _move_caret_to(_sel_range()[0], False); return
@@ -2630,10 +2659,10 @@ def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0)
         if ctrl:
             return
         try:
-            kb_state  = _build_kb_state()
+            kb_state = _build_kb_state()
             scan_code = _user32.MapVirtualKeyW(vk, 0)
-            outbuf    = _ctypes.create_unicode_buffer(8)
-            result    = _user32.ToUnicode(
+            outbuf = _ctypes.create_unicode_buffer(8)
+            result = _user32.ToUnicode(
                 vk, scan_code, kb_state, outbuf, len(outbuf), 0)
         except Exception:
             return
@@ -2674,7 +2703,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0)
             return
 
         currently_down = _state['down']
-        fired          = _state['fired']
+        fired = _state['fired']
 
         if currently_down and not fired:
             # Rising edge — check which watched actor the cursor is over
@@ -2697,13 +2726,13 @@ def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0)
 
             hit_actor = hit.actor if hit is not None else None
             matched_actor = None
-            matched_text  = None
+            matched_text = None
             if hit_actor is not None:
                 for w_actor, w_text in watched.items():
                     try:
                         if w_actor == hit_actor:
                             matched_actor = w_actor
-                            matched_text  = w_text
+                            matched_text = w_text
                             break
                     except Exception:
                         pass

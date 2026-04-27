@@ -57,8 +57,8 @@ _TYPE_TO_PRESET = {
 }
 
 # Projection mode int values (ECameraProjectionMode)
-_PROJ_PERSPECTIVE   = 0
-_PROJ_ORTHOGRAPHIC  = 1
+_PROJ_PERSPECTIVE = 0
+_PROJ_ORTHOGRAPHIC = 1
 
 
 class PyActorCamera:
@@ -152,7 +152,7 @@ class PyActorCamera:
 
         try:
             sw = cfg.get('sensor_width', 36.0)
-            self._cam.FilmbackSettings.SensorWidth  = sw
+            self._cam.FilmbackSettings.SensorWidth = sw
             self._cam.FilmbackSettings.SensorHeight = sw * 9.0 / 16.0
         except Exception as e:
             ue.log_warning(f'PyActorCamera: FilmbackSettings: {e}')

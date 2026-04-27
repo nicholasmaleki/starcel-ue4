@@ -26,35 +26,31 @@ class PyActorCursor:
     this class only renders/blinks.
     """
 
-    BLINK_RATE      = 1.0
+    BLINK_RATE = 1.0
     CURSOR_MAT_PATH = '/Game/Materials/M_Color_Translucent.M_Color_Translucent'
-    MESH_COMPONENT  = 'Cube'
+    MESH_COMPONENT = 'Cube'
 
     def begin_play(self):
-        self._timer   = 0.0
+        self._timer = 0.0
         self._visible = False
-        self._active  = False
+        self._active = False
 
         try:
             self.uobject.SetActorHiddenInGame(True)
         except Exception:
             pass
 
-        # Translucent material (cursor is overlaid on text — never block clicks)
-        self._smc = find_component(self.uobject, self.MESH_COMPONENT)
-        if self._smc is not None and Material is not None:
-            try:
-                mat = ue.load_object(Material, self.CURSOR_MAT_PATH)
-                mid = self._smc.create_material_instance_dynamic(mat)
-                self._smc.set_material(0, mid)
-            except Exception as e:
-                ue.log_warning(f'PyActorCursor: material setup failed: {e}')
+        # SMC + translucent material deferred to first tick: spawn_pyactor
+        # attaches components after FinishSpawning, not visible in begin_play.
+        self._smc = None
+        self._smc_resolved = False
+
         try:
             self.uobject.SetActorEnableCollision(False)
         except Exception:
             pass
 
-        ue.log('PyActorCursor: ready')
+        ue.log('PyActorCursor: ready  (smc deferred)')
 
     def move_to(self, world_pt, scale_vec, rotation=None):
         """Position the caret in world space, set scale/rotation, show + blink."""
@@ -78,8 +74,8 @@ class PyActorCursor:
             self.uobject.SetActorHiddenInGame(False)
         except Exception:
             pass
-        self._active  = True
-        self._timer   = 0.0
+        self._active = True
+        self._timer = 0.0
         self._visible = True
 
     def hide(self):
@@ -87,10 +83,21 @@ class PyActorCursor:
             self.uobject.SetActorHiddenInGame(True)
         except Exception:
             pass
-        self._active  = False
+        self._active = False
         self._visible = False
 
     def tick(self, dt):
+        if not self._smc_resolved:
+            self._smc_resolved = True
+            self._smc = find_component(self.uobject, self.MESH_COMPONENT)
+            if self._smc is not None and Material is not None:
+                try:
+                    mat = ue.load_object(Material, self.CURSOR_MAT_PATH)
+                    mid = self._smc.create_material_instance_dynamic(mat)
+                    self._smc.set_material(0, mid)
+                except Exception as e:
+                    ue.log_warning(f'PyActorCursor: material setup failed: {e}')
+
         if not self._active:
             return
         self._timer += dt

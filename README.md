@@ -1,4 +1,4 @@
-# Starcel ![logo](Images/branding/icon-padded.png)
+# Starcel <sub><img src="Images/branding/icon-padded.png" alt="logo"></sub>
 Hi! I'm Nick, the developer of Starcel. 
 
 
@@ -173,11 +173,12 @@ Although you can work on anything you'd like, here are specific tasks I need hel
 - Integrate [UnrealEnginePython Modus](https://github.com/dfb/UnrealEnginePython/tree/modus)
 - Proper Software Engineering principles refactor — Much of this code is AI generated, and I lost the plot
 - Clean up the Unreal Engine files according to [standards](https://github.com/Allar/ue5-style-guide) and update the Python files to match. Try to migrate blueprints to Python code. 
+- Upgrade to the latest version of Unreal Engine and Python after the above
 - Integrate Starcel as a renderer for Manim
 - AI md files (anthropic, openai, gemini, etc.)
 - Continued server development
 - Someone to create example maps
-- UE5 and Python Upgrade
+
 
 
 ## Why Unreal? 

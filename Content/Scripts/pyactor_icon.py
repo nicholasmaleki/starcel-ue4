@@ -40,14 +40,14 @@ class IconSphere:
     Click = cursor is hovering (OnBeginCursorOver fired) + LMB rising edge.
     """
     HOVER_DELTA = 0.3
-    LERP_SPEED  = 8.0
+    LERP_SPEED = 8.0
 
     def begin_play(self):
         self.uobject.enable_input()
         self.player_controller = self.uobject.get_player_controller()
         try:
             self.player_controller.bEnableMouseOverEvents = True
-            self.player_controller.bEnableClickEvents     = True
+            self.player_controller.bEnableClickEvents = True
             self.player_controller.CurrentClickTraceChannel = \
                 ECollisionChannel.ECC_WorldDynamic
         except Exception as e:
@@ -56,9 +56,9 @@ class IconSphere:
         # Captured lazily on first tick: spawn_icon's set_actor_transform
         # runs AFTER world.actor_spawn() returns, so begin_play here would
         # see the BP default scale, not the caller's requested scale.
-        self.base_scale      = None
-        self.target_scale    = None
-        self._hovered        = False
+        self.base_scale = None
+        self.target_scale = None
+        self._hovered = False
         self._was_mouse_down = False
 
         # Find the owner actor for source_path lookup
@@ -96,7 +96,7 @@ class IconSphere:
         self._hovered = True
         if self.base_scale is None:
             self.base_scale = self.uobject.get_actor_scale()
-        d  = self.HOVER_DELTA
+        d = self.HOVER_DELTA
         bs = self.base_scale
         self.target_scale = FVector(bs.x - d, bs.y - d, bs.z - d)
 
@@ -139,14 +139,14 @@ class IconSphere:
     def tick(self, dt):
         # First tick: capture the post-spawn actor scale as our base.
         if self.base_scale is None:
-            self.base_scale   = self.uobject.get_actor_scale()
+            self.base_scale = self.uobject.get_actor_scale()
             self.target_scale = self.base_scale
             return
 
         # hover scale lerp
         cur = self.uobject.get_actor_scale()
         tgt = self.target_scale
-        a   = min(1.0, self.LERP_SPEED * dt)
+        a = min(1.0, self.LERP_SPEED * dt)
         self.uobject.set_actor_scale(FVector(
             cur.x + (tgt.x - cur.x) * a,
             cur.y + (tgt.y - cur.y) * a,

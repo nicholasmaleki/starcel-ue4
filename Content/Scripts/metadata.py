@@ -119,7 +119,7 @@ def image_info(path: str, ext: str) -> Dict[str, Any]:
             with _PILImage.open(path) as img:
                 out['dimensions'] = img.size
                 out['color_mode'] = img.mode
-                out['bit_depth']  = _PIL_mode_depth(img.mode)
+                out['bit_depth'] = _PIL_mode_depth(img.mode)
                 dpi = img.info.get('dpi') or img.info.get('jfif_density')
                 if dpi and isinstance(dpi, tuple) and dpi[0]:
                     out['dpi'] = f"{int(dpi[0])} DPI"
@@ -233,15 +233,15 @@ def video_info(path: str) -> Dict[str, Any]:
     try:
         cap = _CV2.VideoCapture(path)
         if cap.isOpened():
-            w   = int(cap.get(_CV2.CAP_PROP_FRAME_WIDTH))
-            h   = int(cap.get(_CV2.CAP_PROP_FRAME_HEIGHT))
+            w = int(cap.get(_CV2.CAP_PROP_FRAME_WIDTH))
+            h = int(cap.get(_CV2.CAP_PROP_FRAME_HEIGHT))
             fps = cap.get(_CV2.CAP_PROP_FPS)
-            fc  = cap.get(_CV2.CAP_PROP_FRAME_COUNT)
+            fc = cap.get(_CV2.CAP_PROP_FRAME_COUNT)
             fourcc = int(cap.get(_CV2.CAP_PROP_FOURCC))
             codec = ''.join(chr((fourcc >> (8*i)) & 0xFF) for i in range(4)).strip('\x00 ')
             out['dimensions'] = (w, h) if w and h else None
-            out['fps']        = round(fps, 3) if fps else None
-            out['codec']      = codec or None
+            out['fps'] = round(fps, 3) if fps else None
+            out['codec'] = codec or None
             if fps and fc:
                 out['length_s'] = fc / fps
         cap.release()
@@ -263,20 +263,20 @@ def audio_tags(path: str) -> Dict[str, Any]:
         if audio is None:
             return out
         info = audio.info
-        out['length_s']    = getattr(info, 'length', None)
-        out['bitrate']     = getattr(info, 'bitrate', None)
+        out['length_s'] = getattr(info, 'length', None)
+        out['bitrate'] = getattr(info, 'bitrate', None)
         out['sample_rate'] = getattr(info, 'sample_rate', None)
-        out['channels']    = getattr(info, 'channels', None)
+        out['channels'] = getattr(info, 'channels', None)
         def _t(k):
             v = audio.get(k)
             return v[0] if v else None
-        out['album']        = _t('album')
+        out['album'] = _t('album')
         out['album_artist'] = _t('albumartist')
-        out['artist']       = _t('artist')
-        out['title']        = _t('title')
-        out['track']        = _t('tracknumber')
-        out['year']         = _t('date') or _t('year')
-        out['genre']        = _t('genre')
+        out['artist'] = _t('artist')
+        out['title'] = _t('title')
+        out['track'] = _t('tracknumber')
+        out['year'] = _t('date') or _t('year')
+        out['genre'] = _t('genre')
     except Exception as exc:
         _log('audio_tags', exc)
     return out
@@ -385,19 +385,19 @@ def _zip_info(path: str) -> Dict[str, Any]:
         with zipfile.ZipFile(path, 'r') as z:
             entries = z.infolist()
             files = [e for e in entries if not e.filename.endswith('/')]
-            dirs  = [e for e in entries if e.filename.endswith('/')]
+            dirs = [e for e in entries if e.filename.endswith('/')]
             methods = {_METHODS.get(e.compress_type, str(e.compress_type)) for e in files}
             encrypted = sum(1 for e in files if e.flag_bits & 0x1)
-            nested   = sum(1 for e in files
+            nested = sum(1 for e in files
                            if Path(e.filename).suffix.lower().lstrip('.') in _ARCH_EXTS)
-            comment  = z.comment.decode('utf-8', errors='replace').strip() if z.comment else None
-            out['file_count']         = len(files)
-            out['dir_count']          = len(dirs)
+            comment = z.comment.decode('utf-8', errors='replace').strip() if z.comment else None
+            out['file_count'] = len(files)
+            out['dir_count'] = len(dirs)
             out['total_uncompressed'] = _human_size(sum(e.file_size for e in files))
             out['compression_method'] = ', '.join(sorted(methods)) or None
-            out['comment']            = comment or None
-            out['encrypted']          = (f"{encrypted} encrypted" if encrypted else 'No')
-            out['nested_archives']    = nested or None
+            out['comment'] = comment or None
+            out['encrypted'] = (f"{encrypted} encrypted" if encrypted else 'No')
+            out['nested_archives'] = nested or None
     except Exception as exc:
         _log('_zip_info', exc)
     return out
@@ -418,13 +418,13 @@ def _tar_info(path: str) -> Dict[str, Any]:
         method = {'gz':'GZip','bz2':'BZip2','xz':'XZ','':'None'}.get(comp,'TAR')
         with tarfile.open(path, f'r:{comp}' if comp else 'r') as t:
             members = t.getmembers()
-            files   = [m for m in members if m.isfile()]
-            dirs    = [m for m in members if m.isdir()]
-            out['file_count']         = len(files)
-            out['dir_count']          = len(dirs)
+            files = [m for m in members if m.isfile()]
+            dirs = [m for m in members if m.isdir()]
+            out['file_count'] = len(files)
+            out['dir_count'] = len(dirs)
             out['total_uncompressed'] = _human_size(sum(m.size for m in files))
             out['compression_method'] = method
-            out['encrypted']          = 'No'
+            out['encrypted'] = 'No'
     except Exception as exc:
         _log('_tar_info', exc)
     return out
@@ -455,12 +455,12 @@ def _rar_info(path: str) -> Dict[str, Any]:
         with _RARFILE.RarFile(path) as rf:
             infos = rf.infolist()
             files = [i for i in infos if not i.is_dir()]
-            dirs  = [i for i in infos if i.is_dir()]
-            out['file_count']         = len(files)
-            out['dir_count']          = len(dirs)
+            dirs = [i for i in infos if i.is_dir()]
+            out['file_count'] = len(files)
+            out['dir_count'] = len(dirs)
             out['total_uncompressed'] = _human_size(sum(i.file_size for i in files))
-            out['encrypted']          = 'Yes' if rf.needs_password() else 'No'
-            out['comment']            = rf.comment or None
+            out['encrypted'] = 'Yes' if rf.needs_password() else 'No'
+            out['comment'] = rf.comment or None
     except Exception as exc:
         _log('_rar_info', exc)
     return out
@@ -474,14 +474,14 @@ def _7z_info(path: str) -> Dict[str, Any]:
     }
     try:
         with _PY7ZR.SevenZipFile(path, mode='r') as z:
-            files   = z.list()
+            files = z.list()
             regular = [f for f in files if not f.is_directory]
-            dirs    = [f for f in files if f.is_directory]
-            out['file_count']         = len(regular)
-            out['dir_count']          = len(dirs)
+            dirs = [f for f in files if f.is_directory]
+            out['file_count'] = len(regular)
+            out['dir_count'] = len(dirs)
             out['total_uncompressed'] = _human_size(
                 sum(f.uncompressed for f in regular if f.uncompressed))
-            out['encrypted']          = 'Yes' if z.needs_password() else 'No'
+            out['encrypted'] = 'Yes' if z.needs_password() else 'No'
     except Exception as exc:
         _log('_7z_info', exc)
     return out
@@ -569,8 +569,8 @@ def _docx_length(path: str) -> Optional[str]:
                     content = z.read('word/document.xml')
                     rendered = content.count(b'w:lastRenderedPageBreak')
                     explicit = content.count(b'w:type="page"')
-                    sect     = content.count(b'<w:sectPr')
-                    pages    = max(rendered, explicit + 1, sect)
+                    sect = content.count(b'<w:sectPr')
+                    pages = max(rendered, explicit + 1, sect)
                     if pages > 1:
                         return f"~{pages} pages (estimated)"
                     paras = content.count(b'<w:p ')
@@ -635,7 +635,7 @@ def spreadsheet_info(path: str, ext: str) -> Dict[str, Any]:
         if e == 'csv' and _CSV_OK:
             with open(path, newline='', encoding='utf-8', errors='replace') as f:
                 rows = list(_CSV_MOD.reader(f))
-            out['dimensions']  = (len(rows), max((len(r) for r in rows), default=0))
+            out['dimensions'] = (len(rows), max((len(r) for r in rows), default=0))
             out['sheet_count'] = 1
             return out
 
@@ -644,7 +644,7 @@ def spreadsheet_info(path: str, ext: str) -> Dict[str, Any]:
                 try:
                     wb = _OPENPYXL.load_workbook(path, read_only=True, data_only=True)
                     ws = wb.active
-                    out['dimensions']  = (ws.max_row or 0, ws.max_column or 0)
+                    out['dimensions'] = (ws.max_row or 0, ws.max_column or 0)
                     out['sheet_count'] = len(wb.sheetnames)
                     return out
                 except Exception as exc:
@@ -695,17 +695,17 @@ def presentation_info(path: str, ext: str) -> Dict[str, Any]:
 # SHORTCUT (.lnk)  —  MS-SHLLINK binary format
 
 _LNK_HEADER_SZ = 0x4C
-_LNK_GUID      = b'\x01\x14\x02\x00\x00\x00\x00\x00\xC0\x00\x00\x00\x00\x00\x00\x46'
+_LNK_GUID = b'\x01\x14\x02\x00\x00\x00\x00\x00\xC0\x00\x00\x00\x00\x00\x00\x46'
 
-_LNK_HAS_IDLIST   = 0x00000001
+_LNK_HAS_IDLIST = 0x00000001
 _LNK_HAS_LINKINFO = 0x00000002
-_LNK_HAS_NAME     = 0x00000004
-_LNK_HAS_RELPATH  = 0x00000008
-_LNK_HAS_WORKDIR  = 0x00000010
-_LNK_HAS_ARGS     = 0x00000020
-_LNK_HAS_ICON     = 0x00000040
-_LNK_IS_UNICODE   = 0x00000080
-_LNK_HAS_ENVLOC   = 0x00000200
+_LNK_HAS_NAME = 0x00000004
+_LNK_HAS_RELPATH = 0x00000008
+_LNK_HAS_WORKDIR = 0x00000010
+_LNK_HAS_ARGS = 0x00000020
+_LNK_HAS_ICON = 0x00000040
+_LNK_IS_UNICODE = 0x00000080
+_LNK_HAS_ENVLOC = 0x00000200
 
 
 def lnk_info(path: str) -> Dict[str, Any]:
@@ -730,13 +730,13 @@ def lnk_info(path: str) -> Dict[str, Any]:
         if data[4:20] != _LNK_GUID:
             return out
 
-        link_flags   = struct.unpack_from('<I', data, 20)[0]
-        is_unicode   = bool(link_flags & _LNK_IS_UNICODE)
+        link_flags = struct.unpack_from('<I', data, 20)[0]
+        is_unicode = bool(link_flags & _LNK_IS_UNICODE)
 
         target_write = struct.unpack_from('<Q', data, 28)[0]
-        target_sz    = struct.unpack_from('<I', data, 52)[0]
-        hotkey_raw   = struct.unpack_from('<H', data, 56)[0]
-        show_cmd     = struct.unpack_from('<I', data, 60)[0]
+        target_sz = struct.unpack_from('<I', data, 52)[0]
+        hotkey_raw = struct.unpack_from('<H', data, 56)[0]
+        show_cmd = struct.unpack_from('<I', data, 60)[0]
 
         if target_sz:
             out['target_size'] = _human_size(target_sz)
@@ -755,7 +755,7 @@ def lnk_info(path: str) -> Dict[str, Any]:
 
         # LinkInfo block  →  local target path
         if link_flags & _LNK_HAS_LINKINFO:
-            li_size  = struct.unpack_from('<I', data, pos)[0]
+            li_size = struct.unpack_from('<I', data, pos)[0]
             li_flags = struct.unpack_from('<I', data, pos + 4)[0]
             li_hdr_sz = struct.unpack_from('<I', data, pos + 8)[0]
 
@@ -799,8 +799,8 @@ def lnk_info(path: str) -> Dict[str, Any]:
         out['description'] = _str() if link_flags & _LNK_HAS_NAME    else None
         _str()                       if link_flags & _LNK_HAS_RELPATH  else None  # skip relpath
         out['working_dir'] = _str() if link_flags & _LNK_HAS_WORKDIR  else None
-        out['arguments']   = _str() if link_flags & _LNK_HAS_ARGS     else None
-        out['icon']        = _str() if link_flags & _LNK_HAS_ICON     else None
+        out['arguments'] = _str() if link_flags & _LNK_HAS_ARGS     else None
+        out['icon'] = _str() if link_flags & _LNK_HAS_ICON     else None
 
         # EnvironmentVariable ExtraData block (target with %env% vars)
         if not out['target'] and (link_flags & _LNK_HAS_ENVLOC):
@@ -996,7 +996,7 @@ def _parse_pgp_packets(data: bytes) -> Dict[str, Any]:
                     body_len = 1 << (lb & 0x1F)
             else:
                 tag = (byte & 0x3C) >> 2
-                lt  = byte & 0x03; pos += 1
+                lt = byte & 0x03; pos += 1
                 if lt == 0: body_len = data[pos]; pos += 1
                 elif lt == 1: body_len = struct.unpack_from('>H',data,pos)[0]; pos += 2
                 elif lt == 2: body_len = struct.unpack_from('>I',data,pos)[0]; pos += 4
@@ -1009,10 +1009,10 @@ def _parse_pgp_packets(data: bytes) -> Dict[str, Any]:
             body = data[pos:pos+body_len]
             if tag in (6,14) and len(body) >= 6 and result['algorithm'] is None:
                 if body[0] == 4:
-                    ts   = struct.unpack('>I', body[1:5])[0]
+                    ts = struct.unpack('>I', body[1:5])[0]
                     algo = body[5]
                     result['algorithm'] = _PGP_KEY_ALGOS.get(algo, f'Algo {algo}')
-                    result['key_type']  = 'PGP Public Key' if tag==6 else 'PGP Secret Key'
+                    result['key_type'] = 'PGP Public Key' if tag==6 else 'PGP Secret Key'
                     try:
                         result['created'] = datetime.datetime.fromtimestamp(ts).strftime('%d/%m/%Y')
                     except Exception:
@@ -1038,7 +1038,7 @@ def _parse_sig_subpackets(body: bytes, result: Dict[str, Any]) -> None:
         hashed_count = struct.unpack('>H', body[4:6])[0]
         pos = 6; end = pos + hashed_count
         while pos < end and pos < len(body):
-            spkt_len  = body[pos]; pos += 1
+            spkt_len = body[pos]; pos += 1
             if spkt_len == 0: break
             spkt_type = body[pos]
             spkt_body = body[pos+1:pos+spkt_len]
@@ -1072,11 +1072,11 @@ def sqlite_info(path: str) -> Dict[str, Any]:
         return out
     try:
         hdr = _read_bytes(path, 100)
-        out['page_size']      = struct.unpack('>H', hdr[16:18])[0]
-        out['page_count']     = struct.unpack('>I', hdr[28:32])[0]
-        enc                   = struct.unpack('>I', hdr[56:60])[0]
-        out['encoding']       = {1:'UTF-8',2:'UTF-16-LE',3:'UTF-16-BE'}.get(enc, f'Enc{enc}')
-        out['user_version']   = struct.unpack('>I', hdr[60:64])[0]
+        out['page_size'] = struct.unpack('>H', hdr[16:18])[0]
+        out['page_count'] = struct.unpack('>I', hdr[28:32])[0]
+        enc = struct.unpack('>I', hdr[56:60])[0]
+        out['encoding'] = {1:'UTF-8',2:'UTF-16-LE',3:'UTF-16-BE'}.get(enc, f'Enc{enc}')
+        out['user_version'] = struct.unpack('>I', hdr[60:64])[0]
         out['application_id'] = struct.unpack('>I', hdr[68:72])[0] or None
         conn = sqlite3.connect(f'file:{path}?mode=ro', uri=True, timeout=2.0)
         tables = conn.execute(
@@ -1137,7 +1137,7 @@ def torrent_info(path: str) -> Dict[str, Any]:
         if len(all_trackers) > 1:
             out['trackers'] = f"{len(all_trackers)} trackers"
 
-        out['comment']    = _s(torrent.get('comment')) or None
+        out['comment'] = _s(torrent.get('comment')) or None
         out['created_by'] = _s(torrent.get('created by')) or None
 
         creation = torrent.get('creation date')
@@ -1153,7 +1153,7 @@ def torrent_info(path: str) -> Dict[str, Any]:
             return out
 
         name = info.get('name')
-        out['name']    = _s(name) or None
+        out['name'] = _s(name) or None
         out['private'] = 'Yes' if info.get('private') == 1 else 'No'
 
         files = info.get('files')
@@ -1196,7 +1196,7 @@ def _bdecode(data: bytes, idx: int = 0):
     elif 48 <= c <= 57:
         colon = data.index(b':', idx)
         length = int(data[idx:colon])
-        start  = colon + 1
+        start = colon + 1
         return data[start:start+length], start + length
     else:
         raise ValueError(f"Invalid bencode byte {c!r} at position {idx}")
@@ -1240,14 +1240,14 @@ def font_info(path: str, ext: str) -> Dict[str, Any]:
             out['family'] = f"TTC ({num_fonts} fonts)"
 
         num_tables = struct.unpack('>H', raw[sfnt_offset+4:sfnt_offset+6])[0]
-        tdir_off   = sfnt_offset + 12
-        name_off   = head_off = maxp_off = None
-        name_len   = None
+        tdir_off = sfnt_offset + 12
+        name_off = head_off = maxp_off = None
+        name_len = None
 
         for i in range(num_tables):
             entry = raw[tdir_off + i*16 : tdir_off + i*16 + 16]
             if len(entry) < 16: break
-            tag    = entry[0:4]
+            tag = entry[0:4]
             offset = struct.unpack('>I', entry[8:12])[0]
             length = struct.unpack('>I', entry[12:16])[0]
             if tag == b'name': name_off = offset; name_len = length
@@ -1269,16 +1269,16 @@ def _parse_name_table(raw: bytes, offset: int) -> Dict[str, Any]:
     result: Dict[str, Any] = {}
     _NAME_IDS = {1:'family', 2:'subfamily', 4:'full_name', 5:'version', 6:'postscript_name'}
     try:
-        count   = struct.unpack('>H', raw[offset+2:offset+4])[0]
+        count = struct.unpack('>H', raw[offset+2:offset+4])[0]
         str_off = struct.unpack('>H', raw[offset+4:offset+6])[0]
         strs_start = offset + str_off
         for i in range(count):
             rec = raw[offset + 6 + i*12 : offset + 6 + i*12 + 12]
             if len(rec) < 12: break
             platform_id = struct.unpack('>H', rec[0:2])[0]
-            name_id     = struct.unpack('>H', rec[6:8])[0]
-            str_length  = struct.unpack('>H', rec[8:10])[0]
-            str_offset  = struct.unpack('>H', rec[10:12])[0]
+            name_id = struct.unpack('>H', rec[6:8])[0]
+            str_length = struct.unpack('>H', rec[8:10])[0]
+            str_offset = struct.unpack('>H', rec[10:12])[0]
             if name_id not in _NAME_IDS or result.get(_NAME_IDS[name_id]):
                 continue
             s_bytes = raw[strs_start+str_offset : strs_start+str_offset+str_length]
@@ -1298,7 +1298,7 @@ def _woff_name_table(raw: bytes, num_tables: int) -> Dict[str, Any]:
             entry = raw[44 + i*20 : 44 + i*20 + 20]
             if len(entry) < 20: break
             if entry[0:4] != b'name': continue
-            offset   = struct.unpack('>I', entry[4:8])[0]
+            offset = struct.unpack('>I', entry[4:8])[0]
             comp_len = struct.unpack('>I', entry[8:12])[0]
             orig_len = struct.unpack('>I', entry[12:16])[0]
             comp_data = raw[offset:offset+comp_len]
@@ -1322,11 +1322,11 @@ def email_info(path: str, ext: str) -> Dict[str, Any]:
     try:
         with open(path, 'rb') as f:
             msg = _email_mod.message_from_bytes(f.read())
-        out['subject']      = msg.get('Subject','').strip() or None
-        out['sender']       = msg.get('From','').strip() or None
-        out['recipients']   = msg.get('To','').strip() or None
-        out['date']         = msg.get('Date','').strip() or None
-        out['message_id']   = msg.get('Message-ID','').strip() or None
+        out['subject'] = msg.get('Subject','').strip() or None
+        out['sender'] = msg.get('From','').strip() or None
+        out['recipients'] = msg.get('To','').strip() or None
+        out['date'] = msg.get('Date','').strip() or None
+        out['message_id'] = msg.get('Message-ID','').strip() or None
         out['content_type'] = msg.get('Content-Type','').split(';')[0].strip() or None
         attachments = sum(
             1 for part in msg.walk()
@@ -1436,14 +1436,14 @@ def _3d_glb(path: str) -> Optional[str]:
 
 
 def _gltf_summary(data: dict, label: str) -> str:
-    version    = data.get('asset',{}).get('version','?')
-    meshes     = len(data.get('meshes',[]))
-    anims      = len(data.get('animations',[]))
-    nodes      = len(data.get('nodes',[]))
-    skins      = len(data.get('skins',[]))
-    prims      = sum(len(m.get('primitives',[])) for m in data.get('meshes',[]))
+    version = data.get('asset',{}).get('version','?')
+    meshes = len(data.get('meshes',[]))
+    anims = len(data.get('animations',[]))
+    nodes = len(data.get('nodes',[]))
+    skins = len(data.get('skins',[]))
+    prims = sum(len(m.get('primitives',[])) for m in data.get('meshes',[]))
     # Vertex count from accessors referenced by POSITION attributes
-    accessors  = data.get('accessors', [])
+    accessors = data.get('accessors', [])
     total_verts = 0
     total_faces = 0
     for mesh in data.get('meshes', []):
@@ -1467,8 +1467,8 @@ def _gltf_summary(data: dict, label: str) -> str:
 def _3d_dae(path: str) -> Optional[str]:
     try:
         root = ET.parse(path).getroot()
-        ns   = re.match(r'\{(.+)\}', root.tag)
-        p    = f'{{{ns.group(1)}}}' if ns else ''
+        ns = re.match(r'\{(.+)\}', root.tag)
+        p = f'{{{ns.group(1)}}}' if ns else ''
         def _n(tag): return len(root.findall(f'.//{p}{tag}'))
         geoms=_n('geometry'); nodes=_n('node'); anims=_n('animation')
         skins=_n('skin');     images=_n('image')
@@ -1507,11 +1507,11 @@ def _fbx_binary(path: str) -> Optional[str]:
     try:
         with open(path,'rb') as f:
             data = f.read()
-        version  = struct.unpack('<I', data[23:27])[0]
+        version = struct.unpack('<I', data[23:27])[0]
         is_64bit = version >= 7500
-        rec_fmt  = '<QQQ' if is_64bit else '<III'
-        rec_sz   = 24 if is_64bit else 12
-        fbx_ver  = f"{version//1000}.{(version%1000)//100}"
+        rec_fmt = '<QQQ' if is_64bit else '<III'
+        rec_sz = 24 if is_64bit else 12
+        fbx_ver = f"{version//1000}.{(version%1000)//100}"
 
         node_counts: Dict[bytes,int] = {
             b'Geometry':0, b'Model':0, b'AnimStack':0,
@@ -1526,10 +1526,10 @@ def _fbx_binary(path: str) -> Optional[str]:
             pos = start
             for _ in range(200_000):
                 if pos + rec_sz + 1 > len(data): break
-                rec      = struct.unpack_from(rec_fmt, data, pos)
+                rec = struct.unpack_from(rec_fmt, data, pos)
                 end_off, n_props, prop_list_len = rec
                 name_len = data[pos + rec_sz]
-                name     = data[pos + rec_sz + 1 : pos + rec_sz + 1 + name_len]
+                name = data[pos + rec_sz + 1 : pos + rec_sz + 1 + name_len]
                 for key in node_counts:
                     if name == key:
                         node_counts[key] += 1
@@ -1606,13 +1606,13 @@ def _3d_blend(path: str) -> Optional[str]:
             hdr = f.read(12)
         if hdr[:7] != b'BLENDER':
             return None
-        ptr_ch   = chr(hdr[7])
-        end_ch   = chr(hdr[8])
-        version  = hdr[9:12].decode('ascii', errors='replace')
+        ptr_ch = chr(hdr[7])
+        end_ch = chr(hdr[8])
+        version = hdr[9:12].decode('ascii', errors='replace')
         ptr_size = 8 if ptr_ch == '-' else 4
-        endian   = 'little' if end_ch == 'v' else 'big'
-        end_sym  = '<' if endian == 'little' else '>'
-        v        = f"{version[0]}.{version[1:]}"
+        endian = 'little' if end_ch == 'v' else 'big'
+        end_sym = '<' if endian == 'little' else '>'
+        v = f"{version[0]}.{version[1:]}"
 
         # Scan file blocks to count meshes and objects
         # Block header: code(4) + size(4) + old_ptr(ptr_size) + sdna_index(4) + count(4)
@@ -1649,7 +1649,7 @@ def _3d_3ds(path: str) -> Optional[str]:
         mesh_count = lights = cameras = 0
         i = 0
         while i < len(data) - 6:
-            chunk_id  = struct.unpack_from('<H', data, i)[0]
+            chunk_id = struct.unpack_from('<H', data, i)[0]
             chunk_len = struct.unpack_from('<I', data, i+2)[0]
             if chunk_id == 0x4000: mesh_count += 1
             if chunk_id == 0x4600: lights     += 1
@@ -1669,9 +1669,9 @@ def _3d_step(path: str) -> Optional[str]:
         with open(path,'r',errors='replace') as f:
             content = f.read()
         shells = content.count('CLOSED_SHELL')
-        breps  = content.count('ADVANCED_BREP_SHAPE_REPRESENTATION')
-        faces  = content.count('ADVANCED_FACE')
-        parts  = ["STEP"]
+        breps = content.count('ADVANCED_BREP_SHAPE_REPRESENTATION')
+        faces = content.count('ADVANCED_FACE')
+        parts = ["STEP"]
         if breps:  parts.append(f"{breps} bodies")
         if shells: parts.append(f"{shells} shells")
         if faces:  parts.append(f"{faces} faces")
@@ -1695,9 +1695,9 @@ def _3d_off(path: str) -> Optional[str]:
 def _3d_amf(path: str) -> Optional[str]:
     try:
         root = ET.parse(path).getroot()
-        ns   = 'http://www.astm.org/cdr/schema/amf'
+        ns = 'http://www.astm.org/cdr/schema/amf'
         objs = len(root.findall(f'{{{ns}}}object') or root.findall('.//object'))
-        msh  = len(root.findall(f'{{{ns}}}mesh')   or root.findall('.//mesh'))
+        msh = len(root.findall(f'{{{ns}}}mesh')   or root.findall('.//mesh'))
         return f"AMF: {objs} objects, {msh} meshes"
     except Exception as exc:
         _log('_3d_amf', exc); return None

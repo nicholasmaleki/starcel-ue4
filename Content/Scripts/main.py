@@ -191,7 +191,7 @@ class Main:
         _main_begin_play_ran = True
         ue.log('Begin Play on Main class')
         #change_background("video", os.path.join(os.path.abspath(ue.get_content_dir()),"Movies", "psychedelic.mp4"))
-        change_background("white_less_emissive")
+        change_background("white_less_emissive") # "stars"
         ue.log('Running startup')
         startup()
 
@@ -373,7 +373,7 @@ class Main:
         # self.test_cylinder()
         # self.test_text()
 
-        results = test_spawn_all(uobject=self.uobject, input_manager=self.input, tests=['test_system_monitor', 'test_sound', 'test_cameras', 'test_desktop_icons', 'test_file_explorer', 'test_gizmo', 'test_text3d_click'])
+        results = test_spawn_all(uobject=self.uobject, input_manager=self.input) #, tests=['test_system_monitor', 'test_sound', 'test_cameras', 'test_desktop_icons', 'test_file_explorer', 'test_gizmo', 'test_text3d_click'])
         print(results)
 
 

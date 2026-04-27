@@ -41,65 +41,65 @@ from utils import filetime_to_dt as _filetime_to_dt, human_size as _human_size
 
 
 # SDK constants
-REQ_FILE_NAME          = 0x00000001
-REQ_PATH               = 0x00000002
-REQ_FULL_PATH          = 0x00000004
-REQ_EXTENSION          = 0x00000008
-REQ_SIZE               = 0x00000010
-REQ_DATE_CREATED       = 0x00000020
-REQ_DATE_MODIFIED      = 0x00000040
-REQ_DATE_ACCESSED      = 0x00000080
-REQ_ATTRIBUTES         = 0x00000100
-REQ_RUN_COUNT          = 0x00000400
-REQ_DATE_RUN           = 0x00000800
+REQ_FILE_NAME = 0x00000001
+REQ_PATH = 0x00000002
+REQ_FULL_PATH = 0x00000004
+REQ_EXTENSION = 0x00000008
+REQ_SIZE = 0x00000010
+REQ_DATE_CREATED = 0x00000020
+REQ_DATE_MODIFIED = 0x00000040
+REQ_DATE_ACCESSED = 0x00000080
+REQ_ATTRIBUTES = 0x00000100
+REQ_RUN_COUNT = 0x00000400
+REQ_DATE_RUN = 0x00000800
 REQ_DATE_RECENTLY_CHGD = 0x00001000
 
 DEFAULT_FLAGS = REQ_FULL_PATH | REQ_SIZE | REQ_DATE_CREATED | REQ_DATE_MODIFIED
 
-SORT_NAME_ASC           = 1
-SORT_NAME_DESC          = 2
-SORT_SIZE_ASC           = 5
-SORT_SIZE_DESC          = 6
-SORT_DATE_CREATED_ASC   = 11
-SORT_DATE_CREATED_DESC  = 12
-SORT_DATE_MODIFIED_ASC  = 13
+SORT_NAME_ASC = 1
+SORT_NAME_DESC = 2
+SORT_SIZE_ASC = 5
+SORT_SIZE_DESC = 6
+SORT_DATE_CREATED_ASC = 11
+SORT_DATE_CREATED_DESC = 12
+SORT_DATE_MODIFIED_ASC = 13
 SORT_DATE_MODIFIED_DESC = 14
-SORT_DATE_ACCESSED_ASC  = 23
+SORT_DATE_ACCESSED_ASC = 23
 SORT_DATE_ACCESSED_DESC = 24
 
 
 # File-type classification
-_EXT_VIDEO   = frozenset(
+_EXT_VIDEO = frozenset(
     '3g2 3gp 3gp2 3gpp amv asf avi bdmv bik d2v divx drc dsa dsm dss dsv evo '
     'f4v flc fli flic flv hdmov ifo ivf m1v m2p m2t m2ts m2v m4v mkv mov '
     'mp2v mp4 mp4v mpe mpeg mpg mpls mpv2 mpv4 mts ogm ogv pss pva qt ram '
     'ratdvd rm rmm rmvb roq rpm smil smk swf tp tpr ts vob vp6 webm wm wmp wmv'.split()
 )
-_EXT_IMAGE   = frozenset(
+_EXT_IMAGE = frozenset(
     'ani apng avif bmp cur gif heic heif hif ico jfi jfif jif jpe jpeg jpg '
     'pcx png psb psd rle svg tga tif tiff webp wmf hdr rgbe exr'.split()
 )
-_EXT_AUDIO   = frozenset(
+_EXT_AUDIO = frozenset(
     'aac ac3 aif aifc aiff amr ape au cda dts fla flac it m1a m2a m3u m4a m4b '
     'mid midi mka mod mp2 mp3 mpa mpc ogg opus ra rmi snd spc voc wav weba wma xm'.split()
 )
-_EXT_DOC     = frozenset(
+_EXT_DOC = frozenset(
     'doc docm docx dot dotm dotx epub mobi odt pdf rtf txt wpd wps wri'.split()
 )
-_EXT_SHEET   = frozenset('csv ods xls xlsb xlsm xlsx xltm xltx'.split())
-_EXT_PPTX    = frozenset('odp pot potm potx pps ppsm ppsx ppt pptm pptx'.split())
-_EXT_EXEC    = frozenset('bat cmd exe msi msp msu ps1 scr'.split())
+_EXT_SHEET = frozenset('csv ods xls xlsb xlsm xlsx xltm xltx'.split())
+_EXT_PPTX = frozenset('odp pot potm potx pps ppsm ppsx ppt pptm pptx'.split())
+_EXT_EXEC = frozenset('bat cmd exe msi msp msu ps1 scr'.split())
 _EXT_ARCHIVE = frozenset('7z ace arj bz2 cab gz gzip jar r00 rar tar tgz z zip cbz cbr'.split())
-_EXT_3D      = frozenset(
+_EXT_3D = frozenset(
     '3ds amf blend dae fbx glb gltf lwo lws ma mb obj off ply skp stl step stp '
     'vrml wrl x3d zpr'.split()
 )
-_EXT_CRYPTO  = frozenset('asc gpg pgp key pem crt cer p7b p12 pfx pub'.split())
-_EXT_DB      = frozenset('db sqlite sqlite3 db3 s3db sl3'.split())
-_EXT_FONT    = frozenset('ttf otf woff woff2 eot fon'.split())
-_EXT_EMAIL   = frozenset('eml msg'.split())
+_EXT_CRYPTO = frozenset('asc gpg pgp key pem crt cer p7b p12 pfx pub'.split())
+_EXT_DB = frozenset('db sqlite sqlite3 db3 s3db sl3'.split())
+_EXT_FONT = frozenset('ttf otf woff woff2 eot fon'.split())
+_EXT_EMAIL = frozenset('eml msg'.split())
 _EXT_TORRENT = frozenset('torrent'.split())
-_EXT_LINK    = frozenset('lnk'.split())
+_EXT_LINK = frozenset('lnk'.split())
 
 
 _EXT_CATEGORIES: Dict[str, str] = {}
@@ -200,90 +200,90 @@ DEFAULT_FIELD_ORDER: List[str] = [
 class Result:
     """Single search result with rich metadata. All fields default to None."""
     # Identity
-    name:          Optional[str]               = None
-    full_path:     Optional[str]               = None
-    type:          Optional[str]               = None
+    name:          Optional[str] = None
+    full_path:     Optional[str] = None
+    type:          Optional[str] = None
     # Size
-    size_bytes:    Optional[int]               = None
-    size:          Optional[str]               = None
+    size_bytes:    Optional[int] = None
+    size:          Optional[str] = None
     # Dates
     date_modified: Optional[datetime.datetime] = None
     date_created:  Optional[datetime.datetime] = None
     # Permissions
-    permissions:   Optional[str]               = None
+    permissions:   Optional[str] = None
     # Image / video
-    dimensions:    Optional[tuple]             = None
-    length:        Optional[str]               = None
-    color_mode:    Optional[str]               = None
-    bit_depth:     Optional[int]               = None
-    dpi:           Optional[str]               = None
+    dimensions:    Optional[tuple] = None
+    length:        Optional[str] = None
+    color_mode:    Optional[str] = None
+    bit_depth:     Optional[int] = None
+    dpi:           Optional[str] = None
     # Audio tags
-    album:         Optional[str]               = None
-    album_artist:  Optional[str]               = None
-    artist:        Optional[str]               = None
-    title:         Optional[str]               = None
-    track:         Optional[str]               = None
-    year:          Optional[str]               = None
-    genre:         Optional[str]               = None
-    bitrate:       Optional[int]               = None
-    sample_rate:   Optional[int]               = None
-    channels:      Optional[int]               = None
+    album:         Optional[str] = None
+    album_artist:  Optional[str] = None
+    artist:        Optional[str] = None
+    title:         Optional[str] = None
+    track:         Optional[str] = None
+    year:          Optional[str] = None
+    genre:         Optional[str] = None
+    bitrate:       Optional[int] = None
+    sample_rate:   Optional[int] = None
+    channels:      Optional[int] = None
     # Archive
-    file_count:          Optional[int]         = None
-    dir_count:           Optional[int]         = None
-    total_uncompressed:  Optional[str]         = None
-    compression_method:  Optional[str]         = None
-    encrypted:           Optional[str]         = None
-    archive_comment:     Optional[str]         = None
-    nested_archives:     Optional[int]         = None
+    file_count:          Optional[int] = None
+    dir_count:           Optional[int] = None
+    total_uncompressed:  Optional[str] = None
+    compression_method:  Optional[str] = None
+    encrypted:           Optional[str] = None
+    archive_comment:     Optional[str] = None
+    nested_archives:     Optional[int] = None
     # Spreadsheet / Presentation
-    sheet_count:   Optional[int]               = None
-    slide_count:   Optional[int]               = None
-    notes_count:   Optional[int]               = None
+    sheet_count:   Optional[int] = None
+    slide_count:   Optional[int] = None
+    notes_count:   Optional[int] = None
     # Crypto / Key
-    key_type:      Optional[str]               = None
-    algorithm:     Optional[str]               = None
-    key_id:        Optional[str]               = None
-    created:       Optional[str]               = None
-    expires:       Optional[str]               = None
-    user_id:       Optional[str]               = None
-    packet_types:  Optional[str]               = None
-    armored:       Optional[bool]              = None
-    key_comment:   Optional[str]               = None
+    key_type:      Optional[str] = None
+    algorithm:     Optional[str] = None
+    key_id:        Optional[str] = None
+    created:       Optional[str] = None
+    expires:       Optional[str] = None
+    user_id:       Optional[str] = None
+    packet_types:  Optional[str] = None
+    armored:       Optional[bool] = None
+    key_comment:   Optional[str] = None
     # Database
-    db_tables:     Optional[str]               = None
-    db_encoding:   Optional[str]               = None
-    db_page_size:  Optional[int]               = None
-    db_page_count: Optional[int]               = None
+    db_tables:     Optional[str] = None
+    db_encoding:   Optional[str] = None
+    db_page_size:  Optional[int] = None
+    db_page_count: Optional[int] = None
     # Font
-    font_family:      Optional[str]            = None
-    font_subfamily:   Optional[str]            = None
-    font_full_name:   Optional[str]            = None
-    font_version:     Optional[str]            = None
-    glyph_count:      Optional[int]            = None
-    units_per_em:     Optional[int]            = None
+    font_family:      Optional[str] = None
+    font_subfamily:   Optional[str] = None
+    font_full_name:   Optional[str] = None
+    font_version:     Optional[str] = None
+    glyph_count:      Optional[int] = None
+    units_per_em:     Optional[int] = None
     # Email
-    email_subject:     Optional[str]           = None
-    email_sender:      Optional[str]           = None
-    email_recipients:  Optional[str]           = None
-    email_date:        Optional[str]           = None
-    email_attachments: Optional[int]           = None
+    email_subject:     Optional[str] = None
+    email_sender:      Optional[str] = None
+    email_recipients:  Optional[str] = None
+    email_date:        Optional[str] = None
+    email_attachments: Optional[int] = None
     # Torrent
-    torrent_name:    Optional[str]             = None
-    torrent_files:   Optional[int]             = None
-    torrent_size:    Optional[str]             = None
-    torrent_tracker: Optional[str]             = None
-    torrent_created: Optional[str]             = None
-    torrent_private: Optional[str]             = None
+    torrent_name:    Optional[str] = None
+    torrent_files:   Optional[int] = None
+    torrent_size:    Optional[str] = None
+    torrent_tracker: Optional[str] = None
+    torrent_created: Optional[str] = None
+    torrent_private: Optional[str] = None
     # Shortcut
-    shortcut_target:      Optional[str]        = None
-    shortcut_working_dir: Optional[str]        = None
-    shortcut_args:        Optional[str]        = None
-    shortcut_icon:        Optional[str]        = None
-    shortcut_hotkey:      Optional[str]        = None
-    shortcut_show:        Optional[str]        = None
+    shortcut_target:      Optional[str] = None
+    shortcut_working_dir: Optional[str] = None
+    shortcut_args:        Optional[str] = None
+    shortcut_icon:        Optional[str] = None
+    shortcut_hotkey:      Optional[str] = None
+    shortcut_show:        Optional[str] = None
     # 3D
-    info_3d:       Optional[str]               = None
+    info_3d:       Optional[str] = None
 
     def to_dict(
         self,
@@ -324,7 +324,7 @@ _NATIVE_TOKEN_RE = re.compile(
     re.IGNORECASE,
 )
 _QUOTED_PATH_RE = re.compile(r'"([A-Za-z]:[^"]*)"')
-_GLOB_EXT_RE    = re.compile(r'^\*\.(\w+)$')
+_GLOB_EXT_RE = re.compile(r'^\*\.(\w+)$')
 
 
 def _parse_query(raw: str) -> str:
@@ -382,8 +382,8 @@ class EverythingSearch:
             dll_path = Path(__file__).parent / 'Everything64.dll'
         self._dll_path = str(dll_path)
         self._dll: Optional[ctypes.WinDLL] = None
-        self._path_buf  = ctypes.create_unicode_buffer(32767)
-        self._size_buf  = ctypes.c_ulonglong(0)
+        self._path_buf = ctypes.create_unicode_buffer(32767)
+        self._size_buf = ctypes.c_ulonglong(0)
         self._mtime_buf = ctypes.c_ulonglong(0)
         self._ctime_buf = ctypes.c_ulonglong(0)
 
@@ -422,9 +422,9 @@ class EverythingSearch:
         self,
         query: str,
         *,
-        limit:        int  = -1,
-        sort:         int  = SORT_DATE_MODIFIED_DESC,
-        flags:        int  = DEFAULT_FLAGS,
+        limit:        int = -1,
+        sort:         int = SORT_DATE_MODIFIED_DESC,
+        flags:        int = DEFAULT_FLAGS,
         regex:        bool = False,
         metadata:     bool = True,
         python_dates: bool = False,
@@ -487,20 +487,20 @@ class EverythingSearch:
                     dll.Everything_GetResultDateCreated(i, self._ctime_buf)
                     date_created = _filetime_to_dt(self._ctime_buf.value)
 
-                p     = Path(full_path) if full_path else None
-                name  = p.name   if p else None
-                ext   = p.suffix if p else ''
+                p = Path(full_path) if full_path else None
+                name = p.name   if p else None
+                ext = p.suffix if p else ''
                 ftype = _classify(ext)
 
                 result = Result(
-                    name          = name,
-                    full_path     = full_path,
-                    type          = ftype,
-                    size_bytes    = size_bytes,
-                    size          = _human_size(size_bytes),
+                    name = name,
+                    full_path = full_path,
+                    type = ftype,
+                    size_bytes = size_bytes,
+                    size = _human_size(size_bytes),
                     date_modified = date_modified,
-                    date_created  = date_created,
-                    permissions   = _permission_string(full_path) if full_path else None,
+                    date_created = date_created,
+                    permissions = _permission_string(full_path) if full_path else None,
                 )
 
                 if metadata and full_path and p and p.exists():
@@ -522,8 +522,8 @@ class EverythingSearch:
             info = _meta.image_info(path, ext)
             r.dimensions = info.get('dimensions')
             r.color_mode = info.get('color_mode')
-            r.bit_depth  = info.get('bit_depth')
-            r.dpi        = info.get('dpi')
+            r.bit_depth = info.get('bit_depth')
+            r.dpi = info.get('dpi')
 
         elif ftype == 'Video':
             info = _meta.video_info(path)
@@ -535,33 +535,33 @@ class EverythingSearch:
             tags = _meta.audio_tags(path)
             if tags.get('length_s'):
                 r.length = _meta._fmt_duration(tags['length_s'])
-            r.album        = tags.get('album')
+            r.album = tags.get('album')
             r.album_artist = tags.get('album_artist')
-            r.artist       = tags.get('artist')
-            r.title        = tags.get('title')
-            r.track        = tags.get('track')
-            r.year         = tags.get('year')
-            r.genre        = tags.get('genre')
-            r.bitrate      = tags.get('bitrate')
-            r.sample_rate  = tags.get('sample_rate')
-            r.channels     = tags.get('channels')
+            r.artist = tags.get('artist')
+            r.title = tags.get('title')
+            r.track = tags.get('track')
+            r.year = tags.get('year')
+            r.genre = tags.get('genre')
+            r.bitrate = tags.get('bitrate')
+            r.sample_rate = tags.get('sample_rate')
+            r.channels = tags.get('channels')
 
         elif ftype == 'Archive':
             info = _meta.archive_info(path, ext)
-            r.file_count        = info.get('file_count')
-            r.dir_count         = info.get('dir_count')
+            r.file_count = info.get('file_count')
+            r.dir_count = info.get('dir_count')
             r.total_uncompressed= info.get('total_uncompressed')
             r.compression_method= info.get('compression_method')
-            r.encrypted         = info.get('encrypted')
-            r.archive_comment   = info.get('comment')
-            r.nested_archives   = info.get('nested_archives')
+            r.encrypted = info.get('encrypted')
+            r.archive_comment = info.get('comment')
+            r.nested_archives = info.get('nested_archives')
 
         elif ftype == 'Document':
             r.length = _meta.doc_length(path, ext)
 
         elif ftype == 'Spreadsheet':
             info = _meta.spreadsheet_info(path, ext)
-            r.dimensions  = info.get('dimensions')
+            r.dimensions = info.get('dimensions')
             r.sheet_count = info.get('sheet_count')
             if r.dimensions:
                 r.length = f"{r.dimensions[0]:,} rows × {r.dimensions[1]:,} cols"
@@ -575,15 +575,15 @@ class EverythingSearch:
 
         elif ftype == 'Crypto/Key':
             info = _meta.crypto_info(path, ext)
-            r.key_type     = info.get('key_type')
-            r.algorithm    = info.get('algorithm')
-            r.key_id       = info.get('key_id')
-            r.created      = info.get('created')
-            r.expires      = info.get('expires')
-            r.user_id      = info.get('user_id')
+            r.key_type = info.get('key_type')
+            r.algorithm = info.get('algorithm')
+            r.key_id = info.get('key_id')
+            r.created = info.get('created')
+            r.expires = info.get('expires')
+            r.user_id = info.get('user_id')
             r.packet_types = info.get('packet_types')
-            r.armored      = info.get('armored')
-            r.key_comment  = info.get('comment')
+            r.armored = info.get('armored')
+            r.key_comment = info.get('comment')
 
         elif ftype == 'Database':
             info = _meta.sqlite_info(path)
@@ -596,44 +596,44 @@ class EverythingSearch:
                     if len(tables) > 8:
                         summary += f' … +{len(tables)-8} more'
                     r.db_tables = summary
-                r.db_encoding   = info.get('encoding')
-                r.db_page_size  = info.get('page_size')
+                r.db_encoding = info.get('encoding')
+                r.db_page_size = info.get('page_size')
                 r.db_page_count = info.get('page_count')
 
         elif ftype == 'Font':
             info = _meta.font_info(path, ext)
-            r.font_family     = info.get('family')
-            r.font_subfamily  = info.get('subfamily')
-            r.font_full_name  = info.get('full_name')
-            r.font_version    = info.get('version')
-            r.glyph_count     = info.get('glyph_count')
-            r.units_per_em    = info.get('units_per_em')
+            r.font_family = info.get('family')
+            r.font_subfamily = info.get('subfamily')
+            r.font_full_name = info.get('full_name')
+            r.font_version = info.get('version')
+            r.glyph_count = info.get('glyph_count')
+            r.units_per_em = info.get('units_per_em')
 
         elif ftype == 'Email':
             info = _meta.email_info(path, ext)
-            r.email_subject     = info.get('subject')
-            r.email_sender      = info.get('sender')
-            r.email_recipients  = info.get('recipients')
-            r.email_date        = info.get('date')
+            r.email_subject = info.get('subject')
+            r.email_sender = info.get('sender')
+            r.email_recipients = info.get('recipients')
+            r.email_date = info.get('date')
             r.email_attachments = info.get('attachment_count')
 
         elif ftype == 'Torrent':
             info = _meta.torrent_info(path)
-            r.torrent_name    = info.get('name')
-            r.torrent_files   = info.get('file_count')
-            r.torrent_size    = info.get('total_size')
+            r.torrent_name = info.get('name')
+            r.torrent_files = info.get('file_count')
+            r.torrent_size = info.get('total_size')
             r.torrent_tracker = info.get('tracker')
             r.torrent_created = info.get('creation_date')
             r.torrent_private = info.get('private')
 
         elif ftype == 'Shortcut':
             info = _meta.lnk_info(path)
-            r.shortcut_target      = info.get('target')
+            r.shortcut_target = info.get('target')
             r.shortcut_working_dir = info.get('working_dir')
-            r.shortcut_args        = info.get('arguments')
-            r.shortcut_icon        = info.get('icon')
-            r.shortcut_hotkey      = info.get('hotkey')
-            r.shortcut_show        = info.get('show_cmd')
+            r.shortcut_args = info.get('arguments')
+            r.shortcut_icon = info.get('icon')
+            r.shortcut_hotkey = info.get('hotkey')
+            r.shortcut_show = info.get('show_cmd')
 
         elif ftype == '3D':
             r.info_3d = _meta.model_3d_info(path, ext)
@@ -672,26 +672,26 @@ class EverythingSearch:
 
     # ctypes signatures
     def _setup_signatures(self) -> None:
-        dll   = self._dll
-        BOOL  = ctypes.c_bool
+        dll = self._dll
+        BOOL = ctypes.c_bool
         DWORD = ctypes.c_ulong
         WCHAR = ctypes.c_wchar_p
-        PULL  = ctypes.POINTER(ctypes.c_ulonglong)
+        PULL = ctypes.POINTER(ctypes.c_ulonglong)
 
-        dll.Everything_Reset.argtypes                  = []; dll.Everything_Reset.restype = None
-        dll.Everything_SetSearchW.argtypes             = [WCHAR]; dll.Everything_SetSearchW.restype = None
-        dll.Everything_SetRegex.argtypes               = [BOOL];  dll.Everything_SetRegex.restype = None
-        dll.Everything_SetRequestFlags.argtypes        = [DWORD]; dll.Everything_SetRequestFlags.restype = None
-        dll.Everything_SetSort.argtypes                = [DWORD]; dll.Everything_SetSort.restype = None
-        dll.Everything_SetMax.argtypes                 = [DWORD]; dll.Everything_SetMax.restype = None
-        dll.Everything_QueryW.argtypes                 = [BOOL];  dll.Everything_QueryW.restype = BOOL
-        dll.Everything_GetNumResults.argtypes          = []; dll.Everything_GetNumResults.restype = DWORD
-        dll.Everything_GetLastError.argtypes           = []; dll.Everything_GetLastError.restype = DWORD
+        dll.Everything_Reset.argtypes = []; dll.Everything_Reset.restype = None
+        dll.Everything_SetSearchW.argtypes = [WCHAR]; dll.Everything_SetSearchW.restype = None
+        dll.Everything_SetRegex.argtypes = [BOOL];  dll.Everything_SetRegex.restype = None
+        dll.Everything_SetRequestFlags.argtypes = [DWORD]; dll.Everything_SetRequestFlags.restype = None
+        dll.Everything_SetSort.argtypes = [DWORD]; dll.Everything_SetSort.restype = None
+        dll.Everything_SetMax.argtypes = [DWORD]; dll.Everything_SetMax.restype = None
+        dll.Everything_QueryW.argtypes = [BOOL];  dll.Everything_QueryW.restype = BOOL
+        dll.Everything_GetNumResults.argtypes = []; dll.Everything_GetNumResults.restype = DWORD
+        dll.Everything_GetLastError.argtypes = []; dll.Everything_GetLastError.restype = DWORD
         dll.Everything_GetResultFullPathNameW.argtypes = [DWORD, WCHAR, DWORD]
-        dll.Everything_GetResultFullPathNameW.restype  = None
-        dll.Everything_GetResultSize.argtypes          = [DWORD, PULL]; dll.Everything_GetResultSize.restype = None
-        dll.Everything_GetResultDateModified.argtypes  = [DWORD, PULL]; dll.Everything_GetResultDateModified.restype = None
-        dll.Everything_GetResultDateCreated.argtypes   = [DWORD, PULL]; dll.Everything_GetResultDateCreated.restype = None
+        dll.Everything_GetResultFullPathNameW.restype = None
+        dll.Everything_GetResultSize.argtypes = [DWORD, PULL]; dll.Everything_GetResultSize.restype = None
+        dll.Everything_GetResultDateModified.argtypes = [DWORD, PULL]; dll.Everything_GetResultDateModified.restype = None
+        dll.Everything_GetResultDateCreated.argtypes = [DWORD, PULL]; dll.Everything_GetResultDateCreated.restype = None
 
 
 # Demo

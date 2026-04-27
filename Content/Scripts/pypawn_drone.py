@@ -10,9 +10,9 @@ try:
     from unreal_engine.classes import StaticMeshActor, StaticMesh, Material
     from unreal_engine.enums import EComponentMobility
 except Exception:
-    StaticMeshActor    = None
-    StaticMesh         = None
-    Material           = None
+    StaticMeshActor = None
+    StaticMesh = None
+    Material = None
     EComponentMobility = None
 
 # TYPING REFERENCE (never changes):
@@ -56,26 +56,26 @@ class PyPawnDrone:
         self.legacy_mode = True # keep true as quat mode is broken
 
         rot = self.uobject.get_actor_rotation()   # FRotator
-        self._yaw   = rot.yaw
+        self._yaw = rot.yaw
         self._pitch = rot.pitch
-        self._roll  = rot.roll
+        self._roll = rot.roll
 
         self._axis_forward = 0.0
-        self._axis_right   = 0.0
-        self._axis_up      = 0.0
+        self._axis_right = 0.0
+        self._axis_up = 0.0
         self._axis_mouse_x = 0.0
         self._axis_mouse_y = 0.0
 
-        self._target_scale      = self.uobject.get_actor_scale()  # FVector
+        self._target_scale = self.uobject.get_actor_scale()  # FVector
         self._target_arm_length = None   # init from component on first tick
 
-        self.size_selector  = FiniteRepetitionSelector(current_operator="*", current_operand=2.0)
+        self.size_selector = FiniteRepetitionSelector(current_operator="*", current_operand=2.0)
         self.speed_selector = FiniteRepetitionSelector(current_operator="*", current_operand=2.0)
-        self.arm_selector   = FiniteRepetitionSelector(current_operator="*", current_operand=2.0)
+        self.arm_selector = FiniteRepetitionSelector(current_operator="*", current_operand=2.0)
 
         self.keyboard = Keyboard()
-        self.mouse    = Mouse()
-        self.input    = HotkeyManager(self.uobject, self.keyboard, self.mouse)
+        self.mouse = Mouse()
+        self.input = HotkeyManager(self.uobject, self.keyboard, self.mouse)
 
         # Crosshair image plane attached to Screen component
         self.crosshair_actor = None
@@ -93,8 +93,8 @@ class PyPawnDrone:
         '/Game/Materials/M_TextureUnlit',
     )
     CROSSHAIR_PARAM = 'Texture'
-    CROSSHAIR_SCALE = 1   # multiplier so tiny PNGs are visible at distance
-    SCREEN_NAME     = 'Screen'
+    CROSSHAIR_SCALE = .1   # multiplier so tiny PNGs are visible at distance
+    SCREEN_NAME = 'Screen'
 
     def _spawn_crosshair(self):
         """Add a StaticMeshComponent (cube) to the owning actor, attach it
@@ -153,41 +153,40 @@ class PyPawnDrone:
             from unreal_engine_tools import get_world
             world = self.uobject.get_world() or get_world()
             actor = world.actor_spawn(StaticMeshActor)
-            smc   = actor.StaticMeshComponent
-            cube  = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube')
-            smc.SetStaticMesh(cube)
+            # Disable collision so the Screen's SpringArm probe doesn't trip
+            # on the crosshair and collapse the arm to the drone center.
+            actor.SetActorEnableCollision(False)
+            smc = actor.StaticMeshComponent
             smc.Mobility = EComponentMobility.Movable
+            cube = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube')
+            smc.SetStaticMesh(cube)
 
             mid = smc.create_material_instance_dynamic(mat)
             mid.set_material_texture_parameter(self.CROSSHAIR_PARAM, tex)
             smc.set_material(0, mid)
 
-            actor.attach_to_component(screen)
+            # attach_to_component defaults are SnapToTarget(loc) / KeepWorld(rot) /
+            # SnapToTarget(scale), which wipes the relative transform on attach.
+            # Pass all-KeepRelative (0) so post-attach SetRelative* calls stick.
+            actor.attach_to_component(screen, '', 0, 0, 0, False)
 
-            # Target WORLD scale: square aspect preserved regardless of
-            # Screen's own (possibly non-uniform) scale. 1 UU per pixel ×
-            # CROSSHAIR_SCALE, divided by parent scale to yield the relative.
+            # Mark scale absolute so parent (Screen / pawn) scale changes
+            # after spawn don't stretch the cube. The Screen's world scale
+            # reads as (1,1,1) at begin_play but ends up non-uniform later;
+            # without this the cube inherits that stretch.
             try:
-                p = screen.get_world_scale()
-                px = abs(p.x) or 1e-6
-                py = abs(p.y) or 1e-6 # width
-                pz = abs(p.z) or 1e-6 # height
+                smc.SetAbsolute(False, False, True)
             except Exception:
-                px = py = pz = 1.0
-            tgt_wy = img_w * self.CROSSHAIR_SCALE / 100.0
-            tgt_wz = img_h * self.CROSSHAIR_SCALE / 100.0
-            rel_scale = FVector(0.001 / px, tgt_wy, tgt_wz)
-            try:
-                actor.set_actor_relative_scale(rel_scale)
-            except Exception:
-                actor.set_actor_scale(rel_scale)
+                try:
+                    smc.bAbsoluteScale = True
+                except Exception:
+                    pass
 
-            # Front face of default cube is at local Y = -50. Add a small
-            # world-space epsilon (scaled to local by parent Y) to avoid
-            # z-fighting with the Screen plane.
-            y_rel = py*.5
-            z_rel = pz*.5
-            actor.K2_SetActorRelativeLocation(FVector(0, y_rel, z_rel))
+            tgt = (img_w * self.CROSSHAIR_SCALE / 100.0)
+            actor.set_actor_scale(FVector(0.001, tgt, tgt))
+
+            # y_rel = -(50.0 + 0.5 / py)
+            actor.K2_SetActorRelativeLocation(FVector(0, 0, 0))
 
             self.crosshair_actor = actor  # keep ref for cleanup
             ue.log(f'PyPawnDrone: crosshair {int(img_w)}x{int(img_h)} px '
@@ -249,9 +248,9 @@ class PyPawnDrone:
         self.continuous_tilt = not self.continuous_tilt
         if not self.continuous_tilt:
             rot = self.uobject.get_actor_rotation()
-            self._yaw   = rot.yaw
+            self._yaw = rot.yaw
             self._pitch = rot.pitch
-            self._roll  = rot.roll
+            self._roll = rot.roll
         self._dbg(f"PyPawnDrone: continuous_tilt={'ON' if self.continuous_tilt else 'OFF'}")
 
     def toggle_debug(self):
@@ -278,11 +277,15 @@ class PyPawnDrone:
     #  Axis handlers                                                       #
     # #
 
-    def _on_axis_forward(self, v): self._axis_forward = v
-    def _on_axis_right(self, v):   self._axis_right   = v
-    def _on_axis_up(self, v):      self._axis_up      = v
-    def _on_mouse_x(self, v):      self._axis_mouse_x = v
-    def _on_mouse_y(self, v):      self._axis_mouse_y = v
+    # Axis setters belt-and-brace _apply_movement / _apply_rotation: storing
+    # 0.0 while typing means a stale class or any other reader of these
+    # attributes (Blueprint, future tick path, hot-reloaded duplicate) still
+    # sees no input.
+    def _on_axis_forward(self, v): self._axis_forward = 0.0 if self._is_typing() else v
+    def _on_axis_right(self, v):   self._axis_right = 0.0 if self._is_typing() else v
+    def _on_axis_up(self, v):      self._axis_up = 0.0 if self._is_typing() else v
+    def _on_mouse_x(self, v):      self._axis_mouse_x = 0.0 if self._is_typing() else v
+    def _on_mouse_y(self, v):      self._axis_mouse_y = 0.0 if self._is_typing() else v
 
     def _on_mmb_pressed(self):
         if self._is_typing():
@@ -417,7 +420,7 @@ class PyPawnDrone:
     def _apply_scale_lerp(self, dt):
         cur = self.uobject.get_actor_scale()   # FVector: .x .y .z
         tgt = self._target_scale               # FVector: .x .y .z
-        a   = min(1.0, self.SCALE_LERP_SPEED * dt)
+        a = min(1.0, self.SCALE_LERP_SPEED * dt)
         self.uobject.set_actor_scale(FVector(
             cur.x + (tgt.x - cur.x) * a,
             cur.y + (tgt.y - cur.y) * a,
@@ -455,15 +458,15 @@ class PyPawnDrone:
     def _apply_movement(self, dt):
         if self._is_typing():
             return
-        fwd   = self._axis_forward
+        fwd = self._axis_forward
         right = self._axis_right
-        up    = self._axis_up
+        up = self._axis_up
         if fwd == 0.0 and right == 0.0 and up == 0.0:
             return
-        rot       = self.uobject.get_actor_rotation()
-        fwd_vec   = KismetMathLibrary.GetForwardVector(rot)
+        rot = self.uobject.get_actor_rotation()
+        fwd_vec = KismetMathLibrary.GetForwardVector(rot)
         right_vec = KismetMathLibrary.GetRightVector(rot)
-        up_vec    = KismetMathLibrary.GetUpVector(rot)
+        up_vec = KismetMathLibrary.GetUpVector(rot)
         delta = (
             fwd_vec   * (fwd   * self.move_speed) +
             right_vec * (right * self.move_speed) +
@@ -483,7 +486,7 @@ class PyPawnDrone:
         my = self._axis_mouse_y
         rs = self.rotation_speed
 
-        alt_held  = self.input.is_key_down("LeftAlt")
+        alt_held = self.input.is_key_down("LeftAlt")
         ctrl_held = self.input.is_key_down("Ctrl")
 
         # Ctrl+Alt -> size-only mode, skip all rotation

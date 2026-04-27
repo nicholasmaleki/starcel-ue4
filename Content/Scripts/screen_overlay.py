@@ -95,8 +95,8 @@ def spawn_textured_plane(uobject, pil_image, material_paths, param_name='Texture
         world = get_world()
 
     actor = world.actor_spawn(StaticMeshActor)
-    smc   = actor.StaticMeshComponent
-    cube  = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube')
+    smc = actor.StaticMeshComponent
+    cube = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube')
     smc.SetStaticMesh(cube)
     smc.SetMobility(EComponentMobility.Movable)
 

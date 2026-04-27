@@ -50,9 +50,9 @@ def _data_dir() -> Path:
     return d
 
 
-DATA_DIR    = _data_dir()
+DATA_DIR = _data_dir()
 RESULT_FILE = DATA_DIR / "sysmon_text.txt"
-PID_FILE    = DATA_DIR / "sysmon_worker.pid"
+PID_FILE = DATA_DIR / "sysmon_worker.pid"
 
 
 def _write_atomic(path: Path, text: str) -> None:

@@ -45,10 +45,10 @@ def _default_data_dir() -> Path:
     d.mkdir(parents=True, exist_ok=True)
     return d
 
-DATA_DIR      = _default_data_dir()
-STATS_FILE    = DATA_DIR / "activity_stats.json"
-PERSIST_FILE  = DATA_DIR / "activity_persist.json"   # survives restarts
-LOG_FILE      = DATA_DIR / "activity_log.txt"
+DATA_DIR = _default_data_dir()
+STATS_FILE = DATA_DIR / "activity_stats.json"
+PERSIST_FILE = DATA_DIR / "activity_persist.json"   # survives restarts
+LOG_FILE = DATA_DIR / "activity_log.txt"
 
 _lock = Lock()
 
@@ -101,16 +101,16 @@ def _save() -> None:
         session_sec = (now - datetime.fromisoformat(_state["session_start"])).total_seconds()
         mins = max(session_sec / 60, 0.01667)
 
-        _state["clicks_per_min"]  = round(_state["mouse_total_clicks"] / mins, 2)
-        _state["keys_per_min"]    = round(_state["key_total"] / mins, 2)
+        _state["clicks_per_min"] = round(_state["mouse_total_clicks"] / mins, 2)
+        _state["keys_per_min"] = round(_state["key_total"] / mins, 2)
         _state["actions_per_min"] = round((_state["mouse_total_clicks"] + _state["key_total"]) / mins, 2)
 
         # Merge with persist
         combined = dict(_state)
         combined["alltime_mouse_clicks"] = _persist["alltime_mouse_clicks"]
-        combined["alltime_key_total"]    = _persist["alltime_key_total"]
-        combined["alltime_distance_px"]  = _persist["alltime_distance_px"]
-        combined["alltime_scroll"]       = _persist["alltime_scroll"]
+        combined["alltime_key_total"] = _persist["alltime_key_total"]
+        combined["alltime_distance_px"] = _persist["alltime_distance_px"]
+        combined["alltime_scroll"] = _persist["alltime_scroll"]
 
         # Write stats (for sysinfo.py to read)
         tmp = STATS_FILE.with_suffix(".tmp")
@@ -181,7 +181,7 @@ def _start_listeners() -> None:
     mouse_listener = mouse.Listener(on_click=on_click, on_move=on_move, on_scroll=on_scroll)
     keyboard_listener = keyboard.Listener(on_press=on_press)
 
-    mouse_listener.daemon    = True
+    mouse_listener.daemon = True
     keyboard_listener.daemon = True
     mouse_listener.start()
     keyboard_listener.start()
@@ -190,8 +190,8 @@ def _start_listeners() -> None:
     print(f"[activity_tracker] Log         → {LOG_FILE}")
 
     SAVE_INTERVAL = 5    # seconds between disk writes
-    LOG_INTERVAL  = 300  # 5 minutes between log entries
-    last_log      = time.time()
+    LOG_INTERVAL = 300  # 5 minutes between log entries
+    last_log = time.time()
 
     def _shutdown(sig, frame):
         _save()

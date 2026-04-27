@@ -73,15 +73,15 @@ class PyActorPlotter:
 
     # Defaults
     function_expr = 'sin(x)+cos(y)'
-    plot_type     = 'surface'
-    mesh_mode     = 'triangles'
-    orientation   = 'ground_table'
-    resolution    = 32
-    x_range       = (-math.pi, math.pi)
-    y_range       = (-math.pi, math.pi)
-    z_range       = (-2.0,  2.0)
-    units_per_uu  = 100.0
-    show_grid     = True
+    plot_type = 'surface'
+    mesh_mode = 'triangles'
+    orientation = 'ground_table'
+    resolution = 32
+    x_range = (-math.pi, math.pi)
+    y_range = (-math.pi, math.pi)
+    z_range = (-2.0,  2.0)
+    units_per_uu = 100.0
+    show_grid = True
 
     def begin_play(self):
         self._plotter = None
@@ -102,17 +102,17 @@ class PyActorPlotter:
             self._plotter = None
 
         origin = self.uobject.get_actor_location()
-        fn     = _compile(self.function_expr)
+        fn = _compile(self.function_expr)
 
         try:
             p = create_plotter(
-                world        = get_world(),
-                origin       = origin,
-                x_range      = self.x_range,
-                y_range      = self.y_range,
-                z_range      = self.z_range,
+                world = get_world(),
+                origin = origin,
+                x_range = self.x_range,
+                y_range = self.y_range,
+                z_range = self.z_range,
                 units_per_uu = self.units_per_uu,
-                orientation  = self.orientation,
+                orientation = self.orientation,
             )
         except Exception as exc:
             ue.log_warning(f'PyActorPlotter: create_plotter failed: {exc}')
@@ -165,7 +165,7 @@ class PyActorPlotter:
             pc.set_function('sin(sqrt(x**2+y**2))', plot_type='heatmap', resolution=48)
         """
         self.function_expr = expr
-        if plot_type  is not None: self.plot_type  = plot_type
+        if plot_type  is not None: self.plot_type = plot_type
         if resolution is not None: self.resolution = resolution
         self.render()
 

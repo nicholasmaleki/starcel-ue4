@@ -31,7 +31,7 @@ QUOTES = [
 
 FONT_PATH = '/Game/Fonts/CatFont_Font'
 QUOTE_INTERVAL = 90.0   # 1.5 minutes between quote changes
-QUOTE_OFFSET   = FVector(-55, -10, -35)  # to the right and up from the cat
+QUOTE_OFFSET = FVector(-55, -10, -35)  # to the right and up from the cat
 TEXT_LINE_LENGTH = 25
 
 
@@ -39,9 +39,9 @@ class PyActorQur:
     """Spawns a rotating quote above the Qur cat using CatFont."""
 
     def begin_play(self):
-        self._elapsed    = 0.0
+        self._elapsed = 0.0
         self._quote_actor = None
-        self._font       = None
+        self._font = None
         self._first_quote_pending = True
 
         try:

@@ -53,9 +53,9 @@ from typing import Any, Dict, List, Optional, Tuple
 import psutil
 
 # OS detection
-_OS       = platform.system()
-_IS_WIN   = _OS == "Windows"
-_IS_MAC   = _OS == "Darwin"
+_OS = platform.system()
+_IS_WIN = _OS == "Windows"
+_IS_MAC = _OS == "Darwin"
 _IS_LINUX = _OS == "Linux"
 
 # Windows-only imports
@@ -123,7 +123,7 @@ def _data_dir() -> Path:
     d.mkdir(parents=True, exist_ok=True)
     return d
 
-DATA_DIR      = _data_dir()
+DATA_DIR = _data_dir()
 SNAPSHOT_FILE = DATA_DIR / "snapshots.txt"
 
 # Activity tracker stats file
@@ -162,7 +162,7 @@ def _bytes_to_tb(b: int) -> float: return b / (1024 ** 4)
 def _fmt_uptime(seconds: float) -> str:
     d, rem = divmod(int(seconds), 86400)
     h, rem = divmod(rem, 3600)
-    m, s   = divmod(rem, 60)
+    m, s = divmod(rem, 60)
     parts = []
     if d: parts.append(f"{d}d")
     if h: parts.append(f"{h}h")
@@ -216,10 +216,10 @@ def _collect_clipboard() -> Dict[str, Any]:
             text = _run_ps("Get-Clipboard -Format Text 2>$null")
             if text:
                 out["content_type"] = "text"
-                out["preview"]      = text[:120].replace("\n", "↵")
-                out["char_count"]   = len(text)
-                out["word_count"]   = len(text.split())
-                out["line_count"]   = text.count("\n") + 1
+                out["preview"] = text[:120].replace("\n", "↵")
+                out["char_count"] = len(text)
+                out["word_count"] = len(text.split())
+                out["line_count"] = text.count("\n") + 1
                 return out
         except Exception:
             pass
@@ -235,8 +235,8 @@ def _collect_clipboard() -> Dict[str, Any]:
                     "if($i){\"$($i.Width)x$($i.Height)\"}"
                 )
                 out["content_type"] = "image"
-                out["image_size"]   = size or "unknown"
-                out["preview"]      = f"Image ({out['image_size']})"
+                out["image_size"] = size or "unknown"
+                out["preview"] = f"Image ({out['image_size']})"
                 return out
         except Exception:
             pass
@@ -245,9 +245,9 @@ def _collect_clipboard() -> Dict[str, Any]:
             if files:
                 fl = [f.strip() for f in files.splitlines() if f.strip()]
                 out["content_type"] = "files"
-                out["has_files"]    = len(fl)
-                out["file_list"]    = fl[:10]
-                out["preview"]      = f"{len(fl)} file(s): " + ", ".join(Path(f).name for f in fl[:3])
+                out["has_files"] = len(fl)
+                out["file_list"] = fl[:10]
+                out["preview"] = f"{len(fl)} file(s): " + ", ".join(Path(f).name for f in fl[:3])
                 return out
         except Exception:
             pass
@@ -256,10 +256,10 @@ def _collect_clipboard() -> Dict[str, Any]:
         text = _run(["pbpaste"])
         if text:
             out["content_type"] = "text"
-            out["preview"]      = text[:120].replace("\n", "↵")
-            out["char_count"]   = len(text)
-            out["word_count"]   = len(text.split())
-            out["line_count"]   = text.count("\n") + 1
+            out["preview"] = text[:120].replace("\n", "↵")
+            out["char_count"] = len(text)
+            out["word_count"] = len(text.split())
+            out["line_count"] = text.count("\n") + 1
 
     elif _IS_LINUX:
         for cmd in [["xclip", "-selection", "clipboard", "-o"],
@@ -268,10 +268,10 @@ def _collect_clipboard() -> Dict[str, Any]:
             text = _run(cmd)
             if text:
                 out["content_type"] = "text"
-                out["preview"]      = text[:120].replace("\n", "↵")
-                out["char_count"]   = len(text)
-                out["word_count"]   = len(text.split())
-                out["line_count"]   = text.count("\n") + 1
+                out["preview"] = text[:120].replace("\n", "↵")
+                out["char_count"] = len(text)
+                out["word_count"] = len(text.split())
+                out["line_count"] = text.count("\n") + 1
                 break
 
     return out
@@ -351,7 +351,7 @@ def _collect_open_apps() -> Dict[str, Any]:
                     items = [items]
                 apps = []
                 for it in items:
-                    name  = (it.get("ProcessName") or "").strip()
+                    name = (it.get("ProcessName") or "").strip()
                     title = (it.get("MainWindowTitle") or "").strip()
                     if name:
                         apps.append({
@@ -360,7 +360,7 @@ def _collect_open_apps() -> Dict[str, Any]:
                             "cpu":    it.get("CPU", 0),
                             "mem_mb": it.get("RAM_MB", 0),
                         })
-                out["apps"]  = apps
+                out["apps"] = apps
                 out["count"] = len(apps)
         except Exception:
             pass
@@ -372,7 +372,7 @@ def _collect_open_apps() -> Dict[str, Any]:
             result = _run(["osascript", "-e", script], timeout=4)
             if result:
                 apps = [a.strip() for a in result.split(",") if a.strip()]
-                out["apps"]  = [{"name": a, "title": a} for a in apps]
+                out["apps"] = [{"name": a, "title": a} for a in apps]
                 out["count"] = len(apps)
         except Exception:
             pass
@@ -387,7 +387,7 @@ def _collect_open_apps() -> Dict[str, Any]:
                     if len(parts) >= 4:
                         apps.append({"name": parts[3].strip()[:60],
                                      "title": parts[3].strip()[:60]})
-                out["apps"]  = apps
+                out["apps"] = apps
                 out["count"] = len(apps)
         except Exception:
             pass
@@ -434,7 +434,7 @@ def _collect_activity(units: str) -> Dict[str, Any]:
         )[:8],
     }
     dist_px = stats.get("mouse_distance_px", 0)
-    out["mouse_distance"]   = _px_to_dist(dist_px, units)
+    out["mouse_distance"] = _px_to_dist(dist_px, units)
     alltime_px = stats.get("alltime_distance_px", 0)
     out["alltime_distance"] = _px_to_dist(alltime_px, units)
 
@@ -445,14 +445,14 @@ def _collect_activity(units: str) -> Dict[str, Any]:
 
 def _collect_system() -> Dict[str, Any]:
     out: Dict[str, Any] = {}
-    out["platform"]     = _OS
-    out["pc_name"]      = platform.node()
-    out["os_name"]      = platform.system()
-    out["os_version"]   = platform.version()
-    out["os_release"]   = platform.release()
+    out["platform"] = _OS
+    out["pc_name"] = platform.node()
+    out["os_name"] = platform.system()
+    out["os_version"] = platform.version()
+    out["os_release"] = platform.release()
     out["architecture"] = platform.machine()
-    out["hostname"]     = socket.gethostname()
-    out["python_ver"]   = platform.python_version()
+    out["hostname"] = socket.gethostname()
+    out["python_ver"] = platform.python_version()
 
     out["uptime_sec"] = time.time() - psutil.boot_time()
     out["uptime_str"] = _fmt_uptime(out["uptime_sec"])
@@ -514,23 +514,23 @@ def _collect_system() -> Dict[str, Any]:
     # BIOS / Board
     if _IS_WIN and _WMI_OK and not _MINIMAL:
         try:
-            bios  = _WMI.Win32_BIOS()[0]
+            bios = _WMI.Win32_BIOS()[0]
             board = _WMI.Win32_BaseBoard()[0]
-            out["bios_version"]    = getattr(bios, "Name", "N/A")
-            out["bios_date"]       = (getattr(bios, "ReleaseDate", "") or "")[:8]
+            out["bios_version"] = getattr(bios, "Name", "N/A")
+            out["bios_date"] = (getattr(bios, "ReleaseDate", "") or "")[:8]
             out["mb_manufacturer"] = getattr(board, "Manufacturer", "N/A")
-            out["mb_model"]        = getattr(board, "Product", "N/A")
+            out["mb_model"] = getattr(board, "Product", "N/A")
         except Exception:
             out["bios_version"] = out["bios_date"] = "N/A"
             out["mb_manufacturer"] = out["mb_model"] = "N/A"
     elif _IS_MAC:
         out["mb_manufacturer"] = "Apple"
-        out["mb_model"]        = _run(["sysctl", "-n", "hw.model"]) or "N/A"
-        out["bios_version"]    = "N/A"
+        out["mb_model"] = _run(["sysctl", "-n", "hw.model"]) or "N/A"
+        out["bios_version"] = "N/A"
     else:
-        out["bios_version"]    = _safe(lambda: Path("/sys/class/dmi/id/bios_version").read_text().strip(), "N/A")
+        out["bios_version"] = _safe(lambda: Path("/sys/class/dmi/id/bios_version").read_text().strip(), "N/A")
         out["mb_manufacturer"] = _safe(lambda: Path("/sys/class/dmi/id/board_vendor").read_text().strip(), "N/A")
-        out["mb_model"]        = _safe(lambda: Path("/sys/class/dmi/id/board_name").read_text().strip(), "N/A")
+        out["mb_model"] = _safe(lambda: Path("/sys/class/dmi/id/board_name").read_text().strip(), "N/A")
 
     return out
 
@@ -553,12 +553,12 @@ def _collect_cpu(units: str) -> Dict[str, Any]:
     else:
         out["cpu_name"] = platform.processor()
 
-    out["physical_cores"]    = psutil.cpu_count(logical=False)
-    out["logical_cores"]     = psutil.cpu_count(logical=True)
-    out["base_clock_ghz"]    = round(freq.max / 1000, 2) if freq else "N/A"
+    out["physical_cores"] = psutil.cpu_count(logical=False)
+    out["logical_cores"] = psutil.cpu_count(logical=True)
+    out["base_clock_ghz"] = round(freq.max / 1000, 2) if freq else "N/A"
     out["current_clock_ghz"] = round(freq.current / 1000, 2) if freq else "N/A"
-    out["utilization_pct"]   = psutil.cpu_percent(interval=0.2)
-    out["per_core_pct"]      = psutil.cpu_percent(interval=0.2, percpu=True)
+    out["utilization_pct"] = psutil.cpu_percent(interval=0.2)
+    out["per_core_pct"] = psutil.cpu_percent(interval=0.2, percpu=True)
 
     # Temperatures
     try:
@@ -585,9 +585,9 @@ def _collect_cpu(units: str) -> Dict[str, Any]:
         try:
             proc = _WMI.Win32_Processor()[0]
             out["virtualization"] = bool(getattr(proc, "VirtualizationFirmwareEnabled", False))
-            out["l2_cache_kb"]    = getattr(proc, "L2CacheSize", "N/A")
-            out["l3_cache_kb"]    = getattr(proc, "L3CacheSize", "N/A")
-            out["socket_desig"]   = getattr(proc, "SocketDesignation", "N/A")
+            out["l2_cache_kb"] = getattr(proc, "L2CacheSize", "N/A")
+            out["l3_cache_kb"] = getattr(proc, "L3CacheSize", "N/A")
+            out["socket_desig"] = getattr(proc, "SocketDesignation", "N/A")
         except Exception:
             pass
 
@@ -691,7 +691,7 @@ def _collect_memory(units: str) -> Dict[str, Any]:
         try:
             chips = _WMI.Win32_PhysicalMemory()
             speeds = [int(c.Speed) for c in chips if getattr(c, "Speed", None)]
-            out["speed_mhz"]  = speeds[0] if speeds else "N/A"
+            out["speed_mhz"] = speeds[0] if speeds else "N/A"
             out["slots_used"] = len(chips)
             ff_map = {8: "DIMM", 12: "SODIMM", 13: "SODIMM"}
             ff_val = int(getattr(chips[0], "FormFactor", 0)) if chips else 0
@@ -721,9 +721,9 @@ def _collect_storage(units: str) -> List[Dict[str, Any]]:
         }
         try:
             usage = psutil.disk_usage(part.mountpoint)
-            d["total_tb"]  = round(_bytes_to_tb(usage.total), 3)
-            d["used_tb"]   = round(_bytes_to_tb(usage.used), 3)
-            d["free_tb"]   = round(_bytes_to_tb(usage.free), 3)
+            d["total_tb"] = round(_bytes_to_tb(usage.total), 3)
+            d["used_tb"] = round(_bytes_to_tb(usage.used), 3)
+            d["free_tb"] = round(_bytes_to_tb(usage.free), 3)
             d["usage_pct"] = usage.percent
         except Exception:
             d["total_tb"] = d["used_tb"] = d["free_tb"] = d["usage_pct"] = "N/A"
@@ -741,9 +741,9 @@ def _collect_storage(units: str) -> List[Dict[str, Any]]:
                 disks = _WMI.Win32_DiskDrive()
                 if disks:
                     dk = disks[0]
-                    d["model"]      = getattr(dk, "Model", "N/A")
-                    d["serial"]     = (getattr(dk, "SerialNumber", "") or "").strip()
-                    d["interface"]  = getattr(dk, "InterfaceType", "N/A")
+                    d["model"] = getattr(dk, "Model", "N/A")
+                    d["serial"] = (getattr(dk, "SerialNumber", "") or "").strip()
+                    d["interface"] = getattr(dk, "InterfaceType", "N/A")
                     d["media_type"] = getattr(dk, "MediaType", "N/A")
             except Exception:
                 pass
@@ -825,7 +825,7 @@ def _collect_network(units: str) -> Dict[str, Any]:
         stat = psutil.net_if_stats().get(name)
         if stat:
             adapter["speed_mbps"] = stat.speed
-            adapter["is_up"]      = stat.isup
+            adapter["is_up"] = stat.isup
         if adapter.get("is_up"):
             adapters.append(adapter)
     out["adapters"] = adapters
@@ -837,9 +837,9 @@ def _collect_network(units: str) -> Dict[str, Any]:
             sm = re.search(r"^\s*SSID\s*:\s*(.+)", raw, re.MULTILINE)
             sig = re.search(r"Signal\s*:\s*(.+)", raw)
             spd = re.search(r"Receive rate.*?:\s*(.+)", raw)
-            out["wifi_ssid"]   = sm.group(1).strip()  if sm  else "N/A"
+            out["wifi_ssid"] = sm.group(1).strip()  if sm  else "N/A"
             out["wifi_signal"] = sig.group(1).strip()  if sig else "N/A"
-            out["wifi_speed"]  = spd.group(1).strip()  if spd else "N/A"
+            out["wifi_speed"] = spd.group(1).strip()  if spd else "N/A"
     elif _IS_MAC:
         airport = _run([
             "/System/Library/PrivateFrameworks/Apple80211.framework"
@@ -847,7 +847,7 @@ def _collect_network(units: str) -> Dict[str, Any]:
         ])
         sm = re.search(r" SSID: (.+)", airport)
         sp = re.search(r"lastTxRate: (\d+)", airport)
-        out["wifi_ssid"]  = sm.group(1).strip() if sm else "N/A"
+        out["wifi_ssid"] = sm.group(1).strip() if sm else "N/A"
         out["wifi_speed"] = f"{sp.group(1)} Mbps" if sp else "N/A"
     elif _IS_LINUX:
         out["wifi_ssid"] = _run(["iwgetid", "-r"]) or "N/A"
@@ -895,9 +895,9 @@ def _collect_audio() -> Dict[str, Any]:
     if _IS_WIN and _WMI_OK:
         try:
             devs = _WMI.Win32_SoundDevice()
-            out["output_device"]  = getattr(devs[0], "Name", "N/A") if devs else "N/A"
-            out["input_device"]   = getattr(devs[-1], "Name", "N/A") if len(devs) > 1 else "N/A"
-            out["all_devices"]    = [getattr(d, "Name", "N/A") for d in devs]
+            out["output_device"] = getattr(devs[0], "Name", "N/A") if devs else "N/A"
+            out["input_device"] = getattr(devs[-1], "Name", "N/A") if len(devs) > 1 else "N/A"
+            out["all_devices"] = [getattr(d, "Name", "N/A") for d in devs]
         except Exception:
             pass
         try:
@@ -956,7 +956,7 @@ def _collect_battery() -> Optional[Dict[str, Any]]:
         for bat in Path("/sys/class/power_supply").glob("BAT*"):
             try:
                 full = int((bat/"energy_full").read_text())
-                des  = int((bat/"energy_full_design").read_text())
+                des = int((bat/"energy_full_design").read_text())
                 out["wear_pct"] = round((1 - full/des)*100, 1) if des else "N/A"
                 break
             except Exception:
@@ -983,12 +983,12 @@ def _collect_bluetooth() -> Dict[str, Any]:
                 all_devs = [{"name": (it.get("FriendlyName") or "").strip(),
                               "status": (it.get("Status") or "").strip()}
                              for it in items if it.get("FriendlyName")]
-                adapters  = [d for d in all_devs if any(
+                adapters = [d for d in all_devs if any(
                     x in d["name"].lower() for x in ["adapter", "radio", "host"])]
-                periph    = [d for d in all_devs if d not in adapters]
+                periph = [d for d in all_devs if d not in adapters]
                 out["adapter_present"] = bool(adapters)
-                out["adapter_name"]    = adapters[0]["name"] if adapters else "N/A"
-                out["devices"]         = periph
+                out["adapter_name"] = adapters[0]["name"] if adapters else "N/A"
+                out["devices"] = periph
         except Exception:
             pass
 
@@ -1007,7 +1007,7 @@ def _collect_bluetooth() -> Dict[str, Any]:
                 m = re.match(r"Device ([\w:]+)\s+(.+)", line)
                 if m:
                     devs.append({"mac": m.group(1), "name": m.group(2)})
-            out["devices"]         = devs
+            out["devices"] = devs
             out["adapter_present"] = bool(devs) or bool(_run(["hciconfig"]))
         except Exception:
             pass
@@ -1021,16 +1021,16 @@ def _collect_weather(units: str) -> Dict[str, Any]:
     if not _REQUESTS_OK:
         return {"error": "pip install requests"}
     try:
-        geo  = _requests.get("https://ipapi.co/json/", timeout=4).json()
+        geo = _requests.get("https://ipapi.co/json/", timeout=4).json()
         city = geo.get("city", "Unknown")
         state = geo.get("region", "")
-        lat   = geo.get("latitude", 0)
-        lon   = geo.get("longitude", 0)
-        out   = {"location": f"{city}, {state}" if state else city}
+        lat = geo.get("latitude", 0)
+        lon = geo.get("longitude", 0)
+        out = {"location": f"{city}, {state}" if state else city}
 
         tu = "fahrenheit" if units == "usa" else "celsius"
         wu = "mph" if units == "usa" else "kmh"
-        r  = _requests.get(
+        r = _requests.get(
             f"https://api.open-meteo.com/v1/forecast"
             f"?latitude={lat}&longitude={lon}"
             f"&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code"
@@ -1040,13 +1040,13 @@ def _collect_weather(units: str) -> Dict[str, Any]:
         curr = r.get("current", {})
         u_t = "°F" if units == "usa" else "°C"
         u_w = "mph" if units == "usa" else "km/h"
-        wmo  = {0:"Clear",1:"Mainly clear",2:"Partly cloudy",3:"Overcast",
+        wmo = {0:"Clear",1:"Mainly clear",2:"Partly cloudy",3:"Overcast",
                 45:"Fog",51:"Light drizzle",61:"Light rain",71:"Light snow",95:"Thunderstorm"}
         code = curr.get("weather_code", -1)
         out["temperature"] = f"{curr.get('temperature_2m','N/A')}{u_t}"
-        out["humidity"]    = f"{curr.get('relative_humidity_2m','N/A')}%"
-        out["wind_speed"]  = f"{curr.get('wind_speed_10m','N/A')} {u_w}"
-        out["conditions"]  = wmo.get(code, f"Code {code}")
+        out["humidity"] = f"{curr.get('relative_humidity_2m','N/A')}%"
+        out["wind_speed"] = f"{curr.get('wind_speed_10m','N/A')} {u_w}"
+        out["conditions"] = wmo.get(code, f"Code {code}")
         return out
     except Exception as e:
         return {"error": str(e)}
@@ -1121,7 +1121,7 @@ def _collect_filesystem(units: str) -> Dict[str, Any]:
     # Everything counts (Windows only)
     if _EVERYTHING_OK:
         try:
-            out["total_objects"]     = f"{_EVERYTHING.count():,}"
+            out["total_objects"] = f"{_EVERYTHING.count():,}"
             out["downloads_objects"] = f"{_EVERYTHING.count(chr(34)+str(Path.home()/'Downloads')+chr(34)):,}"
             out["documents_objects"] = f"{_EVERYTHING.count(chr(34)+str(Path.home()/'Documents')+chr(34)):,}"
         except Exception:
@@ -1252,24 +1252,24 @@ def get_info_dict(mode: str = "normal", units: str = "usa") -> Dict[str, Any]:
         "_platform":  _OS,
         "_timestamp": datetime.datetime.now().isoformat(),
     }
-    if sections.get("system"):        data["system"]        = _safe(_collect_system, {})
-    if sections.get("cpu"):           data["cpu"]           = _safe(lambda: _collect_cpu(units), {})
-    if sections.get("gpu"):           data["gpu"]           = _safe(lambda: _collect_gpu(units), [])
-    if sections.get("memory"):        data["memory"]        = _safe(lambda: _collect_memory(units), {})
-    if sections.get("storage"):       data["storage"]       = _safe(lambda: _collect_storage(units), [])
-    if sections.get("network"):       data["network"]       = _safe(lambda: _collect_network(units), {})
-    if sections.get("display"):       data["display"]       = _safe(_collect_display, [])
-    if sections.get("audio"):         data["audio"]         = _safe(_collect_audio, {})
-    if sections.get("battery"):       data["battery"]       = _safe(_collect_battery, None)
-    if sections.get("bluetooth"):     data["bluetooth"]     = _safe(_collect_bluetooth, {})
-    if sections.get("weather"):       data["weather"]       = _safe(lambda: _collect_weather(units), {})
-    if sections.get("clipboard"):     data["clipboard"]     = _safe(_collect_clipboard, {})
+    if sections.get("system"):        data["system"] = _safe(_collect_system, {})
+    if sections.get("cpu"):           data["cpu"] = _safe(lambda: _collect_cpu(units), {})
+    if sections.get("gpu"):           data["gpu"] = _safe(lambda: _collect_gpu(units), [])
+    if sections.get("memory"):        data["memory"] = _safe(lambda: _collect_memory(units), {})
+    if sections.get("storage"):       data["storage"] = _safe(lambda: _collect_storage(units), [])
+    if sections.get("network"):       data["network"] = _safe(lambda: _collect_network(units), {})
+    if sections.get("display"):       data["display"] = _safe(_collect_display, [])
+    if sections.get("audio"):         data["audio"] = _safe(_collect_audio, {})
+    if sections.get("battery"):       data["battery"] = _safe(_collect_battery, None)
+    if sections.get("bluetooth"):     data["bluetooth"] = _safe(_collect_bluetooth, {})
+    if sections.get("weather"):       data["weather"] = _safe(lambda: _collect_weather(units), {})
+    if sections.get("clipboard"):     data["clipboard"] = _safe(_collect_clipboard, {})
     if sections.get("notifications"): data["notifications"] = _safe(_collect_notifications, {})
-    if sections.get("open_apps"):     data["open_apps"]     = _safe(_collect_open_apps, {})
-    if sections.get("activity"):      data["activity"]      = _safe(lambda: _collect_activity(units), {})
-    if sections.get("processes"):     data["processes"]     = _safe(_collect_processes, [])
-    if sections.get("filesystem"):    data["filesystem"]    = _safe(lambda: _collect_filesystem(units), {})
-    if sections.get("cooling"):       data["cooling"]       = _safe(lambda: _collect_cooling(units), {})
+    if sections.get("open_apps"):     data["open_apps"] = _safe(_collect_open_apps, {})
+    if sections.get("activity"):      data["activity"] = _safe(lambda: _collect_activity(units), {})
+    if sections.get("processes"):     data["processes"] = _safe(_collect_processes, [])
+    if sections.get("filesystem"):    data["filesystem"] = _safe(lambda: _collect_filesystem(units), {})
+    if sections.get("cooling"):       data["cooling"] = _safe(lambda: _collect_cooling(units), {})
     return data
 
 
@@ -1519,10 +1519,10 @@ def _fmt_open_apps(info: dict, lines: List[str]) -> None:
     _heading(lines, "OPEN APPLICATIONS")
     lines.append(f"  Total: {apps_d.get('count', 0)}")
     for app in apps_d.get("apps", [])[:20]:
-        name  = app.get("name", "?")
+        name = app.get("name", "?")
         title = app.get("title", "")
-        cpu   = app.get("cpu_pct")
-        mem   = app.get("mem_mb")
+        cpu = app.get("cpu_pct")
+        mem = app.get("mem_mb")
         entry = f"  {name}"
         if title and title.lower() != name.lower():
             entry += f"  —  {title[:45]}"
@@ -1674,11 +1674,11 @@ def save_snapshot(
     header = f"\n{'#'*60}\n# SNAPSHOT  {ts}  [{mode.upper()}  {units.upper()}]\n{'#'*60}\n"
 
     # Compact summary for easy recall
-    sys_s  = data.get("system", {})
-    cpu_s  = data.get("cpu", {})
-    mem_s  = data.get("memory", {})
-    net_s  = data.get("network", {})
-    act_s  = data.get("activity", {})
+    sys_s = data.get("system", {})
+    cpu_s = data.get("cpu", {})
+    mem_s = data.get("memory", {})
+    net_s = data.get("network", {})
+    act_s = data.get("activity", {})
     summary: Dict[str, Any] = {
         "ts":       ts,
         "mode":     mode,
@@ -1694,8 +1694,8 @@ def save_snapshot(
     if bat:
         summary["battery_pct"] = bat.get("percent")
     if act_s.get("tracker_running"):
-        summary["apm"]            = act_s.get("actions_per_min")
-        summary["alltime_keys"]   = act_s.get("alltime_key_total")
+        summary["apm"] = act_s.get("actions_per_min")
+        summary["alltime_keys"] = act_s.get("alltime_key_total")
         summary["alltime_clicks"] = act_s.get("alltime_mouse_clicks")
 
     weather = data.get("weather", {})

@@ -157,7 +157,7 @@ except ImportError:
     class ProceduralMeshComponent: pass
     class TextRenderComponent: pass
 
-_P  = "[Plotter]  "
+_P = "[Plotter]  "
 _PA = "[Plotter++]"
 
 _PALETTE = [
@@ -178,13 +178,13 @@ _PALETTE = [
 class LineStyle:
     color:          Tuple[float,float,float,float] = (1.0, 0.4, 0.1, 1.0)
     linewidth:      float = 0.02
-    linewidth_mode: str   = 'domain'   # 'domain' | 'absolute'
+    linewidth_mode: str = 'domain'   # 'domain' | 'absolute'
     opacity:        float = 1.0
-    shape:          str   = 'cylinder' # 'cylinder' | 'square_tube'
+    shape:          str = 'cylinder' # 'cylinder' | 'square_tube'
     dash_pattern:   Optional[Tuple[float,float]] = None
-    end_cap:        str   = 'flat'     # 'flat'|'none'|'sphere'|'cone'
-    circle_res:     int   = 10
-    label:          str   = ''
+    end_cap:        str = 'flat'     # 'flat'|'none'|'sphere'|'cone'
+    circle_res:     int = 10
+    label:          str = ''
     translucent_material: str = '/Game/Materials/M_Color_Translucent.M_Color_Translucent'
 
     @staticmethod
@@ -250,13 +250,13 @@ _ORIENTATION_ALIASES: Dict[str, str] = {
 
 @dataclass
 class PlotBounds:
-    x_range:      Vec2  = (-5.0, 5.0)
-    y_range:      Vec2  = (-5.0, 5.0)
-    z_range:      Vec2  = (-5.0, 5.0)
+    x_range:      Vec2 = (-5.0, 5.0)
+    y_range:      Vec2 = (-5.0, 5.0)
+    z_range:      Vec2 = (-5.0, 5.0)
     units_per_uu: float = 100.0
     # Orientation preset name — see _ORIENTATION_PRESETS above.
     # Pass e.g. 'wall_graph', 'ground_table', 'wall_table', or 'default'.
-    orientation:  str   = 'default'
+    orientation:  str = 'default'
 
     # resolved basis vectors (set by __post_init__)
     _ox: Tuple[float,float,float] = field(init=False, repr=False)
@@ -379,13 +379,13 @@ class UnrealActorFactory:
                  origin: FVector = None,
                  debug: bool = False,
                  advanced_debug: bool = False):
-        self.world      = world
-        self.origin     = origin or FVector(0,0,0)
+        self.world = world
+        self.origin = origin or FVector(0,0,0)
         self._spawned: List[Any] = []
-        self.debug      = debug
-        self.adv        = advanced_debug
+        self.debug = debug
+        self.adv = advanced_debug
         # Surface render mode: 'triangles' | 'spheres' | 'sphere_lines'
-        self.mesh_mode  = 'triangles'
+        self.mesh_mode = 'triangles'
         # Mesh used for point vertices in spheres / sphere_lines modes
         self.point_mesh = '/Engine/BasicShapes/Sphere.Sphere'
         # Cached color material
@@ -442,8 +442,8 @@ class UnrealActorFactory:
 
         try:
             actor = self.world.actor_spawn(StaticMeshActor)
-            smc   = actor.StaticMeshComponent
-            mesh  = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cylinder.Cylinder')
+            smc = actor.StaticMeshComponent
+            mesh = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cylinder.Cylinder')
             smc.SetStaticMesh(mesh)
             smc.Mobility = EComponentMobility.Movable
             actor.set_actor_transform(FTransform(
@@ -468,8 +468,8 @@ class UnrealActorFactory:
         s = radius/50.0
         try:
             actor = self.world.actor_spawn(StaticMeshActor)
-            smc   = actor.StaticMeshComponent
-            mesh  = ue.load_object(StaticMesh, self.point_mesh)
+            smc = actor.StaticMeshComponent
+            mesh = ue.load_object(StaticMesh, self.point_mesh)
             smc.SetStaticMesh(mesh)
             smc.Mobility = EComponentMobility.Movable
             actor.set_actor_transform(FTransform(p, FRotator(0,0,0), FVector(s,s,s)))
@@ -524,10 +524,10 @@ class UnrealActorFactory:
 
     def _proc_mesh_triangles(self, mesh: MeshData, color: Tuple) -> Optional[Any]:
         """Per-triangle tilted Plane actors."""
-        verts  = mesh.vertices
-        faces  = mesh.indices
+        verts = mesh.vertices
+        faces = mesh.indices
         plane_mesh = ue.load_object(StaticMesh, '/Engine/BasicShapes/Plane.Plane')
-        actors_ok  = 0
+        actors_ok = 0
 
         for face in faces:
             try:
@@ -548,15 +548,15 @@ class UnrealActorFactory:
                     continue
                 nx /= nm;  ny /= nm;  nz /= nm
 
-                area  = nm / 2.0
+                area = nm / 2.0
                 scale = math.sqrt(area) / 50.0
 
                 pitch = math.degrees(math.atan2(
                     math.sqrt(nx*nx + ny*ny), nz)) - 90
-                yaw   = math.degrees(math.atan2(ny, nx))
+                yaw = math.degrees(math.atan2(ny, nx))
 
                 actor = self.world.actor_spawn(StaticMeshActor)
-                smc   = actor.StaticMeshComponent
+                smc = actor.StaticMeshComponent
                 smc.SetStaticMesh(plane_mesh)
                 smc.Mobility = EComponentMobility.Movable
                 actor.set_actor_transform(FTransform(
@@ -829,7 +829,7 @@ class UnrealActorFactory:
                                 '/Game/Blueprints/Assets/BP_Cell.BP_Cell')
             if bp:
                 actor = self.world.actor_spawn(bp.GeneratedClass, p)
-                t3d   = actor.get_actor_component('Text3DComponent')
+                t3d = actor.get_actor_component('Text3DComponent')
                 if t3d:
                     t3d.Text = text
                     try:
@@ -865,12 +865,12 @@ class UnrealActorFactory:
         """Convert CurveSegments → tube meshes via TubeMeshBuilder."""
         radius = style.resolved_radius(bounds.x_span) * bounds.units_per_uu
         builder = TubeMeshBuilder(
-            radius   = radius,
-            sides    = style.circle_res,
-            shape    = style.shape,
+            radius = radius,
+            sides = style.circle_res,
+            shape = style.shape,
             dash_pattern = style.dash_pattern,
-            end_cap  = style.end_cap,
-            debug    = self.debug,
+            end_cap = style.end_cap,
+            debug = self.debug,
             advanced_debug = self.adv,
         )
         actors = []
@@ -907,10 +907,10 @@ class GridRenderer:
                  debug: bool = False,
                  advanced_debug: bool = False):
         self.factory = factory
-        self.bounds  = bounds
+        self.bounds = bounds
         self.actors: List[Any] = []
-        self.debug   = debug
-        self.adv     = advanced_debug
+        self.debug = debug
+        self.adv = advanced_debug
 
     def render_grid_2d(self, spacing: float = 1.0,
                        color: Tuple = (0.85,0.85,0.85,1.0),
@@ -1066,11 +1066,11 @@ class MathPlotter:
                  ga_backend: str = 'vga',
                  debug: bool = False,
                  advanced_debug: bool = False):
-        self.world          = world
-        self.bounds         = bounds or PlotBounds()
-        self.zoom           = zoom
-        self.debug          = debug
-        self.adv            = advanced_debug
+        self.world = world
+        self.bounds = bounds or PlotBounds()
+        self.zoom = zoom
+        self.debug = debug
+        self.adv = advanced_debug
 
         # GA backend
         self.ga = GABackend(backend=ga_backend,
@@ -1089,15 +1089,15 @@ class MathPlotter:
 
         # State
         self._queue:        List[Dict] = []
-        self._style_index:  int        = 0
+        self._style_index:  int = 0
         self._pending_style: Optional[LineStyle] = None
-        self._show_grid:    bool       = False
-        self._grid_mode:    str        = '2d'
-        self._grid_spacing: float      = 1.0
-        self._title:        str        = ''
-        self._xlabel:       str        = ''
-        self._ylabel:       str        = ''
-        self._zlabel:       str        = ''
+        self._show_grid:    bool = False
+        self._grid_mode:    str = '2d'
+        self._grid_spacing: float = 1.0
+        self._title:        str = ''
+        self._xlabel:       str = ''
+        self._ylabel:       str = ''
+        self._zlabel:       str = ''
 
         if self.debug:
             print(f"{_P}MathPlotter init  bounds={self.bounds}  "
@@ -1163,9 +1163,9 @@ class MathPlotter:
     def plot(self, f, x_range: Vec2 = None, n: int = 128,
              show_inflections: bool = False, **kw) -> 'MathPlotter':
         """y = f(x) explicit curve."""
-        fn      = self._resolve_fn(f, ('x',))
+        fn = self._resolve_fn(f, ('x',))
         x_range = x_range or self.bounds.x_range
-        style   = self._next_style(**kw)
+        style = self._next_style(**kw)
         self._queue.append(dict(type='plot', fn=fn, x_range=x_range,
                                 n=n, style=style,
                                 show_inflections=show_inflections))
@@ -1174,7 +1174,7 @@ class MathPlotter:
 
     def implicit(self, F, resolution: int = 80, **kw) -> 'MathPlotter':
         """F(x,y)=0 implicit contour."""
-        fn    = self._resolve_fn(F, ('x','y'))
+        fn = self._resolve_fn(F, ('x','y'))
         style = self._next_style(**kw)
         self._queue.append(dict(type='implicit', fn=fn,
                                 resolution=resolution, style=style))
@@ -1184,9 +1184,9 @@ class MathPlotter:
     def contour(self, F, levels: List[float] = None,
                 resolution: int = 60, **kw) -> 'MathPlotter':
         """Contour lines of F(x,y) at given level values."""
-        fn     = self._resolve_fn(F, ('x','y'))
+        fn = self._resolve_fn(F, ('x','y'))
         levels = levels or [0.0]
-        style  = self._next_style(**kw)
+        style = self._next_style(**kw)
         self._queue.append(dict(type='contour', fn=fn,
                                 levels=levels, resolution=resolution,
                                 style=style))
@@ -1195,7 +1195,7 @@ class MathPlotter:
 
     def heatmap(self, F, resolution: int = 64, **kw) -> 'MathPlotter':
         """F(x,y) as a coloured flat mesh."""
-        fn    = self._resolve_fn(F, ('x','y'))
+        fn = self._resolve_fn(F, ('x','y'))
         style = self._next_style(**kw)
         self._queue.append(dict(type='heatmap', fn=fn,
                                 resolution=resolution, style=style))
@@ -1218,10 +1218,10 @@ class MathPlotter:
     def band(self, f_lo, f_hi, x_range: Vec2 = None,
              n: int = 64, **kw) -> 'MathPlotter':
         """Ribbon / band between f_lo(x) and f_hi(x)."""
-        fn_lo   = self._resolve_fn(f_lo, ('x',))
-        fn_hi   = self._resolve_fn(f_hi, ('x',))
+        fn_lo = self._resolve_fn(f_lo, ('x',))
+        fn_hi = self._resolve_fn(f_hi, ('x',))
         x_range = x_range or self.bounds.x_range
-        style   = self._next_style(**kw)
+        style = self._next_style(**kw)
         self._queue.append(dict(type='band', fn_lo=fn_lo, fn_hi=fn_hi,
                                 x_range=x_range, n=n, style=style))
         if self.debug: print(f"{_P}queued band")
@@ -1234,10 +1234,10 @@ class MathPlotter:
                y_range: Vec2 = None,
                resolution: int = 64, **kw) -> 'MathPlotter':
         """z = f(x,y) explicit surface — primary 3D plot method."""
-        fn      = self._resolve_fn(f, ('x','y'))
+        fn = self._resolve_fn(f, ('x','y'))
         x_range = x_range or self.bounds.x_range
         y_range = y_range or self.bounds.y_range
-        style   = self._next_style(**kw)
+        style = self._next_style(**kw)
         self._queue.append(dict(type='plot3d', fn=fn,
                                 x_range=x_range, y_range=y_range,
                                 resolution=resolution, style=style))
@@ -1279,10 +1279,10 @@ class MathPlotter:
                   y_range: Vec2 = None,
                   resolution: int = 20, **kw) -> 'MathPlotter':
         """Wireframe of z=f(x,y) — surfaces lines along u/v isoparametric curves."""
-        fn      = self._resolve_fn(f, ('x','y'))
+        fn = self._resolve_fn(f, ('x','y'))
         x_range = x_range or self.bounds.x_range
         y_range = y_range or self.bounds.y_range
-        style   = self._next_style(**kw)
+        style = self._next_style(**kw)
         self._queue.append(dict(type='wireframe', fn=fn,
                                 x_range=x_range, y_range=y_range,
                                 resolution=resolution, style=style))
@@ -1295,10 +1295,10 @@ class MathPlotter:
                           resolution: int = 64,
                           colormap: str = 'viridis', **kw) -> 'MathPlotter':
         """z=f(x,y) surface with per-vertex colour mapped from z value."""
-        fn      = self._resolve_fn(f, ('x','y'))
+        fn = self._resolve_fn(f, ('x','y'))
         x_range = x_range or self.bounds.x_range
         y_range = y_range or self.bounds.y_range
-        style   = self._next_style(**kw)
+        style = self._next_style(**kw)
         self._queue.append(dict(type='colormap_surface', fn=fn,
                                 x_range=x_range, y_range=y_range,
                                 resolution=resolution,
@@ -1369,7 +1369,7 @@ class MathPlotter:
     def vector_field(self, F, density: int = 8, normalize: bool = True,
                      scale: float = 0.4, mode: str = '2d', **kw) -> 'MathPlotter':
         """Vector field arrows on a grid."""
-        fn    = self._resolve_fn(F, ('x','y') if mode=='2d' else ('x','y','z'))
+        fn = self._resolve_fn(F, ('x','y') if mode=='2d' else ('x','y','z'))
         style = self._next_style(**kw)
         self._queue.append(dict(type='vector_field', fn=fn,
                                 density=density, normalize=normalize,
@@ -1381,7 +1381,7 @@ class MathPlotter:
                    step: float = 0.05, max_steps: int = 400,
                    mode: str = '2d', **kw) -> 'MathPlotter':
         """Integral curve (streamline) of a vector field."""
-        fn    = self._resolve_fn(F, ('x','y') if mode=='2d' else ('x','y','z'))
+        fn = self._resolve_fn(F, ('x','y') if mode=='2d' else ('x','y','z'))
         style = self._next_style(**kw)
         self._queue.append(dict(type='streamline', fn=fn, seed=seed,
                                 step=step, max_steps=max_steps,
@@ -1492,9 +1492,9 @@ class MathPlotter:
 
     def grid(self, show: bool = True, spacing: float = 1.0,
              mode: str = '2d', **kw) -> 'MathPlotter':
-        self._show_grid    = show
+        self._show_grid = show
         self._grid_spacing = spacing
-        self._grid_mode    = mode
+        self._grid_mode = mode
         return self
 
     def title(self, t: str) -> 'MathPlotter':
@@ -1644,10 +1644,10 @@ class MathPlotter:
     # 2D render methods
 
     def _r_plot(self, item):
-        fn      = item['fn']
+        fn = item['fn']
         x_range = item['x_range']
-        style   = item['style']
-        n       = item['n']
+        style = item['style']
+        n = item['n']
 
         sub = AdaptiveSubdivider(zoom=self.zoom,
                                   tolerance=style.linewidth*0.05,
@@ -1662,10 +1662,10 @@ class MathPlotter:
         self.factory.spawn_segments_as_tube(segs, self.bounds, style, mode='2d')
 
     def _r_implicit(self, item):
-        fn    = item['fn']
-        res   = item['resolution']
+        fn = item['fn']
+        res = item['resolution']
         style = item['style']
-        b     = self.bounds
+        b = self.bounds
 
         # Use intersection with zero
         finder = IntersectionFinder(resolution=res,
@@ -1675,11 +1675,11 @@ class MathPlotter:
         self.factory.spawn_segments_as_tube(segs, b, style, mode='2d')
 
     def _r_contour(self, item):
-        fn     = item['fn']
+        fn = item['fn']
         levels = item['levels']
-        res    = item['resolution']
-        style  = item['style']
-        b      = self.bounds
+        res = item['resolution']
+        style = item['style']
+        b = self.bounds
 
         for level in levels:
             finder = IntersectionFinder(resolution=res,
@@ -1691,9 +1691,9 @@ class MathPlotter:
         if self.debug: print(f"{_P}  contour: {len(levels)} levels")
 
     def _r_heatmap(self, item):
-        fn  = item['fn']
+        fn = item['fn']
         res = item['resolution']
-        b   = self.bounds
+        b = self.bounds
 
         sampler = SurfaceSampler(resolution=res,
                                   debug=self.debug, advanced_debug=self.adv)
@@ -1708,10 +1708,10 @@ class MathPlotter:
         if self.debug: print(f"{_P}  heatmap: {len(mesh.vertices)} verts")
 
     def _r_scatter(self, item):
-        pts   = item['points']
+        pts = item['points']
         style = item['style']
-        b     = self.bounds
-        r     = style.resolved_radius(b.x_span) * b.units_per_uu * 3
+        b = self.bounds
+        r = style.resolved_radius(b.x_span) * b.units_per_uu * 3
         for p in pts:
             if len(p) == 2:
                 pos = b.to_uu(p[0], 0.0, p[1])
@@ -1722,8 +1722,8 @@ class MathPlotter:
 
     def _r_line(self, item):
         p1, p2 = item['p1'], item['p2']
-        style  = item['style']
-        b      = self.bounds
+        style = item['style']
+        b = self.bounds
         if len(p1) == 2: v0 = b.to_uu(p1[0], 0, p1[1])
         else:            v0 = b.to_uu(*p1[:3])
         if len(p2) == 2: v1 = b.to_uu(p2[0], 0, p2[1])
@@ -1732,12 +1732,12 @@ class MathPlotter:
         self.factory.spawn_cylinder(v0, v1, r, style.color)
 
     def _r_band(self, item):
-        fn_lo   = item['fn_lo']
-        fn_hi   = item['fn_hi']
+        fn_lo = item['fn_lo']
+        fn_hi = item['fn_hi']
         x_range = item['x_range']
-        n       = item['n']
-        style   = item['style']
-        b       = self.bounds
+        n = item['n']
+        style = item['style']
+        b = self.bounds
 
         xs = np.linspace(x_range[0], x_range[1], n)
         verts, norms, tris = [], [], []
@@ -1765,12 +1765,12 @@ class MathPlotter:
     # 3D surface render methods
 
     def _r_plot3d(self, item):
-        fn      = item['fn']
+        fn = item['fn']
         x_range = item['x_range']
         y_range = item['y_range']
-        res     = item['resolution']
-        style   = item['style']
-        b       = self.bounds
+        res = item['resolution']
+        style = item['style']
+        b = self.bounds
 
         with _timed("plot3d sample", self.adv):
             sampler = SurfaceSampler(resolution=res,
@@ -1784,11 +1784,11 @@ class MathPlotter:
 
     def _r_parametric_surface(self, item):
         fx, fy, fz = item['fx'], item['fy'], item['fz']
-        u_range    = item['u_range']
-        v_range    = item['v_range']
-        res        = item['resolution']
-        style      = item['style']
-        b          = self.bounds
+        u_range = item['u_range']
+        v_range = item['v_range']
+        res = item['resolution']
+        style = item['style']
+        b = self.bounds
 
         sampler = SurfaceSampler(resolution=res,
                                   debug=self.debug, advanced_debug=self.adv)
@@ -1800,9 +1800,9 @@ class MathPlotter:
 
     def _r_plot_curve3d(self, item):
         fx, fy, fz = item['fx'], item['fy'], item['fz']
-        t_range    = item['t_range']
-        n          = item['n']
-        style      = item['style']
+        t_range = item['t_range']
+        n = item['n']
+        style = item['style']
 
         sub = AdaptiveSubdivider(zoom=self.zoom,
                                   tolerance=style.linewidth*0.05,
@@ -1817,12 +1817,12 @@ class MathPlotter:
         self.factory.spawn_segments_as_tube(segs, self.bounds, style, mode='3d')
 
     def _r_wireframe(self, item):
-        fn      = item['fn']
+        fn = item['fn']
         x_range = item['x_range']
         y_range = item['y_range']
-        res     = item['resolution']
-        style   = item['style']
-        b       = self.bounds
+        res = item['resolution']
+        style = item['style']
+        b = self.bounds
 
         xs = np.linspace(x_range[0], x_range[1], res)
         ys = np.linspace(y_range[0], y_range[1], res)
@@ -1853,9 +1853,9 @@ class MathPlotter:
         self._r_plot3d({**item, 'type': 'plot3d'})
 
     def _r_isosurface(self, item):
-        fn    = item['fn']
+        fn = item['fn']
         style = item['style']
-        b     = self.bounds
+        b = self.bounds
 
         mc = MarchingCubes(
             x_range=item['x_range'], y_range=item['y_range'],
@@ -1870,8 +1870,8 @@ class MathPlotter:
 
     def _r_intersection(self, item):
         F1, F2 = item['F1'], item['F2']
-        style  = item['style']
-        b      = self.bounds
+        style = item['style']
+        b = self.bounds
         finder = IntersectionFinder(resolution=item['resolution'],
                                      debug=self.debug, advanced_debug=self.adv)
 
@@ -1885,8 +1885,8 @@ class MathPlotter:
             self.factory.spawn_proc_mesh(mesh, style.color, style.opacity)
 
     def _r_riemann_surface(self, item):
-        b     = self.bounds
-        bld   = RiemannSurfaceBuilder(
+        b = self.bounds
+        bld = RiemannSurfaceBuilder(
             r_range=item['r_range'], resolution=item['resolution'],
             sheet_gap=item['sheet_gap'],
             debug=self.debug, advanced_debug=self.adv)
@@ -1902,7 +1902,7 @@ class MathPlotter:
         for mesh, sheet_idx in sheets:
             mesh.vertices *= b.units_per_uu
             color = _PALETTE[sheet_idx % len(_PALETTE)]
-            kw    = item.get('kw', {})
+            kw = item.get('kw', {})
             if 'color' in kw: color = kw['color']
             opacity = kw.get('opacity', 0.85)
             self.factory.spawn_proc_mesh(mesh, color, opacity)
@@ -1911,11 +1911,11 @@ class MathPlotter:
             print(f"{_P}  riemann_surface kind={kind}: {len(sheets)} sheets")
 
     def _r_domain_color(self, item):
-        fn         = item['fn']
+        fn = item['fn']
         resolution = item['resolution']
-        x_range    = item['x_range']
-        y_range    = item['y_range']
-        b          = self.bounds
+        x_range = item['x_range']
+        y_range = item['y_range']
+        b = self.bounds
 
         colorizer = DomainColorizer(resolution=resolution,
                                      x_range=x_range, y_range=y_range,
@@ -1924,10 +1924,10 @@ class MathPlotter:
 
         x0,x1 = x_range; y0,y1 = y_range
         verts = np.array([[x0,0,y0],[x1,0,y0],[x1,0,y1],[x0,0,y1]]) * b.units_per_uu
-        inds  = np.array([[0,1,2],[0,2,3]], dtype=int)
+        inds = np.array([[0,1,2],[0,2,3]], dtype=int)
         norms = np.tile([0,1,0], (4,1)).astype(float)
-        uvs   = np.array([[0,0],[1,0],[1,1],[0,1]])
-        mesh  = MeshData(verts, inds, norms, uvs)
+        uvs = np.array([[0,0],[1,0],[1,1],[0,1]])
+        mesh = MeshData(verts, inds, norms, uvs)
 
         avg_color = tuple(float(img[:,:,c].mean()) for c in range(3)) + (1.0,)
         self.factory.spawn_proc_mesh(mesh, avg_color)
@@ -1937,22 +1937,22 @@ class MathPlotter:
 
     def _r_vector(self, item):
         style = item['style']
-        o     = item['origin']
-        v     = item['v']
-        b     = self.bounds
+        o = item['origin']
+        v = item['v']
+        b = self.bounds
         if len(v) == 2:
-            o3  = b.to_uu(o[0], 0, o[1] if len(o)>1 else 0)
+            o3 = b.to_uu(o[0], 0, o[1] if len(o)>1 else 0)
             tip = b.to_uu(o[0]+v[0], 0, (o[1] if len(o)>1 else 0)+v[1])
         else:
-            o3  = b.to_uu(*o[:3])
+            o3 = b.to_uu(*o[:3])
             tip = b.to_uu(o[0]+v[0], o[1]+v[1], o[2]+v[2])
         r = style.resolved_radius(b.x_span) * b.units_per_uu
         self.factory.spawn_arrow(o3, tip, r, style.color)
 
     def _r_vector_field(self, item):
-        fn    = item['fn']
+        fn = item['fn']
         style = item['style']
-        b     = self.bounds
+        b = self.bounds
 
         sampler = VectorFieldSampler(
             density=item['density'], normalize=item['normalize'],
@@ -1968,10 +1968,10 @@ class MathPlotter:
         for arrow in arrows:
             ox,oy,oz = arrow.origin; dx,dy,dz = arrow.direction
             if item['mode'] == '2d':
-                o3  = b.to_uu(ox, 0, oy)
+                o3 = b.to_uu(ox, 0, oy)
                 tip = b.to_uu(ox+dx/b.units_per_uu, 0, oy+dy/b.units_per_uu)
             else:
-                o3  = b.to_uu(ox, oy, oz)
+                o3 = b.to_uu(ox, oy, oz)
                 tip = b.to_uu(ox+dx/b.units_per_uu,
                                oy+dy/b.units_per_uu,
                                oz+dz/b.units_per_uu)
@@ -1980,10 +1980,10 @@ class MathPlotter:
         if self.debug: print(f"{_P}  vector_field: {len(arrows)} arrows")
 
     def _r_streamline(self, item):
-        fn    = item['fn']
-        seed  = item['seed']
+        fn = item['fn']
+        seed = item['seed']
         style = item['style']
-        b     = self.bounds
+        b = self.bounds
 
         solver = IntegralCurveSolver(
             step_size=item['step'], max_steps=item['max_steps'],
@@ -2002,11 +2002,11 @@ class MathPlotter:
     # GA render methods
 
     def _r_ga(self, item):
-        mv     = item['mv']
+        mv = item['mv']
         origin = item['origin']
-        scale  = item['scale']
-        style  = item['style']
-        b      = self.bounds
+        scale = item['scale']
+        style = item['style']
+        b = self.bounds
 
         grade = GABackend.detect_grade(mv)
 
@@ -2023,7 +2023,7 @@ class MathPlotter:
         elif grade == 1:
             # Vector: arrow
             vx, vy, vz = GABackend.extract_vector(mv)
-            o3  = b.to_uu(*origin)
+            o3 = b.to_uu(*origin)
             tip = b.to_uu(origin[0]+vx*scale,
                            origin[1]+vy*scale,
                            origin[2]+vz*scale)
@@ -2085,7 +2085,7 @@ class MathPlotter:
         else:
             # Higher grade: projected grade-1 representation + label
             vx, vy, vz = GABackend.extract_vector(mv)
-            o3  = b.to_uu(*origin)
+            o3 = b.to_uu(*origin)
             tip = b.to_uu(origin[0]+vx*scale,
                            origin[1]+vy*scale,
                            origin[2]+vz*scale)
@@ -2101,20 +2101,20 @@ class MathPlotter:
 
     def _r_ga_rotor(self, item):
         """Visualise rotor action: draw original, arc path, rotated result."""
-        R          = item['R']
-        target_mv  = item['target_mv']
-        origin     = item['origin']
-        scale      = item['scale']
-        steps      = item['steps']
-        style      = item['style']
-        b          = self.bounds
+        R = item['R']
+        target_mv = item['target_mv']
+        origin = item['origin']
+        scale = item['scale']
+        steps = item['steps']
+        style = item['style']
+        b = self.bounds
 
         axis, angle = GABackend.rotor_to_axis_angle(R)
 
         # Draw axis line
         r_ax = style.resolved_radius(b.x_span) * b.units_per_uu * 0.4
         ax_start = b.to_uu(*origin)
-        ax_end   = b.to_uu(origin[0]+axis[0]*scale*2,
+        ax_end = b.to_uu(origin[0]+axis[0]*scale*2,
                             origin[1]+axis[1]*scale*2,
                             origin[2]+axis[2]*scale*2)
         self.factory.spawn_cylinder(ax_start, ax_end, r_ax,
@@ -2124,7 +2124,7 @@ class MathPlotter:
         grade = GABackend.detect_grade(target_mv)
         if grade == 1:
             vx,vy,vz = GABackend.extract_vector(target_mv)
-            o3  = b.to_uu(*origin)
+            o3 = b.to_uu(*origin)
             tip = b.to_uu(origin[0]+vx*scale,
                            origin[1]+vy*scale,
                            origin[2]+vz*scale)
@@ -2182,12 +2182,12 @@ class MathPlotter:
 
     def _r_ga_meet(self, item):
         """Render meet (intersection) — try to call kingdon meet, fall back to midpoint."""
-        mv1    = item['mv1']
-        mv2    = item['mv2']
+        mv1 = item['mv1']
+        mv2 = item['mv2']
         origin = item['origin']
-        scale  = item['scale']
-        style  = item['style']
-        b      = self.bounds
+        scale = item['scale']
+        style = item['style']
+        b = self.bounds
 
         # Try kingdon vee (meet operator)
         result_mv = None
@@ -2214,11 +2214,11 @@ class MathPlotter:
 
     def _r_ga_join(self, item):
         """Render join (span/outer product)."""
-        mv1    = item['mv1']
-        mv2    = item['mv2']
+        mv1 = item['mv1']
+        mv2 = item['mv2']
         origin = item['origin']
-        scale  = item['scale']
-        style  = item['style']
+        scale = item['scale']
+        style = item['style']
 
         result_mv = None
         if KINGDON_AVAILABLE and hasattr(mv1, 'outer'):
@@ -2241,7 +2241,7 @@ class MathPlotter:
             sty2 = LineStyle.from_palette(self._style_index)
             self._r_ga({**item, 'type':'ga', 'mv': mv2, 'origin': origin,
                         'scale': scale, 'style': sty2})
-            b   = self.bounds
+            b = self.bounds
             pos = b.to_uu(*origin)
             self.factory.spawn_text(pos, "∪", size=10.0, color=style.color)
 
@@ -2249,12 +2249,12 @@ class MathPlotter:
 
     def _r_ga_spread(self, item):
         """Decompose higher-grade mv into grade projections, render in grid."""
-        mv           = item['mv']
-        origin       = item['origin']
-        scale        = item['scale']
+        mv = item['mv']
+        origin = item['origin']
+        scale = item['scale']
         max_subviews = item['max_subviews']
-        style        = item['style']
-        b            = self.bounds
+        style = item['style']
+        b = self.bounds
 
         grades_found = []
         grade = GABackend.detect_grade(mv)
@@ -2276,13 +2276,13 @@ class MathPlotter:
     # nD spread render
 
     def _r_spread(self, item):
-        fn             = item['fn']
-        var_names      = item['var_names']
-        var_ranges     = item['var_ranges']
-        max_subplots   = item['max_subplots']
-        resolution     = item['resolution']
+        fn = item['fn']
+        var_names = item['var_names']
+        var_ranges = item['var_ranges']
+        max_subplots = item['max_subplots']
+        resolution = item['resolution']
         subplot_spacing = item['subplot_spacing']
-        b              = self.bounds
+        b = self.bounds
 
         engine = SpreadEngine(
             fn=fn, var_names=var_names, var_ranges=var_ranges,
@@ -2292,7 +2292,7 @@ class MathPlotter:
         projections = engine.generate_projections()
 
         for proj in projections:
-            mesh   = proj['mesh']
+            mesh = proj['mesh']
             offset = proj['offset']
             labels = proj['labels']
 

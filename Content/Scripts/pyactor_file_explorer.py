@@ -25,19 +25,32 @@ from utils import human_size
 class FileExplorer:
     """PyActor that renders a file browser table with a BP_Icon column."""
 
-    DEFAULT_FOLDER    = os.path.join(os.path.expanduser('~'), 'Desktop')
-    MAX_FILES         = 20
-    ICON_COL          = 0      # leading empty column reserved for icons
-    ICON_COL_WIDTH    = 120.0  # UU; cell width — icon size derives from this
-    ICON_FILL         = 0.336  # icon diameter as fraction of min(row_h, col_w)
-    SPHERE_BASE_DIAM  = 100.0  # /Engine/BasicShapes/Sphere natural diameter
+    DEFAULT_FOLDER = os.path.join(os.path.expanduser('~'), 'Desktop')
+    MAX_FILES = 20
+    ICON_COL = 0      # leading empty column reserved for icons
+    ICON_COL_WIDTH = 120.0  # UU; cell width — icon size derives from this
+    ICON_FILL = 0.448  # icon diameter as fraction of min(row_h, col_w)
+    SPHERE_BASE_DIAM = 100.0  # /Engine/BasicShapes/Sphere natural diameter
 
     def begin_play(self):
-        self.api          = None
-        self.renderer     = None
+        self.api = None
+        self.renderer = None
         self._icon_actors = []    # hold refs so GC doesn't eat them
+        self._configured = False
 
         self.location = self.uobject.get_actor_location()
+        # current_folder + api/renderer init + first refresh are deferred to
+        # the first tick: spawn_file_explorer sets `actor.initial_path` AFTER
+        # actor_spawn returns, but begin_play fires inside actor_spawn — so
+        # reading initial_path here always falls back to DEFAULT_FOLDER.
+        # Same pattern as pyactor_camera._configure_camera.
+
+    def tick(self, dt):
+        if not self._configured:
+            self._configure()
+
+    def _configure(self):
+        self._configured = True   # set first so failures don't retry every tick
         self.current_folder = getattr(self.uobject, 'initial_path',
                                       None) or self.DEFAULT_FOLDER
 
@@ -71,12 +84,14 @@ class FileExplorer:
         self._render(results)
 
     def _query_folder(self, folder):
-        """Run a scoped Everything query — quoted path limits to that folder.
+        """Run a scoped Everything query — direct children of `folder` only.
 
-        Mirrors the pattern used in sysinfo.py on master:
-            api.count(r'"C:\\Users\\you\\Downloads"')
+        Uses Everything's `parent:` modifier so we get one level deep, not
+        every nested item. A bare `"<folder>"` query is a substring match on
+        the indexed full path, which returns every descendant recursively
+        (and surfaces duplicate basenames like nested `.git` folders).
         """
-        query = f'"{folder}"'
+        query = f'parent:"{folder}"'
         try:
             return self.api.search(query, max_results=self.MAX_FILES)
         except Exception as e:
@@ -100,8 +115,8 @@ class FileExplorer:
         # the column to ~20UU since empty Text3D measures near zero, so we
         # override the column width with set_user_size below.
         headers = ['', 'Name', 'Size', 'Date', 'Type']
-        n_cols  = len(headers)
-        n_rows  = len(results) + 1   # header + N files
+        n_cols = len(headers)
+        n_rows = len(results) + 1   # header + N files
 
         # wall_table: axis 0 -> +Y (right), axis 1 -> -Z (down).
         # So axis 0 = columns (go across), axis 1 = rows (go down).

@@ -31,7 +31,7 @@ def setup_player_controller(uobject):
         player_controller = uobject.get_player_controller()
         if player_controller is not None:
             player_controller.bEnableMouseOverEvents = True
-            player_controller.bEnableClickEvents     = True
+            player_controller.bEnableClickEvents = True
             if ECollisionChannel is not None:
                 player_controller.CurrentClickTraceChannel = \
                     ECollisionChannel.ECC_WorldDynamic

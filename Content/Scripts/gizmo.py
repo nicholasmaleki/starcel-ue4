@@ -28,7 +28,7 @@ from unreal_engine_tools import get_world, apply_material
 world = get_world()
 
 # crash log
-DESKTOP   = os.path.join(os.path.expanduser("~"), "Desktop")
+DESKTOP = os.path.join(os.path.expanduser("~"), "Desktop")
 _log_file = open(os.path.join(DESKTOP, "gizmo_crash_log.txt"), "w", buffering=1)
 
 def _log(msg):
@@ -37,7 +37,7 @@ def _log(msg):
 
 # mesh paths (BasicShapes – always have collision)
 SH_CONE = '/Engine/BasicShapes/Cone'
-SH_CYL  = '/Engine/BasicShapes/Cylinder'
+SH_CYL = '/Engine/BasicShapes/Cylinder'
 SH_CUBE = '/Engine/BasicShapes/Cube'
 M_COLOR = '/Game/Materials/M_TranslucentTransformGizmoMaterial.M_TranslucentTransformGizmoMaterial'
 
@@ -60,7 +60,7 @@ ORIGIN = FVector(0, 0, 0)
 def _rot(axis):
     r = KismetMathLibrary.FindLookAtRotation(ORIGIN, axis)
     r.pitch -= 90
-    r.roll  = 0
+    r.roll = 0
     return r
 
 # axis / plane tables
@@ -98,9 +98,9 @@ BBOX_EDGES = [(ai, dj, dk)
 BBOX_LOCAL_EXTENT = 50.0  # BasicShapes half-extent; multiplied by actor scale
 
 # colour / hover state
-_actor_mid    = {}   # actor → MID
+_actor_mid = {}   # actor → MID
 _actor_colors = {}   # actor → (r, g, b, emissive)
-_piece_off    = {}   # actor → FVector offset from target centre (world-space)
+_piece_off = {}   # actor → FVector offset from target centre (world-space)
 _bbox_dynamic = {}   # actor → ('corner',(dx,dy,dz)) | ('edge',ai,dj,dk) | ('wire',ai,dj,dk) | ('bracket',(dx,dy,dz,seg_axis))
 _hover_groups = {}   # actor → list of sibling actors that hover/unhover together (e.g. the 3 segments of one L-bracket)
 
@@ -125,7 +125,7 @@ def _apply_color(actor, red, green, blue, emissive=2.0, opacity=0.8):
                 'Opacity':             opacity,
             },
         )
-        _actor_mid[actor]    = mid
+        _actor_mid[actor] = mid
         _actor_colors[actor] = (red, green, blue, emissive)
     except Exception as e:
         _log(f"color fail: {e}")
@@ -222,9 +222,9 @@ def _rotate_local(rotation, local_vec):
 
 def bbox_piece_world_transform(target, kind, data):
     """Return (world_loc, world_rot, world_scale) for a dynamic bbox piece."""
-    loc  = target.get_actor_location()
-    rot  = target.get_actor_rotation()
-    h    = bbox_world_half_extent(target)
+    loc = target.get_actor_location()
+    rot = target.get_actor_rotation()
+    h = bbox_world_half_extent(target)
 
     if kind == 'corner':
         dx, dy, dz = data
@@ -235,7 +235,7 @@ def bbox_piece_world_transform(target, kind, data):
     if kind == 'edge':
         ai, dj, dk = data
         others = [i for i in (0, 1, 2) if i != ai]
-        comps  = [0.0, 0.0, 0.0]
+        comps = [0.0, 0.0, 0.0]
         comps[others[0]] = dj * _component(h, others[0])
         comps[others[1]] = dk * _component(h, others[1])
         local_off = _vec_from_components(*comps)
@@ -245,15 +245,15 @@ def bbox_piece_world_transform(target, kind, data):
     if kind == 'wire':
         ai, dj, dk = data
         others = [i for i in (0, 1, 2) if i != ai]
-        comps  = [0.0, 0.0, 0.0]
+        comps = [0.0, 0.0, 0.0]
         comps[others[0]] = dj * _component(h, others[0])
         comps[others[1]] = dk * _component(h, others[1])
         local_off = _vec_from_components(*comps)
         world_off = _rotate_local(rot, local_off)
-        axis_vec   = [FVector(1,0,0), FVector(0,1,0), FVector(0,0,1)][ai]
-        axis_rot   = _rot(axis_vec)
-        combined   = KismetMathLibrary.ComposeRotators(axis_rot, rot)
-        length     = 2.0 * _component(h, ai)
+        axis_vec = [FVector(1,0,0), FVector(0,1,0), FVector(0,0,1)][ai]
+        axis_rot = _rot(axis_vec)
+        combined = KismetMathLibrary.ComposeRotators(axis_rot, rot)
+        length = 2.0 * _component(h, ai)
         return (loc + world_off, combined,
                 FVector(0.03, 0.03, length / 100.0))
 
@@ -263,9 +263,9 @@ def bbox_piece_world_transform(target, kind, data):
         # for ~25% of that edge's length.
         dx, dy, dz, seg_axis = data
         corner_signs = (dx, dy, dz)
-        h_seg        = _component(h, seg_axis)
-        seg_length   = 0.5 * h_seg            # 25% of the full edge (2 * h_seg)
-        seg_half     = 0.5 * seg_length
+        h_seg = _component(h, seg_axis)
+        seg_length = 0.5 * h_seg            # 25% of the full edge (2 * h_seg)
+        seg_half = 0.5 * seg_length
 
         comps = [corner_signs[i] * _component(h, i) for i in (0, 1, 2)]
         # Pull the seg_axis component inward by half the segment length so the
@@ -275,9 +275,9 @@ def bbox_piece_world_transform(target, kind, data):
         local_off = _vec_from_components(*comps)
         world_off = _rotate_local(rot, local_off)
 
-        axis_vec  = [FVector(1,0,0), FVector(0,1,0), FVector(0,0,1)][seg_axis]
-        axis_rot  = _rot(axis_vec)
-        combined  = KismetMathLibrary.ComposeRotators(axis_rot, rot)
+        axis_vec = [FVector(1,0,0), FVector(0,1,0), FVector(0,0,1)][seg_axis]
+        axis_rot = _rot(axis_vec)
+        combined = KismetMathLibrary.ComposeRotators(axis_rot, rot)
 
         return (loc + world_off, combined,
                 FVector(0.06, 0.06, seg_length / 100.0))
@@ -333,7 +333,7 @@ def test_gizmos(location=None):
     gizmo_root.StaticMeshComponent.Mobility = EComponentMobility.Movable
     gizmo_root.set_actor_label("GizmoRoot")
 
-    base    = target.get_actor_location()
+    base = target.get_actor_location()
     handles = {}
 
     # ── move arrows  (Cone, tip points along axis, centered 100 u from base)
@@ -342,7 +342,7 @@ def test_gizmos(location=None):
     _log("-- arrows --")
     for name, ax, rgb in AXES6:
         off = ax * 100
-        a   = _spawn(SH_CONE, base + off, _rot(ax), FVector(0.12, 0.12, 0.9), f"GM_{name}", off)
+        a = _spawn(SH_CONE, base + off, _rot(ax), FVector(0.12, 0.12, 0.9), f"GM_{name}", off)
         if a:
             _apply_color(a, *rgb)
             handles[a] = ('axis', ax)
@@ -361,7 +361,7 @@ def test_gizmos(location=None):
     _log("-- rings --")
     for ring_idx, (name, ax, rgb) in enumerate(AXES3):
         off = FVector(0, 0, 0)
-        a   = _spawn(SH_CYL, base, _rot(ax), FVector(1.8, 1.8, 0.10), f"GR_{name}", off)
+        a = _spawn(SH_CYL, base, _rot(ax), FVector(1.8, 1.8, 0.10), f"GR_{name}", off)
         if a:
             _apply_color(a, *rgb, emissive=1.8)
             try:
@@ -374,7 +374,7 @@ def test_gizmos(location=None):
     _log("-- scale --")
     for name, ax, rgb in AXES6:
         off = ax * 175
-        a   = _spawn(SH_CUBE, base + off, FRotator(0, 0, 0),
+        a = _spawn(SH_CUBE, base + off, FRotator(0, 0, 0),
                      FVector(0.18, 0.18, 0.18), f"GS_{name}", off)
         if a:
             _apply_color(a, *rgb, emissive=1.0)
@@ -387,7 +387,7 @@ def test_gizmos(location=None):
     _log("-- planes --")
     for pname, normal, rgb, d1, d2 in PLANES:
         off = d1 * 35 + d2 * 35
-        a   = _spawn(SH_CUBE, base + off, _rot(normal),
+        a = _spawn(SH_CUBE, base + off, _rot(normal),
                      FVector(0.28, 0.28, 0.05), f"GP_{pname}", off)
         if a:
             _apply_color(a, *rgb, emissive=1.5)
@@ -428,7 +428,7 @@ def test_gizmos(location=None):
                        FVector(0, 0, 0))
             if a:
                 _apply_color(a, 1.00, 1.00, 0.20, emissive=1.5)
-                handles[a]       = ('bbox_corner', (dx, dy, dz))
+                handles[a] = ('bbox_corner', (dx, dy, dz))
                 _bbox_dynamic[a] = ('bracket', (dx, dy, dz, seg_axis))
                 seg_actors.append(a)
         for a in seg_actors:

@@ -214,7 +214,7 @@ def _exec_console(cmd):
 
 # Image conversion
 
-IMAGE_NATIVE  = {'.png', '.jpg', '.jpeg', '.bmp', '.tga', '.tiff', '.exr', '.hdr'}
+IMAGE_NATIVE = {'.png', '.jpg', '.jpeg', '.bmp', '.tga', '.tiff', '.exr', '.hdr'}
 IMAGE_CONVERT = {'.webp', '.ico', '.gif', '.psd', '.svg'}  # -> PNG via Pillow
 
 def _ensure_image(path):
@@ -241,7 +241,7 @@ def _ensure_image(path):
 
 # Video conversion
 
-VIDEO_NATIVE  = {'.mp4', '.avi'}
+VIDEO_NATIVE = {'.mp4', '.avi'}
 VIDEO_CONVERT = {'.mov', '.mkv', '.wmv', '.webm', '.flv', '.ts', '.m4v'}
 
 def _ensure_video(path):
@@ -273,7 +273,7 @@ def _ensure_video(path):
 
 # 3-D format conversion
 
-OBJ_NATIVE  = {'.fbx'}
+OBJ_NATIVE = {'.fbx'}
 OBJ_TRIMESH = {'.obj', '.ply', '.stl', '.off', '.dae', '.gltf', '.glb'}
 OBJ_BLENDER = {'.blend', '.3ds', '.dxf', '.x3d', '.wrl'}
 
@@ -389,7 +389,7 @@ def spawn_image(path, location=None, rotation=None, scale=None,
     from unreal_engine_tools import pil_image_to_texture
 
     world = _get_world()
-    path  = _ensure_image(path)
+    path = _ensure_image(path)
 
     # load and size the image
     try:
@@ -402,8 +402,8 @@ def spawn_image(path, location=None, rotation=None, scale=None,
 
     # spawn cube actor (no location; transform set after)
     actor = world.actor_spawn(StaticMeshActor)
-    smc   = actor.StaticMeshComponent
-    cube  = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube')
+    smc = actor.StaticMeshComponent
+    cube = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube')
     smc.Mobility = EComponentMobility.Movable
     smc.SetStaticMesh(cube)
 
@@ -431,6 +431,8 @@ def spawn_image(path, location=None, rotation=None, scale=None,
     ue.log(f'spawn_image: "{os.path.basename(path)}" {int(img_w)}x{int(img_h)} px '
            f'→ scale=({scale.x:.3f}, {scale.y:.3f}, {scale.z:.3f})  '
            f'world size = {int(img_w)}x{int(scale.y*100)}x{int(img_h)} UU')
+    if rotation is None:
+        rotation = FRotator(0, 0, 90)  # 90° clockwise around Z (yaw)
     _set_transform(actor, location, rotation, scale)
     # Verify UE actually applied the non-uniform scale
     try:
@@ -450,7 +452,7 @@ def spawn_video(video_path, location=None, rotation=None, scale=None,
     OpenUrl on the MediaPlayer so the material's existing MediaTexture →
     MediaPlayer wiring plays the given video file.
     """
-    from unreal_engine.classes import MediaPlayer
+    from unreal_engine.classes import MediaPlayer, FileMediaSource
 
     world = _get_world()
     video_path = _ensure_video(video_path)
@@ -471,17 +473,25 @@ def spawn_video(video_path, location=None, rotation=None, scale=None,
         pass
 
     actor = world.actor_spawn(StaticMeshActor)
-    smc   = actor.StaticMeshComponent
-    smc.SetStaticMesh(ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube'))
+    smc = actor.StaticMeshComponent
     smc.Mobility = EComponentMobility.Movable
+    smc.SetStaticMesh(ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube'))
     smc.set_material(0, ue.load_object(Material, material_path))
-
-    mp = ue.load_object(MediaPlayer, media_player_path)
-    mp.OpenUrl('file://' + os.path.abspath(video_path).replace('\\', '/'))
 
     if scale is None:
         scale = FVector(vid_w / 100.0, 0.05, vid_h / 100.0)
+    if rotation is None:
+        rotation = FRotator(0, 0, 90)  # 90° clockwise around Z (yaw)
     _set_transform(actor, location, rotation, scale)
+
+    try:
+        mp = ue.load_object(MediaPlayer, media_player_path)
+        media_source = ue.new_object(FileMediaSource)
+        media_source.set_property('FilePath', {'FilePath': os.path.abspath(video_path)})
+        mp.call_function('OpenSource', media_source)
+        mp.call_function('Play')
+    except Exception as e:
+        ue.log_warning(f'spawn_video: media setup failed: {e}')
     return actor
 
 
@@ -674,33 +684,41 @@ def _decode_audio_to_pcm(path, target_rate=44100, target_channels=2):
 
 
 def _build_procedural_wave(path):
-    """Decode *path* to PCM and wrap it in a fresh USoundWaveProcedural.
-    Returns (sound_wave, duration_sec) or (None, 0)."""
+    """Decode *path* to PCM and create a fresh USoundWaveProcedural.
+    Returns (sound_wave, pcm_bytes, duration_sec) or (None, None, 0).
+
+    The PCM is NOT queued on the wave — callers must call
+    ``sw.queue_audio(pcm)`` immediately before ``play_sound_at_location``.
+    Pre-queueing at decode time and playing later doesn't work: the audio
+    engine pulls from the queue only while a source is actively rendering,
+    and by the time a delayed play starts the queue state isn't what we
+    queued.  Queue-then-play back-to-back is the only reliable pattern.
+    """
     from unreal_engine.classes import SoundWaveProcedural
     pcm, rate, channels = _decode_audio_to_pcm(path)
     if not pcm:
-        return None, 0
-    frames   = len(pcm) // (2 * channels)          # 2 bytes per s16 sample
+        return None, None, 0
+    frames = len(pcm) // (2 * channels)          # 2 bytes per s16 sample
     duration = frames / float(rate)
 
     sw = ue.new_object(SoundWaveProcedural)
-    sw.SampleRate  = rate
+    sw.SampleRate = rate
     sw.NumChannels = channels
-    sw.Duration    = duration + 1.0                # small safety margin
-    sw.SoundGroup  = 0                             # SOUNDGROUP_Default
-    sw.bLooping    = False
-    sw.queue_audio(pcm)
-    ue.log(f'_build_procedural_wave: queued {duration:.2f}s '
+    sw.Duration = duration + 1.0                # small safety margin
+    sw.SoundGroup = 0                             # SOUNDGROUP_Default
+    sw.bLooping = False
+    ue.log(f'_build_procedural_wave: prepared {duration:.2f}s '
            f'({len(pcm)} bytes, {rate}Hz x{channels}) from {path}')
-    return sw, duration
+    return sw, pcm, duration
 
 
 def _play_audio_file(world, path, location, volume, pitch):
     """Decode *path* and play it through a transient USoundWaveProcedural.
     Returns the sound wave (held in _procedural_sounds so playback survives)."""
-    sw, _ = _build_procedural_wave(path)
+    sw, pcm, _ = _build_procedural_wave(path)
     if sw is None:
         return None
+    sw.queue_audio(pcm)
     world.play_sound_at_location(sw, location, volume, pitch, 0.0)
     _procedural_sounds.append(sw)
     return sw
@@ -710,11 +728,14 @@ def _play_audio_file_as_actor(path, location, volume, pitch):
     """Decode *path* and bind the resulting USoundWaveProcedural to a clickable
     SoundSphere actor.  Click the sphere to play; nothing plays on spawn.
 
-    The wave is attached as ``actor.sound`` so SoundSphere's lazy lookup
-    picks it up on click and routes it through play_sound_at_location.  The
-    Python attribute keeps the wave alive for the actor's lifetime — no
-    global keep-alive list and no AudioComponent needed."""
-    sw, _ = _build_procedural_wave(path)
+    The wave AND the raw PCM are attached to the actor:
+      - ``actor.sound``      : the USoundWaveProcedural
+      - ``actor.sound_pcm``  : the decoded PCM bytes
+
+    SoundSphere._play() re-queues ``sound_pcm`` onto the wave immediately
+    before each play_sound_at_location call.  See _build_procedural_wave
+    for why pre-queueing at decode time doesn't work."""
+    sw, pcm, _ = _build_procedural_wave(path)
     if sw is None:
         return None
 
@@ -727,6 +748,7 @@ def _play_audio_file_as_actor(path, location, volume, pitch):
         name=os.path.basename(path),
         source_path=path)
     if actor is None:
+        sw.queue_audio(pcm)
         _procedural_sounds.append(sw)
         ue.log_warning('_play_audio_file_as_actor: spawn_pyactor returned None; '
                        'falling back to world playback.')
@@ -741,18 +763,20 @@ def _play_audio_file_as_actor(path, location, volume, pitch):
     except Exception:
         pass
 
-    # Bind the wave + playback params to the actor.  SoundSphere._get_sound()
-    # reads actor.sound on each click, and _play() reads actor.volume /
-    # actor.pitch.  source_path is also set (by spawn_pyactor above) as a
-    # fallback in case .sound is cleared.
+    # Bind the wave + PCM + playback params to the actor.  SoundSphere reads
+    # these on each click and re-queues sound_pcm onto sound right before
+    # play_sound_at_location.
     try:
-        actor.sound  = sw
+        actor.sound = sw
+        actor.sound_pcm = pcm
         actor.volume = float(volume)
-        actor.pitch  = float(pitch)
+        actor.pitch = float(pitch)
     except Exception as e:
         ue.log_warning(f'_play_audio_file_as_actor: attr bind failed ({e}); '
-                       'wave kept alive via global registry.')
+                       'falling back to world playback.')
+        sw.queue_audio(pcm)
         _procedural_sounds.append(sw)
+        _get_world().play_sound_at_location(sw, location, volume, pitch, 0.0)
     return actor
 
 
@@ -815,8 +839,8 @@ def spawn_sound(path, location=None, volume=1.0, pitch=1.0,
                 source_path=path)
             if sound:
                 actor.sound = sound
-            actor.volume     = float(volume)
-            actor.pitch      = float(pitch)
+            actor.volume = float(volume)
+            actor.pitch = float(pitch)
             actor.start_time = float(start_time)
             return actor
         except Exception as e:
@@ -1038,13 +1062,13 @@ def spawn_camera(location=None, rotation=None,
     cfg = dict(CAMERA_PRESETS.get('default'))
     if preset and preset in CAMERA_PRESETS:
         cfg.update(CAMERA_PRESETS[preset])
-    if focal_length    is not None: cfg['focal_length']    = focal_length
-    if aperture        is not None: cfg['aperture']        = aperture
-    if sensor_width    is not None: cfg['sensor_width']    = sensor_width
-    if focus_distance  is not None: cfg['focus_distance']  = focus_distance
-    if panini:                      cfg['panini']          = True
-    if panini_d        != 0.5:      cfg['panini_d']        = panini_d
-    if panini_s        != 0.05:     cfg['panini_s']        = panini_s
+    if focal_length    is not None: cfg['focal_length'] = focal_length
+    if aperture        is not None: cfg['aperture'] = aperture
+    if sensor_width    is not None: cfg['sensor_width'] = sensor_width
+    if focus_distance  is not None: cfg['focus_distance'] = focus_distance
+    if panini:                      cfg['panini'] = True
+    if panini_d        != 0.5:      cfg['panini_d'] = panini_d
+    if panini_s        != 0.05:     cfg['panini_s'] = panini_s
     if screen_percentage != 150:    cfg['screen_percentage'] = screen_percentage
 
     actor = None
@@ -1057,10 +1081,10 @@ def spawn_camera(location=None, rotation=None,
             cam = actor.CameraComponent  # CineCameraComponent
 
             cam.CurrentFocalLength = cfg['focal_length']
-            cam.CurrentAperture    = cfg['aperture']
+            cam.CurrentAperture = cfg['aperture']
 
             try:
-                cam.FilmbackSettings.SensorWidth  = cfg['sensor_width']
+                cam.FilmbackSettings.SensorWidth = cfg['sensor_width']
                 cam.FilmbackSettings.SensorHeight = cfg['sensor_width'] * 9.0 / 16.0
             except Exception:
                 pass  # FilmbackSettings struct may vary by UE version
@@ -1109,8 +1133,8 @@ def spawn_camera(location=None, rotation=None,
 
     # Panini projection
     if cfg.get('panini', False):
-        d   = cfg.get('panini_d', 0.5)
-        s   = cfg.get('panini_s', 0.05)
+        d = cfg.get('panini_d', 0.5)
+        s = cfg.get('panini_s', 0.05)
         pct = cfg.get('screen_percentage', 150)
         _exec_console(f'r.Upscale.Panini.D {d}')
         _exec_console(f'r.Upscale.Panini.S {s}')
@@ -1182,9 +1206,9 @@ def spawn_camera_pawn(location=None, rotation=None,
     cfg = dict(CAMERA_PRESETS.get('default'))
     if preset and preset in CAMERA_PRESETS:
         cfg.update(CAMERA_PRESETS[preset])
-    if focal_length   is not None: cfg['focal_length']   = focal_length
-    if aperture       is not None: cfg['aperture']       = aperture
-    if sensor_width   is not None: cfg['sensor_width']   = sensor_width
+    if focal_length   is not None: cfg['focal_length'] = focal_length
+    if aperture       is not None: cfg['aperture'] = aperture
+    if sensor_width   is not None: cfg['sensor_width'] = sensor_width
     if focus_distance is not None: cfg['focus_distance'] = focus_distance
 
     try:
@@ -1206,10 +1230,10 @@ def spawn_camera_pawn(location=None, rotation=None,
     try:
         cam = pawn.add_actor_component(CineCameraComponent, 'CineCameraComponent')
         cam.CurrentFocalLength = cfg['focal_length']
-        cam.CurrentAperture    = cfg['aperture']
+        cam.CurrentAperture = cfg['aperture']
 
         try:
-            cam.FilmbackSettings.SensorWidth  = cfg['sensor_width']
+            cam.FilmbackSettings.SensorWidth = cfg['sensor_width']
             cam.FilmbackSettings.SensorHeight = cfg['sensor_width'] * 9.0 / 16.0
         except Exception:
             pass
@@ -1423,12 +1447,12 @@ def spawn_table_actor(table=None, location=None, rotation=None,
     try:
         proxy = actor.get_py_proxy()
         if proxy is not None:
-            proxy.orientation      = orientation
-            proxy.cell_spacing     = cell_spacing
+            proxy.orientation = orientation
+            proxy.cell_spacing = cell_spacing
             proxy.render_gridlines = render_gridlines
-            proxy.render_text      = render_text
-            proxy.enable_resize    = enable_resize
-            proxy.auto_size        = auto_size
+            proxy.render_text = render_text
+            proxy.enable_resize = enable_resize
+            proxy.auto_size = auto_size
             if table is not None:
                 proxy.set_table(table)
     except Exception as e:
@@ -1570,7 +1594,7 @@ def spawn_desktop_icons(location=None, desktop_path=None, spacing=150,
     import math
     from icon_to_image import get_folder_icons
 
-    loc    = location or FVector(0, 0, 0)
+    loc = location or FVector(0, 0, 0)
     folder = desktop_path or os.path.join(os.path.expanduser('~'), 'Desktop')
 
     try:
@@ -1579,8 +1603,8 @@ def spawn_desktop_icons(location=None, desktop_path=None, spacing=150,
         ue.log_warning(f'spawn_desktop_icons: could not scan "{folder}": {e}')
         return []
 
-    paths  = list(icons.items())[:max_icons]
-    cols   = max(1, int(math.ceil(math.sqrt(len(paths)))))
+    paths = list(icons.items())[:max_icons]
+    cols = max(1, int(math.ceil(math.sqrt(len(paths)))))
     actors = []
 
     for i, (path, pil_img) in enumerate(paths):
@@ -1786,15 +1810,15 @@ def spawn_plot(function_expr='sin(x)+cos(y)',
         proxy = actor.get_py_proxy()
         if proxy is not None:
             proxy.function_expr = function_expr
-            proxy.plot_type     = plot_type
-            proxy.mesh_mode     = mesh_mode
-            proxy.orientation   = orientation
-            proxy.resolution    = resolution
-            proxy.x_range       = x_range
-            proxy.y_range       = y_range
-            proxy.z_range       = z_range
-            proxy.units_per_uu  = units_per_uu
-            proxy.show_grid     = show_grid
+            proxy.plot_type = plot_type
+            proxy.mesh_mode = mesh_mode
+            proxy.orientation = orientation
+            proxy.resolution = resolution
+            proxy.x_range = x_range
+            proxy.y_range = y_range
+            proxy.z_range = z_range
+            proxy.units_per_uu = units_per_uu
+            proxy.show_grid = show_grid
             proxy.render()
     except Exception as e:
         ue.log_warning(f'spawn_plot: could not configure PyActorPlotter: {e}')
@@ -1878,12 +1902,12 @@ def spawn_gizmo(location=None, rotation=None, scale=None,
 
 # File-type detection — extended with new types
 
-TABLE_KEYWORDS   = {'table', 'nd_table', 'ndtable'}
-SYSMON_KEYWORDS  = {'sysmon', 'system_monitor', 'systemmonitor', 'monitor'}
+TABLE_KEYWORDS = {'table', 'nd_table', 'ndtable'}
+SYSMON_KEYWORDS = {'sysmon', 'system_monitor', 'systemmonitor', 'monitor'}
 DESKTOP_KEYWORDS = {'desktop', 'desktop_icons', 'desktopicons'}
-PLOT_KEYWORDS    = {'plot', 'math_plot', 'mathplot', 'heatmap', 'surface', 'chart', 'graph'}
-GIZMO_KEYWORDS   = {'gizmo', 'transform_gizmo', 'transformgizmo'}
-TEXT3D_KEYWORDS  = {'text3d', 'text_3d', 'cell', 'bp_cell'}
+PLOT_KEYWORDS = {'plot', 'math_plot', 'mathplot', 'heatmap', 'surface', 'chart', 'graph'}
+GIZMO_KEYWORDS = {'gizmo', 'transform_gizmo', 'transformgizmo'}
+TEXT3D_KEYWORDS = {'text3d', 'text_3d', 'cell', 'bp_cell'}
 NDTABLE_KEYWORDS = {'nd_table_grid', 'ndtablegrid', 'nd_grid'}
 PYACTOR_KEYWORDS = {'pyactor', 'py_actor', 'pyactorempty'}
 
@@ -2036,18 +2060,18 @@ def spawn_icon_from_path(path, location=None, rotation=None, scale=None,
 
 # File-type detection
 
-IMAGE_EXTS  = {'.png', '.jpg', '.jpeg', '.bmp', '.tga', '.tiff', '.exr',
+IMAGE_EXTS = {'.png', '.jpg', '.jpeg', '.bmp', '.tga', '.tiff', '.exr',
                '.hdr', '.webp', '.ico', '.gif', '.psd'}
-VIDEO_EXTS  = {'.mp4', '.avi', '.mov', '.mkv', '.wmv', '.webm', '.flv',
+VIDEO_EXTS = {'.mp4', '.avi', '.mov', '.mkv', '.wmv', '.webm', '.flv',
                '.ts', '.m4v'}
-SOUND_EXTS  = {'.wav', '.mp3', '.ogg', '.flac', '.aif', '.aiff'}
-OBJ_EXTS    = {'.fbx', '.obj', '.dae', '.collada', '.3ds', '.ply', '.stl',
+SOUND_EXTS = {'.wav', '.mp3', '.ogg', '.flac', '.aif', '.aiff'}
+OBJ_EXTS = {'.fbx', '.obj', '.dae', '.collada', '.3ds', '.ply', '.stl',
                '.gltf', '.glb', '.blend', '.dxf', '.x3d', '.wrl', '.off'}
-PRIMITIVE_NAMES  = {'cube', 'sphere', 'cylinder', 'cone', 'plane'}
-CAMERA_KEYWORDS  = {'camera', 'cam', 'cine', 'cinecamera'}
+PRIMITIVE_NAMES = {'cube', 'sphere', 'cylinder', 'cone', 'plane'}
+CAMERA_KEYWORDS = {'camera', 'cam', 'cine', 'cinecamera'}
 CAMERA_PAWN_KEYWORDS = {'camera_pawn', 'campawn', 'flycam', 'flycamera',
                         'pawn_camera', 'possessable_camera'}
-EARTH_KEYWORDS   = {'earth', 'globe', 'cesium', 'cesiumearth'}
+EARTH_KEYWORDS = {'earth', 'globe', 'cesium', 'cesiumearth'}
 
 
 def _detect_type(path_or_name):

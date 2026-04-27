@@ -46,11 +46,11 @@ class PyActorText3D:
     """
 
     HOVER_DELTA = 0.3
-    LERP_SPEED  = 8.0
+    LERP_SPEED = 8.0
 
     # Approximate UE units per character at the default Text3D font size (100).
     # Tune to match the actual font size in your Blueprint.
-    CHAR_WIDTH  = 50.0
+    CHAR_WIDTH = 50.0
     CHAR_HEIGHT = 50.0
 
     TEXT_COMPONENT_NAME = 'Text3DComponent'
@@ -63,10 +63,10 @@ class PyActorText3D:
     #     reporting the top of the line, not its center).
     # CURSOR_DIACRITIC_HEADROOM_FRAC — extra height added above the bounds top
     #     (fraction of tight bounds) so accents/^ aren't clipped.
-    CURSOR_WIDTH_FRAC             = 0.068
-    CURSOR_VERTICAL_OFFSET_FRAC   = .9
+    CURSOR_WIDTH_FRAC = 0.068
+    CURSOR_VERTICAL_OFFSET_FRAC = .9
     CURSOR_DIACRITIC_HEADROOM_FRAC = 0.50
-    CURSOR_HEIGHT_MULTIPLIER = 1.1
+    CURSOR_HEIGHT_MULTIPLIER = 1.2
 
     # Lifecycle
 
@@ -74,14 +74,14 @@ class PyActorText3D:
         self.uobject.enable_input()
         self.player_controller = self.uobject.get_player_controller()
         self.player_controller.bEnableMouseOverEvents = True
-        self.player_controller.bEnableClickEvents     = True
+        self.player_controller.bEnableClickEvents = True
         self.player_controller.CurrentClickTraceChannel = ECollisionChannel.ECC_WorldDynamic
 
-        self.base_scale   = self.uobject.get_actor_scale()
+        self.base_scale = self.uobject.get_actor_scale()
         self.target_scale = self.base_scale
 
         self._was_mouse_down = False
-        self._hovered        = False
+        self._hovered = False
 
         # Find Text3DComponent
         self.text3d = None
@@ -302,7 +302,7 @@ class PyActorText3D:
         # Scale lerp
         cur = self.uobject.get_actor_scale()
         tgt = self.target_scale
-        a   = min(1.0, self.LERP_SPEED * dt)
+        a = min(1.0, self.LERP_SPEED * dt)
         self.uobject.set_actor_scale(FVector(
             cur.x + (tgt.x - cur.x) * a,
             cur.y + (tgt.y - cur.y) * a,
@@ -313,8 +313,8 @@ class PyActorText3D:
             return
 
         # Cursor hit this actor?
-        hit        = self.uobject.get_hit_result_under_cursor(ECollisionChannel.ECC_WorldDynamic)
-        on_self    = hit is not None and hit.actor == self.uobject
+        hit = self.uobject.get_hit_result_under_cursor(ECollisionChannel.ECC_WorldDynamic)
+        on_self = hit is not None and hit.actor == self.uobject
 
         # Tick-based hover fallback
         if not self._component_hover:
@@ -343,7 +343,7 @@ class PyActorText3D:
         self.on_hover_end(component)
 
     def on_hover_begin(self, component):
-        d  = self.HOVER_DELTA
+        d = self.HOVER_DELTA
         bs = self.base_scale
         self.target_scale = FVector(bs.x + d, bs.y + d, bs.z + d)
 
@@ -366,10 +366,10 @@ class PyActorText3D:
                 pass
 
         # Strategy 1: CharacterMeshes (proportional fonts)
-        mesh_idx   = None
+        mesh_idx = None
         mesh_letter = None
         if char_meshes is not None and len(char_meshes) > 0:
-            best_idx  = -1
+            best_idx = -1
             best_dist = float('inf')
             for i, mesh in enumerate(char_meshes):
                 if mesh is None:
@@ -389,7 +389,7 @@ class PyActorText3D:
                     d = abs(world_pt.y - mid_y)
                     if d < best_dist:
                         best_dist = d
-                        best_idx  = i
+                        best_idx = i
                 except Exception:
                     continue
             if best_idx >= 0:
@@ -408,11 +408,11 @@ class PyActorText3D:
         # Pick best result
         if mesh_idx is not None:
             letter = mesh_letter
-            idx    = mesh_idx
+            idx = mesh_idx
             method = 'CharacterMeshes'
         else:
-            idx    = col
-            lines  = text.split('\n')
+            idx = col
+            lines = text.split('\n')
             if 0 <= row < len(lines) and 0 <= col < len(lines[row]):
                 letter = lines[row][col]
             else:
@@ -448,9 +448,9 @@ class PyActorText3D:
             delta = FVector(world_pt.x - loc.x,
                             world_pt.y - loc.y,
                             world_pt.z - loc.z)
-            yaw   = math.radians(-rot.yaw)
+            yaw = math.radians(-rot.yaw)
             pitch = math.radians(-rot.pitch)
-            roll  = math.radians(-rot.roll)
+            roll = math.radians(-rot.roll)
             cy, sy = math.cos(yaw), math.sin(yaw)
             x1 =  cy * delta.x + sy * delta.y
             y1 = -sy * delta.x + cy * delta.y

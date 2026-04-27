@@ -13,7 +13,7 @@ except ImportError:
 
 # Windows FILETIME conversion
 
-_WIN_TICKS        = 10_000_000
+_WIN_TICKS = 10_000_000
 _EPOCH_DIFF_TICKS = (
     datetime.datetime(1970, 1, 1) - datetime.datetime(1601, 1, 1)
 ).total_seconds() * _WIN_TICKS

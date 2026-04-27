@@ -196,11 +196,11 @@ class FiniteRepetitionSelector:
         if current_operator not in self.OPERATORS:
             raise ValueError(f"Unknown operator '{current_operator}'. Choose from {self.OPERATORS}")
 
-        self.current_operator      = current_operator
-        self.current_operand       = current_operand
-        self.autonegate            = autonegate
-        self.autonegate_threshold  = autonegate_threshold
-        self.use_reals             = use_reals
+        self.current_operator = current_operator
+        self.current_operand = current_operand
+        self.autonegate = autonegate
+        self.autonegate_threshold = autonegate_threshold
+        self.use_reals = use_reals
 
         self._real = None
         if use_reals:
@@ -262,7 +262,7 @@ class FiniteRepetitionSelector:
 
     def increase_value(self, value: float) -> float:
         value = self.autonegate_value(value)
-        op      = self._op()
+        op = self._op()
         operand = self.current_operand
 
         if op == 0:   # C/S  (successor)
@@ -281,7 +281,7 @@ class FiniteRepetitionSelector:
 
     def decrease_value(self, value: float) -> float:
         value = self.autonegate_value(value)
-        op      = self._op()
+        op = self._op()
         operand = self.current_operand
 
         if op == 0:   # C/S  (predecessor)
