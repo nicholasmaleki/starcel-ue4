@@ -64,8 +64,9 @@ class PyActorText3D:
     # CURSOR_DIACRITIC_HEADROOM_FRAC — extra height added above the bounds top
     #     (fraction of tight bounds) so accents/^ aren't clipped.
     CURSOR_WIDTH_FRAC             = 0.068
-    CURSOR_VERTICAL_OFFSET_FRAC   = 1.0
+    CURSOR_VERTICAL_OFFSET_FRAC   = .9
     CURSOR_DIACRITIC_HEADROOM_FRAC = 0.50
+    CURSOR_HEIGHT_MULTIPLIER = 1.1
 
     # Lifecycle
 
@@ -293,7 +294,7 @@ class PyActorText3D:
         scale_vec = FVector(
             0.01,
             glyph_w * cls.CURSOR_WIDTH_FRAC / 100.0,
-            cursor_h / 100.0,
+            (cursor_h / 100.0) * cls.CURSOR_HEIGHT_MULTIPLIER,
         )
         return world_pt, scale_vec, actor_rot
 

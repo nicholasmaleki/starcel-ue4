@@ -33,7 +33,7 @@ _main_begin_play_ran = False
 ue.log('Hello i am a Python module.')
 
 # Use this if you want to rebuild the unreal_engine intellisense(.pyi, etc.) and cli
-rebuild_generated_modules()
+# rebuild_generated_modules()
 
 # ret = ue.message_dialog_open(ue.APP_MSG_TYPE_YES_NO, "Do you want to test dialogs?")
 # if ret == ue.APP_RETURN_TYPE_YES:
@@ -245,13 +245,6 @@ class Main:
         # desktop-icon/file-explorer icon under the cursor, opening the
         # associated app (e.g. a .uproject's editor) every time the user
         # types 'm'.
-        # def _toggle_cursor_unless_typing():
-        #     try:
-        #         from pyactor_global_click import PyActorGlobalClick
-        #         if PyActorGlobalClick.is_any_focused():
-        #             return
-        #     except Exception:
-        #         pass
 
         self.input.bind_press("M", self.input.toggle_cursor)
         #

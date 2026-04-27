@@ -29,7 +29,7 @@ class FileExplorer:
     MAX_FILES         = 20
     ICON_COL          = 0      # leading empty column reserved for icons
     ICON_COL_WIDTH    = 120.0  # UU; cell width — icon size derives from this
-    ICON_FILL         = 0.56   # icon diameter as fraction of min(row_h, col_w)
+    ICON_FILL         = 0.336  # icon diameter as fraction of min(row_h, col_w)
     SPHERE_BASE_DIAM  = 100.0  # /Engine/BasicShapes/Sphere natural diameter
 
     def begin_play(self):

@@ -53,8 +53,11 @@ class IconSphere:
         except Exception as e:
             ue.log_warning(f'IconSphere: pc setup failed: {e}')
 
-        self.base_scale      = self.uobject.get_actor_scale()
-        self.target_scale    = self.base_scale
+        # Captured lazily on first tick: spawn_icon's set_actor_transform
+        # runs AFTER world.actor_spawn() returns, so begin_play here would
+        # see the BP default scale, not the caller's requested scale.
+        self.base_scale      = None
+        self.target_scale    = None
         self._hovered        = False
         self._was_mouse_down = False
 
@@ -91,6 +94,8 @@ class IconSphere:
 
     def on_hover_begin(self, mesh):
         self._hovered = True
+        if self.base_scale is None:
+            self.base_scale = self.uobject.get_actor_scale()
         d  = self.HOVER_DELTA
         bs = self.base_scale
         self.target_scale = FVector(bs.x - d, bs.y - d, bs.z - d)
@@ -132,6 +137,12 @@ class IconSphere:
     # Tick
 
     def tick(self, dt):
+        # First tick: capture the post-spawn actor scale as our base.
+        if self.base_scale is None:
+            self.base_scale   = self.uobject.get_actor_scale()
+            self.target_scale = self.base_scale
+            return
+
         # hover scale lerp
         cur = self.uobject.get_actor_scale()
         tgt = self.target_scale

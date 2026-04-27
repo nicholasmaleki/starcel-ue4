@@ -3,27 +3,34 @@ test_spawn.py — Spawn test suite for Starcel9
 ==============================================
 Modeled after test_gizmos() in gizmo.py.
 
-All actors are placed at X=0, spread along the Y axis in bands:
-  Y    0 –  800  primitives
-  Y 1000 – 1200  image
-  Y 1400 – 1600  video
-  Y 1800 – 2000  sound
-  Y 2200 – 5700  cameras (one per preset, stride 500)
-  Y 6000 – 6500  earth
-  Y 7000          system monitor
-  Y 7500          table
-  Y 8000          desktop icons
-  Y 9000          icon from PIL
-  Y 9500          icon from .exe path (GoogleDriveSetup.exe)
-  Y 10000 – 10500 text3d click (test_text3d_click only)
-  Y 11000         plot spheres
-  Y 11500         plot sphere_lines (custom point_mesh option)
-  Y 12000         plot ripple sphere_lines
-  Y 12500         plot tan(x) 2D curve
-  Y 13000         transform gizmo (test_gizmo only)
-  Y 14000+        nd_table grid (2D 10x10 through 7D)
-  Y 16000         file explorer (Everything-backed, BP_Icon column)
-  Y 17000         3D resizable table (drag row/col/slice gridlines)
+All actors are placed at X=0, spread along the Y axis.  test_spawn_all()
+walks the chosen tests in order and gives each one a base_y allocated
+sequentially from a running cursor (starting at Y=0), using the per-test
+span registered in ``_TEST_Y_SPAN``.  Each test_* function accepts a
+``base_y`` kwarg and lays its own actors out within that band.
+
+This means a subset like ``tests=['cameras','earth']`` is packed at the
+origin instead of being pushed to the cameras' old fixed Y=2200, and
+no two tests ever share a Y band regardless of which subset you pick.
+
+Default Y spans (full-suite layout — see ``_TEST_Y_SPAN``):
+  primitives     1000  (5 shapes, stride 200)
+  image           600  (valid + invalid path)
+  video           600
+  sound           400
+  cameras        4000  (8 presets, stride 500)
+  earth          1000  (2 presets, stride 500)
+  system_monitor  500
+  table          1000  (basic + formulas, formulas offset on X)
+  desktop_icons  1000
+  icon            500
+  exe_icon        500
+  nd_table       2000  (2D 10x10 through 7D)
+  plot           2000  (4 plots, stride 500)
+  file_explorer  1000  (Everything-backed)
+  3d             1000  (drag row/col/slice gridlines)
+  gizmo          1000  (interactive — only with uobject+input_manager)
+  text3d_click   1000  (interactive — only with uobject+input_manager)
 
 Usage (PIE Python console):
     from test_spawn import test_spawn_all
@@ -36,6 +43,9 @@ Usage (PIE Python console):
     # Interactive transform gizmo (needs uobject + input_manager):
     from test_spawn import test_gizmo
     target, handles, tick = test_gizmo(uobject, input_manager)
+
+Per-test elapsed time is logged to Desktop/test_spawn_log.txt and
+returned on each result entry as ``results[name]['elapsed']``.
 
 Prerequisites summary printed to log at start of test_spawn_all().
 Log file: Desktop/test_spawn_log.txt
@@ -159,11 +169,13 @@ def _describe_actor(actor):
     return ' '.join(parts)
 
 
-def _result(name, actor_or_value, extra='', expected=None, inputs=None):
+def _result(name, actor_or_value, extra='', expected=None, inputs=None,
+            elapsed=None):
     """Log a test outcome with rich context:
       - inputs   : what params/paths were passed in
       - expected : what a passing result should look like
       - actor    : full introspection of the returned actor (class/loc/mesh/etc.)
+      - elapsed  : seconds the spawn call took (logged + stored on result dict)
       - status   : PASS/FAIL line
     """
     ok     = actor_or_value is not None
@@ -179,15 +191,17 @@ def _result(name, actor_or_value, extra='', expected=None, inputs=None):
             _log(f'  actor:    <introspection failed: {e}>')
     else:
         _log('  actor:    None  (spawner returned nothing)')
+    if elapsed is not None:
+        _log(f'  elapsed:  {elapsed:.3f}s')
     suffix = f' — {extra}' if extra else ''
     _log(f'[{status}] {name}{suffix}')
-    return {name: {'ok': ok, 'actor': actor_or_value}}
+    return {name: {'ok': ok, 'actor': actor_or_value, 'elapsed': elapsed}}
 
 
 def _skip(name, reason=''):
     _log(f'  skip_reason: {reason}' if reason else '  skip_reason: (unspecified)')
     _log(f'[SKIP] {name}{(" — " + reason) if reason else ""}')
-    return {name: {'ok': True, 'actor': None}}   # skips are non-failing
+    return {name: {'ok': True, 'actor': None, 'elapsed': None}}   # skips are non-failing
 
 
 def _log_env():
@@ -334,18 +348,30 @@ def _check_ffmpeg():
 # Each function returns a dict { test_name: {'ok': bool, 'actor': ...} }
 # Actors are kept in the returned dict so Python holds references (prevent GC).
 
-# Y-axis layout constants
-_Y_PRIMITIVES    =    0   # stride 200, 5 shapes  ->  0..800
-_Y_IMAGE         = 1000   # stride 200             -> 1000..1200
-_Y_VIDEO         = 1400   # stride 200             -> 1400..1600
-_Y_SOUND         = 1800   # stride 200             -> 1800..2000
-_Y_CAMERAS       = 2200   # stride 500, 8 presets  -> 2200..5700
-_Y_EARTH         = 6000   # stride 500             -> 6000..6500
-_Y_SYSMON        = 7000
-_Y_TABLE         = 7500
-_Y_DESKTOP_ICONS = 8000
-_Y_ICON          = 9000
-_Y_EXE_ICON      = 9500
+# Per-test Y-span registry (UU along Y).  test_spawn_all() walks this list
+# in order and assigns each chosen test a base_y = (running cursor), so a
+# subset like tests=['cameras','earth'] is packed sequentially from Y=0
+# rather than leaving big gaps.  Each test_* function takes a base_y kwarg
+# and lays its own actors out within that band.
+_TEST_Y_SPAN = {
+    'test_primitives':     1000,   # 5 shapes × 200 stride                  (0..800)
+    'test_image':           600,   # valid at 0, invalid at +400
+    'test_video':           600,
+    'test_sound':           400,   # at 0 and +200
+    'test_cameras':        4000,   # 8 presets × 500 stride                 (0..3500)
+    'test_earth':          1000,   # 2 presets × 500
+    'test_system_monitor':  500,
+    'test_table':          1000,   # basic + formulas (formulas offset on X)
+    'test_desktop_icons':  1000,
+    'test_icon':            500,
+    'test_exe_icon':        500,
+    'test_nd_table':       2000,
+    'test_plot':           2000,   # 4 plots × 500 stride
+    'test_file_explorer':  1000,
+    'test_3d':             1000,
+    'test_gizmo':          1000,
+    'test_text3d_click':   1000,
+}
 
 _GOOGLE_DRIVE_EXE = r"C:\Users\nicho\Downloads\GoogleDriveSetup.exe"
 _BIG_BAD_JOHN_FLAC = r"C:\Users\nicho\Downloads\Big Bad John\Big Bad John.flac"
@@ -380,25 +406,28 @@ def _find_test_image():
         return None
 
 
-def test_primitives():
-    """Spawn all 5 primitive shapes along Y."""
+def test_primitives(base_y=0):
+    """Spawn all 5 primitive shapes along Y, starting at *base_y*."""
     from ue_spawn import spawn_primitive
     results = {}
     shapes = ['cube', 'sphere', 'cylinder', 'cone', 'plane']
     for i, shape in enumerate(shapes):
-        loc   = FVector(0, _Y_PRIMITIVES + i * 200, 100)
+        loc   = FVector(0, base_y + i * 200, 100)
         actor = None
+        t0 = time.monotonic()
         try:
             actor = spawn_primitive(shape, location=loc)
         except Exception as e:
             _log_exception(f'primitive_{shape}', e)
-        results.update(_result(f'primitive_{shape}', actor))
+        elapsed = time.monotonic() - t0
+        results.update(_result(f'primitive_{shape}', actor, elapsed=elapsed))
     return results
 
 
-def test_image():
+def test_image(base_y=0):
     """
     Spawn from a test image and verify cube matches image pixel dimensions.
+    Lays out two spawns at base_y and base_y+400 along Y.
 
     Priority order for the test image:
       1. User-specified Feedback Hub screenshot
@@ -473,8 +502,9 @@ def test_image():
             _log(f'  image_valid: could not probe size: {e}')
 
         actor = None
+        t0 = time.monotonic()
         try:
-            actor = spawn_image(img_path, location=FVector(0, _Y_IMAGE, 100))
+            actor = spawn_image(img_path, location=FVector(0, base_y, 100))
             if actor is not None:
                 # Verify the scale UE actually applied
                 try:
@@ -485,21 +515,26 @@ def test_image():
                     _log(f'  image_valid: could not read actor scale: {e}')
         except Exception as e:
             _log_exception('image_valid', e)
-        results.update(_result('image_valid', actor))
+        results.update(_result('image_valid', actor,
+                               elapsed=time.monotonic() - t0))
 
     # 3. invalid path — None is the correct result
     bad = None
+    t0 = time.monotonic()
     try:
         bad = spawn_image('C:/nonexistent_path/bad.png',
-                          location=FVector(0, _Y_IMAGE + 400, 100))
+                          location=FVector(0, base_y + 400, 100))
     except Exception:
         pass
-    results['image_invalid_path'] = {'ok': bad is None, 'actor': bad}
+    elapsed = time.monotonic() - t0
+    results['image_invalid_path'] = {'ok': bad is None, 'actor': bad,
+                                     'elapsed': elapsed}
+    _log(f'  elapsed: {elapsed:.3f}s')
     _log(f'[{"PASS" if bad is None else "FAIL"}] image_invalid_path')
     return results
 
 
-def test_video():
+def test_video(base_y=0):
     """
     Spawn the loading_screen.mp4 as a vertical picture-frame video plane
     using MP_VideoTexture_Video_Mat, plus run the legacy Desktop-MP4 scan.
@@ -511,22 +546,24 @@ def test_video():
     loading_mp4 = (r'C:\Users\nicho\Documents\Unreal Projects\Starcel9\Content\Movies\loading_screen.mp4')
     if os.path.exists(loading_mp4):
         actor = None
+        t0 = time.monotonic()
         try:
             actor = spawn_video(
                 loading_mp4,
-                location=FVector(0, _Y_VIDEO + 400, 100),
+                location=FVector(0, base_y + 400, 100),
             )
         except Exception as e:
             _log_exception('video_cube', e)
         results.update(_result('video_cube', actor,
-                               extra='cube playing loading_screen.mp4'))
+                               extra='cube playing loading_screen.mp4',
+                               elapsed=time.monotonic() - t0))
     else:
         results.update(_skip('video_cube', f'not found: {loading_mp4}'))
 
     return results
 
 
-def test_sound():
+def test_sound(base_y=0):
     """Exercise ue_spawn.spawn_sound with a filesystem audio file, in both
     world-playback and actor-hosted modes."""
     from ue_spawn import spawn_sound
@@ -534,26 +571,30 @@ def test_sound():
 
     if os.path.isfile(_BIG_BAD_JOHN_FLAC):
         sw = None
+        t0 = time.monotonic()
         try:
             sw = spawn_sound(_BIG_BAD_JOHN_FLAC,
-                             location=FVector(0, _Y_SOUND, 100))
+                             location=FVector(0, base_y, 100))
         except Exception as e:
             _log_exception('sound_file_flac', e)
         results.update(_result('sound_file_flac', sw,
                                inputs={'path': _BIG_BAD_JOHN_FLAC},
-                               extra='decoded via ffmpeg -> SoundWaveProcedural'))
+                               extra='decoded via ffmpeg -> SoundWaveProcedural',
+                               elapsed=time.monotonic() - t0))
 
         actor = None
+        t0 = time.monotonic()
         try:
             actor = spawn_sound(_BIG_BAD_JOHN_FLAC,
-                                location=FVector(0, _Y_SOUND + 200, 100),
+                                location=FVector(0, base_y + 200, 100),
                                 as_actor=True)
         except Exception as e:
             _log_exception('sound_file_flac_as_actor', e)
         results.update(_result('sound_file_flac_as_actor', actor,
                                inputs={'path': _BIG_BAD_JOHN_FLAC,
                                        'as_actor': True},
-                               extra='click sphere to play (SoundSphere host)'))
+                               extra='click sphere to play (SoundSphere host)',
+                               elapsed=time.monotonic() - t0))
     else:
         results.update(_skip('sound_file_flac',
                              f'not found: {_BIG_BAD_JOHN_FLAC}'))
@@ -562,49 +603,54 @@ def test_sound():
     return results
 
 
-def test_cameras():
+def test_cameras(base_y=0):
     """Spawn each camera preset along Y. Click the proxy cube to possess."""
     from ue_spawn import spawn_camera_actor, CAMERA_PRESETS
     results = {}
     for i, preset_name in enumerate(CAMERA_PRESETS):
-        loc   = FVector(0, _Y_CAMERAS + i * 500, 300)
+        loc   = FVector(0, base_y + i * 500, 300)
         actor = None
+        t0 = time.monotonic()
         try:
             actor = spawn_camera_actor(location=loc, camera_type=preset_name)
         except Exception as e:
             _log_exception(f'camera_{preset_name}', e)
-        results.update(_result(f'camera_{preset_name}', actor))
+        results.update(_result(f'camera_{preset_name}', actor,
+                               elapsed=time.monotonic() - t0))
     return results
 
 
-def test_earth():
+def test_earth(base_y=0):
     """Spawn Cesium Earth with satellite and night presets."""
     from ue_spawn import spawn_earth
     results = {}
     for i, preset in enumerate(['satellite', 'night']):
-        loc   = FVector(0, _Y_EARTH + i * 500, 0)
+        loc   = FVector(0, base_y + i * 500, 0)
         actor = None
+        t0 = time.monotonic()
         try:
             actor = spawn_earth(location=loc, preset=preset,
                                 scale=FVector(0.00001, 0.00001, 0.00001))
         except Exception as e:
             _log_exception(f'earth_{preset}', e)
-        results.update(_result(f'earth_{preset}', actor))
+        results.update(_result(f'earth_{preset}', actor,
+                               elapsed=time.monotonic() - t0))
     return results
 
 
-def test_system_monitor():
+def test_system_monitor(base_y=0):
     """Spawn a PyActorSysmon dynamically (no Blueprint placeholder)."""
     from ue_spawn import spawn_system_monitor
     actor = None
+    t0 = time.monotonic()
     try:
-        actor = spawn_system_monitor(location=FVector(0, _Y_SYSMON, 100))
+        actor = spawn_system_monitor(location=FVector(0, base_y, 100))
     except Exception as e:
         _log_exception('system_monitor', e)
-    return _result('system_monitor', actor)
+    return _result('system_monitor', actor, elapsed=time.monotonic() - t0)
 
 
-def test_table():
+def test_table(base_y=0):
     """Spawn two nd_tables: a basic 3×4 file listing and an advanced formula
     spreadsheet that exercises in-cell Python, spreadsheet labels (A–C, AA, AB),
     named cells, and cross-cell dependencies."""
@@ -613,23 +659,26 @@ def test_table():
 
     # Basic table (unchanged)
     renderer = None
+    t0 = time.monotonic()
     try:
         from nd_table.ndtable import Table
         t = Table(shape=(3, 4))
         t[(0, 0)] = 'Name';    t[(0, 1)] = 'Size';    t[(0, 2)] = 'Date';    t[(0, 3)] = 'Type'
         t[(1, 0)] = 'file.py'; t[(1, 1)] = '10 KB';   t[(1, 2)] = '2024-01'; t[(1, 3)] = '.py'
         t[(2, 0)] = 'readme';  t[(2, 1)] = '1 KB';    t[(2, 2)] = '2024-01'; t[(2, 3)] = '.md'
-        renderer = spawn_table(t, location=FVector(0, _Y_TABLE, 500))
+        renderer = spawn_table(t, location=FVector(0, base_y, 500))
     except Exception as e:
         _log_exception('table', e)
     n_cells = len(renderer.cell_actors) if renderer and hasattr(renderer, 'cell_actors') else 0
-    results.update(_result('table', renderer, extra=f'{n_cells} cells'))
+    results.update(_result('table', renderer, extra=f'{n_cells} cells',
+                           elapsed=time.monotonic() - t0))
 
     # Advanced formula spreadsheet
     #  Uses spreadsheet labels A–C and extended AA, AB.
     #  Row 0: headers
     #  Rows 1-5: numeric data + formulas referencing other cells
     adv_renderer = None
+    t0 = time.monotonic()
     try:
         from nd_table.ndtable import Table
         adv = Table(shape=(8, 28), lazy_eval=True)  # 8 rows, 28 cols (A..AB)
@@ -695,7 +744,7 @@ def test_table():
             formula_ok = False
 
         adv_renderer = spawn_table(
-            adv, location=FVector(500, _Y_TABLE + 400, 500))
+            adv, location=FVector(500, base_y + 400, 500))
         if formula_ok:
             _log(f'  adv_table: formulas evaluated successfully')
     except Exception as e:
@@ -703,35 +752,39 @@ def test_table():
 
     n_adv = len(adv_renderer.cell_actors) if adv_renderer and hasattr(adv_renderer, 'cell_actors') else 0
     results.update(_result('table_formulas', adv_renderer,
-                           extra=f'{n_adv} cells, labels A-C + AA + AB'))
+                           extra=f'{n_adv} cells, labels A-C + AA + AB',
+                           elapsed=time.monotonic() - t0))
 
     return results
 
 
-def test_desktop_icons():
+def test_desktop_icons(base_y=0):
     """Spawn first 5 desktop shell icons as BP_Icon actors."""
     from ue_spawn import spawn_desktop_icons
     actors = []
+    t0 = time.monotonic()
     try:
         actors = spawn_desktop_icons(
-            location=FVector(0, _Y_DESKTOP_ICONS, 100),
+            location=FVector(0, base_y, 100),
             max_icons=5,
         )
     except Exception as e:
         _log_exception('desktop_icons', e)
 
     first = actors[0] if actors else None
-    return _result('desktop_icons', first, extra=f'{len(actors)} spawned')
+    return _result('desktop_icons', first, extra=f'{len(actors)} spawned',
+                   elapsed=time.monotonic() - t0)
 
 
-def test_icon():
+def test_icon(base_y=0):
     """Spawn a BP_Icon from a plain PIL image."""
     from ue_spawn import spawn_icon
     actor = None
+    t0 = time.monotonic()
     try:
         from PIL import Image as PILImage
         img = PILImage.new('RGBA', (256, 256), (0, 200, 50, 255))
-        actor = spawn_icon(img, location=FVector(0, _Y_ICON, 100))
+        actor = spawn_icon(img, location=FVector(0, base_y, 100))
         if actor:
             try:
                 actor.get_actor_component('Sphere').SetSimulatePhysics(True)
@@ -739,10 +792,10 @@ def test_icon():
                 _log(f'  icon physics: {phys_e}')
     except Exception as e:
         _log_exception('icon_from_pil', e)
-    return _result('icon_from_pil', actor)
+    return _result('icon_from_pil', actor, elapsed=time.monotonic() - t0)
 
 
-def test_exe_icon():
+def test_exe_icon(base_y=0):
     """Spawn a BP_Icon from GoogleDriveSetup.exe (shell icon + clickable source_path).
 
     Uses ue_spawn.spawn_icon_from_path, which wraps extract_icon + spawn_icon
@@ -751,49 +804,41 @@ def test_exe_icon():
     """
     from ue_spawn import spawn_icon_from_path
     actor = None
+    t0 = time.monotonic()
     try:
         actor = spawn_icon_from_path(
             _GOOGLE_DRIVE_EXE,
-            location=FVector(0, _Y_EXE_ICON, 400))
+            location=FVector(0, base_y, 400))
     except Exception as e:
         _log_exception('exe_icon', e)
-    return _result('exe_icon', actor)
+    return _result('exe_icon', actor, elapsed=time.monotonic() - t0)
 
 
-# nD table grid test  (Y 8000 area, offset in X/Y from base)
+# nD table grid test — base_location is the upper-left of the grid.
 
-_Y_ND_TABLE = 14000
-
-
-def test_nd_table():
+def test_nd_table(base_y=0):
     """Comprehensive nD table rendering (2D 10x10 through 7D)."""
     from nd_table.examples import test_nd_table_grid
     renderer = None
+    t0 = time.monotonic()
     try:
         renderer = test_nd_table_grid(
-            base_location=FVector(0, _Y_ND_TABLE, 700))
+            base_location=FVector(0, base_y, 700))
     except Exception as e:
         _log_exception('nd_table_grid', e)
     n_cells = len(renderer.cell_actors) if renderer and hasattr(renderer, 'cell_actors') else 0
     n_lines = len(renderer.gridline_actors) if renderer and hasattr(renderer, 'gridline_actors') else 0
     return _result('nd_table_grid', renderer,
-                   extra=f'{n_cells} cells, {n_lines} gridlines')
+                   extra=f'{n_cells} cells, {n_lines} gridlines',
+                   elapsed=time.monotonic() - t0)
 
 
-# Plot test  (Y 9000 – 9500)
+# File explorer test — Spawns a FileExplorer PyActor that builds a
+# Name/Size/Date/Type table and a leftmost column of BP_Icons.  BP_Icon's
+# IconSphere handles clicks (opens the file with the OS default handler —
+# Windows Explorer behavior).
 
-_Y_PLOT = 11000
-
-
-# File explorer test  (Y 14000)
-# Spawns a FileExplorer PyActor that builds a Name/Size/Date/Type table
-# and a leftmost column of BP_Icons.  BP_Icon's IconSphere handles clicks
-# (opens the file with the OS default handler — Windows Explorer behavior).
-
-_Y_FILE_EXPLORER = 16000
-
-
-def test_file_explorer():
+def test_file_explorer(base_y=0):
     """Spawn a FileExplorer PyActor populated via EverythingAPI.
 
     Requires Everything (Voidtools) running and Everything64.dll reachable.
@@ -801,24 +846,23 @@ def test_file_explorer():
     the component's begin_play and logged to UE output."""
     from ue_spawn import spawn_file_explorer
     actor = None
+    t0 = time.monotonic()
     try:
         actor = spawn_file_explorer(
-            location=FVector(0, _Y_FILE_EXPLORER, 100))
+            location=FVector(0, base_y, 100))
     except Exception as e:
         _log_exception('file_explorer', e)
     return _result('file_explorer', actor,
-                   extra='needs Everything daemon + Everything64.dll')
+                   extra='needs Everything daemon + Everything64.dll',
+                   elapsed=time.monotonic() - t0)
 
 
-# 3D resizable table test  (Y 15000)
+# 3D resizable table test
 # Uses spawn_table_actor so the renderer's gridline resize controller is
 # ticked by a PyActor — LMB-drag on any gridline resizes that row (axis 0),
 # column (axis 1), or slice/layer (axis 2).
 
-_Y_3D = 17000
-
-
-def test_3d():
+def test_3d(base_y=0):
     """Spawn a 3x3x3 resizable table for trying out row/col/slice drag-resize.
 
     Hover a gridline, then LMB-drag to resize the adjacent row (axis 0),
@@ -827,6 +871,7 @@ def test_3d():
     """
     from ue_spawn import spawn_table_actor
     actor = None
+    t0 = time.monotonic()
     try:
         from nd_table.ndtable import Table
         t = Table(shape=(3, 3, 3))
@@ -836,7 +881,7 @@ def test_3d():
                     t[i, j, k] = f'r{i}c{j}s{k}'
         actor = spawn_table_actor(
             t,
-            location=FVector(0, _Y_3D, 500),
+            location=FVector(0, base_y, 500),
             enable_resize=True,
         )
     except Exception as e:
@@ -851,13 +896,10 @@ def test_3d():
                 extra = f'{n_cells} cells, {n_lines} gridlines (drag to resize row/col/slice)'
     except Exception:
         pass
-    return _result('3d', actor, extra=extra)
+    return _result('3d', actor, extra=extra, elapsed=time.monotonic() - t0)
 
 
-_Y_GIZMO = 13000
-
-
-def test_gizmo(uobject=None, input_manager=None, location=None):
+def test_gizmo(uobject=None, input_manager=None, location=None, base_y=0):
     """
     Spawn the interactive transform gizmo (target cylinder + move arrows,
     rotate rings, scale handles, plane squares) and wire up drag interaction.
@@ -870,11 +912,12 @@ def test_gizmo(uobject=None, input_manager=None, location=None):
     from ue_spawn import spawn_gizmo
 
     if location is None:
-        location = FVector(0, _Y_GIZMO, 100)
+        location = FVector(0, base_y, 100)
 
     _log('--- test_gizmo ---')
     _log(f'Spawning gizmo target at {location}')
 
+    t0 = time.monotonic()
     try:
         target, handles, pyactor = spawn_gizmo(
             location=location,
@@ -883,7 +926,8 @@ def test_gizmo(uobject=None, input_manager=None, location=None):
         )
     except Exception as e:
         _log(f'test_gizmo: spawn failed: {e}')
-        _result('gizmo', None, extra=str(e))
+        _result('gizmo', None, extra=str(e),
+                elapsed=time.monotonic() - t0)
         return None, None, None
 
     if handles is not None:
@@ -901,18 +945,18 @@ def test_gizmo(uobject=None, input_manager=None, location=None):
              'self.input from Main.begin_play to enable interaction.')
 
     _result('gizmo', target,
-            extra=f'{len(handles) if handles else 0} handles')
+            extra=f'{len(handles) if handles else 0} handles',
+            elapsed=time.monotonic() - t0)
     return target, handles, pyactor
 
 
-def test_plot():
+def test_plot(base_y=0):
     """
-    Three plot tests spread along Y:
-      Y 9000  — colormap surface, triangles (reference)
-      Y 9500  — colormap surface, sphere_lines (custom point_mesh option)
-      Y 10000 — spherical ripple sphere_lines  (custom point_mesh option)
-
-    sphere_lines variants accept an optional point_mesh path (default: Sphere).
+    Four plot tests spread along Y from *base_y*:
+      base_y      — colormap surface, spheres (reference)
+      base_y + 500  — colormap surface, sphere_lines
+      base_y + 1000 — spherical ripple sphere_lines
+      base_y + 1500 — 2D tan(x) curve
 
     Uses spawn_plot() — a dynamic PyActorPlotter spawned via spawn_pyactor.
     Falls back to create_plotter() directly if spawn_plot errors out.
@@ -923,18 +967,19 @@ def test_plot():
     variants = [
         dict(name='plot_spheres',        func='sin(x)+cos(y)',
              plot_type='surface',   mesh_mode='spheres',      orientation='ground_table',
-             location=FVector(0, _Y_PLOT,        0)),
+             location=FVector(0, base_y,        0)),
         dict(name='plot_sphere_lines',   func='sin(x)+cos(y)',
              plot_type='surface',   mesh_mode='sphere_lines', orientation='ground_table',
-             location=FVector(0, _Y_PLOT + 500,  0)),
+             location=FVector(0, base_y + 500,  0)),
         dict(name='plot_ripple_sphere_lines', func='sin(sqrt(x**2+y**2))',
              plot_type='surface',   mesh_mode='sphere_lines', orientation='ground_table',
-             location=FVector(0, _Y_PLOT + 1000, 0)),
+             location=FVector(0, base_y + 1000, 0)),
     ]
 
     for v in variants:
         actor = None
         name  = v['name']
+        t0    = time.monotonic()
 
         # Primary path: PyActorPlotter via spawn_plot
         try:
@@ -985,10 +1030,11 @@ def test_plot():
             except Exception as e2:
                 _log(f'  {name} direct plotter also failed: {e2}')
 
-        results.update(_result(name, actor))
+        results.update(_result(name, actor, elapsed=time.monotonic() - t0))
 
     # 2D curve: tan(x) with asymptote breaks
     plot_2d = None
+    t0 = time.monotonic()
     try:
         from ue_math_plotter import create_plotter
 
@@ -1001,7 +1047,7 @@ def test_plot():
 
         p = create_plotter(
             world        = get_world(),
-            origin       = FVector(0, _Y_PLOT + 1500, 0),
+            origin       = FVector(0, base_y + 1500, 0),
             x_range      = (-3.14159, 3.14159),
             y_range      = (-5.0, 5.0),
             z_range      = (-5.0, 5.0),
@@ -1016,7 +1062,8 @@ def test_plot():
         plot_2d = p
     except Exception as e:
         _log(f'  plot_tan_2d failed: {e}')
-    results.update(_result('plot_tan_2d', plot_2d, extra='2D tan(x)'))
+    results.update(_result('plot_tan_2d', plot_2d, extra='2D tan(x)',
+                           elapsed=time.monotonic() - t0))
 
     return results
 
@@ -1027,7 +1074,13 @@ def test_spawn_all(uobject=None, input_manager=None, tests=None):
     """
     Run all spawn tests.  Modeled after test_gizmos().
 
-    Actors are placed at X=0 and spread along Y (see module docstring for layout).
+    Actors are placed at X=0 and spread along Y.  Each chosen test gets a
+    base_y allocated sequentially from a running cursor (starting at Y=0)
+    using its registered span in ``_TEST_Y_SPAN`` — so a subset like
+    ``tests=['cameras','earth']`` is packed at the origin instead of being
+    pushed out to the cameras' fixed Y=2200 like the old layout did, and
+    independent tests never share a Y band.
+
     Runs a prerequisites check first so you know exactly what to set up.
 
     Parameters
@@ -1046,7 +1099,8 @@ def test_spawn_all(uobject=None, input_manager=None, tests=None):
 
     Returns
     -------
-    dict: { test_name: {'ok': bool, 'actor': actor_or_None} }
+    dict: { test_name: {'ok': bool, 'actor': actor_or_None,
+                        'elapsed': seconds_or_None} }
 
     Call from PIE Python console:
         from test_spawn import test_spawn_all
@@ -1069,69 +1123,78 @@ def test_spawn_all(uobject=None, input_manager=None, tests=None):
     _log_env()
     _check_prerequisites()
 
+    # (fn_name, callable_taking_base_y) pairs — order = layout order.
     non_interactive = [
-        test_primitives,
-        test_image,
-        test_video,
-        test_sound,
-        test_cameras,
-        test_earth,
-        test_system_monitor,
-        test_table,
-        test_desktop_icons,
-        test_icon,
-        test_exe_icon,
-        test_nd_table,
-        test_plot,
-        test_file_explorer,
-        test_3d,
+        ('test_primitives',     test_primitives),
+        ('test_image',          test_image),
+        ('test_video',          test_video),
+        ('test_sound',          test_sound),
+        ('test_cameras',        test_cameras),
+        ('test_earth',          test_earth),
+        ('test_system_monitor', test_system_monitor),
+        ('test_table',          test_table),
+        ('test_desktop_icons',  test_desktop_icons),
+        ('test_icon',           test_icon),
+        ('test_exe_icon',       test_exe_icon),
+        ('test_nd_table',       test_nd_table),
+        ('test_plot',           test_plot),
+        ('test_file_explorer',  test_file_explorer),
+        ('test_3d',             test_3d),
     ]
     interactive = [
         ('test_gizmo',
-         lambda: test_gizmo(uobject=uobject, input_manager=input_manager)),
+         lambda by: test_gizmo(uobject=uobject,
+                               input_manager=input_manager,
+                               base_y=by)),
         ('test_text3d_click',
-         lambda: test_text3d_click(uobject=uobject, input_manager=input_manager)),
+         lambda by: test_text3d_click(uobject=uobject,
+                                      input_manager=input_manager,
+                                      base_y=by)),
     ]
 
-    selected = None
     if tests is not None:
         if isinstance(tests, str):
             tests = [tests]
         selected = {t if t.startswith('test_') else f'test_{t}' for t in tests}
-        known = {fn.__name__ for fn in non_interactive} | {n for n, _ in interactive}
+        known = {n for n, _ in non_interactive} | {n for n, _ in interactive}
         unknown = selected - known
         if unknown:
             _log(f'WARNING: unknown test names ignored: {sorted(unknown)}')
-        non_interactive = [fn for fn in non_interactive if fn.__name__ in selected]
-        interactive    = [(n, c) for (n, c) in interactive if n in selected]
+        non_interactive = [(n, fn) for (n, fn) in non_interactive if n in selected]
+        interactive    = [(n, c)  for (n, c)  in interactive    if n in selected]
 
     results  = {}
-    timings  = {}   # fn_name -> seconds
+    timings  = {}   # fn_name -> seconds (whole-fn wall time)
+    layout   = {}   # fn_name -> base_y allocated
     errors   = {}   # fn_name -> top-level exception if the whole fn blew up
-    for fn in non_interactive:
-        _section(fn.__name__)
+    y_cursor = 0    # next available Y (sequential allocation)
+
+    def _run(fn_name, fn_call):
+        nonlocal y_cursor
+        base_y = y_cursor
+        layout[fn_name] = base_y
+        span = _TEST_Y_SPAN.get(fn_name, 1000)
+        _section(f'{fn_name}  (base_y={base_y}, span={span})')
         t0 = time.monotonic()
         try:
-            results.update(fn())
+            out = fn_call(base_y)
+            if isinstance(out, dict):
+                results.update(out)
         except Exception as e:
-            errors[fn.__name__] = e
-            _log_exception(fn.__name__, e)
-        timings[fn.__name__] = time.monotonic() - t0
-        _log(f'  elapsed: {timings[fn.__name__]:.2f}s')
+            errors[fn_name] = e
+            _log_exception(fn_name, e)
+        timings[fn_name] = time.monotonic() - t0
+        _log(f'  total elapsed: {timings[fn_name]:.2f}s')
+        y_cursor += span
+
+    for fn_name, fn in non_interactive:
+        _run(fn_name, fn)
 
     # Interactive tests — need uobject + input_manager from Main. Their own
     # PyActors own the per-frame tick, so Main.tick does not forward anything.
     if uobject is not None and input_manager is not None:
         for fn_name, fn_call in interactive:
-            _section(fn_name)
-            t0 = time.monotonic()
-            try:
-                fn_call()
-            except Exception as e:
-                errors[fn_name] = e
-                _log_exception(fn_name, e)
-            timings[fn_name] = time.monotonic() - t0
-            _log(f'  elapsed: {timings[fn_name]:.2f}s')
+            _run(fn_name, fn_call)
 
     passed = sum(1 for v in results.values() if v['ok'])
     failed = len(results) - passed
@@ -1143,11 +1206,11 @@ def test_spawn_all(uobject=None, input_manager=None, tests=None):
     _log(f'Log:     {_LOG_PATH}')
     _log('=' * 70)
 
-    # Per-test table — fast scan of what passed/failed and class returned
+    # Per-test table — fast scan of what passed/failed, class returned, time taken
     _log('')
     _log('Per-test summary:')
-    _log(f'  {"status":<6} {"test":<40} {"class":<30}')
-    _log(f'  {"-"*6} {"-"*40} {"-"*30}')
+    _log(f'  {"status":<6} {"test":<40} {"elapsed":>8}  {"class":<30}')
+    _log(f'  {"-"*6} {"-"*40} {"-"*8}  {"-"*30}')
     for name in sorted(results.keys()):
         r = results[name]
         status = 'PASS' if r['ok'] else 'FAIL'
@@ -1159,7 +1222,9 @@ def test_spawn_all(uobject=None, input_manager=None, tests=None):
                 cls_str = '<?>'
         else:
             cls_str = '—'
-        _log(f'  {status:<6} {name:<40} {cls_str:<30}')
+        secs = r.get('elapsed')
+        elapsed_str = f'{secs:7.3f}s' if secs is not None else '       —'
+        _log(f'  {status:<6} {name:<40} {elapsed_str}  {cls_str:<30}')
 
     # Fail-only list — makes it easy to paste only failing tests back
     failing = [n for n, r in results.items() if not r['ok']]
@@ -1167,20 +1232,21 @@ def test_spawn_all(uobject=None, input_manager=None, tests=None):
         _log('')
         _log(f'FAILING TESTS ({len(failing)}): ' + ', '.join(failing))
 
-    # Per-fn elapsed times (spot hangs/slow tests)
+    # Per-fn elapsed times (spot hangs/slow tests) + base_y allocation
     _log('')
-    _log('Per-fn timings:')
+    _log('Per-fn timings + Y-band layout:')
+    _log(f'  {"elapsed":>8}  {"base_y":>7}  {"span":>5}  test')
+    _log(f'  {"-"*8}  {"-"*7}  {"-"*5}  {"-"*40}')
     for name, secs in timings.items():
         marker = '  (fn-level error)' if name in errors else ''
-        _log(f'  {secs:6.2f}s  {name}{marker}')
+        by = layout.get(name, 0)
+        sp = _TEST_Y_SPAN.get(name, 0)
+        _log(f'  {secs:7.2f}s  {by:>7}  {sp:>5}  {name}{marker}')
 
     return results
 
 
 # Text3D click investigation (manual — call, then click the spawned text)
-
-_Y_TEXT3D_CLICK = 10000
-
 
 def _resolve_char_from_meshes(actor, hit):
     """
@@ -1461,7 +1527,7 @@ def _spawn_highlight_box(world):
         return None, None
 
 
-def test_text3d_click(uobject=None, input_manager=None, location=None):
+def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0):
     """
     Spawn a Text3D actor with known string "ABCDEFGHIJ" and a 3x3 test table.
     Returns (single_actor, table_renderer).
@@ -1470,7 +1536,9 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
                     get_hit_result_under_cursor traces.
     input_manager — self.input from Main; used for bind_press/bind_release
                     on LeftMouseButton.
-    location      — FVector spawn position. Defaults to FVector(400, 0, 150).
+    location      — FVector spawn position. Defaults to FVector(400, base_y, 150).
+    base_y        — used only when *location* is None; lets the test_spawn_all
+                    dispatcher place this band sequentially.
 
     A PyActorGlobalClick singleton is spawned to own the per-frame work
     (keyboard poll, caret blink, click dispatch). Main.tick does NOT need to
@@ -1488,7 +1556,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
     from ue_spawn import spawn_blueprint, spawn_table_actor
 
     if location is None:
-        location = FVector(400, 0, 150)
+        location = FVector(400, base_y, 150)
 
     _log('--- test_text3d_click ---')
     _log(f'Spawning at {location}  (table at Y+400)')

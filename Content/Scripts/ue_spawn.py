@@ -30,7 +30,7 @@ import numpy as np
 import unreal_engine as ue
 from unreal_engine import FVector, FRotator, FTransform
 from unreal_engine.classes import (
-    StaticMeshActor, StaticMesh, Material, Blueprint,
+    StaticMeshActor, StaticMesh, Material, Blueprint, SkeletalMesh,
 )
 from unreal_engine.enums import EComponentMobility, EPixelFormat
 from unreal_engine_tools import pil_image_to_texture, get_world, find_component
@@ -66,10 +66,13 @@ def spawn_pyactor(python_module, python_class,
     Spawn a PyActor dynamically with the given Python module/class attached.
 
     *components* is an optional list of dicts, each with:
-        class_name : str  — UE component class (e.g. 'StaticMeshComponent')
-        name       : str  — component name
-        mesh       : str  — optional mesh asset path to SetStaticMesh
-        root       : bool — if True, use add_actor_root_component
+        class_name      : str  — UE component class (e.g. 'StaticMeshComponent')
+        name            : str  — component name
+        mesh            : str  — optional StaticMesh asset path -> SetStaticMesh
+        skeletal_mesh   : str  — optional SkeletalMesh asset path -> SetSkeletalMesh
+        rotation        : FRotator — optional component-relative rotation
+        hidden_in_game  : bool — if True, hide visually (collision still active)
+        root            : bool — if True, use add_actor_root_component
 
     *bp_path* — host Blueprint to spawn (default BP_PyActorEmpty).
     *source_path* — optional file path attached as ``actor.source_path``
@@ -137,6 +140,29 @@ def spawn_pyactor(python_module, python_class,
             if comp.get('mesh'):
                 mesh_obj = ue.load_object(StaticMesh, comp['mesh'])
                 c.SetStaticMesh(mesh_obj)
+            if comp.get('skeletal_mesh'):
+                skel_obj = ue.load_object(SkeletalMesh, comp['skeletal_mesh'])
+                try:
+                    c.SetSkeletalMesh(skel_obj)
+                except Exception as e:
+                    ue.log_warning(
+                        f'spawn_pyactor: SetSkeletalMesh({comp["skeletal_mesh"]}) '
+                        f'failed: {e}')
+            comp_rot = comp.get('rotation')
+            if comp_rot is not None:
+                try:
+                    c.set_relative_rotation(comp_rot)
+                except Exception as e:
+                    ue.log_warning(
+                        f'spawn_pyactor: set_relative_rotation on '
+                        f'{comp["name"]} failed: {e}')
+            if comp.get('hidden_in_game'):
+                try:
+                    c.SetHiddenInGame(True)
+                except Exception as e:
+                    ue.log_warning(
+                        f'spawn_pyactor: SetHiddenInGame on '
+                        f'{comp["name"]} failed: {e}')
 
     # add_actor_root_component swaps the root SceneComponent and resets the
     # actor's world transform to identity, undoing the loc/rot passed to
@@ -1631,9 +1657,19 @@ def spawn_camera_actor(location=None, rotation=None,
         components=[
             dict(class_name='CineCameraComponent',
                  name='CineCameraComponent', root=True),
+            # Invisible sphere handles cursor traces. Drone_Sphere_parent has
+            # no PhysicsAsset, so a SkeletalMeshComponent alone wouldn't
+            # register clicks via line trace.
             dict(class_name='StaticMeshComponent',
                  name='ClickProxy',
-                 mesh='/Engine/BasicShapes/Cube.Cube'),
+                 mesh='/Engine/BasicShapes/Sphere.Sphere',
+                 hidden_in_game=True),
+            # Drone_Sphere_parent: visible drone, inherits the actor rotation
+            # so it faces the camera's shoot direction.
+            dict(class_name='SkeletalMeshComponent',
+                 name='DroneMesh',
+                 skeletal_mesh='/Game/Blueprints/Assets/DroneCharacter/'
+                               'Drone_Sphere_parent.Drone_Sphere_parent'),
         ],
         name=name if name else f'Camera_{camera_type}')
     if actor is None:

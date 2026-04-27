@@ -74,6 +74,7 @@ class PyActorCamera:
         self.player_controller = setup_player_controller(self.uobject)
         self._cam = None
         self._click_proxy = None
+        self._drone_mesh = None
         self._proxy_configured = False
         self._cam_configured = False
         self._current_type = 'normal'
@@ -273,22 +274,31 @@ class PyActorCamera:
             self._click_proxy = find_component(self.uobject, 'ClickProxy')
         except Exception:
             self._click_proxy = None
-        if self._click_proxy is not None:
+        try:
+            self._drone_mesh = find_component(self.uobject, 'DroneMesh')
+        except Exception:
+            self._drone_mesh = None
+        scale_vec = FVector(self.PROXY_SCALE, self.PROXY_SCALE, self.PROXY_SCALE)
+        for comp, label in ((self._click_proxy, 'ClickProxy'),
+                            (self._drone_mesh, 'DroneMesh')):
+            if comp is None:
+                continue
             try:
-                self._click_proxy.set_relative_scale(FVector(
-                    self.PROXY_SCALE, self.PROXY_SCALE, self.PROXY_SCALE))
+                comp.set_relative_scale(scale_vec)
             except Exception as e:
-                ue.log_warning(f'PyActorCamera: proxy scale failed: {e}')
+                ue.log_warning(f'PyActorCamera: {label} scale failed: {e}')
         self._proxy_configured = True
 
     def _set_proxy_visible(self, visible):
-        if self._click_proxy is None:
+        # Toggle the visible drone; the click proxy stays hidden either way
+        # (it's purely a collision target).
+        if self._drone_mesh is None:
             return
         try:
-            self._click_proxy.SetVisibility(bool(visible))
+            self._drone_mesh.SetVisibility(bool(visible))
         except Exception:
             try:
-                self._click_proxy.SetHiddenInGame(not visible)
+                self._drone_mesh.SetHiddenInGame(not visible)
             except Exception as e:
                 ue.log_warning(f'PyActorCamera: visibility toggle failed: {e}')
 

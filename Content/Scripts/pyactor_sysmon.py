@@ -1,88 +1,165 @@
+import os
+import shutil
+import subprocess
+from pathlib import Path
+
 import unreal_engine as ue
 from unreal_engine_tools import find_component
 
-# Python component: live system monitor
+# Python component: live system monitor (background-process variant)
 #
-# Spawn via spawn_system_monitor(...) in ue_spawn.py — dynamic PyActor,
-# no Blueprint placeholder required. The Text3DComponent is added after
-# BeginPlay by spawn_pyactor(components=...).
+# Spawn via spawn_system_monitor(...) in ue_spawn.py.
 #
-# Data sources:
-#   sysinfo.py          get_info_string(mode='minimal', units='usa')
-#   activity_tracker.py read_stats()   ← requires tracker daemon to be running
+# Architecture
+# ------------
+# A separate Python process (sysinfo_worker.py) does the heavy WMI /
+# PowerShell / HTTP work and writes the formatted display string to
+# {APPDATA}/sysinfo/sysmon_text.txt. This PyActor only reads that file
+# from tick(), so the UE thread is never blocked by sysinfo collection.
 #
-# The Text3D is updated every UPDATE_INTERVAL seconds via tick(dt).
-# Imports are done lazily inside _update() to support hot-reload in UE editor.
-#
-# If activity_tracker is not running, read_stats() returns None and only
-# sysinfo data is displayed — no crash.
+# The worker is launched against an external system Python — NOT
+# sys.executable, which inside UE is UE4Editor.exe. The worker self-exits
+# when our PID dies so it doesn't leak on editor crash.
+
+
+_SCRIPT_DIR  = Path(__file__).resolve().parent
+_DATA_DIR    = Path(os.environ.get("APPDATA", str(Path.home()))) / "sysinfo"
+_RESULT_FILE = _DATA_DIR / "sysmon_text.txt"
+_PID_FILE    = _DATA_DIR / "sysmon_worker.pid"
+_WORKER_PY   = _SCRIPT_DIR / "sysinfo_worker.py"
+
+
+def _find_python():
+    """Locate an external Python interpreter. Never sys.executable — inside
+    UE that's UE4Editor.exe and would re-launch the editor."""
+    for name in ("python", "python3", "py"):
+        p = shutil.which(name)
+        if p and "ue4editor" not in p.lower() and "unrealeditor" not in p.lower():
+            return p
+    for p in (
+        Path.home() / "AppData/Local/Programs/Python/Python39/python.exe",
+        Path.home() / "AppData/Local/Programs/Python/Python310/python.exe",
+        Path.home() / "AppData/Local/Programs/Python/Python311/python.exe",
+        Path.home() / "AppData/Local/Programs/Python/Python312/python.exe",
+        Path.home() / "AppData/Local/Programs/Python/Python313/python.exe",
+        Path("C:/Python39/python.exe"),
+        Path("C:/Python310/python.exe"),
+    ):
+        if p.exists():
+            return str(p)
+    return None
+
+
+def _kill_prior_worker():
+    """If a previous worker is still alive (e.g. script hot-reloaded without
+    end_play firing), terminate it before spawning a new one."""
+    try:
+        if not _PID_FILE.exists():
+            return
+        pid = int(_PID_FILE.read_text().strip())
+    except Exception:
+        return
+    try:
+        import psutil
+        if psutil.pid_exists(pid):
+            psutil.Process(pid).terminate()
+    except Exception:
+        pass
+    try:
+        _PID_FILE.unlink()
+    except Exception:
+        pass
 
 
 class PyActorSysmon:
     """
-    Tick-based system monitor that writes live metrics to a Text3DComponent.
+    Reads the worker-written display string from disk and pushes it to a
+    Text3DComponent. All expensive collection happens out-of-process.
     """
 
-    UPDATE_INTERVAL = 300.0  # seconds between refreshes (5 minutes)
+    READ_INTERVAL = 1.0   # seconds between file polls (cheap stat + maybe read)
+    WORKER_INTERVAL = 300 # seconds between sysinfo refreshes in the worker
 
     def begin_play(self):
         self._elapsed = 0.0
         self.text3d   = None
+        self._proc    = None
+        self._mtime   = 0.0
+
+        py = _find_python()
+        if py is None:
+            ue.log_warning(
+                "PyActorSysmon: no external Python found on PATH or in common "
+                "install locations — sysmon will stay on 'Loading...'. Install "
+                "Python 3.9+ and ensure psutil is available."
+            )
+            return
+
+        _kill_prior_worker()
+
+        cmd = [
+            py, str(_WORKER_PY),
+            "--parent-pid", str(os.getpid()),
+            "--interval",   str(self.WORKER_INTERVAL),
+            "--mode",       "minimal",
+            "--units",      "usa",
+        ]
+        flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+        env = dict(os.environ)
+        env["PYTHONIOENCODING"] = "utf-8"
+        try:
+            self._proc = subprocess.Popen(
+                cmd,
+                cwd=str(_SCRIPT_DIR),
+                creationflags=flags,
+                env=env,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                stdin=subprocess.DEVNULL,
+            )
+            ue.log(f"PyActorSysmon: worker spawned (PID {self._proc.pid})")
+        except Exception as e:
+            ue.log_warning(f"PyActorSysmon: failed to spawn worker: {e}")
+            self._proc = None
 
     def tick(self, dt):
-        # Lazy component lookup — ue_spawn.spawn_pyactor adds components
-        # after BeginPlay, so the Text3DComponent may not exist until tick.
+        # Lazy component lookup — components are added after BeginPlay.
         if self.text3d is None:
             try:
-                self.text3d = find_component(self.uobject, 'Text3DComponent')
+                self.text3d = find_component(self.uobject, "Text3DComponent")
             except Exception:
                 pass
             if self.text3d is None:
                 return
-            ue.log(f'PyActorSysmon: started on {self.uobject.get_name()}')
-            self._update()
-            return
 
         self._elapsed += dt
-        if self._elapsed >= self.UPDATE_INTERVAL:
-            self._elapsed = 0.0
-            self._update()
+        if self._elapsed < self.READ_INTERVAL:
+            return
+        self._elapsed = 0.0
 
-
-    def _update(self):
-        """Read sysinfo + activity_tracker, format, push to Text3DComponent."""
-        lines = []
-
-        # System info
         try:
-            from sysinfo import get_info_string
-            sys_str = get_info_string(mode='minimal', units='usa')
-            if sys_str:
-                lines.append(sys_str.strip())
+            st = _RESULT_FILE.stat()
+        except FileNotFoundError:
+            return
+        if st.st_mtime <= self._mtime:
+            return
+        self._mtime = st.st_mtime
+
+        try:
+            text = _RESULT_FILE.read_text(encoding="utf-8")
         except Exception as e:
-            lines.append(f'[sysinfo error: {e}]')
-
-        # Activity tracker (optional daemon)
-        try:
-            from activity_tracker import read_stats
-            stats = read_stats()
-            if stats:
-                apm   = stats.get('actions_per_min',  0.0)
-                cpm   = stats.get('clicks_per_min',   0.0)
-                kpm   = stats.get('keys_per_min',     0.0)
-                dist  = stats.get('mouse_distance_px', 0.0)
-                lines.append(
-                    f'APM: {apm:.1f}  '
-                    f'Clicks/min: {cpm:.1f}  '
-                    f'Keys/min: {kpm:.1f}  '
-                    f'Mouse px: {dist:.0f}'
-                )
-        except Exception:
-            pass   # silently skip if tracker not available
-
-        display = '\n'.join(lines) if lines else '(no data)'
+            ue.log_warning(f"PyActorSysmon: failed to read result file: {e}")
+            return
 
         try:
-            self.text3d.Text = display
+            self.text3d.Text = text
         except Exception as e:
-            ue.log_warning(f'PyActorSysmon: failed to set Text3D text: {e}')
+            ue.log_warning(f"PyActorSysmon: failed to set Text3D text: {e}")
+
+    def end_play(self, reason):
+        if self._proc is not None:
+            try:
+                self._proc.terminate()
+            except Exception:
+                pass
+            self._proc = None
