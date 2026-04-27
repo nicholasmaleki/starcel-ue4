@@ -75,19 +75,22 @@ class PyActorCamera:
         self._cam = None
         self._click_proxy = None
         self._proxy_configured = False
+        self._cam_configured = False
         self._current_type = 'normal'
         self._was_mouse_down = False
         self._is_active_view = False
         self._previous_view_target = None
+        # Camera setup is deferred to first tick: the CineCameraComponent
+        # (added via spawn_pyactor's components=[...]) and the camera_type
+        # attribute (set by spawn_camera_actor after spawn returns) are not
+        # visible during begin_play.
 
-        # Find CineCameraComponent
+    def _configure_camera(self):
         try:
             self._cam = find_component(self.uobject, 'CineCameraComponent')
         except Exception:
             pass
-
         if self._cam is None:
-            # Try generic CameraComponent fallback
             try:
                 self._cam = find_component(self.uobject, 'CameraComponent')
             except Exception:
@@ -100,9 +103,9 @@ class PyActorCamera:
         else:
             ue.log(f'PyActorCamera: found camera component on {self.uobject.get_name()}')
 
-        # Read Blueprint-exposed camera_type property, apply preset
         cam_type = getattr(self.uobject, 'camera_type', 'normal') or 'normal'
         self.set_type(cam_type)
+        self._cam_configured = True
 
     # Camera type / preset
 
@@ -292,6 +295,8 @@ class PyActorCamera:
     # Tick — click-to-toggle possession
 
     def tick(self, dt):
+        if not self._cam_configured:
+            self._configure_camera()
         if not self._proxy_configured:
             self._configure_click_proxy()
 

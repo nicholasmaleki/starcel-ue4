@@ -93,7 +93,7 @@ class PyPawnDrone:
         '/Game/Materials/M_TextureUnlit',
     )
     CROSSHAIR_PARAM = 'Texture'
-    CROSSHAIR_SCALE = 3.0   # multiplier so tiny PNGs are visible at distance
+    CROSSHAIR_SCALE = 1   # multiplier so tiny PNGs are visible at distance
     SCREEN_NAME     = 'Screen'
 
     def _spawn_crosshair(self):
@@ -170,13 +170,13 @@ class PyPawnDrone:
             try:
                 p = screen.get_world_scale()
                 px = abs(p.x) or 1e-6
-                py = abs(p.y) or 1e-6
-                pz = abs(p.z) or 1e-6
+                py = abs(p.y) or 1e-6 # width
+                pz = abs(p.z) or 1e-6 # height
             except Exception:
                 px = py = pz = 1.0
-            tgt_wx = img_w * self.CROSSHAIR_SCALE / 100.0
+            tgt_wy = img_w * self.CROSSHAIR_SCALE / 100.0
             tgt_wz = img_h * self.CROSSHAIR_SCALE / 100.0
-            rel_scale = FVector(tgt_wx / px, 0.001 / py, tgt_wz / pz)
+            rel_scale = FVector(0.001 / px, tgt_wy, tgt_wz)
             try:
                 actor.set_actor_relative_scale(rel_scale)
             except Exception:
@@ -185,8 +185,9 @@ class PyPawnDrone:
             # Front face of default cube is at local Y = -50. Add a small
             # world-space epsilon (scaled to local by parent Y) to avoid
             # z-fighting with the Screen plane.
-            y_rel = -(50.0 + 0.5 / py)
-            actor.K2_SetActorRelativeLocation(FVector(0, y_rel, 0))
+            y_rel = py*.5
+            z_rel = pz*.5
+            actor.K2_SetActorRelativeLocation(FVector(0, y_rel, z_rel))
 
             self.crosshair_actor = actor  # keep ref for cleanup
             ue.log(f'PyPawnDrone: crosshair {int(img_w)}x{int(img_h)} px '
@@ -261,6 +262,18 @@ class PyPawnDrone:
         if self.DEBUG:
             ue.log(f"[DBG] {msg}")
 
+    def _is_typing(self):
+        """True when a Text3D actor is focused for typing — drone input
+        (movement, rotation, scroll modes, MMB roll, Alt freelook) should
+        be suppressed so 'w', mouse moves, AltGr, etc. don't double as
+        drone controls. Release handlers stay ungated so any state set
+        before typing started still gets cleaned up on key release."""
+        try:
+            from pyactor_global_click import PyActorGlobalClick
+            return PyActorGlobalClick.is_any_focused()
+        except Exception:
+            return False
+
     # #
     #  Axis handlers                                                       #
     # #
@@ -272,6 +285,8 @@ class PyPawnDrone:
     def _on_mouse_y(self, v):      self._axis_mouse_y = v
 
     def _on_mmb_pressed(self):
+        if self._is_typing():
+            return
         self.roll_mode = True
         self._dbg("PyPawnDrone: roll mode ON")
 
@@ -284,6 +299,8 @@ class PyPawnDrone:
     # #
 
     def _on_alt_pressed(self):
+        if self._is_typing():
+            return
         if self.input.is_key_down("Ctrl"):
             self._dbg("PyPawnDrone: alt+ctrl pressed -> size mode, no freelook")
             return
@@ -321,6 +338,8 @@ class PyPawnDrone:
     # #
 
     def _on_scroll_up(self):
+        if self._is_typing():
+            return
         if self.input.is_key_down("Ctrl"):
             self._on_ctrl_scroll_up()
         elif self.input.is_key_down("LeftAlt"):
@@ -329,6 +348,8 @@ class PyPawnDrone:
             self._on_shift_scroll_up()
 
     def _on_scroll_down(self):
+        if self._is_typing():
+            return
         if self.input.is_key_down("Ctrl"):
             self._on_ctrl_scroll_down()
         elif self.input.is_key_down("LeftAlt"):
@@ -432,6 +453,8 @@ class PyPawnDrone:
     # #
 
     def _apply_movement(self, dt):
+        if self._is_typing():
+            return
         fwd   = self._axis_forward
         right = self._axis_right
         up    = self._axis_up
@@ -453,6 +476,8 @@ class PyPawnDrone:
     # #
 
     def _apply_rotation(self, dt):
+        if self._is_typing():
+            return
         # FRotator attrs: .roll .pitch .yaw  (constructor: roll, pitch, yaw)
         mx = self._axis_mouse_x
         my = self._axis_mouse_y

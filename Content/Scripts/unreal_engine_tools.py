@@ -1148,18 +1148,23 @@ def load_session(session = 'session_backup.pkl'):
 
 
 def rebuild_generated_modules():
+    from input_devices import generate_input_bindings_doc
     libraries_to_build = [ # languages.py self builds
         os.path.join(os.path.abspath(ue.get_content_dir()), "Scripts", "unreal_engine", "gen_autocomplete_stub.py"),
-        os.path.join(os.path.abspath(ue.get_content_dir()), "Scripts", "gen_cli.py")
+        os.path.join(os.path.abspath(ue.get_content_dir()), "Scripts", "gen_cli.py"),
+        generate_input_bindings_doc,
     ]
     print("Building libraries:", libraries_to_build)
-    try:
-        for library in libraries_to_build:
-            print("Building library:", library)
-            ue.py_exec(library)
-        print("Finished building libraries")
-    except Exception as e:
-        print("Building libraries failed", e)
+    for library in libraries_to_build:
+        print("Building library:", library)
+        try:
+            if callable(library):
+                library()
+            else:
+                ue.py_exec(library)
+        except Exception as e:
+            print("Building library failed:", library, e)
+    print("Finished building libraries")
 
     # from pickle import picklequotes
     # picklequotes.pickle_quotes()

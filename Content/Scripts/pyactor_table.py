@@ -39,6 +39,7 @@ class PyActorTable:
     render_gridlines = True
     render_text      = True
     enable_resize    = True
+    auto_size        = True
     table            = None
 
     def begin_play(self):
@@ -116,6 +117,7 @@ class PyActorTable:
                 orientation_preset=self.orientation,
                 text_mode='3d',
                 enable_resize=self.enable_resize,
+                auto_size=self.auto_size,
                 player_controller=self._pc,
             )
         except Exception as e:

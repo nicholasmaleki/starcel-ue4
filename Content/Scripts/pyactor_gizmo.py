@@ -47,14 +47,19 @@ def _any_down(uobject_ref, keys):
 
 
 def _inverse_rotate(rotation, world_vec):
-    """World vector → local (actor frame) via inverse quaternion."""
-    q     = rotation.quaternion()
-    q_inv = KismetMathLibrary.Quat_Inversed(q)
-    return KismetMathLibrary.Quat_RotateVector(q_inv, world_vec)
+    """World vector → local (actor frame) via inverse rotation.
+
+    Uses FRotator.inversed() + FRotator * FVector (which calls
+    FRotator::RotateVector internally). Avoids KismetMathLibrary.Quat_*
+    — UEPython's UFUNCTION arg converter has no FQuat→Q branch, so the
+    quaternion path errors every call.
+    """
+    return rotation.inversed() * world_vec
 
 
 def _rotate_local(rotation, local_vec):
-    return KismetMathLibrary.Quat_RotateVector(rotation.quaternion(), local_vec)
+    # See _inverse_rotate for why we don't go through Quat_RotateVector.
+    return rotation * local_vec
 
 
 def _vec_get(v, i):
@@ -78,6 +83,7 @@ class GizmoController:
     def begin_play(self):
         self._ready          = False
         self._uobject_ref    = None
+        self._player_controller = None
         self._target         = None
         self._handles        = None
         self._piece_offsets  = None
@@ -93,6 +99,7 @@ class GizmoController:
         self._scl0 = None
         self._hit0 = None
         self._off0 = None
+        self._plane_normal = None
         self._hov  = None
 
     def setup(self, uobject, input_manager, target, handles, piece_offsets,
@@ -114,6 +121,11 @@ class GizmoController:
         # so they won't appear as cursor hits anyway.
         self._all_actors    = set(handles.keys()) | {target}
 
+        try:
+            self._player_controller = uobject.get_player_controller()
+        except Exception:
+            self._player_controller = None
+
         input_manager.bind_press("LeftMouseButton",   self._press)
         input_manager.bind_release("LeftMouseButton", self._release)
 
@@ -131,6 +143,98 @@ class GizmoController:
                 _log(f"Drag end pos={self._target.get_actor_location()}")
             except Exception:
                 pass
+
+    # Drag-plane projection helpers
+    #
+    # The previous implementation read cur from get_hit_result_under_cursor's
+    # impact_point. As soon as the cursor left every collidable surface (or
+    # the dragged handle outran it), the trace returned no hit and the drag
+    # froze — visible as "the resize hits a limit" once you move the mouse
+    # past the corner cube. We instead deproject the mouse ray each tick and
+    # intersect it with a stable plane chosen at drag start, so cur is always
+    # defined regardless of what (if anything) the cursor is hovering over.
+    @staticmethod
+    def _normalize_vec(v):
+        L = math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z)
+        if L < 1e-6:
+            return FVector(0, 0, 1)
+        return FVector(v.x / L, v.y / L, v.z / L)
+
+    def _camera_forward_unit(self):
+        pc = self._player_controller
+        if pc is None:
+            return FVector(1, 0, 0)
+        try:
+            rot = pc.PlayerCameraManager.GetCameraRotation()
+            return KismetMathLibrary.GetForwardVector(rot)
+        except Exception:
+            return FVector(1, 0, 0)
+
+    def _compute_drag_plane_normal(self, kind, data):
+        """Pick a plane whose normal stays meaningful for the whole drag.
+
+        - axis / scale: plane contains the axis; normal = camera-forward
+          projected perpendicular to the axis (so the plane faces the
+          camera as well as possible while still containing the axis).
+        - plane: the literal plane defined by the two in-plane directions.
+        - rotate: the rotation plane (normal = rotation axis).
+        - free / bbox_corner / bbox_edge: camera-facing plane through hit0.
+        """
+        cam_fwd = self._camera_forward_unit()
+
+        if kind in ('axis', 'scale'):
+            ax = data
+            dot = cam_fwd.x * ax.x + cam_fwd.y * ax.y + cam_fwd.z * ax.z
+            n = FVector(cam_fwd.x - ax.x * dot,
+                        cam_fwd.y - ax.y * dot,
+                        cam_fwd.z - ax.z * dot)
+            L = math.sqrt(n.x * n.x + n.y * n.y + n.z * n.z)
+            if L < 1e-3:
+                # camera ~parallel to axis — pick any vector perp to ax
+                fb = FVector(0, 0, 1) if abs(ax.x) > 0.9 else FVector(1, 0, 0)
+                d  = ax.x * fb.x + ax.y * fb.y + ax.z * fb.z
+                n  = FVector(fb.x - ax.x * d, fb.y - ax.y * d, fb.z - ax.z * d)
+            return self._normalize_vec(n)
+
+        if kind == 'plane':
+            d1, d2 = data
+            n = FVector(d1.y * d2.z - d1.z * d2.y,
+                        d1.z * d2.x - d1.x * d2.z,
+                        d1.x * d2.y - d1.y * d2.x)
+            return self._normalize_vec(n)
+
+        if kind == 'rotate':
+            return self._normalize_vec(data)
+
+        # 'free', 'bbox_corner', 'bbox_edge' (or fallback): camera-facing
+        return self._normalize_vec(cam_fwd)
+
+    def _mouse_world_on_plane(self, plane_point, plane_normal):
+        pc = self._player_controller
+        if pc is None:
+            return None
+        try:
+            success, origin, direction = pc.DeprojectMousePositionToWorld()
+        except Exception:
+            return None
+        if not success:
+            return None
+
+        n = plane_normal
+        denom = direction.x * n.x + direction.y * n.y + direction.z * n.z
+        if abs(denom) < 1e-6:
+            return None
+
+        diff = FVector(plane_point.x - origin.x,
+                       plane_point.y - origin.y,
+                       plane_point.z - origin.z)
+        t = (diff.x * n.x + diff.y * n.y + diff.z * n.z) / denom
+        if t < 0:
+            return None
+
+        return FVector(origin.x + direction.x * t,
+                       origin.y + direction.y * t,
+                       origin.z + direction.z * t)
 
     def tick(self, delta_time):
         if not self._ready or self._target is None:
@@ -193,74 +297,95 @@ class GizmoController:
                 self._scl0 = target.get_actor_scale()
             self._hit0 = hit.impact_point
             self._off0 = hit.impact_point - target.get_actor_location()
+            self._plane_normal = self._compute_drag_plane_normal(kind, data)
             _log(f"Drag start: {kind} on {hit_actor.get_name()}")
 
-        # Drag update
-        if self._drag and self._down and hit:
-            cur  = hit.impact_point
-            loc0 = self._loc0
-            rot0 = self._rot0
-            hit0 = self._hit0
-            kind = self._kind
-            data = self._data
+        # Drag update — cur comes from a ray/plane intersection rather than
+        # the cursor's hit result, so the drag keeps tracking the mouse even
+        # when the cursor is over empty space (or the handle has outrun the
+        # cursor during a resize).
+        if self._drag and self._down:
+            cur = self._mouse_world_on_plane(self._hit0, self._plane_normal)
+            if cur is not None:
+                loc0 = self._loc0
+                rot0 = self._rot0
+                hit0 = self._hit0
+                kind = self._kind
+                data = self._data
 
-            if kind == 'free':
-                target.set_actor_location(cur - self._off0)
+                if kind == 'free':
+                    target.set_actor_location(cur - self._off0)
 
-            elif kind == 'axis':
-                ax   = data
-                diff = cur - loc0
-                t    = diff.x*ax.x + diff.y*ax.y + diff.z*ax.z
-                target.set_actor_location(loc0 + ax * t)
+                elif kind == 'axis':
+                    ax   = data
+                    diff = cur - loc0
+                    t    = diff.x*ax.x + diff.y*ax.y + diff.z*ax.z
+                    target.set_actor_location(loc0 + ax * t)
 
-            elif kind == 'plane':
-                d1, d2 = data
-                diff   = cur - loc0
-                t1 = diff.x*d1.x + diff.y*d1.y + diff.z*d1.z
-                t2 = diff.x*d2.x + diff.y*d2.y + diff.z*d2.z
-                target.set_actor_location(loc0 + d1*t1 + d2*t2)
+                elif kind == 'plane':
+                    d1, d2 = data
+                    diff   = cur - loc0
+                    t1 = diff.x*d1.x + diff.y*d1.y + diff.z*d1.z
+                    t2 = diff.x*d2.x + diff.y*d2.y + diff.z*d2.z
+                    target.set_actor_location(loc0 + d1*t1 + d2*t2)
 
-            elif kind == 'rotate':
-                nrm = data
-                v1  = hit0 - loc0
-                v2  = cur  - loc0
-                d1 = v1.x*nrm.x + v1.y*nrm.y + v1.z*nrm.z
-                d2 = v2.x*nrm.x + v2.y*nrm.y + v2.z*nrm.z
-                v1 = FVector(v1.x-nrm.x*d1, v1.y-nrm.y*d1, v1.z-nrm.z*d1)
-                v2 = FVector(v2.x-nrm.x*d2, v2.y-nrm.y*d2, v2.z-nrm.z*d2)
-                l1 = math.sqrt(v1.x**2+v1.y**2+v1.z**2)
-                l2 = math.sqrt(v2.x**2+v2.y**2+v2.z**2)
-                if l1 > 0.1 and l2 > 0.1:
-                    v1 = FVector(v1.x/l1, v1.y/l1, v1.z/l1)
-                    v2 = FVector(v2.x/l2, v2.y/l2, v2.z/l2)
-                    dot = max(-1.0, min(1.0, v1.x*v2.x+v1.y*v2.y+v1.z*v2.z))
-                    cx = v1.y*v2.z-v1.z*v2.y
-                    cy = v1.z*v2.x-v1.x*v2.z
-                    cz = v1.x*v2.y-v1.y*v2.x
-                    sgn = 1.0 if cx*nrm.x+cy*nrm.y+cz*nrm.z > 0 else -1.0
-                    ang = math.degrees(math.acos(dot)) * sgn
-                    target.set_actor_rotation(FRotator(
-                        rot0.roll  + nrm.x * ang,
-                        rot0.pitch + nrm.y * ang,
-                        rot0.yaw   + nrm.z * ang,
+                elif kind == 'rotate':
+                    nrm = data
+                    v1  = hit0 - loc0
+                    v2  = cur  - loc0
+                    d1 = v1.x*nrm.x + v1.y*nrm.y + v1.z*nrm.z
+                    d2 = v2.x*nrm.x + v2.y*nrm.y + v2.z*nrm.z
+                    v1 = FVector(v1.x-nrm.x*d1, v1.y-nrm.y*d1, v1.z-nrm.z*d1)
+                    v2 = FVector(v2.x-nrm.x*d2, v2.y-nrm.y*d2, v2.z-nrm.z*d2)
+                    l1 = math.sqrt(v1.x**2+v1.y**2+v1.z**2)
+                    l2 = math.sqrt(v2.x**2+v2.y**2+v2.z**2)
+                    if l1 > 0.1 and l2 > 0.1:
+                        v1 = FVector(v1.x/l1, v1.y/l1, v1.z/l1)
+                        v2 = FVector(v2.x/l2, v2.y/l2, v2.z/l2)
+                        dot = max(-1.0, min(1.0, v1.x*v2.x+v1.y*v2.y+v1.z*v2.z))
+                        cx = v1.y*v2.z-v1.z*v2.y
+                        cy = v1.z*v2.x-v1.x*v2.z
+                        cz = v1.x*v2.y-v1.y*v2.x
+                        sgn = 1.0 if cx*nrm.x+cy*nrm.y+cz*nrm.z > 0 else -1.0
+                        ang = math.degrees(math.acos(dot)) * sgn
+                        # 2026-04-26: rotation now composed in world space.
+                        # Old code added `ang` directly to rot0.roll/pitch/yaw,
+                        # which silently re-interpreted the world-axis delta as
+                        # an Euler increment in the actor's local frame. When
+                        # the actor was inverted (e.g. pitch≈±180), the local
+                        # frame was flipped vs. world, so the rotation appeared
+                        # opposite to the cursor drag. Building the delta as a
+                        # world rotator and composing with rot0 keeps the delta
+                        # meaningful regardless of starting orientation.
+                        # ROLLBACK: replace the 6 lines below with
+                        #     target.set_actor_rotation(FRotator(
+                        #         rot0.roll  + nrm.x * ang,
+                        #         rot0.pitch + nrm.y * ang,
+                        #         rot0.yaw   + nrm.z * ang,
+                        #     ))
+                        delta = FRotator(0, 0, 0)
+                        delta.roll  = nrm.x * ang
+                        delta.pitch = nrm.y * ang
+                        delta.yaw   = nrm.z * ang
+                        target.set_actor_rotation(
+                            KismetMathLibrary.ComposeRotators(rot0, delta))
+
+                elif kind == 'scale':
+                    ax    = data
+                    diff  = cur - hit0
+                    delta = (diff.x*ax.x + diff.y*ax.y + diff.z*ax.z) * 0.01
+                    s     = self._scl0
+                    target.SetActorScale3D(FVector(
+                        max(0.05, s.x + abs(ax.x) * delta),
+                        max(0.05, s.y + abs(ax.y) * delta),
+                        max(0.05, s.z + abs(ax.z) * delta),
                     ))
 
-            elif kind == 'scale':
-                ax    = data
-                diff  = cur - hit0
-                delta = (diff.x*ax.x + diff.y*ax.y + diff.z*ax.z) * 0.01
-                s     = self._scl0
-                target.SetActorScale3D(FVector(
-                    max(0.05, s.x + abs(ax.x) * delta),
-                    max(0.05, s.y + abs(ax.y) * delta),
-                    max(0.05, s.z + abs(ax.z) * delta),
-                ))
+                elif kind == 'bbox_corner':
+                    self._drag_bbox_corner(cur, data)
 
-            elif kind == 'bbox_corner':
-                self._drag_bbox_corner(cur, data)
-
-            elif kind == 'bbox_edge':
-                self._drag_bbox_edge(cur, data)
+                elif kind == 'bbox_edge':
+                    self._drag_bbox_edge(cur, data)
 
         if self._drag and not self._down:
             self._drag = False
@@ -283,7 +408,12 @@ class GizmoController:
         dx, dy, dz = data
         loc0, rot0, s0, hit0 = self._loc0, self._rot0, self._scl0, self._hit0
 
-        h0  = FVector(50.0 * s0.x, 50.0 * s0.y, 50.0 * s0.z)
+        # Per-mesh local extent (50uu for BasicShapes, but differs for any
+        # imported mesh). h0 = local extent × original scale = original world
+        # half-extent in the actor-local frame.
+        from gizmo import local_half_extent
+        le  = local_half_extent(target)
+        h0  = FVector(le.x * s0.x, le.y * s0.y, le.z * s0.z)
         dp  = cur - hit0
         dpl = _inverse_rotate(rot0, dp)
 
@@ -306,9 +436,9 @@ class GizmoController:
         new_hy = max(new_hy, mn)
         new_hz = max(new_hz, mn)
 
-        target.SetActorScale3D(FVector(new_hx / 50.0,
-                                       new_hy / 50.0,
-                                       new_hz / 50.0))
+        target.SetActorScale3D(FVector(new_hx / le.x,
+                                       new_hy / le.y,
+                                       new_hz / le.z))
 
         if _any_down(self._uobject_ref, _MOD_SHIFT):
             target.set_actor_location(loc0)
@@ -324,7 +454,10 @@ class GizmoController:
         ai, dj, dk = data
         loc0, rot0, s0, hit0 = self._loc0, self._rot0, self._scl0, self._hit0
 
-        h0_list = [50.0 * s0.x, 50.0 * s0.y, 50.0 * s0.z]
+        from gizmo import local_half_extent
+        le      = local_half_extent(target)
+        le_list = [le.x, le.y, le.z]
+        h0_list = [le.x * s0.x, le.y * s0.y, le.z * s0.z]
         dp      = cur - hit0
         dpl     = _inverse_rotate(rot0, dp)
         dp_list = [dpl.x, dpl.y, dpl.z]
@@ -351,9 +484,9 @@ class GizmoController:
         mn = self._MIN_HALF_EXTENT
         new_h = [max(h, mn) for h in new_h]
 
-        target.SetActorScale3D(FVector(new_h[0] / 50.0,
-                                       new_h[1] / 50.0,
-                                       new_h[2] / 50.0))
+        target.SetActorScale3D(FVector(new_h[0] / le_list[0],
+                                       new_h[1] / le_list[1],
+                                       new_h[2] / le_list[2]))
 
         if _any_down(self._uobject_ref, _MOD_SHIFT):
             target.set_actor_location(loc0)

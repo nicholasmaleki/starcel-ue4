@@ -96,7 +96,7 @@
 		},
 		{
 			"Name": "ChaosEditor",
-			"Enabled": false
+			"Enabled": true
 		},
 		{
 			"Name": "ChaosNiagara",

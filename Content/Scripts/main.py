@@ -27,7 +27,7 @@ _main_begin_play_ran = False
 
 # Warning:
 # BUG: imported classes are not reloaded, you need to restart the editor
-# Code placed outside the Main class will not run when connecting to a server.
+# Code placed outside the Main class will not run when connecting to a server and may run twice
 # You can ignore and delete .uasset files as you'd like. They are regenerated on run
 
 ue.log('Hello i am a Python module.')
@@ -191,7 +191,7 @@ class Main:
         _main_begin_play_ran = True
         ue.log('Begin Play on Main class')
         #change_background("video", os.path.join(os.path.abspath(ue.get_content_dir()),"Movies", "psychedelic.mp4"))
-        change_background("white")
+        change_background("white_less_emissive")
         ue.log('Running startup')
         startup()
 
@@ -239,7 +239,20 @@ class Main:
         # # Hotkeys
         # self.input.bind_press("Ctrl+Shift+B", lambda: ue.log("Ctrl+Shift+B"))
         # self.input.bind_press("Ctrl+Shift+A", lambda: ue.log("Ctrl+Shift+A"))
-        #
+
+        # Suppress while typing into a Text3D — M is otherwise a normal letter
+        # key and the synthetic LMB click in toggle_cursor() can land on a
+        # desktop-icon/file-explorer icon under the cursor, opening the
+        # associated app (e.g. a .uproject's editor) every time the user
+        # types 'm'.
+        # def _toggle_cursor_unless_typing():
+        #     try:
+        #         from pyactor_global_click import PyActorGlobalClick
+        #         if PyActorGlobalClick.is_any_focused():
+        #             return
+        #     except Exception:
+        #         pass
+
         self.input.bind_press("M", self.input.toggle_cursor)
         #
         # # Repeat
@@ -332,7 +345,7 @@ class Main:
             # self.test_multicast_flag("hello via multicast flag")
 
         else:
-            if self.uobject.has_authority():
+            if self.uobject.HasAuthority():
                 ue.log("BeginPlay on LISTEN SERVER / STANDALONE (has authority)")
             else:
                 ue.log("BeginPlay on CLIENT (connected to remote server)")
@@ -383,7 +396,7 @@ class Main:
         # self.input.print_cursor_info()
 
         # Gizmo + Text3D ticks now run on their own PyActors
-        # (pyactor_gizmo.GizmoController, pyactor_text3d.PyActorText3DGlobal).
+        # (pyactor_gizmo.GizmoController, pyactor_global_click.PyActorGlobalClick).
 
 
     def test_kingdon(self):

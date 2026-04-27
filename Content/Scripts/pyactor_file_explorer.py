@@ -9,12 +9,13 @@ from utils import human_size
 #
 # Layout (head-on view, wall_table orientation):
 #
-#       Name      Size     Date     Type      <- header row (Z = 0)
-#   [i] file1     10 KB    ...      .txt      <- each file is a row going down
-#   [i] folder    -        ...      folder
-#   [i] pic.png   2 MB     ...      .png
-#       ^
-#     icon column (one BP_Icon per file, positioned to the left of the Name cell)
+#         Name      Size     Date     Type    <- header row (Z = 0)
+#   [i]   file1     10 KB    ...      .txt    <- each file is a row going down
+#   [i]   folder    -        ...      folder
+#   [i]   pic.png   2 MB     ...      .png
+#   ^
+#   icon column: a real (empty-headered) column 0 in the table; icons sit at
+#   the cell center, so spacing matches the rest of the grid exactly.
 #
 # BP_Icon hosts pyactor_icon.IconSphere, which handles hover-shrink and
 # click-to-open via the OS default handler (same as Windows Explorer
@@ -26,8 +27,10 @@ class FileExplorer:
 
     DEFAULT_FOLDER    = os.path.join(os.path.expanduser('~'), 'Desktop')
     MAX_FILES         = 20
-    ICON_SCALE        = 0.4    # BP_Icon scale (sphere is ~100UU at scale 1)
-    ICON_LEFT_OFFSET  = 150.0  # UU from Name cell center to icon center (-Y)
+    ICON_COL          = 0      # leading empty column reserved for icons
+    ICON_COL_WIDTH    = 120.0  # UU; cell width — icon size derives from this
+    ICON_FILL         = 0.56   # icon diameter as fraction of min(row_h, col_w)
+    SPHERE_BASE_DIAM  = 100.0  # /Engine/BasicShapes/Sphere natural diameter
 
     def begin_play(self):
         self.api          = None
@@ -91,7 +94,12 @@ class FileExplorer:
                 pass
         self._icon_actors = []
 
-        headers = ['Name', 'Size', 'Date', 'Type']
+        # Column 0 is the icon column. Each cell in it is set to an empty
+        # string so the renderer spawns a (text-less) cell actor we can use as
+        # a position anchor for the icon. The auto-sizer would otherwise shrink
+        # the column to ~20UU since empty Text3D measures near zero, so we
+        # override the column width with set_user_size below.
+        headers = ['', 'Name', 'Size', 'Date', 'Type']
         n_cols  = len(headers)
         n_rows  = len(results) + 1   # header + N files
 
@@ -108,10 +116,16 @@ class FileExplorer:
             full = item.get('full_path') or name
             is_folder = item.get('is_folder', False)
             ext = 'folder' if is_folder else (os.path.splitext(name)[1] or '?')
-            t[(0, ri + 1)] = name
-            t[(1, ri + 1)] = '-' if is_folder else (human_size(item.get('size')) or '?')
-            t[(2, ri + 1)] = self._mtime_str(full)
-            t[(3, ri + 1)] = ext
+            t[(self.ICON_COL, ri + 1)] = ''
+            t[(1, ri + 1)] = name
+            t[(2, ri + 1)] = '-' if is_folder else (human_size(item.get('size')) or '?')
+            t[(3, ri + 1)] = self._mtime_str(full)
+            t[(4, ri + 1)] = ext
+
+        # Reserve a fixed width for the icon column. axis 0 in this table is
+        # the column axis (shape=(n_cols, n_rows)), and the renderer maps
+        # axis 0 -> cell_width_per_row (the Y-extent of each column slot).
+        self.renderer.set_user_size(0, self.ICON_COL, self.ICON_COL_WIDTH)
 
         try:
             self.renderer.render_table(t, world_location=self.location)
@@ -132,7 +146,8 @@ class FileExplorer:
         return datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
 
     def _spawn_icon_column(self, results):
-        """Spawn one BP_Icon per file, positioned to the left of each Name cell.
+        """Spawn one BP_Icon per file at the center of its reserved cell in the
+        leftmost (empty-headered) column.
 
         Uses spawn_icon_from_path so each icon is a BP_Icon with IconSphere
         attached — hover-shrink + click-to-open-with-default-app come for free.
@@ -146,7 +161,6 @@ class FileExplorer:
             ue.log_warning(f'FileExplorer: spawn_icon_from_path unavailable: {e}')
             return
 
-        scale_vec = FVector(self.ICON_SCALE, self.ICON_SCALE, self.ICON_SCALE)
         spawned = 0
 
         for ri, item in enumerate(results):
@@ -154,20 +168,30 @@ class FileExplorer:
             if not full:
                 continue
 
-            name_cell = self.renderer.cell_actors.get((0, ri + 1))
-            if name_cell is None:
+            icon_cell = self.renderer.cell_actors.get((self.ICON_COL, ri + 1))
+            if icon_cell is None:
                 continue
 
             try:
-                cell_loc = name_cell.get_actor_location()
+                cell_loc = icon_cell.get_actor_location()
             except Exception:
                 continue
 
+            # Cell actor location is the Text3D pivot — top-left corner of
+            # the cell in wall_table orientation (axis 0 = +Y, axis 1 = -Z).
+            # The sphere mesh is center-pivoted, so to land it in the cell
+            # center we shift +width/2 along Y and -height/2 along Z.
+            row_h = self.renderer.get_effective_size(1, ri + 1)
+            col_w = self.renderer.get_effective_size(0, self.ICON_COL)
             icon_loc = FVector(
                 cell_loc.x,
-                cell_loc.y - self.ICON_LEFT_OFFSET,   # left of Name cell
-                cell_loc.z,
+                cell_loc.y + col_w / 2.0,
+                cell_loc.z - row_h / 2.0,
             )
+
+            target = max(8.0, min(row_h, col_w) * self.ICON_FILL)
+            s = target / self.SPHERE_BASE_DIAM
+            scale_vec = FVector(s, s, s)
 
             try:
                 actor = spawn_icon_from_path(

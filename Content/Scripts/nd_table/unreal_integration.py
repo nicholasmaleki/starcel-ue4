@@ -71,6 +71,7 @@ class UnrealTableRenderer:
                  debug: bool = False,
                  aggressive_debug: bool = False,
                  enable_resize: bool = True,
+                 auto_size: bool = True,
                  gridline_thickness: float = 0.04,
                  player_controller=None):
         self.world = world
@@ -87,6 +88,7 @@ class UnrealTableRenderer:
         self.debug = debug
         self.aggressive_debug = aggressive_debug
         self.enable_resize = enable_resize
+        self.auto_size = auto_size
         self.gridline_thickness = gridline_thickness
 
         self.cell_actors = {}
@@ -185,9 +187,86 @@ class UnrealTableRenderer:
             )
         return self.base_cell_spacing
 
+    def _refresh_world_location(self, table, origin_cell):
+        """Re-anchor _last_world_location after a possible world origin rebase.
+
+        Why: UE rebases actor world coords transparently when the player gets
+        far from origin, but our cached FVector floats don't update. Reading
+        a cell actor's current location recovers the post-rebase anchor.
+        How to apply: call before any in-place reposition that uses
+        _last_world_location.
+        """
+        if not self.cell_actors:
+            return
+        anchor = self.cell_actors.get(origin_cell)
+        if anchor is not None:
+            try:
+                self._last_world_location = anchor.get_actor_location()
+                return
+            except Exception:
+                pass
+        zero = FVector(0, 0, 0)
+        for idx, actor in self.cell_actors.items():
+            if not isinstance(idx, tuple):
+                continue
+            try:
+                cur = actor.get_actor_location()
+                off = self._get_cell_world_position(table, idx, zero, origin_cell)
+                self._last_world_location = FVector(
+                    cur.x - off.x, cur.y - off.y, cur.z - off.z)
+                return
+            except Exception:
+                continue
+
+    def recompute_layout(self):
+        """Re-measure existing cell actors and reposition them in place.
+
+        Use after external edits to cell content (e.g. Text3D text changes
+        from typing) so the table fits the new content without destroying
+        cell actors. No-op when ``auto_size`` is False.
+        """
+        if not self.auto_size:
+            return
+        if self._last_table is None or not self.cell_actors:
+            return
+        origin_cell = self._get_origin_cell(self._last_table)
+        self._refresh_world_location(self._last_table, origin_cell)
+        self._measure_and_size_cells(self._last_table, self.cell_actors)
+        self._reposition_actors(
+            self._last_table, self.cell_actors,
+            self._last_world_location, origin_cell)
+        if self._last_render_gridlines:
+            self._render_gridlines(
+                self._last_table, self._last_world_location, origin_cell)
+
     def rerender_last(self):
+        """Re-apply layout for the last-rendered table.
+
+        For tables of ndim <= 3 with existing cell actors, re-measures and
+        re-positions the *existing* cells in place — external references
+        (text-edit watch dicts, hover bookkeeping, etc.) stay valid across
+        a gridline drag-resize. Gridlines are always rebuilt since their
+        geometry depends on cell sizes.
+
+        Falls back to destroy + respawn when there are no cell actors yet
+        or when ndim > 3 (the nD spread path doesn't track per-slice cell
+        actors uniquely, so in-place reuse isn't safe there).
+        """
         if self._last_table is None:
             return
+
+        if self.cell_actors and self._last_table.ndim <= 3:
+            origin_cell = self._get_origin_cell(self._last_table)
+            self._refresh_world_location(self._last_table, origin_cell)
+            self._measure_and_size_cells(self._last_table, self.cell_actors)
+            self._reposition_actors(
+                self._last_table, self.cell_actors,
+                self._last_world_location, origin_cell)
+            if self._last_render_gridlines:
+                self._render_gridlines(
+                    self._last_table, self._last_world_location, origin_cell)
+            return
+
         self._destroy_actors(list(self.cell_actors.values()))
         self.cell_actors = {}
         self._destroy_actors(self.gridline_actors)
@@ -449,6 +528,9 @@ class UnrealTableRenderer:
         def _seg(start, end, meta=None):
             return {'start': start, 'end': end, 'meta': meta}
 
+        def _neg(v):
+            return FVector(-v.x, -v.y, -v.z)
+
         if num_visual_dims == 1:
             axis0_indices = list(table.axes[0].indices)
 
@@ -494,6 +576,13 @@ class UnrealTableRenderer:
                         'resize_target_index': axis0_indices[i - 1],
                         'direction': orient[0],
                     }
+                elif n_rows > 0:
+                    # Top/leading edge — resize first row with inverted direction
+                    meta = {
+                        'axis': 0,
+                        'resize_target_index': axis0_indices[0],
+                        'direction': _neg(orient[0]),
+                    }
                 segments.append(_seg(line_start, line_end, meta))
 
             # VERTICAL (n_cols + 1) — separate columns; drag along axis 1 resizes column left
@@ -517,8 +606,15 @@ class UnrealTableRenderer:
                         'resize_target_index': axis1_indices[j - 1],
                         'direction': orient[1],
                     }
+                elif n_cols > 0:
+                    # Left/leading edge — resize first column with inverted direction
+                    meta = {
+                        'axis': 1,
+                        'resize_target_index': axis1_indices[0],
+                        'direction': _neg(orient[1]),
+                    }
                 segments.append(_seg(line_start, line_end, meta))
-        
+
         elif num_visual_dims == 3:
             axis0_indices = list(table.axes[0].indices)
             axis1_indices = list(table.axes[1].indices)
@@ -570,6 +666,13 @@ class UnrealTableRenderer:
                             'resize_target_index': axis2_indices[k - 1],
                             'direction': orient[2],
                         }
+                    elif j == 0 and k == 0 and n1 > 0:
+                        # Top-front leading corner — resize first column with inverted direction
+                        meta = {
+                            'axis': 1,
+                            'resize_target_index': axis1_indices[0],
+                            'direction': _neg(orient[1]),
+                        }
                     segments.append(_seg(line_start, line_end, meta))
 
             # Lines parallel to axis 1 (run along column direction, vary over (i, k))
@@ -608,10 +711,19 @@ class UnrealTableRenderer:
                             'resize_target_index': axis2_indices[k - 1],
                             'direction': orient[2],
                         }
+                    elif i == 0 and k == 0 and n0 > 0:
+                        # Left-front leading corner — resize first row with inverted direction
+                        meta = {
+                            'axis': 0,
+                            'resize_target_index': axis0_indices[0],
+                            'direction': _neg(orient[0]),
+                        }
                     segments.append(_seg(line_start, line_end, meta))
 
-            # Lines parallel to axis 2 (run along depth direction)
-            # These don't uniquely bound any single axis — left untagged in v1.
+            # Lines parallel to axis 2 (run along depth direction, vary over (i, j))
+            # Convention: top face (i==0, j>0) => column resize; everything else
+            # with i>0 => row resize. (i==0, j==0) skipped — corner is covered by
+            # the axis-0 / axis-1 parallel corner taggings above.
             for i in range(n0 + 1):
                 cum_row = sum(self.cell_width_per_row.get(axis0_indices[k], self.base_cell_spacing)
                            for k in range(min(i, n0)))
@@ -633,7 +745,20 @@ class UnrealTableRenderer:
                     line_start = FVector(start_pos.x + shifts.x, start_pos.y + shifts.y, start_pos.z + shifts.z)
                     line_end = FVector(line_start.x + extend.x, line_start.y + extend.y, line_start.z + extend.z)
 
-                    segments.append(_seg(line_start, line_end))
+                    meta = None
+                    if i == 0 and j > 0:
+                        meta = {
+                            'axis': 1,
+                            'resize_target_index': axis1_indices[j - 1],
+                            'direction': orient[1],
+                        }
+                    elif i > 0:
+                        meta = {
+                            'axis': 0,
+                            'resize_target_index': axis0_indices[i - 1],
+                            'direction': orient[0],
+                        }
+                    segments.append(_seg(line_start, line_end, meta))
 
         return segments
     
@@ -651,8 +776,8 @@ class UnrealTableRenderer:
         rotation.pitch += 90
 
         cylinder = self.world.actor_spawn(StaticMeshActor)
-        cylinder.StaticMeshComponent.SetStaticMesh(self.cylinder_mesh)
         cylinder.StaticMeshComponent.Mobility = EComponentMobility.Movable
+        cylinder.StaticMeshComponent.SetStaticMesh(self.cylinder_mesh)
 
         thickness = self.gridline_thickness
         scale = FVector(thickness, thickness, distance / 100.0)

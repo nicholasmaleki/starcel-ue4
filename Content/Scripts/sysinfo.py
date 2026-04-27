@@ -1288,13 +1288,13 @@ def _compact(lines: List[str], *pairs, sep: str = ", ") -> None:
         if v and v not in ("N/A", "None", ""):
             parts.append(f"{label}: {v}")
     if parts:
-        lines.append("  " + sep.join(parts))
+        lines.append(sep.join(parts))
 
 
-def _row(lines: List[str], label: str, value: Any, pad: int = 28) -> None:
+def _row(lines: List[str], label: str, value: Any) -> None:
     v = str(value) if value is not None else ""
     if v and v not in ("N/A", "None"):
-        lines.append(f"  {label:<{pad}} {v}")
+        lines.append(f"{label}: {v}")
 
 
 def _fmt_system(info: dict, mode: str, lines: List[str]) -> None:
@@ -1391,7 +1391,7 @@ def _fmt_storage(info: dict, mode: str, lines: List[str]) -> None:
         lbl = drv.get("label", "")
         tag = drv.get("letter", "?") + (f" [{lbl}]" if lbl else "")
         sys_t = " [SYSTEM]" if drv.get("is_system") else ""
-        lines.append(f"  {tag}{sys_t}  {drv.get('model','')}")
+        lines.append(f"{tag}{sys_t}  {drv.get('model','')}")
         _compact(lines, ("Used", f"{drv.get('used_tb')}/{drv.get('total_tb')} TB"),
                  ("Free", f"{drv.get('free_tb')} TB"),
                  ("Usage", f"{drv.get('usage_pct')}%"))
@@ -1537,7 +1537,7 @@ def _fmt_activity(info: dict, lines: List[str]) -> None:
     act = info["activity"]
     _heading(lines, "MOUSE & KEYBOARD ACTIVITY")
     if not act.get("tracker_running"):
-        lines.append(f"    {act.get('note', 'Tracker not running.')}")
+        lines.append(f"{act.get('note', 'Tracker not running.')}")
     else:
         _compact(lines, ("APM", act.get("actions_per_min")),
                  ("Clicks/min", act.get("clicks_per_min")),

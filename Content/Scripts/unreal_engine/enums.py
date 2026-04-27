@@ -46,6 +46,9 @@ class EUserInterfaceActionType:
 class EInputEvent:
     pass
 
+class EMouseCursor:
+    pass
+
 class EPhysicalSurface:
     pass
 

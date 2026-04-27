@@ -8,22 +8,22 @@ All actors are placed at X=0, spread along the Y axis in bands:
   Y 1000 – 1200  image
   Y 1400 – 1600  video
   Y 1800 – 2000  sound
-  Y 2200 – 3600  cameras (one per preset, stride 200)
-  Y 4000 – 4500  earth
-  Y 5000          system monitor
-  Y 5500          table
-  Y 6000          desktop icons
-  Y 7000          icon from PIL
-  Y 7500          icon from .exe path (GoogleDriveSetup.exe)
-  Y 8000 – 8500  text3d click (test_text3d_click only)
-  Y 9000          plot spheres
-  Y 9500          plot sphere_lines (custom point_mesh option)
-  Y 10000         plot ripple sphere_lines
-  Y 10500         plot tan(x) 2D curve
-  Y 11000         transform gizmo (test_gizmo only)
-  Y 12000+        nd_table grid (2D 10x10 through 7D)
-  Y 14000         file explorer (Everything-backed, BP_Icon column)
-  Y 15000         3D resizable table (drag row/col/slice gridlines)
+  Y 2200 – 5700  cameras (one per preset, stride 500)
+  Y 6000 – 6500  earth
+  Y 7000          system monitor
+  Y 7500          table
+  Y 8000          desktop icons
+  Y 9000          icon from PIL
+  Y 9500          icon from .exe path (GoogleDriveSetup.exe)
+  Y 10000 – 10500 text3d click (test_text3d_click only)
+  Y 11000         plot spheres
+  Y 11500         plot sphere_lines (custom point_mesh option)
+  Y 12000         plot ripple sphere_lines
+  Y 12500         plot tan(x) 2D curve
+  Y 13000         transform gizmo (test_gizmo only)
+  Y 14000+        nd_table grid (2D 10x10 through 7D)
+  Y 16000         file explorer (Everything-backed, BP_Icon column)
+  Y 17000         3D resizable table (drag row/col/slice gridlines)
 
 Usage (PIE Python console):
     from test_spawn import test_spawn_all
@@ -339,13 +339,13 @@ _Y_PRIMITIVES    =    0   # stride 200, 5 shapes  ->  0..800
 _Y_IMAGE         = 1000   # stride 200             -> 1000..1200
 _Y_VIDEO         = 1400   # stride 200             -> 1400..1600
 _Y_SOUND         = 1800   # stride 200             -> 1800..2000
-_Y_CAMERAS       = 2200   # stride 200, 8 presets  -> 2200..3800
-_Y_EARTH         = 4000   # stride 500             -> 4000..4500
-_Y_SYSMON        = 5000
-_Y_TABLE         = 5500
-_Y_DESKTOP_ICONS = 6000
-_Y_ICON          = 7000
-_Y_EXE_ICON      = 7500
+_Y_CAMERAS       = 2200   # stride 500, 8 presets  -> 2200..5700
+_Y_EARTH         = 6000   # stride 500             -> 6000..6500
+_Y_SYSMON        = 7000
+_Y_TABLE         = 7500
+_Y_DESKTOP_ICONS = 8000
+_Y_ICON          = 9000
+_Y_EXE_ICON      = 9500
 
 _GOOGLE_DRIVE_EXE = r"C:\Users\nicho\Downloads\GoogleDriveSetup.exe"
 _BIG_BAD_JOHN_FLAC = r"C:\Users\nicho\Downloads\Big Bad John\Big Bad John.flac"
@@ -547,14 +547,13 @@ def test_sound():
         try:
             actor = spawn_sound(_BIG_BAD_JOHN_FLAC,
                                 location=FVector(0, _Y_SOUND + 200, 100),
-                                volume=0.0,       # silent: audible test already above
                                 as_actor=True)
         except Exception as e:
             _log_exception('sound_file_flac_as_actor', e)
         results.update(_result('sound_file_flac_as_actor', actor,
                                inputs={'path': _BIG_BAD_JOHN_FLAC,
                                        'as_actor': True},
-                               extra='BP_PyActorEmpty + AudioComponent host'))
+                               extra='click sphere to play (SoundSphere host)'))
     else:
         results.update(_skip('sound_file_flac',
                              f'not found: {_BIG_BAD_JOHN_FLAC}'))
@@ -568,7 +567,7 @@ def test_cameras():
     from ue_spawn import spawn_camera_actor, CAMERA_PRESETS
     results = {}
     for i, preset_name in enumerate(CAMERA_PRESETS):
-        loc   = FVector(0, _Y_CAMERAS + i * 200, 300)
+        loc   = FVector(0, _Y_CAMERAS + i * 500, 300)
         actor = None
         try:
             actor = spawn_camera_actor(location=loc, camera_type=preset_name)
@@ -763,7 +762,7 @@ def test_exe_icon():
 
 # nD table grid test  (Y 8000 area, offset in X/Y from base)
 
-_Y_ND_TABLE = 12000
+_Y_ND_TABLE = 14000
 
 
 def test_nd_table():
@@ -783,7 +782,7 @@ def test_nd_table():
 
 # Plot test  (Y 9000 – 9500)
 
-_Y_PLOT = 9000
+_Y_PLOT = 11000
 
 
 # File explorer test  (Y 14000)
@@ -791,7 +790,7 @@ _Y_PLOT = 9000
 # and a leftmost column of BP_Icons.  BP_Icon's IconSphere handles clicks
 # (opens the file with the OS default handler — Windows Explorer behavior).
 
-_Y_FILE_EXPLORER = 14000
+_Y_FILE_EXPLORER = 16000
 
 
 def test_file_explorer():
@@ -816,7 +815,7 @@ def test_file_explorer():
 # ticked by a PyActor — LMB-drag on any gridline resizes that row (axis 0),
 # column (axis 1), or slice/layer (axis 2).
 
-_Y_3D = 15000
+_Y_3D = 17000
 
 
 def test_3d():
@@ -855,7 +854,7 @@ def test_3d():
     return _result('3d', actor, extra=extra)
 
 
-_Y_GIZMO = 11000
+_Y_GIZMO = 13000
 
 
 def test_gizmo(uobject=None, input_manager=None, location=None):
@@ -1180,7 +1179,7 @@ def test_spawn_all(uobject=None, input_manager=None, tests=None):
 
 # Text3D click investigation (manual — call, then click the spawned text)
 
-_Y_TEXT3D_CLICK = 8000
+_Y_TEXT3D_CLICK = 10000
 
 
 def _resolve_char_from_meshes(actor, hit):
@@ -1418,8 +1417,12 @@ def _log_click_on_actor_from_hit(actor, hit, text_content=None):
     )
 
 
-def _spawn_text_cursor(world):
-    """Spawn a thin translucent cube to use as a blinking insertion cursor."""
+def _spawn_highlight_box(world):
+    """Spawn a translucent cube used as a selection-highlight rectangle.
+
+    The blinking insertion caret is owned by PyActorText3D's singleton
+    PyActorCursor — see pyactor_cursor.py.  This helper is only for the
+    selection-highlight pool (multiple coexisting boxes, no blink)."""
     try:
         from unreal_engine.classes import StaticMeshActor, StaticMesh, Material
         from unreal_engine.enums import EComponentMobility
@@ -1469,7 +1472,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
                     on LeftMouseButton.
     location      — FVector spawn position. Defaults to FVector(400, 0, 150).
 
-    A PyActorText3DGlobal singleton is spawned to own the per-frame work
+    A PyActorGlobalClick singleton is spawned to own the per-frame work
     (keyboard poll, caret blink, click dispatch). Main.tick does NOT need to
     forward delta_time anywhere.
 
@@ -1482,7 +1485,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
       - Text3DComponent -> Generate Hit Events = ON
       - Collision response to WorldDynamic = Block
     """
-    from ue_spawn import spawn_blueprint, spawn_table
+    from ue_spawn import spawn_blueprint, spawn_table_actor
 
     if location is None:
         location = FVector(400, 0, 150)
@@ -1522,24 +1525,50 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
     except Exception as e:
         _log(f'text3d_click: single actor spawn failed: {e}')
 
-    # 3x3 test table
+    # 3x3x3 test table — uses spawn_table_actor so the renderer's gridline
+    # resize controller is ticked every frame (LMB-drag a gridline to resize
+    # row/col/slice; cursor changes on hover).
+    SLICE_SPACING = 600.0
     table_renderer = None
     try:
         from nd_table.ndtable import Table
-        t = Table(shape=(3, 3))
-        t[(0, 0)] = 'Col A'; t[(0, 1)] = 'Col B'; t[(0, 2)] = 'Col C'
-        t[(1, 0)] = 'Hello'; t[(1, 1)] = 'World'; t[(1, 2)] = '123'
-        t[(2, 0)] = 'Click'; t[(2, 1)] = 'Me';    t[(2, 2)] = '!'
-        table_renderer = spawn_table(
-            t, location=FVector(location.x, location.y + 400, location.z))
-        if table_renderer:
-            _log(f'text3d_click: spawned table '
-                 f'({len(table_renderer.cell_actors)} cells)')
+        t = Table(shape=(3, 3, 3))
+        for i in range(3):
+            for j in range(3):
+                for k in range(3):
+                    t[(i, j, k)] = f'r{i}c{j}s{k}'
+        # Front slice (k=0) keeps the original "Col A / Hello / Click" content
+        # used by the typing test for click-to-edit.
+        t[(0, 0, 0)] = 'Col A'; t[(0, 1, 0)] = 'Col B'; t[(0, 2, 0)] = 'Col C'
+        t[(1, 0, 0)] = 'Hello'; t[(1, 1, 0)] = 'World'; t[(1, 2, 0)] = '123'
+        t[(2, 0, 0)] = 'Click'; t[(2, 1, 0)] = 'Me';    t[(2, 2, 0)] = '!'
+
+        table_actor = spawn_table_actor(
+            t,
+            location=FVector(location.x, location.y + 400, location.z),
+            enable_resize=True,
+        )
+        if table_actor is not None:
+            proxy = table_actor.get_py_proxy()
+            if proxy is not None and proxy.renderer is not None:
+                # Large slice (depth/layer) spacing — push k=0,1,2 apart
+                # along the depth axis so each layer is clearly visible.
+                proxy.renderer.min_depth = SLICE_SPACING
+                proxy.renderer.recompute_layout()
+                table_renderer = proxy.renderer
+        if table_renderer is not None:
+            _log(f'text3d_click: spawned 3D resizable table '
+                 f'({len(table_renderer.cell_actors)} cells, '
+                 f'slice spacing={SLICE_SPACING:.0f})')
     except Exception as e:
         _log(f'text3d_click: table spawn failed: {e}')
 
     # Build watched dict: actor → text content
     watched = {}   # actor → str (text shown by that actor's Text3DComponent)
+    # Reverse-lookup: cell actor → owning table renderer. Used on unfocus
+    # to call renderer.recompute_layout() so the table refits the new
+    # text content (skipped when the renderer's auto_size is False).
+    watched_renderer = {}
     if single_actor:
         watched[single_actor] = 'ABCDEFGHIJ'
     if table_renderer and hasattr(table_renderer, 'cell_actors'):
@@ -1552,6 +1581,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
             except Exception:
                 cell_text = f'cell{idx}'
             watched[cell_actor] = cell_text
+            watched_renderer[cell_actor] = table_renderer
 
     # Configure player controller for click traces
     # Use ECC_Visibility (same as gizmo) — most objects respond to it by default.
@@ -1596,15 +1626,42 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
     # with that method — same as gizmo uses self.uobject)
     _trace_obj = uobject
 
-    # Insertion cursor
-    _cursor_actor, _cursor_mid = _spawn_text_cursor(get_world())
-    _cursor_state = {'timer': 0.0, 'visible': False, 'active': False}
+    # Insertion cursor — single shared PyActorCursor managed by
+    # PyActorText3D (class-level singleton).  See pyactor_cursor.py.
+    from pyactor_text3d import PyActorText3D as _PyActorText3D
 
     # Focus / typing state
     # actor: the Text3D actor currently being edited (None when unfocused)
     # string_idx: insertion index within the actor's full text string (caret)
     # anchor: other end of selection; anchor == string_idx means no selection
     _focus_state = {'actor': None, 'string_idx': 0, 'anchor': 0}
+
+    # Mirror focus changes to PyActorGlobalClick so other systems (e.g.
+    # PyPawnDrone WASD) can suppress their input while typing. Imported
+    # here rather than at module load to avoid hard-failing test_spawn if
+    # the pyactor_global_click module has issues during dev iteration.
+    try:
+        from pyactor_global_click import PyActorGlobalClick as _PyActorGlobalClick
+    except Exception:
+        _PyActorGlobalClick = None
+
+    def _set_focused_actor(actor):
+        """Single mutation point for _focus_state['actor']. Refits the
+        previous actor's table when leaving focus (skipped when the
+        renderer's auto_size is False), then mirrors the new value to
+        PyActorGlobalClick so PyPawnDrone (WASD) and friends can
+        suppress their input while typing."""
+        prev = _focus_state['actor']
+        _focus_state['actor'] = actor
+        if prev is not None and prev is not actor:
+            renderer = watched_renderer.get(prev)
+            if renderer is not None and getattr(renderer, 'auto_size', True):
+                try:
+                    renderer.recompute_layout()
+                except Exception as e:
+                    _log(f'text3d_click: recompute_layout failed: {e}')
+        if _PyActorGlobalClick is not None:
+            _PyActorGlobalClick.set_focused_actor(actor)
 
     def _sel_range():
         """Return (start, end) of the selection sorted. start==end means no sel."""
@@ -1640,13 +1697,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
         return len(text)
 
     def _hide_cursor():
-        if _cursor_actor is not None:
-            try:
-                _cursor_actor.SetActorHiddenInGame(True)
-            except Exception:
-                pass
-        _cursor_state['active']  = False
-        _cursor_state['visible'] = False
+        _PyActorText3D.hide_cursor()
 
     # Pool of translucent boxes used to render multi-segment selection highlights.
     _highlight_actors = []
@@ -1654,7 +1705,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
     def _ensure_highlight(i):
         """Lazily grow the highlight pool to at least i+1 actors."""
         while len(_highlight_actors) <= i:
-            a, _ = _spawn_text_cursor(get_world())
+            a, _ = _spawn_highlight_box(get_world())
             if a is None:
                 return None
             try:
@@ -1672,142 +1723,20 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
                 pass
 
     def _unfocus():
-        _focus_state['actor']      = None
+        _set_focused_actor(None)
         _focus_state['string_idx'] = 0
         _focus_state['anchor']     = 0
         _hide_cursor()
         _hide_highlights()
 
     def _get_cursor_placement(actor, target_glyph):
-        """Compute (world_pt, scale_vec, rotation) for cursor at the left
-        edge of the glyph at target_glyph. target_glyph may equal the glyph
-        count (meaning: just past the last glyph). Returns None on failure."""
-        if actor is None:
-            return None
-        t3d = None
-        try:
-            t3d = actor.get_actor_component('Text3DComponent')
-        except Exception:
-            return None
-        if t3d is None:
-            return None
-
-        kernings = None
-        try:
-            kernings = t3d.CharacterKernings
-        except Exception:
-            pass
-        meshes = None
-        try:
-            meshes = t3d.CharacterMeshes
-        except Exception:
-            pass
-
-        if not kernings or len(kernings) == 0:
-            return None
-
-        glyph_h = 50.0
-        glyph_w = 50.0
-
-        # Read glyph dimensions from the reference mesh (target, clamped).
-        ref_idx = target_glyph
-        if ref_idx >= len(kernings):
-            ref_idx = len(kernings) - 1
-        if ref_idx < 0:
-            ref_idx = 0
-        if (meshes is not None
-                and 0 <= ref_idx < len(meshes)
-                and meshes[ref_idx] is not None):
-            try:
-                _, e = meshes[ref_idx].GetComponentBounds()
-                glyph_h = e.z * 2.0
-                glyph_w = e.y * 2.0
-            except Exception:
-                pass
-
-        # target_rel = left edge of target glyph, or one width past the last.
-        target_rel = None
-        if 0 <= target_glyph < len(kernings) and kernings[target_glyph] is not None:
-            try:
-                target_rel = kernings[target_glyph].get_relative_location()
-            except Exception:
-                pass
-        elif len(kernings) > 0 and kernings[-1] is not None:
-            try:
-                r = kernings[-1].get_relative_location()
-                target_rel = FVector(r.x, r.y + glyph_w, r.z)
-            except Exception:
-                pass
-        if target_rel is None:
-            return None
-
-        # Full vertical extent for cursor height/center.
-        full_top = None
-        full_bot = None
-        if meshes is not None:
-            for m in meshes:
-                if m is None:
-                    continue
-                try:
-                    o, e = m.GetComponentBounds()
-                    t = o.z + e.z
-                    b = o.z - e.z
-                    if full_top is None or t > full_top:
-                        full_top = t
-                    if full_bot is None or b < full_bot:
-                        full_bot = b
-                except Exception:
-                    continue
-        try:
-            o, e = t3d.GetComponentBounds()
-            t = o.z + e.z
-            b = o.z - e.z
-            if full_top is None or t > full_top:
-                full_top = t
-            if full_bot is None or b < full_bot:
-                full_bot = b
-        except Exception:
-            pass
-
-        actor_loc = actor.get_actor_location()
-        actor_rot = actor.get_actor_rotation()
-
-        if full_top is not None and full_bot is not None:
-            tight = full_top - full_bot
-            full_top += tight * 0.25  # headroom for diacritics/^
-            cursor_h = full_top - full_bot
-            cursor_z = (full_top + full_bot) * 0.5
-        else:
-            cursor_h = glyph_h
-            cursor_z = actor_loc.z + target_rel.z
-
-        world_pt = FVector(
-            actor_loc.x + target_rel.x,
-            actor_loc.y + target_rel.y,
-            cursor_z,
-        )
-        scale_vec = FVector(0.01, glyph_w * 0.3 / 100.0, cursor_h / 100.0)
-        return world_pt, scale_vec, actor_rot
+        """Delegate to PyActorText3D.compute_placement (single source of
+        truth for caret/highlight geometry)."""
+        return _PyActorText3D.compute_placement(actor, target_glyph)
 
     def _show_cursor_at_glyph(actor, target_glyph):
-        """Move cursor to target_glyph. Returns True on success."""
-        if _cursor_actor is None:
-            return False
-        placement = _get_cursor_placement(actor, target_glyph)
-        if placement is None:
-            return False
-        world_pt, scale_vec, rot = placement
-        try:
-            _cursor_actor.set_actor_scale(scale_vec)
-        except Exception:
-            pass
-        _cursor_actor.set_actor_location(world_pt)
-        _cursor_actor.set_actor_rotation(rot)
-        _cursor_actor.SetActorHiddenInGame(False)
-        _cursor_state['active']  = True
-        _cursor_state['timer']   = 0.0
-        _cursor_state['visible'] = True
-        return True
+        """Move the singleton caret to target_glyph. Returns True on success."""
+        return _PyActorText3D.show_cursor_at(actor, target_glyph)
 
     def _render_highlight_segment(pool_idx, actor, text, seg_start, seg_end):
         """Render one highlight box for string range [seg_start, seg_end).
@@ -1884,7 +1813,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
 
     def _position_cursor(hit_actor, hit):
         """Derive target_glyph from a click hit, move cursor, set focus."""
-        if _cursor_actor is None or hit_actor is None:
+        if hit_actor is None:
             return
 
         t3d = None
@@ -1912,18 +1841,19 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
             except Exception:
                 pass
 
-        # No kernings — fall back to dropping the cursor at the click point.
+        # No kernings — drop the caret directly at the click point via
+        # the singleton cursor's move_to (skipping placement math entirely).
         if not kernings or len(kernings) == 0:
-            try:
-                _cursor_actor.set_actor_location(hit.impact_point)
-                _cursor_actor.set_actor_rotation(hit_actor.get_actor_rotation())
-                _cursor_actor.SetActorHiddenInGame(False)
-                _cursor_state['active']  = True
-                _cursor_state['timer']   = 0.0
-                _cursor_state['visible'] = True
-            except Exception:
-                pass
-            _focus_state['actor']      = hit_actor
+            cursor_proxy = _PyActorText3D._get_or_spawn_cursor(hit_actor)
+            if cursor_proxy is not None:
+                try:
+                    cursor_proxy.move_to(
+                        hit.impact_point,
+                        FVector(0.01, 0.04, 0.5),
+                        hit_actor.get_actor_rotation())
+                except Exception:
+                    pass
+            _set_focused_actor(hit_actor)
             _focus_state['string_idx'] = len(text)
             _focus_state['anchor']     = len(text)
             _hide_highlights()
@@ -1976,11 +1906,15 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
         if not _show_cursor_at_glyph(hit_actor, target_glyph):
             return
 
-        _focus_state['actor']      = hit_actor
+        _set_focused_actor(hit_actor)
         new_idx = _glyph_to_string_idx(text, target_glyph)
         _focus_state['string_idx'] = new_idx
         _focus_state['anchor']     = new_idx
         _hide_highlights()
+        # If the previous focus was in an auto-sizing table, that table
+        # just refit and may have shifted hit_actor's position. Re-show
+        # the cursor so it tracks the new cell location.
+        _show_cursor_at_glyph(hit_actor, target_glyph)
         _log(f'text3d_click: cursor snap clicked={clicked_glyph} '
              f'side={side} → {target_glyph}  '
              f'focus string_idx={new_idx}')
@@ -2122,6 +2056,17 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
         if not _WIN32_TYPING_OK:
             return False
         return (_user32.GetAsyncKeyState(0x10) & 0x8000) != 0   # VK_SHIFT
+
+    def _alt_down():
+        if not _WIN32_TYPING_OK:
+            return False
+        return (_user32.GetAsyncKeyState(0x12) & 0x8000) != 0   # VK_MENU
+
+    def _win_down():
+        if not _WIN32_TYPING_OK:
+            return False
+        return ((_user32.GetAsyncKeyState(0x5B) & 0x8000) != 0   # VK_LWIN
+                or (_user32.GetAsyncKeyState(0x5C) & 0x8000) != 0)  # VK_RWIN
 
     # ---------------- Navigation ----------------
 
@@ -2403,7 +2348,7 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
             i = 0
         new_actor = ordered[i]
         new_text  = watched.get(new_actor, '')
-        _focus_state['actor']      = new_actor
+        _set_focused_actor(new_actor)
         _focus_state['string_idx'] = len(new_text)
         _focus_state['anchor']     = len(new_text)
         _show_cursor_at_glyph(new_actor, _string_idx_to_glyph(new_text, len(new_text)))
@@ -2539,6 +2484,16 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
 
         ctrl  = _ctrl_down()
         shift = _shift_held()
+        alt   = _alt_down()
+        win   = _win_down()
+
+        # Notepad parity: Alt+key (Alt+Tab window switch, Alt+Enter properties,
+        # Alt+F4 close, Alt+Backspace undo, etc.) and Win+key (shell shortcuts)
+        # are never text input. AltGr on European layouts reports Alt+Ctrl
+        # together and DOES produce characters through ToUnicode, so the
+        # `not ctrl` clause keeps that path open.
+        if (alt and not ctrl) or win:
+            return
 
         # ----- Ctrl+key shortcuts -----
         if ctrl:
@@ -2640,20 +2595,12 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
 
     # Tick function: event-driven press state + cursor hit test
     _state['fired'] = False  # ensure we fire once per press
-    CURSOR_BLINK_RATE = 1.0
 
     def tick_fn(dt):
         # Typing poll (fires char events via Win32 ToUnicode when focused)
         _poll_keyboard()
 
-        # Blink cursor
-        if _cursor_actor is not None and _cursor_state['active']:
-            _cursor_state['timer'] += dt
-            half = CURSOR_BLINK_RATE * 0.5
-            should_show = (_cursor_state['timer'] % CURSOR_BLINK_RATE) < half
-            if should_show != _cursor_state['visible']:
-                _cursor_state['visible'] = should_show
-                _cursor_actor.SetActorHiddenInGame(not should_show)
+        # Caret blink is owned by the PyActorCursor singleton (its own tick).
 
         if _trace_obj is None and _pc is None:
             return
@@ -2696,10 +2643,10 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
             if matched_actor is None:
                 # Click off any watched text actor — unfocus + hide cursor.
                 if hit_actor is not None:
-                    _log(f'text3d_click: off-click — hit '
+                    _log(f'global_click: off-click — hit '
                          f'"{hit_actor.get_name()}" (not watched), unfocusing')
                 else:
-                    _log('text3d_click: off-click — nothing under cursor, unfocusing')
+                    _log('global_click: off-click — nothing under cursor, unfocusing')
                 _unfocus()
                 return
 
@@ -2718,11 +2665,12 @@ def test_text3d_click(uobject=None, input_manager=None, location=None):
     try:
         from ue_spawn import spawn_pyactor
         global_actor = spawn_pyactor(
-            'pyactor_text3d', 'PyActorText3DGlobal',
-            location=FVector(0, 0, 0))
+            'pyactor_global_click', 'PyActorGlobalClick',
+            location=FVector(0, 0, 0),
+            name='PyActorGlobalClick')
         global_actor.get_py_proxy().set_tick_fn(tick_fn)
-        _log('text3d_click: PyActorText3DGlobal spawned + tick attached')
+        _log('global_click: PyActorGlobalClick spawned + tick attached')
     except Exception as e:
-        _log(f'text3d_click: PyActorText3DGlobal spawn failed: {e}')
+        _log(f'global_click: PyActorGlobalClick spawn failed: {e}')
 
     return single_actor, table_renderer

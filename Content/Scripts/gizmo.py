@@ -23,7 +23,7 @@ from unreal_engine.classes import StaticMeshActor, StaticMesh, Material, KismetM
 from unreal_engine.enums import EComponentMobility
 from unreal_engine import FVector, FRotator, FTransform
 import os
-from unreal_engine_tools import get_world
+from unreal_engine_tools import get_world, apply_material
 
 world = get_world()
 
@@ -39,17 +39,28 @@ def _log(msg):
 SH_CONE = '/Engine/BasicShapes/Cone'
 SH_CYL  = '/Engine/BasicShapes/Cylinder'
 SH_CUBE = '/Engine/BasicShapes/Cube'
-M_COLOR = '/Game/Materials/M_Color.M_Color'
+M_COLOR = '/Game/Materials/M_TranslucentTransformGizmoMaterial.M_TranslucentTransformGizmoMaterial'
 
 ORIGIN = FVector(0, 0, 0)
 
 # rotation helper
-# BasicShapes Cone and Cylinder are both authored along +Z.
-# _rot(axis) returns the FRotator that makes the +Z axis point along *axis*.
-# This is identical to the test_cylinder pattern in main.py.
+# BasicShapes Cone and Cylinder are both authored along +Z (cone apex at +Z,
+# pivot at base center). _rot(axis) returns the FRotator that makes the +Z
+# mesh axis point along *axis* in world space.
+#
+# FindLookAtRotation aims local +X at *axis*; subtracting 90° pitch then
+# remaps local +Z (the cone tip) to where +X was, i.e. along *axis*.
+#
+# Roll wipe: FindLookAtRotation hits a degenerate case when *axis* is exactly
+# world-up (+Z). MakeFromX falls back to UpVector=(1,0,0), which makes the
+# decomposed rotator come out as FRotator(90, 0, 180) — that 180° of roll
+# survives `pitch -= 90` and rolls the +Z cone upside-down (wide base on top).
+# The other five cardinal axes (incl. -Z) get roll=0 from FindLookAtRotation
+# already, so zeroing roll only affects the +Z case.
 def _rot(axis):
     r = KismetMathLibrary.FindLookAtRotation(ORIGIN, axis)
-    r.pitch += 90
+    r.pitch -= 90
+    r.roll  = 0
     return r
 
 # axis / plane tables
@@ -90,7 +101,8 @@ BBOX_LOCAL_EXTENT = 50.0  # BasicShapes half-extent; multiplied by actor scale
 _actor_mid    = {}   # actor → MID
 _actor_colors = {}   # actor → (r, g, b, emissive)
 _piece_off    = {}   # actor → FVector offset from target centre (world-space)
-_bbox_dynamic = {}   # actor → ('corner', (dx,dy,dz)) | ('edge', ai,dj,dk) | ('wire', ai,dj,dk)
+_bbox_dynamic = {}   # actor → ('corner',(dx,dy,dz)) | ('edge',ai,dj,dk) | ('wire',ai,dj,dk) | ('bracket',(dx,dy,dz,seg_axis))
+_hover_groups = {}   # actor → list of sibling actors that hover/unhover together (e.g. the 3 segments of one L-bracket)
 
 def _set_color(actor, red, green, blue, emissive):
     mid = _actor_mid.get(actor)
@@ -100,25 +112,34 @@ def _set_color(actor, red, green, blue, emissive):
     try: mid.set_material_scalar_parameter('Emissive Multiplier', emissive)
     except: pass
 
-def _apply_color(actor, red, green, blue, emissive=2.0):
+def _apply_color(actor, red, green, blue, emissive=2.0, opacity=0.8):
+    # Delegate to unreal_engine_tools.apply_material so the gizmo uses the
+    # same material-loading + MID-creation path as the rest of the project.
     try:
-        mat = ue.load_object(Material, M_COLOR)
-        mid = actor.StaticMeshComponent.create_material_instance_dynamic(mat)
-        actor.StaticMeshComponent.set_material(0, mid)
+        mid = apply_material(
+            actor=actor,
+            material_path=M_COLOR,
+            params={
+                'Color':              (red, green, blue),
+                'Emissive Multiplier': emissive,
+                'Opacity':             opacity,
+            },
+        )
         _actor_mid[actor]    = mid
         _actor_colors[actor] = (red, green, blue, emissive)
-        _set_color(actor, red, green, blue, emissive)
     except Exception as e:
         _log(f"color fail: {e}")
 
 def _hover_enter(actor):
-    if actor in _actor_colors:
-        red, green, blue, emissive = _actor_colors[actor]
-        _set_color(actor, min(red+0.5, 1), min(green+0.5, 1), min(blue+0.5, 1), emissive * 5)
+    for t in _hover_groups.get(actor, [actor]):
+        if t in _actor_colors:
+            red, green, blue, emissive = _actor_colors[t]
+            _set_color(t, min(red+0.5, 1), min(green+0.5, 1), min(blue+0.5, 1), emissive * 5)
 
 def _hover_exit(actor):
-    if actor in _actor_colors:
-        _set_color(actor, *_actor_colors[actor])
+    for t in _hover_groups.get(actor, [actor]):
+        if t in _actor_colors:
+            _set_color(t, *_actor_colors[t])
 
 # spawn helper
 def _spawn(path, loc, rot, sc, label, offset):
@@ -144,6 +165,45 @@ def _component(v, i):
 def _vec_from_components(c0, c1, c2):
     return FVector(c0, c1, c2)
 
+def _query_local_extent(target):
+    """Local-space half-extent of the target's static mesh, in mesh units
+    (before actor scale or rotation). Falls back to BBOX_LOCAL_EXTENT for
+    a basic 100uu shape if the mesh's bounds can't be read."""
+    try:
+        smc = target.StaticMeshComponent
+        result = smc.GetLocalBounds()
+        if result is not None and len(result) >= 2:
+            mn, mx = result[0], result[1]
+            return FVector((mx.x - mn.x) * 0.5,
+                           (mx.y - mn.y) * 0.5,
+                           (mx.z - mn.z) * 0.5)
+    except Exception as e:
+        _log(f"GetLocalBounds fail, falling back to AABB: {e}")
+    # Fallback: world AABB / scale (correct when rotation == identity, which
+    # is true at spawn time when this is first called and cached).
+    try:
+        scale = target.GetActorScale3D()
+        _, world_extent = target.GetActorBounds()
+        return FVector(world_extent.x / max(0.001, scale.x),
+                       world_extent.y / max(0.001, scale.y),
+                       world_extent.z / max(0.001, scale.z))
+    except Exception as e:
+        _log(f"GetActorBounds fail, using default: {e}")
+    return FVector(BBOX_LOCAL_EXTENT, BBOX_LOCAL_EXTENT, BBOX_LOCAL_EXTENT)
+
+_local_extent_cache = {}   # target actor → cached local half-extent FVector
+
+def local_half_extent(target):
+    """Cached local half-extent. Memoized in a module-level dict — querying
+    the mesh bounds each tick would waste a lookup, and the local mesh
+    doesn't change when the actor is scaled or rotated. Keyed on the actor
+    itself (UEPython wrappers are hashable)."""
+    cached = _local_extent_cache.get(target)
+    if cached is None:
+        cached = _query_local_extent(target)
+        _local_extent_cache[target] = cached
+    return cached
+
 def bbox_world_half_extent(target):
     """Half-extent of the target's oriented bbox (local-axis aligned),
     pre-rotation. Scaled by actor scale."""
@@ -151,13 +211,14 @@ def bbox_world_half_extent(target):
         s = target.GetActorScale3D()
     except Exception:
         s = target.get_actor_scale()
-    return FVector(BBOX_LOCAL_EXTENT * s.x,
-                   BBOX_LOCAL_EXTENT * s.y,
-                   BBOX_LOCAL_EXTENT * s.z)
+    le = local_half_extent(target)
+    return FVector(le.x * s.x, le.y * s.y, le.z * s.z)
 
 def _rotate_local(rotation, local_vec):
-    q = rotation.quaternion()
-    return KismetMathLibrary.Quat_RotateVector(q, local_vec)
+    # FRotator * FVector → FRotator::RotateVector via UEPython's nb_multiply.
+    # Avoids KismetMathLibrary.Quat_RotateVector — UEPython's UFUNCTION arg
+    # converter has no FQuat→Q branch, so that path errors every tick.
+    return rotation * local_vec
 
 def bbox_piece_world_transform(target, kind, data):
     """Return (world_loc, world_rot, world_scale) for a dynamic bbox piece."""
@@ -196,6 +257,31 @@ def bbox_piece_world_transform(target, kind, data):
         return (loc + world_off, combined,
                 FVector(0.03, 0.03, length / 100.0))
 
+    if kind == 'bracket':
+        # One leg of an L-shape at corner (dx,dy,dz). The leg lies along local
+        # axis seg_axis and runs from the corner inward (toward the box center)
+        # for ~25% of that edge's length.
+        dx, dy, dz, seg_axis = data
+        corner_signs = (dx, dy, dz)
+        h_seg        = _component(h, seg_axis)
+        seg_length   = 0.5 * h_seg            # 25% of the full edge (2 * h_seg)
+        seg_half     = 0.5 * seg_length
+
+        comps = [corner_signs[i] * _component(h, i) for i in (0, 1, 2)]
+        # Pull the seg_axis component inward by half the segment length so the
+        # cylinder's far tip sits exactly on the corner.
+        comps[seg_axis] = corner_signs[seg_axis] * (h_seg - seg_half)
+
+        local_off = _vec_from_components(*comps)
+        world_off = _rotate_local(rot, local_off)
+
+        axis_vec  = [FVector(1,0,0), FVector(0,1,0), FVector(0,0,1)][seg_axis]
+        axis_rot  = _rot(axis_vec)
+        combined  = KismetMathLibrary.ComposeRotators(axis_rot, rot)
+
+        return (loc + world_off, combined,
+                FVector(0.06, 0.06, seg_length / 100.0))
+
     return (loc, rot, FVector(1, 1, 1))
 
 def update_bbox_piece(actor, target):
@@ -226,6 +312,8 @@ def test_gizmos(location=None):
     _actor_mid.clear()
     _actor_colors.clear()
     _bbox_dynamic.clear()
+    _hover_groups.clear()
+    _local_extent_cache.clear()
 
     if location is None:
         location = FVector(0, 0, 100)
@@ -263,12 +351,23 @@ def test_gizmos(location=None):
     # Cylinder authored along +Z. _rot(ax) makes the cylinder axis = ax,
     # so the flat faces lie perpendicular to ax → ring rotates around ax.
     # Scale (1.8, 1.8, 0.10): 180 uu diameter ring, 10 uu thick.
+    #
+    # All three rings are translucent and intersect at the center, so
+    # translucent sorting between them is otherwise undefined → z-fight.
+    # Assigning each a unique TranslucencySortPriority makes the draw order
+    # deterministic (higher = drawn later = appears on top). Rings sit above
+    # the rest of the gizmo (which defaults to 0) so they stay readable when
+    # the camera puts an arrow in front of a ring.
     _log("-- rings --")
-    for name, ax, rgb in AXES3:
+    for ring_idx, (name, ax, rgb) in enumerate(AXES3):
         off = FVector(0, 0, 0)
         a   = _spawn(SH_CYL, base, _rot(ax), FVector(1.8, 1.8, 0.10), f"GR_{name}", off)
         if a:
             _apply_color(a, *rgb, emissive=1.8)
+            try:
+                a.StaticMeshComponent.TranslucencySortPriority = 10 + ring_idx
+            except Exception as e:
+                _log(f"ring sort priority fail ({name}): {e}")
             handles[a] = ('rotate', ax)
 
     # ── scale handles  (small Cube, 175 uu along axis past arrows)
@@ -308,28 +407,39 @@ def test_gizmos(location=None):
                    FVector(0.03, 0.03, 0.5),
                    f"GBB_W_{ai}{dj:+d}{dk:+d}", FVector(0, 0, 0))
         if a:
-            _apply_color(a, 0.95, 0.95, 0.95, emissive=0.8)
+            # Dim grey wireframe so the bright yellow corner brackets dominate.
+            _apply_color(a, 0.45, 0.45, 0.45, emissive=0.3)
             try:
                 a.SetActorEnableCollision(False)
             except Exception:
                 pass
             _bbox_dynamic[a] = ('wire', (ai, dj, dk))
 
+    # Yellow corner brackets — 3 thin cylinders per corner, each running inward
+    # along one local axis (X, Y, Z) so the trio forms a 3D L-shape selection
+    # marker. All 3 segments share the same bbox_corner drag and hover/unhover
+    # together via _hover_groups.
     for dx, dy, dz in BBOX_CORNERS:
-        a = _spawn(SH_CUBE, base, FRotator(0, 0, 0),
-                   FVector(0.20, 0.20, 0.20),
-                   f"GBB_C_{dx:+d}{dy:+d}{dz:+d}", FVector(0, 0, 0))
-        if a:
-            _apply_color(a, 1.00, 1.00, 0.20, emissive=1.5)
-            handles[a] = ('bbox_corner', (dx, dy, dz))
-            _bbox_dynamic[a] = ('corner', (dx, dy, dz))
+        seg_actors = []
+        for seg_axis in (0, 1, 2):
+            a = _spawn(SH_CYL, base, FRotator(0, 0, 0),
+                       FVector(0.06, 0.06, 0.5),
+                       f"GBB_BR_{dx:+d}{dy:+d}{dz:+d}_{seg_axis}",
+                       FVector(0, 0, 0))
+            if a:
+                _apply_color(a, 1.00, 1.00, 0.20, emissive=1.5)
+                handles[a]       = ('bbox_corner', (dx, dy, dz))
+                _bbox_dynamic[a] = ('bracket', (dx, dy, dz, seg_axis))
+                seg_actors.append(a)
+        for a in seg_actors:
+            _hover_groups[a] = seg_actors
 
     for ai, dj, dk in BBOX_EDGES:
         a = _spawn(SH_CUBE, base, FRotator(0, 0, 0),
                    FVector(0.16, 0.16, 0.16),
                    f"GBB_E_{ai}{dj:+d}{dk:+d}", FVector(0, 0, 0))
         if a:
-            _apply_color(a, 1.00, 0.70, 0.20, emissive=1.3)
+            _apply_color(a, 1.00, 1.00, 0.20, emissive=0.9)
             handles[a] = ('bbox_edge', (ai, dj, dk))
             _bbox_dynamic[a] = ('edge', (ai, dj, dk))
 

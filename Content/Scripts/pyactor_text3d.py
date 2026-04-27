@@ -2,45 +2,7 @@ import unreal_engine as ue
 from unreal_engine import FVector, FRotator, FTransform
 from unreal_engine.enums import ECollisionChannel, EInputEvent
 from unreal_engine_tools import find_component
-
-
-class PyActorText3DGlobal:
-    """Singleton PyActor that runs one tick for ALL Text3D actors in the scene.
-
-    Replaces the per-frame closure that used to be returned by
-    test_spawn.test_text3d_click — global keyboard poll for typing, caret
-    blink, click rising-edge, focus management, highlight rendering.
-
-    Call set_tick_fn(fn) after spawn with the tick closure built by
-    test_text3d_click (which still owns the state machine via closures — a
-    future refactor could migrate that state onto this class directly).
-    """
-
-    def begin_play(self):
-        self._tick_fn = None
-        ue.log('PyActorText3DGlobal: ready (awaiting set_tick_fn)')
-
-    def set_tick_fn(self, fn):
-        self._tick_fn = fn
-        ue.log('PyActorText3DGlobal: tick function attached')
-
-    def tick(self, dt):
-        fn = self._tick_fn
-        if fn is None:
-            return
-        try:
-            fn(dt)
-        except Exception as e:
-            try:
-                ue.log_warning(f'PyActorText3DGlobal tick error: {e}')
-            except Exception:
-                pass
-
-try:
-    from unreal_engine.classes import StaticMeshActor, StaticMesh, Material
-    from unreal_engine.enums import EComponentMobility
-except Exception:
-    StaticMeshActor = StaticMesh = Material = EComponentMobility = None
+from pyactor_global_click import PyActorGlobalClick
 
 # Python component: click + hover for any actor with a Text3DComponent
 #
@@ -60,7 +22,15 @@ except Exception:
 #   Y axis = character advance (left -> right), col = local_y / CHAR_WIDTH
 #   Z axis = line descent      (up  ->  down),  row = -local_z / CHAR_HEIGHT
 #
-# Override _on_char_click(col, row) in a subclass or replace after spawn.
+# Insertion cursor architecture
+# ------------------------------
+# A single PyActorCursor is spawned lazily on first use and shared across
+# all Text3D actors in the scene (only one caret is ever visible).  This
+# class owns it and exposes class methods for callers (typing handler in
+# test_spawn, click handler here, selection-highlight code) to position,
+# show, and hide it.  Sizing/placement tunables live here as class
+# constants — see CURSOR_WIDTH_FRAC / CURSOR_VERTICAL_OFFSET_FRAC /
+# CURSOR_DIACRITIC_HEADROOM_FRAC.
 
 class PyActorText3D:
     """
@@ -69,6 +39,10 @@ class PyActorText3D:
 
     Click detection is tick-based (Text3DComponent has no OnClicked event).
     Hover detection tries component events first, falls back to tick polling.
+
+    Class-level cursor singleton: see show_cursor_at / hide_cursor /
+    compute_placement.  All callers go through these — no per-instance
+    cursor exists.
     """
 
     HOVER_DELTA = 0.3
@@ -81,10 +55,17 @@ class PyActorText3D:
 
     TEXT_COMPONENT_NAME = 'Text3DComponent'
 
-    # Insertion cursor settings
-    CURSOR_BLINK_RATE = 1.0        # seconds per blink cycle
-    CURSOR_COLOR      = (1, 1, 1, 0.6)
-    CURSOR_MAT_PATH   = '/Game/Materials/M_Color_Translucent.M_Color_Translucent'
+    # Cursor visual tunables (used by compute_placement)
+    # CURSOR_WIDTH_FRAC      — caret bar thickness as fraction of glyph width.
+    # CURSOR_VERTICAL_OFFSET_FRAC — how far the caret is shifted DOWN from the
+    #     bounds-vertical-center, expressed as a fraction of glyph height.
+    #     1.0 drops the caret by one full row (corrects for Text3D bounds
+    #     reporting the top of the line, not its center).
+    # CURSOR_DIACRITIC_HEADROOM_FRAC — extra height added above the bounds top
+    #     (fraction of tight bounds) so accents/^ aren't clipped.
+    CURSOR_WIDTH_FRAC             = 0.068
+    CURSOR_VERTICAL_OFFSET_FRAC   = 1.0
+    CURSOR_DIACRITIC_HEADROOM_FRAC = 0.50
 
     # Lifecycle
 
@@ -101,13 +82,6 @@ class PyActorText3D:
         self._was_mouse_down = False
         self._hovered        = False
 
-        # Insertion cursor state
-        self._cursor_actor   = None
-        self._cursor_mid     = None
-        self._cursor_visible = False
-        self._cursor_timer   = 0.0
-        self._cursor_char_idx = -1
-
         # Find Text3DComponent
         self.text3d = None
         try:
@@ -119,8 +93,6 @@ class PyActorText3D:
                 f'PyActorText3D: could not find "{self.TEXT_COMPONENT_NAME}" '
                 f'on {self.uobject.get_name()}')
             return
-
-        self._spawn_cursor()
 
         # Try to bind cursor-over events (may work depending on UEP build)
         self._component_hover = False
@@ -139,135 +111,191 @@ class PyActorText3D:
             f'PyActorText3D: click detection is tick-based '
             f'on {self.uobject.get_name()}')
 
-    # Insertion cursor
+    # ---------------- Cursor singleton (class-level) ----------------
+    #
+    # Single shared PyActorCursor for the whole scene — only one caret
+    # ever exists.  Spawned lazily on first show_cursor_at() call.
 
-    def _spawn_cursor(self):
-        """Spawn a thin translucent cube as a blinking insertion point."""
-        if StaticMeshActor is None or self.text3d is None:
-            return
-        world = None
-        try:
-            world = self.uobject.get_world()
-        except Exception:
-            pass
-        if world is None:
-            return
+    _cursor_pyactor = None
 
-        try:
-            actor = world.actor_spawn(StaticMeshActor)
-            smc   = actor.StaticMeshComponent
-            cube  = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube')
-            smc.SetStaticMesh(cube)
-            smc.SetMobility(EComponentMobility.Movable)
-
-            mat = ue.load_object(Material, self.CURSOR_MAT_PATH)
-            mid = smc.create_material_instance_dynamic(mat)
-            smc.set_material(0, mid)
-
-            # Scale: thin bar, quarter-char width, full char height.
-            # Cube is 100 UU base → divide by 100.
-            cw = self.CHAR_WIDTH  / 100.0 * 0.25
-            ch = self.CHAR_HEIGHT / 100.0
-            cd = 0.01
-            actor.set_actor_scale(FVector(cd, cw, ch))
-
-            actor.attach_to_component(self.text3d)
-            actor.SetActorHiddenInGame(True)
-
+    @classmethod
+    def _get_or_spawn_cursor(cls, world_provider):
+        """Return the singleton PyActorCursor proxy, spawning if needed.
+        ``world_provider`` is any actor (used only to fetch a UWorld)."""
+        if cls._cursor_pyactor is not None:
             try:
-                actor.SetActorLabel('TextCursor')
+                proxy = cls._cursor_pyactor.get_py_proxy()
+                if proxy is not None:
+                    return proxy
             except Exception:
                 pass
+            cls._cursor_pyactor = None  # stale handle — respawn
 
-            self._cursor_actor = actor
+        try:
+            from ue_spawn import spawn_pyactor
+            cls._cursor_pyactor = spawn_pyactor(
+                'pyactor_cursor', 'PyActorCursor',
+                components=[dict(class_name='StaticMeshComponent',
+                                 name='Cube', root=True,
+                                 mesh='/Engine/BasicShapes/Cube.Cube')],
+                name='TextCursor')
         except Exception as e:
             ue.log_warning(f'PyActorText3D: cursor spawn failed: {e}')
+            return None
 
-    def _move_cursor_to(self, char_index):
-        """Snap the cursor to the discrete position after the clicked character.
+        if cls._cursor_pyactor is None:
+            return None
+        try:
+            return cls._cursor_pyactor.get_py_proxy()
+        except Exception:
+            return None
 
-        Uses CharacterKernings for the exact glyph-relative position (discrete),
-        falls back to CharacterMeshes bounds, then to fixed-width grid.
-        """
-        if self._cursor_actor is None or self.text3d is None:
+    @classmethod
+    def show_cursor_at(cls, actor, target_glyph):
+        """Move the singleton cursor to ``target_glyph`` on ``actor``.
+        Returns True on success."""
+        if actor is None:
+            return False
+        placement = cls.compute_placement(actor, target_glyph)
+        if placement is None:
+            return False
+        proxy = cls._get_or_spawn_cursor(actor)
+        if proxy is None:
+            return False
+        world_pt, scale_vec, rot = placement
+        proxy.move_to(world_pt, scale_vec, rot)
+        return True
+
+    @classmethod
+    def hide_cursor(cls):
+        if cls._cursor_pyactor is None:
             return
-        self._cursor_char_idx = char_index
-        self._cursor_timer    = 0.0
-        self._cursor_visible  = True
+        try:
+            proxy = cls._cursor_pyactor.get_py_proxy()
+        except Exception:
+            return
+        if proxy is not None:
+            proxy.hide()
 
-        placed = False
-        next_idx = char_index + 1  # cursor goes AFTER the clicked char
+    @classmethod
+    def compute_placement(cls, actor, target_glyph):
+        """Compute (world_pt, scale_vec, rotation) for the caret at the
+        left edge of glyph ``target_glyph`` on ``actor``.  ``target_glyph``
+        may equal the glyph count (cursor sits one width past the last
+        glyph).  Returns None on failure.
 
-        # Strategy 1: CharacterKernings — discrete per-glyph relative positions
+        The selection-highlight code uses this too, so it lives here as
+        the single source of truth for caret/highlight geometry.
+        """
+        if actor is None:
+            return None
+        try:
+            t3d = actor.get_actor_component(cls.TEXT_COMPONENT_NAME)
+        except Exception:
+            return None
+        if t3d is None:
+            return None
+
         kernings = None
         try:
-            kernings = self.text3d.CharacterKernings
+            kernings = t3d.CharacterKernings
+        except Exception:
+            pass
+        meshes = None
+        try:
+            meshes = t3d.CharacterMeshes
         except Exception:
             pass
 
-        if kernings is not None:
-            ue.log(f'PyActorText3D cursor: kernings available, len={len(kernings)}, '
-                   f'char_index={char_index}, next_idx={next_idx}')
-            if next_idx < len(kernings) and kernings[next_idx] is not None:
+        if not kernings or len(kernings) == 0:
+            return None
+
+        glyph_h = cls.CHAR_HEIGHT
+        glyph_w = cls.CHAR_WIDTH
+
+        # Read glyph dimensions from the reference mesh (target, clamped).
+        ref_idx = target_glyph
+        if ref_idx >= len(kernings):
+            ref_idx = len(kernings) - 1
+        if ref_idx < 0:
+            ref_idx = 0
+        if (meshes is not None
+                and 0 <= ref_idx < len(meshes)
+                and meshes[ref_idx] is not None):
+            try:
+                _, e = meshes[ref_idx].GetComponentBounds()
+                glyph_h = e.z * 2.0
+                glyph_w = e.y * 2.0
+            except Exception:
+                pass
+
+        # target_rel = left edge of target glyph, or one width past the last.
+        target_rel = None
+        if 0 <= target_glyph < len(kernings) and kernings[target_glyph] is not None:
+            try:
+                target_rel = kernings[target_glyph].get_relative_location()
+            except Exception:
+                pass
+        elif len(kernings) > 0 and kernings[-1] is not None:
+            try:
+                r = kernings[-1].get_relative_location()
+                target_rel = FVector(r.x, r.y + glyph_w, r.z)
+            except Exception:
+                pass
+        if target_rel is None:
+            return None
+
+        # Full vertical extent for caret height/center.
+        full_top = None
+        full_bot = None
+        if meshes is not None:
+            for m in meshes:
+                if m is None:
+                    continue
                 try:
-                    rel = kernings[next_idx].get_relative_location()
-                    ue.log(f'PyActorText3D cursor: kerning[{next_idx}] rel=({rel.x:.1f}, {rel.y:.1f}, {rel.z:.1f})')
-                    self._cursor_actor.K2_SetActorRelativeLocation(rel)
-                    placed = True
-                except Exception as e:
-                    ue.log_warning(f'PyActorText3D cursor: kerning strategy failed: {e}')
-            elif char_index < len(kernings) and kernings[char_index] is not None:
-                try:
-                    rel = kernings[char_index].get_relative_location()
-                    offset_rel = FVector(rel.x, rel.y + self.CHAR_WIDTH, rel.z)
-                    ue.log(f'PyActorText3D cursor: last char, kerning[{char_index}]+CHAR_WIDTH rel=({offset_rel.x:.1f}, {offset_rel.y:.1f}, {offset_rel.z:.1f})')
-                    self._cursor_actor.K2_SetActorRelativeLocation(offset_rel)
-                    placed = True
-                except Exception as e:
-                    ue.log_warning(f'PyActorText3D cursor: last-char kerning failed: {e}')
+                    o, e = m.GetComponentBounds()
+                    t = o.z + e.z
+                    b = o.z - e.z
+                    if full_top is None or t > full_top:
+                        full_top = t
+                    if full_bot is None or b < full_bot:
+                        full_bot = b
+                except Exception:
+                    continue
+        try:
+            o, e = t3d.GetComponentBounds()
+            t = o.z + e.z
+            b = o.z - e.z
+            if full_top is None or t > full_top:
+                full_top = t
+            if full_bot is None or b < full_bot:
+                full_bot = b
+        except Exception:
+            pass
+
+        actor_loc = actor.get_actor_location()
+        actor_rot = actor.get_actor_rotation()
+
+        if full_top is not None and full_bot is not None:
+            tight = full_top - full_bot
+            full_top += tight * cls.CURSOR_DIACRITIC_HEADROOM_FRAC
+            cursor_h = full_top - full_bot
+            cursor_z = (full_top + full_bot) * 0.5
         else:
-            ue.log(f'PyActorText3D cursor: no kernings available')
+            cursor_h = glyph_h
+            cursor_z = actor_loc.z + target_rel.z
 
-        # Strategy 2: CharacterMeshes bounds — discrete right edge
-        if not placed:
-            char_meshes = None
-            try:
-                char_meshes = self.text3d.CharacterMeshes
-            except Exception:
-                pass
-
-            if char_meshes is not None and 0 <= char_index < len(char_meshes):
-                mesh = char_meshes[char_index]
-                if mesh is not None:
-                    try:
-                        rel = mesh.get_relative_location()
-                        # Offset by one full glyph width for "after character"
-                        self._cursor_actor.K2_SetActorRelativeLocation(
-                            FVector(rel.x, rel.y + self.CHAR_WIDTH, rel.z))
-                        placed = True
-                    except Exception:
-                        pass
-
-        # Strategy 3: fixed-width grid
-        if not placed:
-            y = next_idx * self.CHAR_WIDTH
-            try:
-                self._cursor_actor.K2_SetActorRelativeLocation(FVector(0, y, 0))
-            except Exception:
-                pass
-
-        self._cursor_actor.SetActorHiddenInGame(False)
-
-    def _tick_cursor(self, dt):
-        """Blink the insertion cursor."""
-        if self._cursor_actor is None or self._cursor_char_idx < 0:
-            return
-        self._cursor_timer += dt
-        half = self.CURSOR_BLINK_RATE * 0.5
-        should_show = (self._cursor_timer % self.CURSOR_BLINK_RATE) < half
-        if should_show != self._cursor_visible:
-            self._cursor_visible = should_show
-            self._cursor_actor.SetActorHiddenInGame(not should_show)
+        world_pt = FVector(
+            actor_loc.x + target_rel.x,
+            actor_loc.y + target_rel.y,
+            cursor_z - glyph_h * cls.CURSOR_VERTICAL_OFFSET_FRAC,
+        )
+        scale_vec = FVector(
+            0.01,
+            glyph_w * cls.CURSOR_WIDTH_FRAC / 100.0,
+            cursor_h / 100.0,
+        )
+        return world_pt, scale_vec, actor_rot
 
     def tick(self, dt):
         # Scale lerp
@@ -279,8 +307,6 @@ class PyActorText3D:
             cur.y + (tgt.y - cur.y) * a,
             cur.z + (tgt.z - cur.z) * a,
         ))
-
-        self._tick_cursor(dt)
 
         if self.text3d is None:
             return
@@ -450,6 +476,22 @@ class PyActorText3D:
         except Exception:
             return False
 
+    # Focus state — proxies the global registry on PyActorGlobalClick so
+    # callers can read/write `actor.focused` per instance while a single
+    # source of truth remains class-level (only one Text3D can be focused
+    # at a time across the scene).
+
+    @property
+    def focused(self):
+        return PyActorGlobalClick._focused_actor is self.uobject
+
+    @focused.setter
+    def focused(self, value):
+        if value:
+            PyActorGlobalClick.set_focused_actor(self.uobject)
+        elif PyActorGlobalClick._focused_actor is self.uobject:
+            PyActorGlobalClick.set_focused_actor(None)
+
     # Override point
 
     def _on_char_click(self, col, row, letter=None, char_index=None):
@@ -468,4 +510,4 @@ class PyActorText3D:
         Override in a subclass or monkey-patch after spawn.
         """
         if char_index is not None and char_index >= 0:
-            self._move_cursor_to(char_index)
+            PyActorText3D.show_cursor_at(self.uobject, char_index + 1)

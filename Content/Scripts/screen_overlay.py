@@ -122,7 +122,7 @@ DEFAULT_CROSSHAIR_MATS = (
 
 def spawn_crosshair(uobject, crosshair_path, screen_component_name='Screen',
                     material_paths=None, param_name='Texture',
-                    viewport_size=(1920.0, 1080.0), caller_tag='crosshair'):
+                    viewport_size=None, caller_tag='crosshair'):
     """Spawn a crosshair image plane and attach it to the Screen component.
 
     Parameters
@@ -137,8 +137,9 @@ def spawn_crosshair(uobject, crosshair_path, screen_component_name='Screen',
         Material asset paths to try. Defaults to DEFAULT_CROSSHAIR_MATS.
     param_name : str
         Texture parameter name.
-    viewport_size : tuple[float, float]
-        (width, height) of the viewport the Screen maps to.
+    viewport_size : tuple[float, float] or None
+        (width, height) of the viewport the Screen maps to. If None,
+        queries the live viewport via ``ue.get_viewport_size()``.
     caller_tag : str
         Label for log messages.
 
@@ -148,6 +149,8 @@ def spawn_crosshair(uobject, crosshair_path, screen_component_name='Screen',
     """
     if material_paths is None:
         material_paths = DEFAULT_CROSSHAIR_MATS
+    if viewport_size is None:
+        viewport_size = ue.get_viewport_size()
 
     screen = find_component(uobject, screen_component_name)
     if screen is None:
@@ -204,7 +207,7 @@ def spawn_debug_text(uobject, screen_component_name='Screen',
 
 def spawn_icon_overlay(uobject, pil_image, screen_component_name='Screen',
                        material_paths=None, param_name='Texture',
-                       viewport_size=(1920.0, 1080.0),
+                       viewport_size=None,
                        position=None, caller_tag='icon_overlay'):
     """Spawn a small icon image plane and attach it to the Screen component.
 
@@ -212,11 +215,16 @@ def spawn_icon_overlay(uobject, pil_image, screen_component_name='Screen',
 
     Parameters
     ----------
+    viewport_size : tuple[float, float] or None
+        (width, height) of the viewport. If None, queries the live
+        viewport via ``ue.get_viewport_size()``.
     position : FVector or None
         Relative position on the Screen. If None, centers the icon.
     """
     if material_paths is None:
         material_paths = DEFAULT_CROSSHAIR_MATS
+    if viewport_size is None:
+        viewport_size = ue.get_viewport_size()
 
     screen = find_component(uobject, screen_component_name)
     if screen is None:

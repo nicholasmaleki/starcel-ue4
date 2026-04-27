@@ -97,17 +97,54 @@ def spawn_pyactor(python_module, python_class,
 
     # Components are added after BeginPlay — not visible in begin_play,
     # accessible from first tick onward.
+    replaced_root = False
+    root_comp = None
     if components:
-        for comp in components:
+        # Add roots first so non-root components can be parented to them in a
+        # single SetupAttachment call (UEPython's add_actor_component(cls, name,
+        # parent) wires SetupAttachment before RegisterComponent — without it,
+        # SceneComponents stay unparented and ignore the actor's transform).
+        ordered = sorted(components, key=lambda c: 0 if c.get('root') else 1)
+        for comp in ordered:
             cls = ue.find_class(comp['class_name'])
             if comp.get('root', False):
                 c = actor.add_actor_root_component(cls, comp['name'])
+                replaced_root = True
+                root_comp = c
             else:
-                c = actor.add_actor_component(cls, comp['name'])
+                parent = root_comp
+                if parent is None:
+                    try:
+                        parent = actor.get_actor_root_component()
+                    except Exception:
+                        parent = None
+                try:
+                    c = (actor.add_actor_component(cls, comp['name'], parent)
+                         if parent is not None
+                         else actor.add_actor_component(cls, comp['name']))
+                except Exception as e:
+                    ue.log_warning(
+                        f'spawn_pyactor: add_actor_component({comp["name"]}, parent=...) '
+                        f'failed: {e}; retrying without parent')
+                    c = actor.add_actor_component(cls, comp['name'])
+            # Mobility must be Movable before SetStaticMesh and before any
+            # set_actor_transform reapply — a Static root rejects transforms
+            # silently, leaving all spawns stacked at (0,0,0).
+            try:
+                c.Mobility = EComponentMobility.Movable
+            except Exception:
+                pass
             if comp.get('mesh'):
                 mesh_obj = ue.load_object(StaticMesh, comp['mesh'])
                 c.SetStaticMesh(mesh_obj)
-                c.Mobility = EComponentMobility.Movable
+
+    # add_actor_root_component swaps the root SceneComponent and resets the
+    # actor's world transform to identity, undoing the loc/rot passed to
+    # actor_spawn. Re-apply it so e.g. spawn_camera_actor's per-preset Y
+    # offset survives.
+    if replaced_root:
+        scl = scale if scale is not None else FVector(1, 1, 1)
+        actor.set_actor_transform(FTransform(loc, rot, scl))
 
     if actor is not None and source_path is not None:
         try:
@@ -341,8 +378,8 @@ def spawn_image(path, location=None, rotation=None, scale=None,
     actor = world.actor_spawn(StaticMeshActor)
     smc   = actor.StaticMeshComponent
     cube  = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube')
-    smc.SetStaticMesh(cube)
     smc.Mobility = EComponentMobility.Movable
+    smc.SetStaticMesh(cube)
 
     # apply M_TexturePicture as MID, set texture parameter
     mat = ue.load_object(Material, material_path + '.' + material_path.split('/')[-1])
@@ -644,20 +681,19 @@ def _play_audio_file(world, path, location, volume, pitch):
 
 
 def _play_audio_file_as_actor(path, location, volume, pitch):
-    """Decode *path* and attach it to a visible BP_PyActorEmpty host via an
-    AudioComponent.  Returns the spawned actor (or None on failure).
+    """Decode *path* and bind the resulting USoundWaveProcedural to a clickable
+    SoundSphere actor.  Click the sphere to play; nothing plays on spawn.
 
-    The host mounts a sphere mesh for visibility and a looping=False
-    AudioComponent that plays on spawn.  The SoundWaveProcedural lifetime is
-    covered by both the AudioComponent's Sound ref and the Python proxy
-    (ProceduralSoundHost) — no global keep-alive list needed for this path."""
-    from unreal_engine.classes import AudioComponent
-    sw, duration = _build_procedural_wave(path)
+    The wave is attached as ``actor.sound`` so SoundSphere's lazy lookup
+    picks it up on click and routes it through play_sound_at_location.  The
+    Python attribute keeps the wave alive for the actor's lifetime — no
+    global keep-alive list and no AudioComponent needed."""
+    sw, _ = _build_procedural_wave(path)
     if sw is None:
         return None
 
     actor = spawn_pyactor(
-        'pyactor_sound', 'ProceduralSoundHost',
+        'pyactor_sound', 'SoundSphere',
         location=location,
         components=[dict(class_name='StaticMeshComponent',
                          name='Sphere', root=True,
@@ -673,33 +709,24 @@ def _play_audio_file_as_actor(path, location, volume, pitch):
 
     # spawn_pyactor's root=True component replaces BP_PyActorEmpty's default
     # root post-spawn, which resets the actor transform to identity.  Restore
-    # the requested location here so the sound plays where the caller asked.
+    # the requested location here so the sphere lands where the caller asked.
     try:
         actor.set_actor_location(location)
     except Exception:
         pass
 
+    # Bind the wave + playback params to the actor.  SoundSphere._get_sound()
+    # reads actor.sound on each click, and _play() reads actor.volume /
+    # actor.pitch.  source_path is also set (by spawn_pyactor above) as a
+    # fallback in case .sound is cleared.
     try:
-        ac = actor.add_actor_component(AudioComponent, 'Audio')
-        ac.call_function('SetSound', sw)
-        ac.call_function('SetVolumeMultiplier', float(volume))
-        ac.call_function('SetPitchMultiplier', float(pitch))
-        ac.call_function('Play', 0.0)
+        actor.sound  = sw
+        actor.volume = float(volume)
+        actor.pitch  = float(pitch)
     except Exception as e:
-        ue.log_warning(f'_play_audio_file_as_actor: AudioComponent setup failed '
-                       f'({e}); falling back to world playback.')
+        ue.log_warning(f'_play_audio_file_as_actor: attr bind failed ({e}); '
+                       'wave kept alive via global registry.')
         _procedural_sounds.append(sw)
-        _get_world().play_sound_at_location(sw, location, volume, pitch, 0.0)
-        return actor
-
-    # Tie the wave to the Python proxy so GC follows the actor's lifetime.
-    try:
-        proxy = actor.get_py_proxy()
-        if proxy is not None:
-            proxy.sound_wave      = sw
-            proxy.audio_component = ac
-    except Exception:
-        pass
     return actor
 
 
@@ -708,7 +735,7 @@ def _play_audio_file_as_actor(path, location, volume, pitch):
 def spawn_sound(path, location=None, volume=1.0, pitch=1.0,
                 start_time=0.0, as_actor=False):
     """
-    Play a sound immediately, or spawn a clickable/proximity sphere.
+    Play a sound immediately, or spawn a clickable sphere that plays on click.
 
     *path*:
       • UE asset path  ('/Game/Sounds/MySound') -> resolved via load_object
@@ -716,10 +743,12 @@ def spawn_sound(path, location=None, volume=1.0, pitch=1.0,
         into a USoundWaveProcedural and played in place.
 
     *as_actor=True*:
-      • UE asset  -> spawns BP_SoundSphere (see SoundSphereActor).
-      • Filesystem audio -> spawns BP_PyActorEmpty with a sphere mesh and an
-        AudioComponent bound to a transient USoundWaveProcedural (plays on
-        spawn, actor stays in the outliner and moves sound with it).
+      Spawns a SoundSphere that plays the sound on click via
+      play_sound_at_location.  Nothing plays on spawn.  Works for both UE
+      assets and filesystem audio files (the latter decoded via ffmpeg into
+      a transient USoundWaveProcedural, kept alive by the actor's lifetime).
+      *volume* and *pitch* are forwarded to play_sound_at_location at click
+      time (see pyactor_sound.SoundSphere._play).
     """
     world = _get_world()
     loc = location if location is not None else FVector(0, 0, 0)
@@ -728,7 +757,13 @@ def spawn_sound(path, location=None, volume=1.0, pitch=1.0,
     ext = os.path.splitext(path)[1].lower()
     if ext in AUDIO_FILE_EXTS and os.path.isfile(path):
         if as_actor:
-            return _play_audio_file_as_actor(path, loc, volume, pitch)
+            actor = _play_audio_file_as_actor(path, loc, volume, pitch)
+            if actor is not None:
+                try:
+                    actor.start_time = float(start_time)
+                except Exception:
+                    pass
+            return actor
         return _play_audio_file(world, path, loc, volume, pitch)
 
     sound = None
@@ -749,9 +784,14 @@ def spawn_sound(path, location=None, volume=1.0, pitch=1.0,
                 location=loc,
                 components=[dict(class_name='StaticMeshComponent',
                                  name='Sphere', root=True,
-                                 mesh='/Engine/BasicShapes/Sphere.Sphere')])
+                                 mesh='/Engine/BasicShapes/Sphere.Sphere')],
+                name=os.path.basename(path) if path else 'SoundSphere',
+                source_path=path)
             if sound:
-                actor.Sound = sound
+                actor.sound = sound
+            actor.volume     = float(volume)
+            actor.pitch      = float(pitch)
+            actor.start_time = float(start_time)
             return actor
         except Exception as e:
             ue.log_warning(f'spawn_sound as_actor failed: {e}. Falling back to play_at_location.')
@@ -1295,7 +1335,7 @@ def spawn_earth(location=None, rotation=None, scale=None,
 
 def spawn_table(table, location=None, world_location=None,
                 orientation='wall_table', render_gridlines=True,
-                render_text=True, cell_spacing=100.0):
+                render_text=True, cell_spacing=100.0, auto_size=True):
     """
     Render an nd_table.Table as Text3D actors in the world.
 
@@ -1307,6 +1347,10 @@ def spawn_table(table, location=None, world_location=None,
     render_gridlines: bool
     render_text     : bool
     cell_spacing    : float  UE units between cells
+    auto_size       : bool   when True, the table refits its row/column
+                             extents after a Text3D edit (via
+                             ``renderer.recompute_layout()``); when False
+                             the table keeps its current cell sizes.
 
     Returns
     -------
@@ -1319,6 +1363,7 @@ def spawn_table(table, location=None, world_location=None,
         cell_spacing=cell_spacing,
         orientation_preset=orientation,
         text_mode='3d',
+        auto_size=auto_size,
     )
     renderer.render_table(table, world_location=loc,
                           render_gridlines=render_gridlines,
@@ -1331,7 +1376,7 @@ def spawn_table(table, location=None, world_location=None,
 def spawn_table_actor(table=None, location=None, rotation=None,
                       orientation='wall_table', cell_spacing=100.0,
                       render_gridlines=True, render_text=True,
-                      enable_resize=True, name=None):
+                      enable_resize=True, auto_size=True, name=None):
     """
     Spawn a PyActorTable that owns an UnrealTableRenderer and ticks its
     gridline-resize controller every frame — no Main.tick forwarding.
@@ -1357,6 +1402,7 @@ def spawn_table_actor(table=None, location=None, rotation=None,
             proxy.render_gridlines = render_gridlines
             proxy.render_text      = render_text
             proxy.enable_resize    = enable_resize
+            proxy.auto_size        = auto_size
             if table is not None:
                 proxy.set_table(table)
     except Exception as e:
@@ -2061,6 +2107,7 @@ def spawn(
     # Common — applies to spawn_icon-style functions
     component_name=None,
     source_path=None,
+    name=None,
 ):
     """
     Universal spawn function for UnrealEnginePython.
@@ -2233,7 +2280,8 @@ def spawn(
                              location=location, rotation=rotation, scale=scale,
                              components=pyactor_components,
                              bp_path=pyactor_bp_path,
-                             source_path=source_path)
+                             source_path=source_path,
+                             name=name)
 
     elif detected == 'nd_table':
         return spawn_nd_table(location=location, rotation=rotation, scale=scale,
