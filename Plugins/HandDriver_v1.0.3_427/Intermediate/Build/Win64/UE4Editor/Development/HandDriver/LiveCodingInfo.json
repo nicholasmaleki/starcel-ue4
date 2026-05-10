@@ -1,0 +1,31 @@
+{
+	"RemapUnityFiles": 
+	{
+		"Module.HandDriver.cpp.obj": [
+			"AnimNode_BlendHandMocap.cpp.obj",
+			"AnimNode_UdexrealHandPose.cpp.obj",
+			"HandComMeshComponent.cpp.obj",
+			"HandComponent.cpp.obj",
+			"HandDriver.cpp.obj",
+			"HandDriverActor.cpp.obj",
+			"HandDriverBPLibrary.cpp.obj",
+			"HandDriverController.cpp.obj",
+			"HandDriverSource.cpp.obj",
+			"HandDriverSourceFactory.cpp.obj",
+			"HandDriverTypes.cpp.obj",
+			"SHandDriverSourceFactory.cpp.obj"
+		],
+		"Module.HandDriver.gen.cpp.obj": [
+			"AnimNode_BlendHandMocap.gen.cpp.obj",
+			"AnimNode_UdexrealHandPose.gen.cpp.obj",
+			"HandComMeshComponent.gen.cpp.obj",
+			"HandComponent.gen.cpp.obj",
+			"HandDriver.init.gen.cpp.obj",
+			"HandDriverActor.gen.cpp.obj",
+			"HandDriverBPLibrary.gen.cpp.obj",
+			"HandDriverController.gen.cpp.obj",
+			"HandDriverSourceFactory.gen.cpp.obj",
+			"HandDriverTypes.gen.cpp.obj"
+		]
+	}
+}

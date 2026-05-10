@@ -901,6 +901,96 @@ def spawn_obj(path, location=None, rotation=None, scale=None,
     return actor
 
 
+# spawn_gltf_runtime — runtime glTF loading via the glTFRuntime plugin
+
+def spawn_gltf_runtime(path, location=None, rotation=None, scale=None,
+                       path_relative_to_content=False,
+                       allow_animations=True,
+                       allow_cameras=True,
+                       allow_lights=True):
+    """
+    Spawn a glTF/glb file at runtime via the glTFRuntime plugin.
+
+    Unlike spawn_obj — which routes glTF through trimesh→FBX→PyFbxFactory or
+    GLTFImportFactory→AssetImportTask (both editor-import paths) — this
+    parses the file purely at runtime: no asset import, no DDC entry, no
+    .uasset on disk. Best fit for shipped builds and for user-supplied .glb
+    files at runtime.
+
+    *path*: filesystem path. Absolute is used as-is; relative is resolved
+    relative to cwd unless *path_relative_to_content* is True, in which case
+    the plugin resolves it under the project Content directory.
+
+    Asset is ExposeOnSpawn on AglTFRuntimeAssetActor and BeginPlay walks the
+    scenes/nodes to build the component hierarchy — so it must land before
+    BeginPlay. world.actor_spawn(...kwargs) routes through SpawnActorDeferred
+    → set props → FinishSpawning, which satisfies that.
+    """
+    # Lazy import: top-level would break ue_spawn for anyone running before
+    # the plugin gets built. Rebuilding emits these into unreal_engine.classes.
+    try:
+        from unreal_engine.classes import (
+            glTFRuntimeFunctionLibrary, glTFRuntimeAssetActor,
+        )
+    except ImportError as e:
+        ue.log_warning(
+            f'spawn_gltf_runtime: glTFRuntime classes unavailable ({e}) — '
+            'enable glTFRuntime in Starcel9.uproject and rebuild.')
+        return None
+
+    world = _get_world()
+
+    file_path = path
+    if file_path and not path_relative_to_content and not os.path.isabs(file_path):
+        file_path = os.path.abspath(file_path)
+    if not path_relative_to_content and file_path and not os.path.isfile(file_path):
+        ue.log_warning(f'spawn_gltf_runtime: file not found: "{file_path}"')
+        return None
+
+    lib = ue.new_object(glTFRuntimeFunctionLibrary)
+    try:
+        # FglTFRuntimeConfig has AutoCreateRefTerm — UEPython default-constructs
+        # it when omitted (SceneScale=100, TransformBaseType=Default, etc.).
+        asset = lib.call_function(
+            'glTFLoadAssetFromFilename', file_path, path_relative_to_content)
+    except Exception as e:
+        ue.log_warning(f'spawn_gltf_runtime: load failed: {e}')
+        return None
+
+    if asset is None:
+        ue.log_warning(
+            f'spawn_gltf_runtime: glTFLoadAssetFromFilename returned None for '
+            f'"{file_path}" — invalid/unsupported glTF?')
+        return None
+
+    loc = location if location is not None else FVector(0, 0, 0)
+    rot = rotation if rotation is not None else FRotator(0, 0, 0)
+
+    actor = world.actor_spawn(
+        glTFRuntimeAssetActor, loc, rot,
+        Asset=asset,
+        bAllowNodeAnimations=allow_animations,
+        bAllowSkeletalAnimations=allow_animations,
+        bAllowPoseAnimations=allow_animations,
+        bAllowCameras=allow_cameras,
+        bAllowLights=allow_lights,
+    )
+    if actor is None:
+        ue.log_warning('spawn_gltf_runtime: actor_spawn failed.')
+        return None
+
+    if scale is not None:
+        actor.set_actor_transform(FTransform(loc, rot, scale))
+
+    try:
+        actor.set_actor_label(
+            os.path.basename(path) if path else 'glTFRuntimeAsset')
+    except Exception:
+        pass
+
+    return actor
+
+
 # spawn_primitive
 
 def spawn_primitive(primitive_type, location=None, rotation=None, scale=None):
@@ -1570,6 +1660,121 @@ def spawn_text3d(text='', location=None, rotation=None, scale=None,
             ue.log_warning(f'spawn_text3d: could not attach source_path: {e}')
 
     return actor
+
+
+# spawn_text3d_pyactor — BP_PyActorEmpty (Python host) + BP_Cell (Text3D child)
+#
+# Returns the BP_PyActorEmpty parent. The spawned BP_Cell is attached to it and
+# stored as ``parent.text3d_actor`` for the Python proxy to consume on first
+# tick (see project_pyactor_attr_after_spawn memory — attrs set after
+# spawn_pyactor are not visible in begin_play).
+
+def spawn_text3d_pyactor(python_module, python_class,
+                         text='', location=None, rotation=None, scale=None,
+                         pyactor_bp_path='/Game/Blueprints/Assets/BP_PyActorEmpty.BP_PyActorEmpty',
+                         text3d_bp_path='/Game/Blueprints/Assets/BP_Cell.BP_Cell',
+                         component_name='Text3DComponent',
+                         source_path=None,
+                         generate_overlap_events=True,
+                         enable_collision=True,
+                         name=None):
+    """
+    Spawn a BP_PyActorEmpty hosting *python_module.python_class* and attach a
+    BP_Cell Text3D actor to it.
+
+    Same end result as spawn_text3d (a Text3D actor with *text* set), but the
+    actor is parented under a BP_PyActorEmpty so a Python proxy can run
+    alongside it. The Text3D child is stored as ``parent.text3d_actor`` and
+    the Python proxy reads it on first tick.
+
+    Parameters
+    ----------
+    python_module, python_class : str — Python proxy on the BP_PyActorEmpty
+    text                        : str — Text3DComponent.Text on the child
+    pyactor_bp_path             : str — host Blueprint (default BP_PyActorEmpty)
+    text3d_bp_path              : str — Text3D Blueprint  (default BP_Cell)
+    component_name              : str — Text3D component name on the child
+    source_path                 : str — attached as ``parent.source_path`` AND
+                                        ``child.source_path``
+    generate_overlap_events,
+    enable_collision            : bool — forwarded to spawn_text3d for the
+                                         child BP_Cell
+
+    Returns
+    -------
+    parent BP_PyActorEmpty actor (or None on failure)
+    """
+    parent = spawn_pyactor(python_module, python_class,
+                           location=location, rotation=rotation, scale=scale,
+                           bp_path=pyactor_bp_path,
+                           source_path=source_path,
+                           name=name or python_class)
+    if parent is None:
+        ue.log_warning(
+            f'spawn_text3d_pyactor: spawn_pyactor failed for '
+            f'"{python_module}.{python_class}"')
+        return None
+
+    text3d_actor = spawn_text3d(text=text,
+                                location=location, rotation=rotation, scale=scale,
+                                bp_path=text3d_bp_path,
+                                component_name=component_name,
+                                source_path=source_path,
+                                generate_overlap_events=generate_overlap_events,
+                                enable_collision=enable_collision)
+    if text3d_actor is None:
+        ue.log_warning('spawn_text3d_pyactor: spawn_text3d for child returned None')
+        return parent
+
+    # Attach child -> parent so the Text3D follows the BP_PyActorEmpty.
+    # Default attach rules (SnapLoc/KeepRot/SnapScale per
+    # attach_to_component_snap_defaults memory) zero the relative location;
+    # parent and child were spawned at the same world transform so the child
+    # stays put.
+    try:
+        text3d_actor.attach_to_actor(parent)
+    except Exception as e:
+        ue.log_warning(f'spawn_text3d_pyactor: attach_to_actor failed: {e}')
+
+    # Hand the child to the Python proxy. attr is set AFTER spawn_pyactor's
+    # actor_spawn finished BeginPlay, so the proxy must read it on first tick
+    # (project_pyactor_attr_after_spawn memory).
+    try:
+        parent.text3d_actor = text3d_actor
+    except Exception as e:
+        ue.log_warning(
+            f'spawn_text3d_pyactor: could not attach text3d_actor attr: {e}')
+
+    return parent
+
+
+# spawn_text3d_executor — Text3D pyactor that runs its text as Python on Ctrl+Enter
+
+def spawn_text3d_executor(text='', location=None, rotation=None, scale=None,
+                          pyactor_bp_path='/Game/Blueprints/Assets/BP_PyActorEmpty.BP_PyActorEmpty',
+                          text3d_bp_path='/Game/Blueprints/Assets/BP_Cell.BP_Cell',
+                          component_name='Text3DComponent',
+                          source_path=None,
+                          name=None):
+    """
+    Spawn a Text3D pyactor whose Text3DComponent.Text is executed as Python
+    when the user presses Ctrl+Enter.
+
+    Hosted on BP_PyActorEmpty with a BP_Cell Text3D child — same structure as
+    spawn_text3d_pyactor, with the Python proxy fixed to
+    pyactor_text3d_executor.PyActorText3DExecutor.
+
+    Returns the BP_PyActorEmpty parent (the Text3D child is at
+    ``actor.text3d_actor``).
+    """
+    return spawn_text3d_pyactor(
+        'pyactor_text3d_executor', 'PyActorText3DExecutor',
+        text=text, location=location, rotation=rotation, scale=scale,
+        pyactor_bp_path=pyactor_bp_path,
+        text3d_bp_path=text3d_bp_path,
+        component_name=component_name,
+        source_path=source_path,
+        name=name or 'Text3DExecutor')
 
 
 # spawn_desktop_icons — grid of BP_Icon actors from a folder's shell icons
@@ -2373,6 +2578,13 @@ def spawn(
 #
 # # 3-D mesh (GLB → auto-converted to FBX via trimesh)
 # mesh = spawn('C:/models/chair.glb', location=FVector(0, 0, 0))
+#
+# # 3-D mesh (GLB → runtime parsing via glTFRuntime, no asset import)
+# import os, unreal_engine as ue
+# from ue_spawn import spawn_gltf_runtime
+# duck = spawn_gltf_runtime(
+#     os.path.join(os.path.abspath(ue.get_content_dir()), 'Models', 'Duck.glb'),
+#     location=FVector(0, 0, 100))
 #
 # # 3-D mesh (Blender file → Blender CLI conversion)
 # mesh = spawn('C:/models/scene.blend', location=FVector(100, 0, 0))

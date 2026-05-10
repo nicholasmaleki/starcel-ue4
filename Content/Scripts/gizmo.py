@@ -22,18 +22,12 @@ import unreal_engine as ue
 from unreal_engine.classes import StaticMeshActor, StaticMesh, Material, KismetMathLibrary
 from unreal_engine.enums import EComponentMobility
 from unreal_engine import FVector, FRotator, FTransform
-import os
 from unreal_engine_tools import get_world, apply_material
 
 world = get_world()
 
-# crash log
-DESKTOP = os.path.join(os.path.expanduser("~"), "Desktop")
-_log_file = open(os.path.join(DESKTOP, "gizmo_crash_log.txt"), "w", buffering=1)
-
 def _log(msg):
     ue.log_warning(msg)
-    _log_file.write(msg + "\n")
 
 # mesh paths (BasicShapes – always have collision)
 SH_CONE = '/Engine/BasicShapes/Cone'

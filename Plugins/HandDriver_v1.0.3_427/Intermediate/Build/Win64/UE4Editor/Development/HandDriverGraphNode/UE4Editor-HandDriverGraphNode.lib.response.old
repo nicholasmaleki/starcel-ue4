@@ -1,0 +1,13 @@
+/NOLOGO
+/errorReport:prompt
+/MACHINE:x64
+/SUBSYSTEM:WINDOWS
+/DEF
+/NAME:"UE4Editor-HandDriverGraphNode.dll"
+/IGNORE:4221
+/NODEFAULTLIB
+"C:\Users\yd8888\Documents\Unreal Projects\CPP_427\Intermediate\Build\Win64\CPP_427Editor\Development\UnrealEd\SharedPCH.UnrealEd.ShadowErrors.h.obj"
+"C:\Users\yd8888\Documents\Unreal Projects\CPP_427\Plugins\HandDriver_v1.0.3_427\Intermediate\Build\Win64\UE4Editor\Development\HandDriverGraphNode\Module.HandDriverGraphNode.cpp.obj"
+"C:\Users\yd8888\Documents\Unreal Projects\CPP_427\Plugins\HandDriver_v1.0.3_427\Intermediate\Build\Win64\UE4Editor\Development\HandDriverGraphNode\Module.HandDriverGraphNode.gen.cpp.obj"
+"C:\Users\yd8888\Documents\Unreal Projects\CPP_427\Plugins\HandDriver_v1.0.3_427\Intermediate\Build\Win64\UE4Editor\Development\HandDriverGraphNode\Default.rc2.res"
+/OUT:"C:\Users\yd8888\Documents\Unreal Projects\CPP_427\Plugins\HandDriver_v1.0.3_427\Intermediate\Build\Win64\UE4Editor\Development\HandDriverGraphNode\UE4Editor-HandDriverGraphNode.lib"

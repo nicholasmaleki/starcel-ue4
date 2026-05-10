@@ -1,0 +1,83 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "LiveLinkControllerBase.h"
+#include <Roles/LiveLinkAnimationTypes.h>
+#include "HandDriverController.generated.h"
+
+//DECLARE_LOG_CATEGORY_EXTERN(LogHandDriver, Log, All);
+
+USTRUCT(BlueprintType)
+struct FHandDriverControllerData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "HandDriver")
+	bool bWorldTransform = false;
+
+	UPROPERTY(EditAnywhere, Category = "HandDriver",AdvancedDisplay)
+	bool bUseLocation = true;
+
+	UPROPERTY(EditAnywhere, Category = "HandDriver", AdvancedDisplay)
+	bool bUseRotation = true;
+	
+	UPROPERTY(EditAnywhere, Category = "HandDriver", AdvancedDisplay)
+	bool bUseScale = true;
+
+	/**
+	* Whether we sweep to the destination location, triggering overlaps along the way and stopping short of the target if blocked by something.
+	* Only the root component is swept and checked for blocking collision, child components move without sweeping. If collision is off, this has no effect.
+	*/
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "HandDriver", AdvancedDisplay)
+	bool bSweep = false;
+
+	/**
+	* Whether we teleport the physics state (if physics collision is enabled for this object).
+	* If true, physics velocity for this object is unchanged (so ragdoll parts are not affected by change in location).
+	* If false, physics velocity is updated based on the change in position (affecting ragdoll parts).
+	* If CCD is on and not teleporting, this will affect objects along the entire sweep volume.
+	*/
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "HandDriver", AdvancedDisplay)
+	bool bTeleport = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "HandDriver", AdvancedDisplay)
+	bool bUseHandDriver = true;
+
+	void ApplyTransform(USceneComponent* SceneComponent, const FTransform& Transform, const FLiveLinkSkeletonStaticData& StaticData) const;
+	void CheckForError(FName OwnerName, USceneComponent* SceneComponent) const;
+};
+
+/**
+ * 
+ */
+UCLASS()
+class UHandDriverController : public ULiveLinkControllerBase
+{
+	GENERATED_BODY()
+	
+public:
+#if WITH_EDITORONLY_DATA
+	UPROPERTY()
+	FComponentReference ComponentToControlloer_DEPRECATED;
+#endif //WITH_EDITORONLY_DATA
+
+	UPROPERTY(EditAnywhere, Category = "HandDriver",meta = (ShowOnlyInnerProperties))
+	FHandDriverControllerData HandDriverData;
+
+
+public:
+	//~Begin ULiveLinkControllerBase Interface
+	virtual void OnEvaluateRegistered() override;
+	virtual void Tick(float DeltaTime,const FLiveLinkSubjectFrameData& SubjectData) override;
+	virtual bool IsRoleSupported(const TSubclassOf<ULiveLinkRole>& RoleToSupport) override;
+	virtual TSubclassOf<UActorComponent> GetDesiredComponentClass() const override;
+	virtual void SetAttachedComponent(UActorComponent* ActorComponent) override;
+	//~End ULiveLinkControllerBase Interface
+
+	//~Begin UObject Interface
+	virtual void PostLoad() override;
+
+	//~End UObject Interface
+};

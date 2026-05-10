@@ -1,6 +1,6 @@
 import unreal_engine as ue
 from unreal_engine import FVector, FRotator, FTransform
-from unreal_engine.classes import Material, Texture, Texture2D, TextureCube, Blueprint
+from unreal_engine.classes import MaterialInterface, Texture, Texture2D, TextureCube, Blueprint
 from unreal_engine.enums import EPixelFormat, EComponentMobility
 import os, itertools, time, json
 import windowtool
@@ -353,7 +353,7 @@ def get_world():
 
 def startup():
     apply_material(
-        actor_name="StickManCharacter_C",  # runtime instance name (check via print)
+        actor_name="StickManCharacter",  # runtime instance name (check via print)
         component_name="SkeletalMeshOutline",
         material_path="/Game/Materials/M_Outline.M_Outline",
         params={
@@ -362,7 +362,7 @@ def startup():
         }
     )
     apply_material(
-        actor_name="StickManCharacter_C",  # runtime instance name (check via print)
+        actor_name="StickManCharacter",  # runtime instance name (check via print)
         component_name="SkeletalMeshHeadlessOutline",
         material_path="/Game/Materials/M_Outline.M_Outline",
         params={
@@ -379,6 +379,26 @@ def startup():
     #     }
     # )
 
+
+def post_startup(uobject=None):
+    # print("Begin StickMan Possession")
+    # bp_stickman = ue.load_object(Blueprint, '/Game/ThirdPersonCPP/Blueprints/StickManCharacter.StickManCharacter')
+    # player = world.actor_spawn(bp_stickman.GeneratedClass)
+    # transform = FTransform(FVector(100, 100, 200), FRotator(0, 0, 0), FVector(1, 1, 1))
+    # player.set_actor_transform(transform)
+    # uobject.get_player_controller().Possess(player)
+    # py_player = player.get_py_proxy()
+    # py_player._setup_input()
+
+    print("Begin Drone Possession")
+    bp_drone = ue.load_object(Blueprint, '/Game/Blueprints/Assets/DroneCharacter/BP_PyDroneCharacter.BP_PyDroneCharacter')
+    player = world.actor_spawn(bp_drone.GeneratedClass)
+    transform = FTransform(FVector(100, 100, 100), FRotator(0, 0, 0), FVector(1, 1, 1))
+    player.set_actor_transform(transform)
+    uobject.get_player_controller().Possess(player)
+    py_player = player.get_py_proxy()
+    py_player._setup_input()
+
 def invalidate_world_cache():
     """Call when PIE stops/starts to force get_world() to re-scan."""
     global _world_cache, _actor_lookup_cache
@@ -394,6 +414,7 @@ world = get_world()
 print("ue tools world", world)
 
 
+# TODO: make the class finding fuzzy
 def find_actor(name, *, fuzzy=True, use_cache=True):
     """Find a single actor by name. Single pass over all_actors().
     fuzzy=True falls back to substring match when no exact match exists.
@@ -673,7 +694,7 @@ def apply_material(
     material_path="/Game/Materials/M_Color.M_Color",
     material_index=0,
     params=None,
-    bp_helper=find_actor("BP_PyActor"),  # optional Blueprint actor for cubemap conversion
+    bp_helper=find_actor("BP_PyActor"),  # TODO: Make it so you don't have to pass an actor for the optional Blueprint actor for cubemap conversion
 ):
     """
     Apply a material and set parameters by type.
@@ -694,10 +715,14 @@ def apply_material(
         actor = find_actor(actor_name)
 
     target_comp = find_component(actor, component_name)
+    if target_comp is None:
+        ue.log_warning(f"apply_material: component '{component_name}' not found on actor '{actor_name or actor}'")
+        return None
 
-    mat = ue.load_object(Material, material_path)
+    mat = ue.load_object(MaterialInterface, material_path)
     if not mat:
         ue.log_warning(f"Material not found: {material_path}")
+        return None
 
     mid = target_comp.create_material_instance_dynamic(mat)
 
@@ -730,7 +755,7 @@ def apply_material(
             else:
                 tex = load_texture_any(v)
                 if tex:
-                    mat = ue.load_object(Material, "/Game/Materials/M_SkyBoxImage.M_SkyBoxImage")
+                    mat = ue.load_object(MaterialInterface, "/Game/Materials/M_SkyBoxImage.M_SkyBoxImage")
                     if not mat:
                         ue.log_warning(f"Material not found: {material_path}")
 
@@ -756,20 +781,22 @@ def apply_material(
     return mid
 
 
-# Text3DComponent material slots — ordered to match the Details panel image.
-# "Outline" uses slot 0 when bOutline is enabled; the remaining four are
-# always present. Each entry: (slot_name, setter_method, property_name).
+# Text3DComponent material slots. Each entry: (slot_name, group_index,
+# setter_method, property_name). The group_index matches EText3DGroupType
+# in Plugins/Text3D/Source/Text3D/Public/Mesh.h — it is the slot index used
+# inside each per-glyph UStaticMeshComponent in Text3DComponent.CharacterMeshes.
 _TEXT3D_SLOTS = (
-    ('Front',   'SetFrontMaterial',   'FrontMaterial'),
-    ('Bevel',   'SetBevelMaterial',   'BevelMaterial'),
-    ('Extrude', 'SetExtrudeMaterial', 'ExtrudeMaterial'),
-    ('Back',    'SetBackMaterial',    'BackMaterial'),
+    ('Front',   0, 'SetFrontMaterial',   'FrontMaterial'),
+    ('Bevel',   1, 'SetBevelMaterial',   'BevelMaterial'),
+    ('Extrude', 2, 'SetExtrudeMaterial', 'ExtrudeMaterial'),
+    ('Back',    3, 'SetBackMaterial',    'BackMaterial'),
 )
 
 
 def apply_text3d_material(
     actor=None,
     actor_name=None,
+    component=None,
     component_name='Text3DComponent',
     material_path="/Game/Materials/M_Color.M_Color",
     params=None,
@@ -798,66 +825,133 @@ def apply_text3d_material(
     """
     params = params or {}
 
-    if actor is None and (actor_name is None or not actor_name):
-        ue.log_warning("apply_text3d_material: no actor or actor_name provided")
-        return None
-
-    if actor is None:
-        actor = find_actor(actor_name)
-    if actor is None:
-        ue.log_warning(f"apply_text3d_material: actor not found: {actor_name}")
-        return None
-
-    text3d = find_component(actor, component_name)
+    # Accept a pre-resolved component (most reliable path — bypasses any
+    # find_component naming mismatches on inherited Blueprint components).
+    text3d = component
     if text3d is None:
-        ue.log_warning(
-            f"apply_text3d_material: '{component_name}' not found on "
-            f"{actor.get_name()}")
-        return None
+        if actor is None and (actor_name is None or not actor_name):
+            ue.log_warning(
+                "apply_text3d_material: no actor / actor_name / component provided")
+            return None
+        if actor is None:
+            actor = find_actor(actor_name)
+        if actor is None:
+            ue.log_warning(f"apply_text3d_material: actor not found: {actor_name}")
+            return None
+        # Try class-based lookup first (matches how pyactor_qur and others
+        # successfully fetch the component); fall back to name-based search.
+        try:
+            text3d = actor.get_actor_component(component_name)
+        except Exception:
+            text3d = None
+        if text3d is None:
+            text3d = find_component(actor, component_name)
+        if text3d is None:
+            ue.log_warning(
+                f"apply_text3d_material: '{component_name}' not found on "
+                f"{actor.get_name()}")
+            return None
+    elif actor is None:
+        try:
+            actor = text3d.get_owner()
+        except Exception:
+            actor = None
 
-    mat = ue.load_object(Material, material_path)
+    mat = ue.load_object(MaterialInterface, material_path)
     if not mat:
         ue.log_warning(f"apply_text3d_material: material not found: {material_path}")
         return None
 
-    mid = text3d.create_material_instance_dynamic(mat)
+    # Text3DComponent is a USceneComponent, not a UPrimitiveComponent — it
+    # doesn't expose create_material_instance_dynamic. Skip the MID when no
+    # params are requested (raw material works fine on the per-slot setters);
+    # otherwise build a MID via UMaterialInstanceDynamic.Create.
+    mid = None
+    if params:
+        try:
+            from unreal_engine.classes import MaterialInstanceDynamic
+            mid = MaterialInstanceDynamic.Create(mat, actor)
+        except Exception as e:
+            ue.log_warning(
+                f"apply_text3d_material: MID creation failed ({e}); "
+                f"applying raw material and ignoring params")
 
-    for pname, v in params.items():
-        if isinstance(v, (int, float)):
-            mid.set_material_scalar_parameter(pname, float(v))
-        elif isinstance(v, (tuple, list)) and len(v) >= 3:
-            mid.set_material_vector_parameter(pname, ue.FVector(v[0], v[1], v[2]))
-        elif isinstance(v, str):
-            tex = load_texture_any(v)
-            if tex:
-                mid.set_material_texture_parameter(pname, tex)
+    target = mid if mid is not None else mat
+
+    if mid is not None:
+        for pname, v in params.items():
+            if isinstance(v, (int, float)):
+                mid.set_material_scalar_parameter(pname, float(v))
+            elif isinstance(v, (tuple, list)) and len(v) >= 3:
+                mid.set_material_vector_parameter(pname, ue.FVector(v[0], v[1], v[2]))
+            elif isinstance(v, str):
+                tex = load_texture_any(v)
+                if tex:
+                    mid.set_material_texture_parameter(pname, tex)
+                else:
+                    ue.log_warning(f"apply_text3d_material: could not load texture for "
+                                   f"param: {pname} = {v}")
+            elif hasattr(v, "get_class") and "Texture" in v.get_class().get_name():
+                mid.set_material_texture_parameter(pname, v)
             else:
-                ue.log_warning(f"apply_text3d_material: could not load texture for "
-                               f"param: {pname} = {v}")
-        elif hasattr(v, "get_class") and "Texture" in v.get_class().get_name():
-            mid.set_material_texture_parameter(pname, v)
-        else:
-            ue.log_warning(f"apply_text3d_material: unsupported param type: "
-                           f"{pname} = {type(v)}")
+                ue.log_warning(f"apply_text3d_material: unsupported param type: "
+                               f"{pname} = {type(v)}")
+
+    # The rendered geometry lives on Text3DComponent.CharacterMeshes — one
+    # UStaticMeshComponent per glyph, each with four material slots indexed
+    # by EText3DGroupType (Front=0, Bevel=1, Extrude=2, Back=3). Writing the
+    # FrontMaterial UPROPERTY alone does NOT propagate to those children —
+    # only SetFrontMaterial() does, and UEPython's UFUNCTION dispatch for
+    # those setters is unreliable with UObject args. So mirror what
+    # UText3DComponent::UpdateMaterial does in C++: set the UPROPERTY for
+    # serialization, then push the material to every child SMC directly.
+    #
+    # Each setattr below can trigger Text3D's internal UpdateMaterial which
+    # rebuilds CharacterMeshes — invalidating any Python wrappers we cached
+    # before the call. Re-fetch the list after every setattr, and skip
+    # individual glyphs that are still in invalid state (continue, not break,
+    # so a single stale ref doesn't lose the rest of the glyphs).
+    owner_name = actor.get_name() if actor is not None else '<unknown>'
+    last_glyphs = []
+
+    def _fetch_glyphs():
+        try:
+            return list(text3d.CharacterMeshes or [])
+        except Exception as e:
+            ue.log_warning(
+                f"apply_text3d_material: CharacterMeshes unavailable: {e}")
+            return []
 
     want = set(slots)
-    for slot_name, setter, prop in _TEXT3D_SLOTS:
+    for slot_name, group_index, setter, prop in _TEXT3D_SLOTS:
         if slot_name not in want:
             continue
-        applied = False
+        # Mirror onto the UPROPERTY so the Details panel reflects the change
+        # and the value survives into save/serialization.
         try:
-            getattr(text3d, setter)(mid)
-            applied = True
-        except Exception as e_call:
+            setattr(text3d, prop, target)
+        except Exception as e_prop:
+            ue.log_warning(
+                f"apply_text3d_material: setattr({prop}) failed: {e_prop}")
+        # Re-fetch — setattr may have rebuilt CharacterMeshes.
+        glyphs = _fetch_glyphs()
+        last_glyphs = glyphs
+        ok = 0
+        for smc in glyphs:
             try:
-                setattr(text3d, prop, mid)
-                applied = True
-            except Exception as e_prop:
-                ue.log_warning(
-                    f"apply_text3d_material: failed to set {slot_name} "
-                    f"(call: {e_call}; prop: {e_prop})")
-        if applied:
-            ue.log(f"apply_text3d_material: set {slot_name} on {actor.get_name()}")
+                smc.set_material(group_index, target)
+                ok += 1
+            except Exception:
+                # Stale ref from a rebuild — skip and keep going.
+                continue
+        if ok > 0:
+            ue.log(
+                f"apply_text3d_material: set {slot_name} on {owner_name} "
+                f"({ok}/{len(glyphs)} glyphs)")
+        else:
+            ue.log_warning(
+                f"apply_text3d_material: set {slot_name} on {owner_name} "
+                f"applied to 0/{len(glyphs)} glyphs (all stale)")
 
     if include_outline:
         try:
@@ -865,13 +959,24 @@ def apply_text3d_material(
         except Exception:
             has_outline = False
         if has_outline:
-            try:
-                text3d.set_material(0, mid)
-                ue.log(f"apply_text3d_material: set Outline on {actor.get_name()}")
-            except Exception as e:
-                ue.log_warning(f"apply_text3d_material: failed to set Outline: {e}")
+            glyphs = _fetch_glyphs() or last_glyphs
+            ok = 0
+            for smc in glyphs:
+                try:
+                    smc.set_material(0, target)
+                    ok += 1
+                except Exception:
+                    continue
+            if ok > 0:
+                ue.log(
+                    f"apply_text3d_material: set Outline on {owner_name} "
+                    f"({ok}/{len(glyphs)} glyphs)")
+            else:
+                ue.log_warning(
+                    f"apply_text3d_material: set Outline on {owner_name} "
+                    f"applied to 0/{len(glyphs)} glyphs (all stale)")
 
-    return mid
+    return target
 
 
 def reset_backgrounds():
@@ -926,7 +1031,7 @@ def reset_backgrounds():
     sky_light.SetActorHiddenInGame(False)
     pp_camera.set_property("bEnabled", True)
     pp_gray.set_property("bEnabled", True)
-    # mat = ue.load_object(Material, "/Game/Materials/M_SkyBoxWhiteForManualExposure")
+    # mat = ue.load_object(MaterialInterface, "/Game/Materials/M_SkyBoxWhiteForManualExposure")
     # find_component(sky_white, "").set_material(0, mat)
 
     # sky_light.set_property("bLowerHemisphereIsSolidColor", False)
@@ -990,7 +1095,7 @@ def change_background(background="white", path="file://"):
     sky_light.SetActorHiddenInGame(False)
     pp_camera.set_property("bEnabled", True)
     pp_gray.set_property("bEnabled", True)
-    # mat = ue.load_object(Material, "/Game/Materials/M_SkyBoxWhiteForManualExposure")
+    # mat = ue.load_object(MaterialInterface, "/Game/Materials/M_SkyBoxWhiteForManualExposure")
     # find_component(sky_white, "").set_material(0, mat)
 
     # sky_light.set_property("bLowerHemisphereIsSolidColor", False)
@@ -1001,12 +1106,12 @@ def change_background(background="white", path="file://"):
         ue.log_warning(f'DisableWindowTransparent failed: {e}')
 
     # TODO: Add transparency and green screen defaults https://github.com/historia-Inc/WindowTransparency https://www.fab.com/listings/a967c271-f440-4bc2-93f8-3699122f0f7b https://forums.unrealengine.com/t/transparent-window/123446
-    modes = ["white", "black", "white_no_bloom", "white_less_emissive", "stars", "sky", "image", "video", "transparent"]
+    modes = ["white", "black", "white_no_bloom", "white_less_emissive", "stars", "sky", "sky_no_time", "custom_material", "image", "video", "transparent"]
     ue.log(f"Background set to {background}")
     if background in modes:
         if background == "white":
             print("Reached white SET BACKGROUND VIDEO CALLED")
-            mat = ue.load_object(Material, "/Game/Materials/M_SkyBoxWhiteForManualExposure")
+            mat = ue.load_object(MaterialInterface, "/Game/Materials/M_SkyBoxWhiteForManualExposure")
             find_component(sky_white, "").set_material(0, mat)
             sky_sun_time.ManuallySetSunPosition = True
             sky_sun_time.SetActorHiddenInGame(False)
@@ -1028,7 +1133,7 @@ def change_background(background="white", path="file://"):
             # pp_gray.set_property("bEnabled", False)
             # pp_white.set_property("bEnabled", True) # make this a little darker for the black case
         elif background == "white_no_bloom":
-            mat = ue.load_object(Material, "/Game/Materials/M_SkyBoxWhiteForManualExposure")
+            mat = ue.load_object(MaterialInterface, "/Game/Materials/M_SkyBoxWhiteForManualExposure")
             find_component(sky_white, "").set_material(0, mat)
             sky_sun_time.ManuallySetSunPosition = True
             sky_sun_time.SetActorHiddenInGame(False)
@@ -1036,13 +1141,13 @@ def change_background(background="white", path="file://"):
             pp_nobloom.set_property("bEnabled", True)
             pp_novignette.set_property("bEnabled", True)
         elif background == "white_less_emissive":
-            mat = ue.load_object(Material, "/Game/Materials/M_SkyBoxWhiteNoEmissive")
+            mat = ue.load_object(MaterialInterface, "/Game/Materials/M_SkyBoxWhiteNoEmissive")
             find_component(sky_white, "").set_material(0, mat)
             sky_sun_time.ManuallySetSunPosition = True
             sky_sun_time.SetActorHiddenInGame(False)
             sky_white.SetActorHiddenInGame(False)
         elif background == "stars":
-            mat = ue.load_object(Material, "/Game/Materials/M_SkyBox")
+            mat = ue.load_object(MaterialInterface, "/Game/Materials/M_SkyBox")
             find_component(sky, "").set_material(0, mat)
             sky_sun_time.ManuallySetSunPosition = True
             sky_sun_time.SetActorHiddenInGame(False)
@@ -1052,6 +1157,24 @@ def change_background(background="white", path="file://"):
         elif background == "sky":
             sky_sun_time.ManuallySetSunPosition = False
             sky_sun_time.SetActorHiddenInGame(False)
+        elif background == "sky_no_time":
+            sky_sun_time.ManuallySetSunPosition = True
+            sky_sun_time.SetActorHiddenInGame(False)
+        elif background == "custom_material":
+            py_actor = find_actor("BP_PyActor")
+            # print(py_actor)
+            apply_material(
+                actor_name="SM_SkySphere",
+                material_path="/Game/Materials/M_NeonCityTexture",
+                bp_helper=py_actor,
+                params={
+                    "Emissive Multiplier": 1.0,
+                    "Texture": "M_NeonCityTexture",
+                }
+            )
+            sky_sun_time.ManuallySetSunPosition = False
+            sky_sun_time.SetActorHiddenInGame(False)
+            sky.SetActorHiddenInGame(False)
         elif background == "image":  # TODO: Make video and image auto detect
             if os.path.exists(path):
                 py_actor = find_actor("BP_PyActor")
@@ -1091,7 +1214,7 @@ def change_background(background="white", path="file://"):
             else:
                 ue.log_warning("video mode requires working path")
         elif background == "transparent":
-            # mat = ue.load_object(Material, "/Game/Materials/M_SkyBoxWhiteForManualExposure")
+            # mat = ue.load_object(MaterialInterface, "/Game/Materials/M_SkyBoxWhiteForManualExposure")
             # find_component(sky_white, "").set_material(0, mat)
             # sky_sun_time.ManuallySetSunPosition = True
             # sky_sun_time.SetActorHiddenInGame(False)
@@ -1104,7 +1227,7 @@ def change_background(background="white", path="file://"):
             #         "Emissive Multiplier": 1.0,
             #     }
             # )
-            mat = ue.load_object(Material, "/Game/Materials/M_SkyBoxGreen")
+            mat = ue.load_object(MaterialInterface, "/Game/Materials/M_SkyBoxGreen")
             find_component(sky, "").set_material(0, mat)
             pp_novignette.set_property("bEnabled", True)
             py_actor.call_function("SetWindowTransparent")
@@ -1118,7 +1241,7 @@ def change_background(background="white", path="file://"):
 
 # Background swapping
 # Define the list of background types
-backgrounds = ["white", "black", "white_no_bloom", "white_no_emissive", "stars", "sky", "transparent", r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Images\duck.hdr"]
+backgrounds = ["white", "black", "white_no_bloom", "white_no_emissive", "stars", "sky", "transparent", "custom_material", r"C:\Users\nicho\Documents\Unreal Projects\Starcel9\Images\duck.hdr"]
 global current_bg_index
 current_bg_index = 0
 

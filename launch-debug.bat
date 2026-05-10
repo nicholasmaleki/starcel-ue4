@@ -1,2 +1,3 @@
 @echo off
-cmd /k ""C:\UE_4.27Chaos_Source\Engine\Binaries\Win64\UE4Editor.exe" "%~dp0Starcel9.uproject" -log -stdout -FullStdOutLogOutput -LogCmds="LogPluginManager Verbose, LogModuleManager Verbose, LogHMD Verbose, LogSlate Verbose, LogContentBrowser Verbose, LogAssetRegistry Verbose, LogEditor Verbose, LogLiveCoding Verbose""
+cmd /c ""C:\UE_4.27Chaos_Source\Engine\Binaries\Win64\UE4Editor.exe" "%~dp0Starcel9.uproject" -log -stdout -FullStdOutLogOutput -LogCmds="LogPluginManager Verbose, LogModuleManager Verbose, LogHMD Verbose, LogSlate Verbose, LogContentBrowser Verbose, LogAssetRegistry Verbose, LogEditor Verbose, LogLiveCoding Verbose""
+exit

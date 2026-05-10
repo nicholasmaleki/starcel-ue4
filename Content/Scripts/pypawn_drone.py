@@ -93,7 +93,7 @@ class PyPawnDrone:
         '/Game/Materials/M_TextureUnlit',
     )
     CROSSHAIR_PARAM = 'Texture'
-    CROSSHAIR_SCALE = .1   # multiplier so tiny PNGs are visible at distance
+    CROSSHAIR_SCALE = .0285   # multiplier so tiny PNGs are visible at distance
     SCREEN_NAME = 'Screen'
 
     def _spawn_crosshair(self):
@@ -212,6 +212,15 @@ class PyPawnDrone:
 
     def _setup_input(self):
         self._dbg("PyPawnDrone: _setup_input")
+        pc = self.uobject.get_player_controller()
+        if pc is None:
+            ue.log_warning("PyPawnDrone: _setup_input called before Possess; aborting")
+            return
+        # APawn::EnableInput is a no-op override (just toggles bInputEnabled)
+        # and does NOT create the pawn's InputComponent, so pawn.bind_axis
+        # raises "no input manager for this uobject". Bind through the PC's
+        # InputComponent instead — InitInputSystem guarantees it exists.
+        self.input = HotkeyManager(pc, self.keyboard, self.mouse)
         self.input.bind_axis("MoveForward", self._on_axis_forward)
         self.input.bind_axis("MoveRight",   self._on_axis_right)
         self.input.bind_axis("MoveUp",      self._on_axis_up)

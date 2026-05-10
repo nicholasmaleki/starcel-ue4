@@ -1,0 +1,15 @@
+{
+	"RemapUnityFiles": 
+	{
+		"Module.HandDriverGraphNode.cpp.obj": [
+			"AnimGraphNode_BlendHandMocap.cpp.obj",
+			"AnimGraphNode_UdexrealHandPose.cpp.obj",
+			"HandDriverGraphNode.cpp.obj"
+		],
+		"Module.HandDriverGraphNode.gen.cpp.obj": [
+			"AnimGraphNode_BlendHandMocap.gen.cpp.obj",
+			"AnimGraphNode_UdexrealHandPose.gen.cpp.obj",
+			"HandDriverGraphNode.init.gen.cpp.obj"
+		]
+	}
+}

@@ -10,10 +10,14 @@
 /Saved/
 /Content/Models/Qur/
 /Content/Scripts/pickle
+/Content/Scripts/udcap.py
 /Content/Materials/starmap_g8k.hdr
 /Content/Models/PineTree/TwistedPineTree.uasset
 /Content/Models/PineTree/Scene.uasset
 /Content/Maps/PineTreeMap/
+/Plugins/glTFRuntime_4.27/
+/Plugins/CesiumForUnreal_4.27/
+
 
 # Nested starcel-installer pip-package repo (has its own git init)
 /starcel-installer/

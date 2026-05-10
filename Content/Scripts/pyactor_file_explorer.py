@@ -5,7 +5,7 @@ from unreal_engine import FVector
 from unreal_engine_tools import get_world
 from utils import human_size
 
-# Python component: file browser backed by EverythingAPI + nd_table.
+# Python component: file browser backed by os.scandir + nd_table.
 #
 # Layout (head-on view, wall_table orientation):
 #
@@ -29,11 +29,10 @@ class FileExplorer:
     MAX_FILES = 20
     ICON_COL = 0      # leading empty column reserved for icons
     ICON_COL_WIDTH = 120.0  # UU; cell width — icon size derives from this
-    ICON_FILL = 0.448  # icon diameter as fraction of min(row_h, col_w)
+    ICON_FILL = 0.8  # icon diameter as fraction of min(row_h, col_w)
     SPHERE_BASE_DIAM = 100.0  # /Engine/BasicShapes/Sphere natural diameter
 
     def begin_play(self):
-        self.api = None
         self.renderer = None
         self._icon_actors = []    # hold refs so GC doesn't eat them
         self._configured = False
@@ -55,16 +54,6 @@ class FileExplorer:
                                       None) or self.DEFAULT_FOLDER
 
         try:
-            from everything_api import EverythingAPI
-            self.api = EverythingAPI()
-        except Exception as e:
-            ue.log_warning(
-                f'FileExplorer: EverythingAPI unavailable ({e}). '
-                'Make sure Everything (Voidtools) is running and '
-                'Everything64.dll is accessible.')
-            return
-
-        try:
             from nd_table.unreal_integration import UnrealTableRenderer
             self.renderer = UnrealTableRenderer(
                 world=get_world(),
@@ -79,24 +68,48 @@ class FileExplorer:
         self.refresh()
 
     def refresh(self):
-        """Scan current_folder via Everything and render the table + icons."""
+        """Scan current_folder and render the table + icons."""
         results = self._query_folder(self.current_folder)
         self._render(results)
 
     def _query_folder(self, folder):
-        """Run a scoped Everything query — direct children of `folder` only.
+        """List direct children of `folder` via os.scandir.
 
-        Uses Everything's `parent:` modifier so we get one level deep, not
-        every nested item. A bare `"<folder>"` query is a substring match on
-        the indexed full path, which returns every descendant recursively
-        (and surfaces duplicate basenames like nested `.git` folders).
+        Folders first, then files; both alphabetical. Limited to MAX_FILES.
         """
-        query = f'parent:"{folder}"'
         try:
-            return self.api.search(query, max_results=self.MAX_FILES)
-        except Exception as e:
-            ue.log_warning(f'FileExplorer.search({query!r}): {e}')
+            with os.scandir(folder) as it:
+                entries = list(it)
+        except OSError as e:
+            ue.log_warning(f'FileExplorer.scandir({folder!r}): {e}')
             return []
+
+        def _key(e):
+            try:
+                return (0 if e.is_dir() else 1, e.name.lower())
+            except OSError:
+                return (1, e.name.lower())
+
+        entries.sort(key=_key)
+
+        results = []
+        for e in entries[:self.MAX_FILES]:
+            try:
+                st = e.stat(follow_symlinks=False)
+                size = st.st_size
+            except OSError:
+                size = 0
+            try:
+                is_folder = e.is_dir()
+            except OSError:
+                is_folder = False
+            results.append({
+                'name':      e.name,
+                'full_path': e.path,
+                'size':      size,
+                'is_folder': is_folder,
+            })
+        return results
 
     def _render(self, results):
         from nd_table.ndtable import Table

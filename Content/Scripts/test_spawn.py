@@ -23,12 +23,17 @@ Default Y spans (full-suite layout — see ``_TEST_Y_SPAN``):
   system_monitor 2800  (multi-line Text3D, long stat lines extend +Y)
   table          1800  (basic + formulas, formulas offset on X)
   desktop_icons  1500
+  desktop_icons_cylinder 1000  (D=600, H=1500 cylinder cloud, 20 icons)
   icon            800
   exe_icon        800
   nd_table       4000  (2D 10x10 through 7D)
   plot           2700  (4 plots, stride 600, half-width offset 260)
   file_explorer  3500  (21 rows × 120 cell_spacing)
   3d             2000  (drag row/col/slice gridlines)
+  3d_object       800  (Duck.glb → GLTFImporter plugin → spawn StaticMeshActor)
+  glb_object_runtime 800 (Duck.glb → glTFRuntime plugin → AglTFRuntimeAssetActor)
+  text3d_pyactor 1000  (BP_PyActorEmpty + BP_Cell child via spawn_text3d_pyactor)
+  text3d_executor 1000 (Ctrl+Enter exec()s the text via spawn_text3d_executor)
   gizmo           800  (interactive — only with uobject+input_manager)
   text3d_click   1500  (interactive — only with uobject+input_manager)
 
@@ -44,11 +49,10 @@ Usage (PIE Python console):
     from test_spawn import test_gizmo
     target, handles, tick = test_gizmo(uobject, input_manager)
 
-Per-test elapsed time is logged to Desktop/test_spawn_log.txt and
-returned on each result entry as ``results[name]['elapsed']``.
+Per-test elapsed time is emitted to the UE Output Log and returned on each
+result entry as ``results[name]['elapsed']``.
 
 Prerequisites summary printed to log at start of test_spawn_all().
-Log file: Desktop/test_spawn_log.txt
 """
 
 import os
@@ -71,13 +75,10 @@ from unreal_engine_tools import get_world
 # Final summary: env info, per-test table, total pass/fail counts.
 
 DESKTOP = os.path.join(os.path.expanduser('~'), 'Desktop')
-_LOG_PATH = os.path.join(DESKTOP, 'test_spawn_log.txt')
-_log_file = open(_LOG_PATH, 'w', buffering=1, encoding='utf-8')
 
 
 def _log(msg):
     ue.log(msg)
-    _log_file.write(msg + '\n')
 
 
 def _section(title):
@@ -240,7 +241,6 @@ def _log_env():
                 pass
     except Exception as e:
         _log(f'  World:      <err: {e}>')
-    _log(f'  Log path:   {_LOG_PATH}')
 
 
 # Prerequisites check — printed at top of test_spawn_all()
@@ -278,6 +278,11 @@ def _check_prerequisites():
          lambda: bool(ue.load_object(ue.find_class('Blueprint'),
                                      '/Game/Blueprints/Assets/BP_CesiumEarth')),
          'Requires Cesium for Unreal plugin + BP_CesiumEarth Blueprint'),
+
+        ('Plugin glTFRuntime',
+         lambda: ue.find_class('glTFRuntimeAssetActor') is not None,
+         'Enable glTFRuntime in Starcel9.uproject and rebuild — '
+         'test_glb_object_runtime needs it'),
 
         ('EverythingAPI DLL',
          lambda: _check_everything_dll(),
@@ -367,18 +372,25 @@ _TEST_Y_SPAN = {
     'test_system_monitor': 2800,   # multi-line Text3D — long stat lines extend far +Y
     'test_table':          1800,   # basic 3-row at 0 + formula 8-row at +400 (~1200 actual)
     'test_desktop_icons':  1500,   # 3-col grid × 150 spacing (~450 actual)
+    'test_desktop_icons_cylinder': 1000,  # D=600 cylinder centered at base_y+350 → Y in [+50,+650]
     'test_icon':            800,   # single sphere
     'test_exe_icon':        800,   # single sphere
     'test_nd_table':       4000,   # 2D..6D grid extends to base_y + ~3000 UU
     'test_plot':           2700,   # 4 plots × 600 stride (each plot ~502 UU wide)
     'test_file_explorer':  3500,   # 21 rows × 120 cell_spacing = 2520 actual
-    'test_3d':             2000,   # 3x3x3 cells (~300) + axis labels can extend past 1000
+    'test_3d_table_resize': 2000,  # 3x3x3 cells (~300) + axis labels can extend past 1000
+    'test_3d_object':       800,   # single GLB-loaded duck mesh
+    'test_glb_object_runtime': 800, # same Duck.glb via glTFRuntime (runtime parse)
+    'test_text3d_pyactor': 1000,   # one BP_Cell text actor (~500 wide) + buffer
+    'test_text3d_executor':1000,   # one BP_Cell text actor (~500 wide) + buffer
     'test_gizmo':           800,   # cylinder + handles ±200 from center
-    'test_text3d_click':   3000,   # text (~500 wide) + 5x5x5 table @ 400 UU at +400 (~2000 along Y)
+    'test_text3d_click':    600,   # one BP_Cell text actor (~500 wide) + buffer
 }
 
 _GOOGLE_DRIVE_EXE = r"C:\Users\nicho\Downloads\GoogleDriveSetup.exe"
 _BIG_BAD_JOHN_FLAC = r"C:\Users\nicho\Downloads\Big Bad John\Big Bad John.flac"
+_DUCK_GLB = os.path.join(
+    os.path.abspath(ue.get_content_dir()), 'Models', 'Duck.glb')
 
 
 def _find_test_image():
@@ -785,6 +797,95 @@ def test_desktop_icons(base_y=0):
                    elapsed=time.monotonic() - t0)
 
 
+def _cylinder_point_cloud(diameter, height, n_points,
+                          center_z=False, seed=None):
+    """Uniform random point cloud inside a Z-axis cylinder.
+
+    Cross-section uniformity needs r = R*sqrt(u) (not R*u — that biases
+    toward the axis). Returns a list of (x, y, z) tuples in cylinder-local
+    coords; the caller adds the world-space offset.
+    """
+    import numpy as np
+    rng = np.random.default_rng(seed)
+    R = diameter / 2.0
+    r = R * np.sqrt(rng.random(n_points))
+    theta = rng.uniform(0.0, 2.0 * np.pi, n_points)
+    x = r * np.cos(theta)
+    y = r * np.sin(theta)
+    if center_z:
+        z = rng.uniform(-height / 2.0, height / 2.0, n_points)
+    else:
+        z = rng.uniform(0.0, height, n_points)
+    return list(zip(x.tolist(), y.tolist(), z.tolist()))
+
+
+def test_desktop_icons_cylinder(base_y=0):
+    """Spawn desktop icons positioned in a uniform cylindrical point cloud.
+
+    UE scaling notes:
+      • Icons are ~150 UU spheres (BP_Icon default), so a 600 UU diameter
+        gives ~4 icon-widths across — enough to read as a column, not a
+        wall. Height 1500 UU (~15 m) makes the cylinder visibly taller
+        than wide.
+      • 20 points in a ~4.2e8 UU³ volume → ~270 UU mean nearest-neighbour
+        spacing, comfortably more than icon diameter.
+      • Cylinder axis sits at (X=0, Y=base_y+350, Z=200+H/2) so the whole
+        cloud fits inside the test's allocated Y band [base_y, base_y+1000]
+        and Z stays clear of the ground.
+    """
+    from icon_to_image import get_folder_icons
+    from ue_spawn import spawn_icon
+
+    DIAMETER = 600.0
+    HEIGHT   = 1500.0
+    N_POINTS = 20
+    Z_BASE   = 200.0
+    Y_CENTER = base_y + 350.0
+    SEED     = 42
+
+    actors = []
+    t0 = time.monotonic()
+    folder = os.path.join(os.path.expanduser('~'), 'Desktop')
+    try:
+        icons = get_folder_icons(folder)
+    except Exception as e:
+        _log_exception('desktop_icons_cylinder.scan', e)
+        icons = {}
+
+    paths = list(icons.items())[:N_POINTS]
+    if not paths:
+        _log(f'  desktop_icons_cylinder: no icons found in "{folder}"')
+        return _result('desktop_icons_cylinder', None,
+                       extra='0 icons (empty folder)',
+                       elapsed=time.monotonic() - t0)
+
+    try:
+        cloud = _cylinder_point_cloud(
+            diameter=DIAMETER, height=HEIGHT,
+            n_points=len(paths), seed=SEED)
+    except Exception as e:
+        _log_exception('desktop_icons_cylinder.cloud', e)
+        return _result('desktop_icons_cylinder', None,
+                       extra='cloud generation failed',
+                       elapsed=time.monotonic() - t0)
+
+    for (path, pil_img), (cx, cy, cz) in zip(paths, cloud):
+        loc = FVector(cx, Y_CENTER + cy, Z_BASE + cz)
+        try:
+            actor = spawn_icon(pil_img, location=loc, source_path=path)
+            if actor:
+                actors.append(actor)
+        except Exception as e:
+            ue.log_warning(
+                f'desktop_icons_cylinder: spawn_icon failed for "{path}": {e}')
+
+    first = actors[0] if actors else None
+    return _result(
+        'desktop_icons_cylinder', first,
+        extra=f'{len(actors)} spawned in D={DIAMETER:.0f}/H={HEIGHT:.0f} cylinder',
+        elapsed=time.monotonic() - t0)
+
+
 def test_icon(base_y=0):
     """Spawn a BP_Icon from a plain PIL image."""
     from ue_spawn import spawn_icon
@@ -879,7 +980,7 @@ def test_file_explorer(base_y=0):
 # ticked by a PyActor — LMB-drag on any gridline resizes that row (axis 0),
 # column (axis 1), or slice/layer (axis 2).
 
-def test_3d(base_y=0):
+def test_3d_table_resize(base_y=0):
     """Spawn a 3x3x3 resizable table for trying out row/col/slice drag-resize.
 
     Hover a gridline, then LMB-drag to resize the adjacent row (axis 0),
@@ -902,7 +1003,7 @@ def test_3d(base_y=0):
             enable_resize=True,
         )
     except Exception as e:
-        _log_exception('3d', e)
+        _log_exception('3d_table_resize', e)
     extra = 'drag gridlines: row/col/slice resize'
     try:
         if actor is not None:
@@ -913,7 +1014,239 @@ def test_3d(base_y=0):
                 extra = f'{n_cells} cells, {n_lines} gridlines (drag to resize row/col/slice)'
     except Exception:
         pass
-    return _result('3d', actor, extra=extra, elapsed=time.monotonic() - t0)
+    return _result('3d_table_resize', actor, extra=extra, elapsed=time.monotonic() - t0)
+
+
+# Dynamic 3D object test — runtime GLB import via the GLTFImporter plugin
+# (enabled in Starcel9.uproject), then StaticMeshActor + SetStaticMesh.
+#
+# Why not ue.import_asset(_DUCK_GLB, '/Game/Models')?  AssetTools' ImportAssets
+# hardcodes bAutomated=false (UE 4.27 AssetTools.cpp:1298), so GLTFImportFactory
+# pops a modal "glTF Import Options" SWindow during PIE.  In gameplay that
+# dialog is invisible / unfocusable, so the import never completes and the
+# duck never spawns.  Workaround: instantiate UGLTFImportFactory ourselves,
+# attach a UAssetImportTask with bAutomated=True, then call
+# factory_import_object — IsAutomatedImport() returns true and the modal is
+# skipped (defaults: ImportScale=100, bGenerateLightmapUVs=false).
+#
+# Why not ue_spawn.spawn_obj?  spawn_obj routes GLB through trimesh → FBX →
+# PyFbxFactory, but trimesh has no FBX exporter (its exchange formats are
+# OBJ/PLY/STL/GLB/GLTF/DAE/3MF — no FBX), so that path returns None even
+# with `pip install trimesh`.  The Blender fallback works only if Blender
+# is on PATH.
+
+def test_3d_object(base_y=0):
+    """Spawn Content/Models/Duck.glb dynamically via the GLTFImporter plugin.
+
+    Pipeline:
+      1. ue.load_object('/Game/Models/Duck') if already imported.
+      2. Otherwise: GLTFImportFactory + AssetImportTask(bAutomated=True) →
+         factory_import_object — bypasses the modal options dialog that
+         AssetTools.ImportAssets would otherwise show.
+      3. world.actor_spawn(StaticMeshActor) + Mobility=Movable BEFORE
+         SetStaticMesh (see feedback_movable_mobility memory).
+    """
+    from unreal_engine.classes import StaticMesh, StaticMeshActor
+    from unreal_engine.enums import EComponentMobility
+
+    if not os.path.isfile(_DUCK_GLB):
+        return _skip('3d_object', f'not found: {_DUCK_GLB}')
+
+    t0 = time.monotonic()
+    dest_folder = '/Game/Models'
+    # GLTFImportFactory writes the mesh under /Game/Models/Duck/<glTF mesh name>.
+    # For Duck.glb the mesh name is "LOD3spShape" (prefixed "0_" by the factory).
+    # Probe that path FIRST so re-runs hit the cached .uasset and skip the
+    # 5-second distance-field rebuild that re-import triggers — and the
+    # bare /Game/Models/Duck paths (which always miss for this glTF) never
+    # get reached, eliminating their LogLinker miss warnings on every run.
+    asset_candidates = [
+        '/Game/Models/Duck/0_LOD3spShape',
+        '/Game/Models/Duck',
+        '/Game/Models/Duck/Duck',
+    ]
+
+    def _load_first():
+        for p in asset_candidates:
+            try:
+                obj = ue.load_object(StaticMesh, p)
+                if obj is not None:
+                    return obj
+            except Exception:
+                continue
+        return None
+
+    def _scan_dest_for_static_mesh():
+        """Scan dest_folder via AssetRegistry for any StaticMesh — used after
+        factory_import_object returns the outer rather than the mesh itself."""
+        try:
+            from unreal_engine.classes import AssetRegistryHelpers
+            registry = AssetRegistryHelpers.GetAssetRegistry()
+        except Exception:
+            return None
+        assets = None
+        for method in ('get_assets_by_path', 'GetAssetsByPath'):
+            fn = getattr(registry, method, None)
+            if fn is None:
+                continue
+            try:
+                assets = fn(dest_folder, True)
+                break
+            except Exception:
+                continue
+        if not assets:
+            return None
+        for data in assets:
+            try:
+                loaded = data.get_asset() if hasattr(data, 'get_asset') else None
+                if loaded is not None and _is_static_mesh(loaded):
+                    return loaded
+            except Exception:
+                continue
+        return None
+
+    def _is_static_mesh(obj):
+        try:
+            return obj is not None and obj.get_class().get_name() == 'StaticMesh'
+        except Exception:
+            return False
+
+    # Step 1: load if already imported.
+    mesh = _load_first()
+
+    # Step 2: import via UGLTFImportFactory with bAutomated=True so the
+    # plugin's options dialog is skipped (see header comment).
+    if mesh is None:
+        try:
+            factory_class = ue.find_class('GLTFImportFactory')
+            task_class = ue.find_class('AssetImportTask')
+            if factory_class is None or task_class is None:
+                raise Exception(
+                    'GLTFImportFactory / AssetImportTask class not found — '
+                    'is the GLTFImporter plugin enabled in Starcel9.uproject?')
+            factory = ue.new_object(factory_class)
+            task = ue.new_object(task_class)
+            task.bAutomated = True
+            task.bReplaceExisting = True
+            task.bSave = False
+            task.Filename = _DUCK_GLB
+            task.DestinationPath = dest_folder
+            factory.AssetImportTask = task
+            asset = factory.factory_import_object(_DUCK_GLB, dest_folder)
+            if _is_static_mesh(asset):
+                mesh = asset
+            else:
+                # factory_import_object can return the package's outer for
+                # multi-mesh glTF; fall back to canonical asset paths, then
+                # scan the dest folder for any StaticMesh.
+                mesh = _load_first() or _scan_dest_for_static_mesh()
+        except Exception as e:
+            _log_exception('3d_object/factory_import', e)
+            mesh = _load_first() or _scan_dest_for_static_mesh()
+
+    if mesh is None:
+        return _result('3d_object', None,
+                       inputs={'path': _DUCK_GLB, 'dest': dest_folder},
+                       extra='import failed — is GLTFImporter plugin enabled?',
+                       elapsed=time.monotonic() - t0)
+
+    # Step 3: spawn StaticMeshActor.  Mobility must be Movable BEFORE
+    # SetStaticMesh on respawn (project memory: feedback_movable_mobility).
+    actor = None
+    try:
+        world = get_world()
+        actor = world.actor_spawn(StaticMeshActor)
+        smc = actor.StaticMeshComponent
+        smc.Mobility = EComponentMobility.Movable
+        smc.SetStaticMesh(mesh)
+        actor.set_actor_location(FVector(0, base_y, 100))
+        actor.set_actor_scale(FVector(0.01, 0.01, 0.01))
+    except Exception as e:
+        _log_exception('3d_object/spawn', e)
+
+    return _result('3d_object', actor,
+                   inputs={'path': _DUCK_GLB, 'dest': dest_folder},
+                   extra=f'mesh={mesh.get_name()} via GLTFImporter',
+                   elapsed=time.monotonic() - t0)
+
+
+# Same Duck.glb, different pipeline:
+#   • test_3d_object         → editor-import path. UGLTFImportFactory +
+#                              AssetImportTask(bAutomated=True) writes a
+#                              .uasset to /Game/Models, then a StaticMeshActor
+#                              points at it.
+#   • test_glb_object_runtime → ue_spawn.spawn_gltf_runtime. Calls
+#                              UglTFRuntimeFunctionLibrary::glTFLoadAssetFromFilename
+#                              and spawns AglTFRuntimeAssetActor with Asset as
+#                              an ExposeOnSpawn kwarg (must land before BeginPlay
+#                              — that's where the plugin walks scenes/nodes to
+#                              build the component tree). No .uasset on disk.
+
+def test_glb_object_runtime(base_y=0):
+    """Spawn Content/Models/Duck.glb at runtime via the glTFRuntime plugin.
+
+    Side-by-side with test_3d_object so the duck shows up twice in the same
+    suite — easy visual confirmation that both pipelines work and produce a
+    matching mesh. The glTFRuntime version is the only one that survives in
+    a packaged build (editor importers are stripped).
+    """
+    from ue_spawn import spawn_gltf_runtime
+
+    if not os.path.isfile(_DUCK_GLB):
+        return _skip('glb_object_runtime', f'not found: {_DUCK_GLB}')
+    if ue.find_class('glTFRuntimeAssetActor') is None:
+        return _skip(
+            'glb_object_runtime',
+            'glTFRuntime plugin not loaded — enable in Starcel9.uproject + rebuild')
+
+    t0 = time.monotonic()
+    actor = None
+    try:
+        actor = spawn_gltf_runtime(
+            _DUCK_GLB,
+            location=FVector(0, base_y, 100),
+            scale=FVector(0.1, 0.1, 0.1))
+    except Exception as e:
+        _log_exception('glb_object_runtime/spawn', e)
+
+    return _result('glb_object_runtime', actor,
+                   inputs={'path': _DUCK_GLB, 'spawner': 'spawn_gltf_runtime'},
+                   extra='via glTFRuntime plugin (runtime parse, no .uasset)',
+                   elapsed=time.monotonic() - t0)
+
+
+def test_text3d_executor(base_y=0):
+    """Spawn a Ctrl+Enter Python executor Text3D.
+
+    Exercises ue_spawn.spawn_text3d_executor — the convenience wrapper
+    around spawn_text3d_pyactor that hardcodes the
+    pyactor_text3d_executor.PyActorText3DExecutor proxy.
+
+    Click the spawned text to focus it (requires test_text3d_click typing
+    setup), edit the code, then press Ctrl+Enter to exec(). The default
+    payload is a one-line ue.log call so a smoke test is visible in the
+    Output Log.
+    """
+    from ue_spawn import spawn_text3d_executor
+    actor = None
+    t0 = time.monotonic()
+    try:
+        actor = spawn_text3d_executor(
+            text='ue.log("hello from Ctrl+Enter")',
+            location=FVector(0, base_y, 200),
+        )
+    except Exception as e:
+        _log_exception('text3d_executor', e)
+
+    child = None
+    try:
+        child = getattr(actor, 'text3d_actor', None) if actor else None
+    except Exception:
+        pass
+    extra = (f'child={child.get_name()} (Ctrl+Enter to run)'
+             if child else 'no child attached')
+    return _result('text3d_executor', actor, extra=extra,
+                   elapsed=time.monotonic() - t0)
 
 
 def test_gizmo(uobject=None, input_manager=None, location=None, base_y=0):
@@ -1137,7 +1470,7 @@ def test_spawn_all(uobject=None, input_manager=None, tests=None):
     Run only one test:
         test_spawn_all(tests=['video'])
 
-    Open Desktop/test_spawn_log.txt for the PASS/FAIL report.
+    PASS/FAIL report is written to the UE Output Log.
     """
     run_t0 = time.monotonic()
 
@@ -1148,6 +1481,7 @@ def test_spawn_all(uobject=None, input_manager=None, tests=None):
     _log_env()
     _check_prerequisites()
 
+    # TODO: No dict
     # (fn_name, callable_taking_base_y) pairs — order = layout order.
     non_interactive = [
         ('test_primitives',     test_primitives),
@@ -1159,12 +1493,16 @@ def test_spawn_all(uobject=None, input_manager=None, tests=None):
         ('test_system_monitor', test_system_monitor),
         ('test_table',          test_table),
         ('test_desktop_icons',  test_desktop_icons),
+        ('test_desktop_icons_cylinder', test_desktop_icons_cylinder),
         ('test_icon',           test_icon),
         ('test_exe_icon',       test_exe_icon),
         ('test_nd_table',       test_nd_table),
         ('test_plot',           test_plot),
         ('test_file_explorer',  test_file_explorer),
-        ('test_3d',             test_3d),
+        ('test_3d_table_resize', test_3d_table_resize),
+        ('test_3d_object',      test_3d_object),
+        ('test_glb_object_runtime', test_glb_object_runtime),
+        ('test_text3d_executor', test_text3d_executor),
     ]
     interactive = [
         ('test_gizmo',
@@ -1228,7 +1566,6 @@ def test_spawn_all(uobject=None, input_manager=None, tests=None):
     _log('=' * 70)
     _log(f'RESULTS: {passed} PASS / {failed} FAIL  (total {len(results)})')
     _log(f'Total elapsed: {time.monotonic() - run_t0:.2f}s')
-    _log(f'Log:     {_LOG_PATH}')
     _log('=' * 70)
 
     # Per-test table — fast scan of what passed/failed, class returned, time taken
@@ -1271,334 +1608,51 @@ def test_spawn_all(uobject=None, input_manager=None, tests=None):
     return results
 
 
-# Text3D click investigation (manual — call, then click the spawned text)
-
-def _resolve_char_from_meshes(actor, hit):
-    """
-    Identify which character the hit point landed on by transforming the
-    world-space hit into the actor's local space and walking the
-    CharacterKernings Y positions (character advance axis in Text3D CPP).
-
-    The Text3DComponent.cpp layout:
-      • Characters advance along **local Y**
-      • Lines descend along **local -Z**
-      • Collision comes from a single UBoxComponent ("Text3D_Bounds")
-        that blocks ECC_Visibility — individual glyph meshes ignore
-        all channels.
-      • Spaces (bIsVisible=false) are skipped in CharacterMeshes /
-        CharacterKernings, so glyph index != string index when spaces
-        are present.
-
-    Returns (char_index, letter) or (None, None).
-    """
-    t3d = None
-    try:
-        t3d = actor.get_actor_component('Text3DComponent')
-    except Exception:
-        return None, None
-    if t3d is None:
-        return None, None
-
-    text = ''
-    try:
-        text = str(t3d.Text or '')
-    except Exception:
-        pass
-
-    # Get glyph kerning components (one per visible character)
-    kernings = None
-    try:
-        kernings = t3d.CharacterKernings
-    except Exception:
-        pass
-
-    char_meshes = None
-    try:
-        char_meshes = t3d.CharacterMeshes
-    except Exception:
-        pass
-
-    n_glyphs = 0
-    if kernings is not None:
-        n_glyphs = len(kernings)
-    elif char_meshes is not None:
-        n_glyphs = len(char_meshes)
-    if n_glyphs == 0:
-        return None, None
-
-    # Transform hit point into actor local space
-    local_pt = _world_to_local(actor, hit.impact_point)
-    if local_pt is None:
-        return None, None
-
-    # Collect the left-edge Y of each glyph from CharacterKernings.
-    # CPP sets: GlyphLocation = Location; Location.Y += GetAdvanced(...)
-    # So kerning[i].RelativeLocation.Y is the LEFT EDGE of glyph i.
-    glyph_edges = []  # (left_y, glyph_index)
-    for i in range(n_glyphs):
-        glyph_y = None
-        if kernings is not None and i < len(kernings) and kernings[i] is not None:
-            try:
-                rel = kernings[i].get_relative_location()
-                glyph_y = rel.y
-            except Exception:
-                pass
-        if glyph_y is None and char_meshes is not None and i < len(char_meshes):
-            try:
-                mesh_world = char_meshes[i].get_world_location()
-                mesh_local = _world_to_local(actor, mesh_world)
-                if mesh_local:
-                    glyph_y = mesh_local.y
-            except Exception:
-                pass
-        if glyph_y is not None:
-            glyph_edges.append((glyph_y, i))
-
-    if not glyph_edges:
-        return None, None
-
-    # Sort by Y so we can do interval lookup
-    glyph_edges.sort(key=lambda e: e[0])
-
-    # A click between edge[i] and edge[i+1] belongs to glyph i.
-    # A click past the last edge belongs to the last glyph.
-    # A click before the first edge belongs to the first glyph.
-    best_idx = glyph_edges[0][1]  # default: first glyph
-    for j in range(len(glyph_edges)):
-        if local_pt.y >= glyph_edges[j][0]:
-            best_idx = glyph_edges[j][1]
-        else:
-            break
-
-    if best_idx < 0:
-        return None, None
-
-    # Map glyph index → string index.  Spaces (bIsVisible=false) are
-    # skipped in CharacterKernings/Meshes, so we count visible chars.
-    visible_idx = 0
-    flat = text.replace('\n', '')
-    letter = '?'
-    for ch_pos, ch in enumerate(flat):
-        if ch == ' ':
-            continue  # spaces have no kerning component
-        if visible_idx == best_idx:
-            letter = ch
-            best_idx = ch_pos  # return string index, not glyph index
-            break
-        visible_idx += 1
-
-    return best_idx, letter
-
-
-def _resolve_char_fixed_width(local_pt, text_content):
-    """
-    Fallback: fixed-width grid (CHAR_WIDTH=50, CHAR_HEIGHT=50).
-    Returns (char_index, letter, col, row).
-    """
-    CHAR_WIDTH = 50.0
-    CHAR_HEIGHT = 50.0
-    col = int(local_pt.y / CHAR_WIDTH)
-    row = int(-local_pt.z / CHAR_HEIGHT)
-
-    letter = '?'
-    char_index = -1
-    if text_content:
-        lines = text_content.split('\n')
-        if 0 <= row < len(lines):
-            line = lines[row]
-            if 0 <= col < len(line):
-                letter = line[col]
-                # Flat index across all lines
-                char_index = sum(len(lines[r]) for r in range(row)) + col
-    return char_index, letter, col, row
-
-
-def _world_to_local(actor, world_pt):
-    """Transform *world_pt* into *actor*'s local space."""
-    import math
-    try:
-        from unreal_engine.classes import KismetMathLibrary
-        return KismetMathLibrary.InverseTransformLocation(
-            actor.get_actor_transform(), world_pt)
-    except Exception:
-        pass
-    try:
-        loc = actor.get_actor_location()
-        rot = actor.get_actor_rotation()
-        delta = FVector(world_pt.x - loc.x,
-                        world_pt.y - loc.y,
-                        world_pt.z - loc.z)
-        yaw = math.radians(-rot.yaw)
-        pitch = math.radians(-rot.pitch)
-        roll = math.radians(-rot.roll)
-        cy, sy = math.cos(yaw), math.sin(yaw)
-        x1 =  cy * delta.x + sy * delta.y
-        y1 = -sy * delta.x + cy * delta.y
-        z1 = delta.z
-        cp, sp = math.cos(pitch), math.sin(pitch)
-        x2 =  cp * x1 - sp * z1
-        y2 = y1
-        z2 =  sp * x1 + cp * z1
-        cr, sr = math.cos(roll), math.sin(roll)
-        return FVector(x2, cr * y2 + sr * z2, -sr * y2 + cr * z2)
-    except Exception as e:
-        _log(f'text3d_click: _world_to_local failed: {e}')
-        return None
-
-
-def _log_click_on_actor_from_hit(actor, hit, text_content=None):
-    """
-    Given a pre-resolved FHitResult on *actor*, resolve the clicked
-    character and log it.
-
-    Two strategies, tried in order:
-      1. **CharacterMeshes** — use Text3DComponent.CharacterMeshes (one
-         child mesh per glyph) for pixel-accurate hit detection on
-         proportional fonts.
-      2. **Fixed-width grid** — fall back to CHAR_WIDTH=50 / CHAR_HEIGHT=50
-         monospace approximation.
-
-    Both produce a per-letter log entry including the exact letter, its
-    index in the string, and local-space coordinates (useful for
-    computing cursor insertion position).
-    """
-    import math
-
-    world_pt = hit.impact_point
-
-    # Read text from the actor if not passed in
-    if text_content is None:
-        try:
-            t3d = actor.get_actor_component('Text3DComponent')
-            if t3d:
-                text_content = str(t3d.Text or '')
-        except Exception:
-            text_content = ''
-
-    # Strategy 1: CharacterMeshes (proportional-accurate)
-    mesh_idx, mesh_letter = _resolve_char_from_meshes(actor, hit)
-
-    # Strategy 2: fixed-width fallback
-    local_pt = _world_to_local(actor, world_pt)
-    fw_idx, fw_letter, fw_col, fw_row = (-1, '?', -1, -1)
-    if local_pt is not None:
-        fw_idx, fw_letter, fw_col, fw_row = _resolve_char_fixed_width(
-            local_pt, text_content)
-
-    # Pick the best result
-    if mesh_idx is not None and mesh_idx >= 0:
-        method = 'CharacterMeshes'
-        letter = mesh_letter
-        idx = mesh_idx
-    else:
-        method = 'fixed-width'
-        letter = fw_letter
-        idx = fw_idx
-
-    local_str = ''
-    if local_pt is not None:
-        local_str = f'local=({local_pt.y:.1f},{local_pt.z:.1f})  '
-
-    _log(
-        f'text3d_click: letter="{letter}"  index={idx}  '
-        f'method={method}  '
-        f'actor={actor.get_name()}  text="{text_content}"  '
-        f'{local_str}'
-        f'world=({world_pt.x:.1f},{world_pt.y:.1f},{world_pt.z:.1f})'
-    )
-
-
-def _spawn_highlight_box(world):
-    """Spawn a translucent cube used as a selection-highlight rectangle.
-
-    The blinking insertion caret is owned by PyActorText3D's singleton
-    PyActorCursor — see pyactor_cursor.py.  This helper is only for the
-    selection-highlight pool (multiple coexisting boxes, no blink)."""
-    try:
-        from unreal_engine.classes import StaticMeshActor, StaticMesh, Material
-        from unreal_engine.enums import EComponentMobility
-
-        actor = world.actor_spawn(StaticMeshActor)
-        smc = actor.StaticMeshComponent
-        cube = ue.load_object(StaticMesh, '/Engine/BasicShapes/Cube.Cube')
-        smc.SetStaticMesh(cube)
-        smc.SetMobility(EComponentMobility.Movable)
-
-        # Try translucent material, fall back to any available
-        mid = None
-        for mat_path in ('/Game/Materials/M_Color_Translucent.M_Color_Translucent',
-                         '/Game/Materials/M_TextureUnlit.M_TextureUnlit',
-                         '/Game/Materials/M_Icon.M_Icon'):
-            try:
-                mat = ue.load_object(Material, mat_path)
-                mid = smc.create_material_instance_dynamic(mat)
-                break
-            except Exception:
-                continue
-        if mid is not None:
-            smc.set_material(0, mid)
-
-        # Thin vertical bar: width=2.5 UU, height=50 UU, depth=1 UU
-        actor.set_actor_scale(FVector(0.01, 0.025, 0.5))
-        # Disable collision so click-traces pass through the cursor itself
-        try:
-            actor.SetActorEnableCollision(False)
-        except Exception:
-            pass
-        actor.SetActorHiddenInGame(True)
-        return actor, mid
-    except Exception as e:
-        _log(f'text3d_click: cursor spawn failed: {e}')
-        return None, None
-
-
 def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0):
     """
-    Spawn a Text3D actor with known string "ABCDEFGHIJ" and a 3x3 test table.
-    Returns (single_actor, table_renderer).
+    Spawn one Text3D actor with the known string "ABCDEFGHIJ" so the
+    PyActorText3D click + typing system has a target to focus.  The
+    typing/selection state machine itself lives on PyActorText3D
+    (class-level) — this function just spawns the actor and registers
+    it.  The previous closure-based prototype here, plus its 5x5x5
+    test table, was absorbed into pyactor_text3d.PyActorText3D.
 
-    uobject       — the PyActor UObject (self.uobject from Main); used for
-                    get_hit_result_under_cursor traces.
-    input_manager — self.input from Main; used for bind_press/bind_release
-                    on LeftMouseButton.
-    location      — FVector spawn position. Defaults to FVector(400, base_y, 150).
-    base_y        — used only when *location* is None; lets the test_spawn_all
-                    dispatcher place this band sequentially.
-
-    A PyActorGlobalClick singleton is spawned to own the per-frame work
-    (keyboard poll, caret blink, click dispatch). Main.tick does NOT need to
-    forward delta_time anywhere.
+    uobject       — kept for back-compat with the test_spawn_all
+                    dispatch signature; no longer used.
+    input_manager — same; mouse polling is now Win32 (VK_LBUTTON), so
+                    no HotkeyManager dependency.
+    location      — FVector spawn position. Defaults to FVector(400, base_y, 450).
+    base_y        — used only when *location* is None.
 
     Re-call from PIE console at any position:
         from test_spawn import test_text3d_click
         from unreal_engine import FVector
-        a, t = test_text3d_click(uobject, input_manager, FVector(500, 200, 150))
+        a = test_text3d_click(location=FVector(500, 200, 150))
 
     BP_Cell requirements:
       - Text3DComponent -> Generate Hit Events = ON
       - Collision response to WorldDynamic = Block
     """
-    from ue_spawn import spawn_blueprint, spawn_table_actor
+    from ue_spawn import spawn_blueprint
+    from pyactor_text3d import PyActorText3D
 
     if location is None:
         location = FVector(400, base_y, 450)
 
     _log('--- test_text3d_click ---')
-    _log(f'Spawning at {location}  (table at Y+400)')
+    _log(f'Spawning at {location}')
     _log('BP_Cell requirement: Text3DComponent -> Generate Hit Events = ON')
 
-    # Single-string actor: "ABCDEFGHIJ"
-    single_actor = None
+    actor = None
     try:
-        single_actor = spawn_blueprint(
+        actor = spawn_blueprint(
             '/Game/Blueprints/Assets/BP_Cell.BP_Cell',
             location=location,
         )
-        if single_actor:
-            t3d = single_actor.get_actor_component('Text3DComponent')
+        if actor is not None:
+            t3d = actor.get_actor_component('Text3DComponent')
             if t3d:
                 t3d.Text = 'ABCDEFGHIJ'
-                # Enable collision for trace detection
                 try:
                     t3d.SetGenerateOverlapEvents(True)
                 except Exception:
@@ -1609,1165 +1663,17 @@ def test_text3d_click(uobject=None, input_manager=None, location=None, base_y=0)
                     pass
                 _log('text3d_click: spawned single actor "ABCDEFGHIJ"')
             else:
-                _log('text3d_click: WARNING - no Text3DComponent found on BP_Cell actor')
-            # Also try enabling collision on the actor root
+                _log('text3d_click: WARNING - no Text3DComponent on BP_Cell')
             try:
-                single_actor.SetActorEnableCollision(True)
+                actor.SetActorEnableCollision(True)
             except Exception:
                 pass
+            # Ensure registration even when BP_Cell lacks the PyActorText3D
+            # PythonComponent (begin_play wouldn't have fired).  Both calls
+            # are idempotent.
+            PyActorText3D.register_actor(actor)
+            PyActorText3D._ensure_global_typing()
     except Exception as e:
-        _log(f'text3d_click: single actor spawn failed: {e}')
+        _log(f'text3d_click: spawn failed: {e}')
 
-    # 5x5x5 test table — uses spawn_table_actor so the renderer's gridline
-    # resize controller is ticked every frame (LMB-drag a gridline to resize
-    # row/col/slice; cursor changes on hover).
-    CELL_SIZE = 400.0  # uniform row width / column height / slice depth
-    GRID_N = 5
-    table_renderer = None
-    try:
-        from nd_table.ndtable import Table
-        t = Table(shape=(GRID_N, GRID_N, GRID_N))
-        for i in range(GRID_N):
-            for j in range(GRID_N):
-                for k in range(GRID_N):
-                    t[(i, j, k)] = f'r{i}c{j}s{k}'
-        # Front slice (k=0) keeps the original "Col A / Hello / Click" content
-        # used by the typing test for click-to-edit.
-        t[(0, 0, 0)] = 'Col A'; t[(0, 1, 0)] = 'Col B'; t[(0, 2, 0)] = 'Col C'
-        t[(1, 0, 0)] = 'Hello'; t[(1, 1, 0)] = 'World'; t[(1, 2, 0)] = '123'
-        t[(2, 0, 0)] = 'Click'; t[(2, 1, 0)] = 'Me';    t[(2, 2, 0)] = '!'
-
-        table_actor = spawn_table_actor(
-            t,
-            location=FVector(location.x, location.y + 400, location.z),
-            enable_resize=True,
-        )
-        if table_actor is not None:
-            proxy = table_actor.get_py_proxy()
-            if proxy is not None and proxy.renderer is not None:
-                # Force every row/column/slice to the same size so the grid
-                # is a true cube. set_user_size wins over auto-size in
-                # recompute_layout.
-                for axis in (0, 1, 2):
-                    for idx in range(GRID_N):
-                        proxy.renderer.set_user_size(axis, idx, CELL_SIZE)
-                proxy.renderer.recompute_layout()
-                table_renderer = proxy.renderer
-        if table_renderer is not None:
-            _log(f'text3d_click: spawned 3D resizable table '
-                 f'({len(table_renderer.cell_actors)} cells, '
-                 f'{GRID_N}x{GRID_N}x{GRID_N} @ {CELL_SIZE:.0f} UU)')
-    except Exception as e:
-        _log(f'text3d_click: table spawn failed: {e}')
-
-    # Build watched dict: actor → text content
-    watched = {}   # actor → str (text shown by that actor's Text3DComponent)
-    # Reverse-lookup: cell actor → owning table renderer. Used on unfocus
-    # to call renderer.recompute_layout() so the table refits the new
-    # text content (skipped when the renderer's auto_size is False).
-    watched_renderer = {}
-    if single_actor:
-        watched[single_actor] = 'ABCDEFGHIJ'
-    if table_renderer and hasattr(table_renderer, 'cell_actors'):
-        for idx, cell_actor in table_renderer.cell_actors.items():
-            cell_text = ''
-            try:
-                t3d = cell_actor.get_actor_component('Text3DComponent')
-                if t3d:
-                    cell_text = str(t3d.Text)
-            except Exception:
-                cell_text = f'cell{idx}'
-            watched[cell_actor] = cell_text
-            watched_renderer[cell_actor] = table_renderer
-
-    # Configure player controller for click traces
-    # Use ECC_Visibility (same as gizmo) — most objects respond to it by default.
-    # ECC_WorldDynamic requires explicit collision response on the BP_Cell.
-    _pc = None
-    try:
-        _pc = ue.get_player_controller(0)
-    except Exception:
-        pass
-    if _pc is None and uobject is not None:
-        try:
-            _pc = uobject.get_player_controller()
-        except Exception:
-            pass
-    if _pc is not None:
-        try:
-            _pc.bEnableClickEvents = True
-            _pc.bEnableMouseOverEvents = True
-            _pc.CurrentClickTraceChannel = ECollisionChannel.ECC_Visibility
-            _log('text3d_click: player controller configured '
-                 '(ClickEvents=ON, MouseOverEvents=ON, '
-                 'TraceChannel=ECC_Visibility)')
-        except Exception as e:
-            _log(f'text3d_click: WARNING — could not configure player controller: {e}')
-    else:
-        _log('text3d_click: WARNING — no player controller found')
-
-    # Mouse state via input_manager.bind_press (same as gizmo)
-    # FKey doesn't exist in this UEP build — use the HotkeyManager binding.
-    _state = {'down': False}
-
-    if input_manager is not None:
-        def _press():   _state['down'] = True
-        def _release(): _state['down'] = False
-        input_manager.bind_press('LeftMouseButton',   _press)
-        input_manager.bind_release('LeftMouseButton', _release)
-        _log('text3d_click: mouse bindings registered via input_manager')
-    else:
-        _log('text3d_click: WARNING — no input_manager provided; pass self.input from Main.begin_play')
-
-    # trace_obj is used for get_hit_result_under_cursor (must be a UObject
-    # with that method — same as gizmo uses self.uobject)
-    _trace_obj = uobject
-
-    # Insertion cursor — single shared PyActorCursor managed by
-    # PyActorText3D (class-level singleton).  See pyactor_cursor.py.
-    from pyactor_text3d import PyActorText3D as _PyActorText3D
-
-    # Focus / typing state
-    # actor: the Text3D actor currently being edited (None when unfocused)
-    # string_idx: insertion index within the actor's full text string (caret)
-    # anchor: other end of selection; anchor == string_idx means no selection
-    _focus_state = {'actor': None, 'string_idx': 0, 'anchor': 0}
-
-    # Mirror focus changes to PyActorGlobalClick so other systems (e.g.
-    # PyPawnDrone WASD) can suppress their input while typing. Imported
-    # here rather than at module load to avoid hard-failing test_spawn if
-    # the pyactor_global_click module has issues during dev iteration.
-    try:
-        from pyactor_global_click import PyActorGlobalClick as _PyActorGlobalClick
-    except Exception:
-        _PyActorGlobalClick = None
-
-    def _set_focused_actor(actor):
-        """Single mutation point for _focus_state['actor']. Refits the
-        previous actor's table when leaving focus (skipped when the
-        renderer's auto_size is False), then mirrors the new value to
-        PyActorGlobalClick so PyPawnDrone (WASD) and friends can
-        suppress their input while typing."""
-        prev = _focus_state['actor']
-        _focus_state['actor'] = actor
-        if prev is not None and prev is not actor:
-            renderer = watched_renderer.get(prev)
-            if renderer is not None and getattr(renderer, 'auto_size', True):
-                try:
-                    renderer.recompute_layout()
-                except Exception as e:
-                    _log(f'text3d_click: recompute_layout failed: {e}')
-        if _PyActorGlobalClick is not None:
-            _PyActorGlobalClick.set_focused_actor(actor)
-
-    def _sel_range():
-        """Return (start, end) of the selection sorted. start==end means no sel."""
-        a = _focus_state['anchor']
-        c = _focus_state['string_idx']
-        return (a, c) if a <= c else (c, a)
-
-    def _has_sel():
-        return _focus_state['anchor'] != _focus_state['string_idx']
-
-    def _collapse_sel():
-        _focus_state['anchor'] = _focus_state['string_idx']
-
-    def _set_caret(idx, extend_selection=False):
-        """Move caret to idx. If extend_selection=False, anchor follows caret."""
-        _focus_state['string_idx'] = idx
-        if not extend_selection:
-            _focus_state['anchor'] = idx
-
-    def _string_idx_to_glyph(text, sidx):
-        """Count visible (non-space, non-newline) chars in text[:sidx]."""
-        sidx = max(0, min(sidx, len(text)))
-        return sum(1 for c in text[:sidx] if c not in ' \n')
-
-    def _glyph_to_string_idx(text, tg):
-        """Return the string index of the tg-th visible char (or len(text))."""
-        count = 0
-        for i, c in enumerate(text):
-            if count == tg:
-                return i
-            if c not in ' \n':
-                count += 1
-        return len(text)
-
-    def _hide_cursor():
-        _PyActorText3D.hide_cursor()
-
-    # Pool of translucent boxes used to render multi-segment selection highlights.
-    _highlight_actors = []
-
-    def _ensure_highlight(i):
-        """Lazily grow the highlight pool to at least i+1 actors."""
-        while len(_highlight_actors) <= i:
-            a, _ = _spawn_highlight_box(get_world())
-            if a is None:
-                return None
-            try:
-                a.SetActorLabel(f'TextSelHighlight_{len(_highlight_actors)}')
-            except Exception:
-                pass
-            _highlight_actors.append(a)
-        return _highlight_actors[i]
-
-    def _hide_highlights():
-        for a in _highlight_actors:
-            try:
-                a.SetActorHiddenInGame(True)
-            except Exception:
-                pass
-
-    def _unfocus():
-        _set_focused_actor(None)
-        _focus_state['string_idx'] = 0
-        _focus_state['anchor'] = 0
-        _hide_cursor()
-        _hide_highlights()
-
-    def _get_cursor_placement(actor, target_glyph):
-        """Delegate to PyActorText3D.compute_placement (single source of
-        truth for caret/highlight geometry)."""
-        return _PyActorText3D.compute_placement(actor, target_glyph)
-
-    def _show_cursor_at_glyph(actor, target_glyph):
-        """Move the singleton caret to target_glyph. Returns True on success."""
-        return _PyActorText3D.show_cursor_at(actor, target_glyph)
-
-    def _render_highlight_segment(pool_idx, actor, text, seg_start, seg_end):
-        """Render one highlight box for string range [seg_start, seg_end).
-        Assumes the segment is on a single line."""
-        box = _ensure_highlight(pool_idx)
-        if box is None:
-            return
-        sg = _string_idx_to_glyph(text, seg_start)
-        eg = _string_idx_to_glyph(text, seg_end)
-        left = _get_cursor_placement(actor, sg)
-        right = _get_cursor_placement(actor, eg)
-        if left is None or right is None:
-            try:
-                box.SetActorHiddenInGame(True)
-            except Exception:
-                pass
-            return
-        lwp, lscale, lrot = left
-        rwp, _, _ = right
-        # Width between the two caret positions.  Expand the box scale Y so
-        # it covers that span; keep X (depth) thin and Z (height) same as caret.
-        dy = rwp.y - lwp.y
-        dx = rwp.x - lwp.x
-        span_uu = (dx * dx + dy * dy) ** 0.5
-        if span_uu < 1.0:
-            try:
-                box.SetActorHiddenInGame(True)
-            except Exception:
-                pass
-            return
-        # Center box between left and right, along the actor's local Y.
-        mid_wp = FVector(
-            (lwp.x + rwp.x) * 0.5,
-            (lwp.y + rwp.y) * 0.5,
-            (lwp.z + rwp.z) * 0.5,
-        )
-        try:
-            # Cube is 100 UU base.  Scale.y = span_uu/100 gives correct width.
-            box.set_actor_scale(FVector(0.01, span_uu / 100.0, lscale.z))
-        except Exception:
-            pass
-        box.set_actor_location(mid_wp)
-        box.set_actor_rotation(lrot)
-        box.SetActorHiddenInGame(False)
-
-    def _update_highlight():
-        """Rebuild highlight boxes based on current selection."""
-        _hide_highlights()
-        actor = _focus_state['actor']
-        if actor is None or not _has_sel():
-            return
-        t3d = None
-        try:
-            t3d = actor.get_actor_component('Text3DComponent')
-        except Exception:
-            return
-        if t3d is None:
-            return
-        try:
-            text = str(t3d.Text or '')
-        except Exception:
-            return
-        start, end = _sel_range()
-        # Split selection by newlines so each line-segment gets its own box.
-        pool_idx = 0
-        s = start
-        while s < end:
-            nl = text.find('\n', s, end)
-            seg_end = end if nl == -1 else nl
-            if seg_end > s:
-                _render_highlight_segment(pool_idx, actor, text, s, seg_end)
-                pool_idx += 1
-            s = seg_end + 1 if nl != -1 else end
-
-    def _position_cursor(hit_actor, hit):
-        """Derive target_glyph from a click hit, move cursor, set focus."""
-        if hit_actor is None:
-            return
-
-        t3d = None
-        try:
-            t3d = hit_actor.get_actor_component('Text3DComponent')
-        except Exception:
-            pass
-
-        text = ''
-        if t3d is not None:
-            try:
-                text = str(t3d.Text or '')
-            except Exception:
-                pass
-
-        kernings = None
-        meshes = None
-        if t3d is not None:
-            try:
-                kernings = t3d.CharacterKernings
-            except Exception:
-                pass
-            try:
-                meshes = t3d.CharacterMeshes
-            except Exception:
-                pass
-
-        # No kernings — drop the caret directly at the click point via
-        # the singleton cursor's move_to (skipping placement math entirely).
-        if not kernings or len(kernings) == 0:
-            cursor_proxy = _PyActorText3D._get_or_spawn_cursor(hit_actor)
-            if cursor_proxy is not None:
-                try:
-                    cursor_proxy.move_to(
-                        hit.impact_point,
-                        FVector(0.01, 0.04, 0.5),
-                        hit_actor.get_actor_rotation())
-                except Exception:
-                    pass
-            _set_focused_actor(hit_actor)
-            _focus_state['string_idx'] = len(text)
-            _focus_state['anchor'] = len(text)
-            _hide_highlights()
-            return
-
-        # Compute clicked glyph + left/right side from the hit.
-        local_pt = _world_to_local(hit_actor, hit.impact_point)
-        clicked_glyph = 0
-        side = 'right'
-
-        if local_pt is not None:
-            glyph_edges = []
-            for i in range(len(kernings)):
-                if kernings[i] is not None:
-                    try:
-                        rel = kernings[i].get_relative_location()
-                        glyph_edges.append((rel.y, i))
-                    except Exception:
-                        pass
-            glyph_edges.sort(key=lambda e: e[0])
-            if glyph_edges:
-                clicked_glyph = glyph_edges[0][1]
-                for edge_y, gi in glyph_edges:
-                    if local_pt.y >= edge_y:
-                        clicked_glyph = gi
-                    else:
-                        break
-
-            glyph_w_local = 50.0
-            if (meshes is not None
-                    and 0 <= clicked_glyph < len(meshes)
-                    and meshes[clicked_glyph] is not None):
-                try:
-                    _, e = meshes[clicked_glyph].GetComponentBounds()
-                    glyph_w_local = e.y * 2.0
-                except Exception:
-                    pass
-
-            if (0 <= clicked_glyph < len(kernings)
-                    and kernings[clicked_glyph] is not None):
-                try:
-                    r = kernings[clicked_glyph].get_relative_location()
-                    mid_y = r.y + glyph_w_local / 2.0
-                    side = 'left' if local_pt.y < mid_y else 'right'
-                except Exception:
-                    pass
-
-        target_glyph = clicked_glyph if side == 'left' else clicked_glyph + 1
-
-        if not _show_cursor_at_glyph(hit_actor, target_glyph):
-            return
-
-        _set_focused_actor(hit_actor)
-        new_idx = _glyph_to_string_idx(text, target_glyph)
-        _focus_state['string_idx'] = new_idx
-        _focus_state['anchor'] = new_idx
-        _hide_highlights()
-        # If the previous focus was in an auto-sizing table, that table
-        # just refit and may have shifted hit_actor's position. Re-show
-        # the cursor so it tracks the new cell location.
-        _show_cursor_at_glyph(hit_actor, target_glyph)
-        _log(f'text3d_click: cursor snap clicked={clicked_glyph} '
-             f'side={side} → {target_glyph}  '
-             f'focus string_idx={new_idx}')
-
-    def _handle_typed_char(ch):
-        """Insert/delete at cursor. ch='\\b'=backspace, '\\n'=newline, else=literal."""
-        actor = _focus_state['actor']
-        if actor is None:
-            return
-        t3d = None
-        try:
-            t3d = actor.get_actor_component('Text3DComponent')
-        except Exception:
-            return
-        if t3d is None:
-            return
-
-        try:
-            text = str(t3d.Text or '')
-        except Exception:
-            text = ''
-
-        # If there is a selection, replace it (delete it; then insert if not backspace).
-        if _has_sel():
-            start, end = _sel_range()
-            text = text[:start] + text[end:]
-            idx = start
-            _focus_state['string_idx'] = idx
-            _focus_state['anchor'] = idx
-            if ch == '\b':
-                # Selection-backspace just deletes the selection, no further delete.
-                try:
-                    t3d.Text = text
-                except Exception as e:
-                    _log(f'text3d_click: failed to set text: {e}')
-                    return
-                watched[actor] = text
-                _show_cursor_at_glyph(actor, _string_idx_to_glyph(text, idx))
-                _update_highlight()
-                return
-
-        idx = max(0, min(_focus_state['string_idx'], len(text)))
-
-        if ch == '\b':
-            if idx == 0:
-                return
-            text = text[:idx - 1] + text[idx:]
-            idx -= 1
-        else:
-            text = text[:idx] + ch + text[idx:]
-            idx += 1
-
-        try:
-            t3d.Text = text
-        except Exception as e:
-            _log(f'text3d_click: failed to set text: {e}')
-            return
-
-        watched[actor] = text
-        _focus_state['string_idx'] = idx
-        _focus_state['anchor'] = idx
-
-        target_glyph = _string_idx_to_glyph(text, idx)
-        _show_cursor_at_glyph(actor, target_glyph)
-        _update_highlight()
-
-    # Notepad-style typing via direct Windows keyboard poll
-    # Bypasses UE's input routing so we get layout-correct translation
-    # (Shift, CapsLock, AltGr, dead keys) exactly like notepad.exe.
-    # Runs alongside HotkeyManager bindings in main.py without disturbing them.
-    try:
-        import ctypes as _ctypes
-        _user32 = _ctypes.WinDLL('user32', use_last_error=True)
-        _kernel32 = _ctypes.WinDLL('kernel32', use_last_error=True)
-        _user32.GetAsyncKeyState.argtypes = [_ctypes.c_int]
-        _user32.GetAsyncKeyState.restype = _ctypes.c_short
-        _user32.GetKeyState.argtypes = [_ctypes.c_int]
-        _user32.GetKeyState.restype = _ctypes.c_short
-        _user32.MapVirtualKeyW.argtypes = [_ctypes.c_uint, _ctypes.c_uint]
-        _user32.MapVirtualKeyW.restype = _ctypes.c_uint
-        _user32.ToUnicode.argtypes = [
-            _ctypes.c_uint, _ctypes.c_uint,
-            _ctypes.POINTER(_ctypes.c_ubyte), _ctypes.c_wchar_p,
-            _ctypes.c_int, _ctypes.c_uint,
-        ]
-        _user32.ToUnicode.restype = _ctypes.c_int
-        # Clipboard API
-        _user32.OpenClipboard.argtypes = [_ctypes.c_void_p]
-        _user32.OpenClipboard.restype = _ctypes.c_int
-        _user32.CloseClipboard.argtypes = []
-        _user32.CloseClipboard.restype = _ctypes.c_int
-        _user32.EmptyClipboard.argtypes = []
-        _user32.EmptyClipboard.restype = _ctypes.c_int
-        _user32.GetClipboardData.argtypes = [_ctypes.c_uint]
-        _user32.GetClipboardData.restype = _ctypes.c_void_p
-        _user32.SetClipboardData.argtypes = [_ctypes.c_uint, _ctypes.c_void_p]
-        _user32.SetClipboardData.restype = _ctypes.c_void_p
-        _user32.IsClipboardFormatAvailable.argtypes = [_ctypes.c_uint]
-        _user32.IsClipboardFormatAvailable.restype = _ctypes.c_int
-        _kernel32.GlobalAlloc.argtypes = [_ctypes.c_uint, _ctypes.c_size_t]
-        _kernel32.GlobalAlloc.restype = _ctypes.c_void_p
-        _kernel32.GlobalLock.argtypes = [_ctypes.c_void_p]
-        _kernel32.GlobalLock.restype = _ctypes.c_void_p
-        _kernel32.GlobalUnlock.argtypes = [_ctypes.c_void_p]
-        _kernel32.GlobalUnlock.restype = _ctypes.c_int
-        _kernel32.GlobalSize.argtypes = [_ctypes.c_void_p]
-        _kernel32.GlobalSize.restype = _ctypes.c_size_t
-        _WIN32_TYPING_OK = True
-    except Exception as _win_err:
-        _WIN32_TYPING_OK = False
-        _user32 = None
-        _kernel32 = None
-        _ctypes = None
-        _log(f'text3d_click: ctypes typing unavailable ({_win_err})')
-
-    _prev_vk_down = bytearray(256)
-
-    # Standard Windows clipboard format IDs
-    _CF_UNICODETEXT = 13
-
-    def _build_kb_state():
-        """256-byte keyboard state for ToUnicode. High bit=down, low bit=toggle."""
-        buf = (_ctypes.c_ubyte * 256)()
-        for vk in range(256):
-            if _user32.GetAsyncKeyState(vk) & 0x8000:
-                buf[vk] = 0x80
-        # Toggle bits for CapsLock / NumLock / ScrollLock
-        for tvk in (0x14, 0x90, 0x91):
-            if _user32.GetKeyState(tvk) & 0x0001:
-                buf[tvk] |= 0x01
-        return buf
-
-    def _ctrl_down():
-        if not _WIN32_TYPING_OK:
-            return False
-        return (_user32.GetAsyncKeyState(0x11) & 0x8000) != 0   # VK_CONTROL
-
-    def _shift_held():
-        if not _WIN32_TYPING_OK:
-            return False
-        return (_user32.GetAsyncKeyState(0x10) & 0x8000) != 0   # VK_SHIFT
-
-    def _alt_down():
-        if not _WIN32_TYPING_OK:
-            return False
-        return (_user32.GetAsyncKeyState(0x12) & 0x8000) != 0   # VK_MENU
-
-    def _win_down():
-        if not _WIN32_TYPING_OK:
-            return False
-        return ((_user32.GetAsyncKeyState(0x5B) & 0x8000) != 0   # VK_LWIN
-                or (_user32.GetAsyncKeyState(0x5C) & 0x8000) != 0)  # VK_RWIN
-
-    # ---------------- Navigation ----------------
-
-    def _is_word_char(c):
-        return c.isalnum() or c == '_'
-
-    def _word_boundary(text, idx, direction):
-        """Move idx to the next word boundary in `direction` (+1 or -1)."""
-        n = len(text)
-        idx = max(0, min(idx, n))
-        if direction > 0:
-            # Skip any whitespace/punct, then skip word chars
-            while idx < n and not _is_word_char(text[idx]):
-                idx += 1
-            while idx < n and _is_word_char(text[idx]):
-                idx += 1
-        else:
-            idx = max(0, idx - 1)
-            while idx > 0 and not _is_word_char(text[idx]):
-                idx -= 1
-            while idx > 0 and _is_word_char(text[idx - 1]):
-                idx -= 1
-        return idx
-
-    def _line_edge(text, idx, direction):
-        """Move idx to start (-1) or end (+1) of its line."""
-        n = len(text)
-        idx = max(0, min(idx, n))
-        if direction < 0:
-            nl = text.rfind('\n', 0, idx)
-            return 0 if nl == -1 else nl + 1
-        nl = text.find('\n', idx)
-        return n if nl == -1 else nl
-
-    def _line_delta(text, idx, direction):
-        """Move idx up (-1) or down (+1) one line, preserving column."""
-        n = len(text)
-        idx = max(0, min(idx, n))
-        line_start = _line_edge(text, idx, -1)
-        col = idx - line_start
-        if direction < 0:
-            if line_start == 0:
-                return 0
-            prev_end = line_start - 1
-            prev_start = _line_edge(text, prev_end, -1)
-            return min(prev_start + col, prev_end)
-        # direction > 0
-        line_end = _line_edge(text, idx, +1)
-        if line_end == n:
-            return n
-        next_start = line_end + 1
-        next_end = _line_edge(text, next_start, +1)
-        return min(next_start + col, next_end)
-
-    def _move_caret_to(new_idx, extend):
-        """Set caret, optionally extending selection; then refresh cursor + highlight."""
-        actor = _focus_state['actor']
-        if actor is None:
-            return
-        t3d = None
-        try:
-            t3d = actor.get_actor_component('Text3DComponent')
-        except Exception:
-            pass
-        text = ''
-        if t3d is not None:
-            try:
-                text = str(t3d.Text or '')
-            except Exception:
-                pass
-        new_idx = max(0, min(new_idx, len(text)))
-        _set_caret(new_idx, extend_selection=extend)
-        _show_cursor_at_glyph(actor, _string_idx_to_glyph(text, new_idx))
-        _update_highlight()
-
-    # ---------------- Clipboard ----------------
-
-    def _clipboard_get_text():
-        if not _WIN32_TYPING_OK:
-            return None
-        try:
-            if not _user32.OpenClipboard(0):
-                return None
-            try:
-                if not _user32.IsClipboardFormatAvailable(_CF_UNICODETEXT):
-                    return None
-                h = _user32.GetClipboardData(_CF_UNICODETEXT)
-                if not h:
-                    return None
-                p = _kernel32.GlobalLock(h)
-                if not p:
-                    return None
-                try:
-                    return _ctypes.c_wchar_p(p).value
-                finally:
-                    _kernel32.GlobalUnlock(h)
-            finally:
-                _user32.CloseClipboard()
-        except Exception as e:
-            _log(f'text3d_click: clipboard read failed: {e}')
-            return None
-
-    def _clipboard_set_text(text):
-        if not _WIN32_TYPING_OK or text is None:
-            return False
-        try:
-            if not _user32.OpenClipboard(0):
-                return False
-            try:
-                _user32.EmptyClipboard()
-                GMEM_MOVEABLE = 0x0002
-                data = text.encode('utf-16-le') + b'\x00\x00'
-                size = len(data)
-                h = _kernel32.GlobalAlloc(GMEM_MOVEABLE, size)
-                if not h:
-                    return False
-                p = _kernel32.GlobalLock(h)
-                if not p:
-                    return False
-                _ctypes.memmove(p, data, size)
-                _kernel32.GlobalUnlock(h)
-                # After SetClipboardData, the system owns the handle.
-                return bool(_user32.SetClipboardData(_CF_UNICODETEXT, h))
-            finally:
-                _user32.CloseClipboard()
-        except Exception as e:
-            _log(f'text3d_click: clipboard write failed: {e}')
-            return False
-
-    def _clipboard_get_image():
-        try:
-            from PIL import ImageGrab, Image as PILImage
-            img = ImageGrab.grabclipboard()
-            if isinstance(img, PILImage.Image):
-                return img
-            return None
-        except Exception as e:
-            _log(f'text3d_click: ImageGrab failed: {e}')
-            return None
-
-    # ---------------- Actions ----------------
-
-    def _delete_selection():
-        """Delete selected text in focused actor. Returns True if anything deleted."""
-        actor = _focus_state['actor']
-        if actor is None or not _has_sel():
-            return False
-        t3d = None
-        try:
-            t3d = actor.get_actor_component('Text3DComponent')
-        except Exception:
-            return False
-        if t3d is None:
-            return False
-        try:
-            text = str(t3d.Text or '')
-        except Exception:
-            return False
-        start, end = _sel_range()
-        new_text = text[:start] + text[end:]
-        try:
-            t3d.Text = new_text
-        except Exception as e:
-            _log(f'text3d_click: delete_selection failed: {e}')
-            return False
-        watched[actor] = new_text
-        _focus_state['string_idx'] = start
-        _focus_state['anchor'] = start
-        _show_cursor_at_glyph(actor, _string_idx_to_glyph(new_text, start))
-        _update_highlight()
-        return True
-
-    def _select_all():
-        actor = _focus_state['actor']
-        if actor is None:
-            return
-        t3d = None
-        try:
-            t3d = actor.get_actor_component('Text3DComponent')
-        except Exception:
-            return
-        if t3d is None:
-            return
-        try:
-            text = str(t3d.Text or '')
-        except Exception:
-            return
-        _focus_state['anchor'] = 0
-        _focus_state['string_idx'] = len(text)
-        _show_cursor_at_glyph(actor, _string_idx_to_glyph(text, len(text)))
-        _update_highlight()
-
-    def _copy():
-        if not _has_sel():
-            return
-        actor = _focus_state['actor']
-        if actor is None:
-            return
-        t3d = None
-        try:
-            t3d = actor.get_actor_component('Text3DComponent')
-        except Exception:
-            return
-        if t3d is None:
-            return
-        try:
-            text = str(t3d.Text or '')
-        except Exception:
-            return
-        s, e = _sel_range()
-        _clipboard_set_text(text[s:e])
-
-    def _cut():
-        if not _has_sel():
-            return
-        _copy()
-        _delete_selection()
-
-    def _paste():
-        if _focus_state['actor'] is None:
-            return
-        # Image first — if clipboard has a bitmap, inline-paste it.
-        img = _clipboard_get_image()
-        if img is not None:
-            _paste_image(img)
-            return
-        # Otherwise paste text at caret, replacing any selection.
-        clip = _clipboard_get_text()
-        if not clip:
-            return
-        if _has_sel():
-            _delete_selection()
-        # Feed characters one-by-one so the existing path (which updates
-        # text, caret, cursor, watched) does the heavy lifting.
-        for c in clip:
-            if c == '\r':
-                continue   # CRLF → LF
-            _handle_typed_char(c)
-
-    def _delete_forward():
-        actor = _focus_state['actor']
-        if actor is None:
-            return
-        if _has_sel():
-            _delete_selection()
-            return
-        t3d = None
-        try:
-            t3d = actor.get_actor_component('Text3DComponent')
-        except Exception:
-            return
-        if t3d is None:
-            return
-        try:
-            text = str(t3d.Text or '')
-        except Exception:
-            return
-        idx = _focus_state['string_idx']
-        if idx >= len(text):
-            return
-        new_text = text[:idx] + text[idx + 1:]
-        try:
-            t3d.Text = new_text
-        except Exception:
-            return
-        watched[actor] = new_text
-        _show_cursor_at_glyph(actor, _string_idx_to_glyph(new_text, idx))
-        _update_highlight()
-
-    def _cycle_focus(direction=1):
-        """Ctrl+Tab — move focus to the next (or previous) watched text actor."""
-        if not watched:
-            return
-        ordered = list(watched.keys())
-        current = _focus_state['actor']
-        if current in ordered:
-            i = (ordered.index(current) + direction) % len(ordered)
-        else:
-            i = 0
-        new_actor = ordered[i]
-        new_text = watched.get(new_actor, '')
-        _set_focused_actor(new_actor)
-        _focus_state['string_idx'] = len(new_text)
-        _focus_state['anchor'] = len(new_text)
-        _show_cursor_at_glyph(new_actor, _string_idx_to_glyph(new_text, len(new_text)))
-        _hide_highlights()
-
-    # ---------------- Inline image paste ----------------
-
-    # Track inline images spawned into each actor so they can be repositioned
-    # after text edits.  Each entry: (actor, image_actor, placeholder_start,
-    # placeholder_len, img_w_uu, img_h_uu).
-    _inline_images = []
-
-    def _paste_image(pil_img):
-        """Inline-paste a PIL image into the focused Text3D at the caret.
-        Image is scaled so its height matches the text's line height, then
-        space characters are inserted to reserve horizontal room.  The image
-        actor is placed over the reserved spaces."""
-        actor = _focus_state['actor']
-        if actor is None:
-            return
-        t3d = None
-        try:
-            t3d = actor.get_actor_component('Text3DComponent')
-        except Exception:
-            return
-        if t3d is None:
-            return
-        try:
-            text = str(t3d.Text or '')
-        except Exception:
-            text = ''
-
-        # Measure the text's vertical extent for target image height.
-        text_h = 50.0
-        try:
-            o, e = t3d.GetComponentBounds()
-            text_h = max(text_h, e.z * 2.0 * 0.8)
-        except Exception:
-            pass
-        # Measure average glyph width for space count.
-        glyph_w = 50.0
-        try:
-            meshes = t3d.CharacterMeshes
-            if meshes is not None:
-                for m in meshes:
-                    if m is None:
-                        continue
-                    try:
-                        _, e = m.GetComponentBounds()
-                        glyph_w = e.y * 2.0
-                        break
-                    except Exception:
-                        continue
-        except Exception:
-            pass
-
-        # Scale image to text height, preserving aspect ratio.
-        iw, ih = float(pil_img.width), float(pil_img.height)
-        if ih <= 0:
-            return
-        img_h_uu = text_h
-        img_w_uu = iw / ih * img_h_uu
-        n_spaces = max(1, int(round(img_w_uu / glyph_w)))
-
-        # Replace any existing selection, insert placeholder spaces, set text.
-        if _has_sel():
-            _delete_selection()
-            try:
-                text = str(t3d.Text or '')
-            except Exception:
-                text = ''
-
-        idx = _focus_state['string_idx']
-        placeholder = ' ' * n_spaces
-        new_text = text[:idx] + placeholder + text[idx:]
-        try:
-            t3d.Text = new_text
-        except Exception as e:
-            _log(f'text3d_click: paste_image set text failed: {e}')
-            return
-        watched[actor] = new_text
-
-        # Spawn the image via ue_spawn.spawn_image.  It needs a file path, so
-        # write the PIL buffer to a temp PNG.
-        image_actor = None
-        try:
-            import tempfile, os as _os
-            from ue_spawn import spawn_image
-            tmpdir = _os.path.join(tempfile.gettempdir(), 'ue_clipboard_images')
-            try:
-                _os.makedirs(tmpdir, exist_ok=True)
-            except Exception:
-                pass
-            # Unique-ish filename so we don't stomp repeated pastes.
-            import time as _t
-            tmp_path = _os.path.join(tmpdir, f'clip_{int(_t.time()*1000)}.png')
-            pil_img.convert('RGBA').save(tmp_path, 'PNG')
-            # Scale (width/100, thin, height/100) — spawn_image uses 1 px = 1 UU.
-            # Override to match our target dimensions in UU.
-            img_scale = FVector(img_w_uu / 100.0, 0.05, img_h_uu / 100.0)
-            image_actor = spawn_image(tmp_path, scale=img_scale)
-        except Exception as e:
-            _log(f'text3d_click: spawn_image failed: {e}')
-
-        # Position the image over the placeholder spaces.
-        if image_actor is not None:
-            try:
-                mid_idx = idx + n_spaces // 2
-                mid_glyph = _string_idx_to_glyph(new_text, mid_idx)
-                placement = _get_cursor_placement(actor, mid_glyph)
-                if placement is not None:
-                    world_pt, _, rot = placement
-                    image_actor.set_actor_location(world_pt)
-                    image_actor.set_actor_rotation(rot)
-                    image_actor.attach_to_actor(actor)
-            except Exception as e:
-                _log(f'text3d_click: image position failed: {e}')
-            _inline_images.append(
-                (actor, image_actor, idx, n_spaces, img_w_uu, img_h_uu))
-
-        # Advance caret past the reserved spaces.
-        new_idx = idx + n_spaces
-        _focus_state['string_idx'] = new_idx
-        _focus_state['anchor'] = new_idx
-        _show_cursor_at_glyph(actor, _string_idx_to_glyph(new_text, new_idx))
-        _update_highlight()
-
-    def _on_vk_rise(vk):
-        """Rising-edge handler. Dispatches shortcuts, then falls through to
-        ToUnicode for ordinary character entry (notepad's WM_CHAR semantics)."""
-        if _focus_state['actor'] is None:
-            return
-
-        ctrl = _ctrl_down()
-        shift = _shift_held()
-        alt = _alt_down()
-        win = _win_down()
-
-        # Notepad parity: Alt+key (Alt+Tab window switch, Alt+Enter properties,
-        # Alt+F4 close, Alt+Backspace undo, etc.) and Win+key (shell shortcuts)
-        # are never text input. AltGr on European layouts reports Alt+Ctrl
-        # together and DOES produce characters through ToUnicode, so the
-        # `not ctrl` clause keeps that path open.
-        if (alt and not ctrl) or win:
-            return
-
-        # ----- Ctrl+key shortcuts -----
-        if ctrl:
-            if vk == 0x41:    # A
-                _select_all(); return
-            if vk == 0x43:    # C
-                _copy(); return
-            if vk == 0x58:    # X
-                _cut(); return
-            if vk == 0x56:    # V
-                _paste(); return
-            if vk == 0x09:    # Tab
-                _cycle_focus(-1 if shift else +1); return
-            # Ctrl+arrow / home / end: word & doc navigation
-            actor = _focus_state['actor']
-            t3d = actor.get_actor_component('Text3DComponent') if actor else None
-            text = str(t3d.Text or '') if t3d else ''
-            idx = _focus_state['string_idx']
-            if vk == 0x25:    # Ctrl+Left  — prev word
-                _move_caret_to(_word_boundary(text, idx, -1), shift); return
-            if vk == 0x27:    # Ctrl+Right — next word
-                _move_caret_to(_word_boundary(text, idx, +1), shift); return
-            if vk == 0x24:    # Ctrl+Home  — doc start
-                _move_caret_to(0, shift); return
-            if vk == 0x23:    # Ctrl+End   — doc end
-                _move_caret_to(len(text), shift); return
-
-        # ----- Caret movement without Ctrl -----
-        if vk in (0x25, 0x27, 0x26, 0x28, 0x24, 0x23):
-            actor = _focus_state['actor']
-            t3d = actor.get_actor_component('Text3DComponent') if actor else None
-            text = str(t3d.Text or '') if t3d else ''
-            idx = _focus_state['string_idx']
-            if vk == 0x25:    # Left
-                if _has_sel() and not shift:
-                    _move_caret_to(_sel_range()[0], False); return
-                _move_caret_to(max(0, idx - 1), shift); return
-            if vk == 0x27:    # Right
-                if _has_sel() and not shift:
-                    _move_caret_to(_sel_range()[1], False); return
-                _move_caret_to(min(len(text), idx + 1), shift); return
-            if vk == 0x26:    # Up
-                _move_caret_to(_line_delta(text, idx, -1), shift); return
-            if vk == 0x28:    # Down
-                _move_caret_to(_line_delta(text, idx, +1), shift); return
-            if vk == 0x24:    # Home
-                _move_caret_to(_line_edge(text, idx, -1), shift); return
-            if vk == 0x23:    # End
-                _move_caret_to(_line_edge(text, idx, +1), shift); return
-
-        # ----- Editing keys -----
-        if vk == 0x08:        # VK_BACK
-            _handle_typed_char('\b'); return
-        if vk == 0x2E:        # VK_DELETE
-            _delete_forward(); return
-        if vk == 0x0D:        # VK_RETURN
-            _handle_typed_char('\n'); return
-        if vk == 0x09:        # VK_TAB
-            _handle_typed_char('\t'); return
-        if vk == 0x1B:        # VK_ESCAPE
-            _unfocus(); return
-
-        # ----- Regular character via OS keyboard layout -----
-        # Ctrl+letter would otherwise produce control chars (e.g. Ctrl+B → 0x02);
-        # we already handled the shortcuts we care about, so suppress the rest.
-        if ctrl:
-            return
-        try:
-            kb_state = _build_kb_state()
-            scan_code = _user32.MapVirtualKeyW(vk, 0)
-            outbuf = _ctypes.create_unicode_buffer(8)
-            result = _user32.ToUnicode(
-                vk, scan_code, kb_state, outbuf, len(outbuf), 0)
-        except Exception:
-            return
-        if result > 0:
-            for c in outbuf.value[:result]:
-                if c and ord(c) >= 0x20:
-                    _handle_typed_char(c)
-
-    def _poll_keyboard():
-        """Call each tick. Fires character events on rising edges while focused."""
-        if not _WIN32_TYPING_OK:
-            return
-        curr = bytearray(256)
-        for vk in range(256):
-            if _user32.GetAsyncKeyState(vk) & 0x8000:
-                curr[vk] = 1
-        if _focus_state['actor'] is not None:
-            for vk in range(256):
-                if curr[vk] and not _prev_vk_down[vk]:
-                    _on_vk_rise(vk)
-        for i in range(256):
-            _prev_vk_down[i] = curr[i]
-
-    _log('text3d_click: ctypes keyboard poll ready'
-         if _WIN32_TYPING_OK else
-         'text3d_click: typing disabled (ctypes unavailable)')
-
-    # Tick function: event-driven press state + cursor hit test
-    _state['fired'] = False  # ensure we fire once per press
-
-    def tick_fn(dt):
-        # Typing poll (fires char events via Win32 ToUnicode when focused)
-        _poll_keyboard()
-
-        # Caret blink is owned by the PyActorCursor singleton (its own tick).
-
-        if _trace_obj is None and _pc is None:
-            return
-
-        currently_down = _state['down']
-        fired = _state['fired']
-
-        if currently_down and not fired:
-            # Rising edge — check which watched actor the cursor is over
-            _state['fired'] = True
-            hit = None
-            # Try ECC_Visibility first (like gizmo), then WorldDynamic
-            for channel in (ECollisionChannel.ECC_Visibility,
-                            ECollisionChannel.ECC_WorldDynamic):
-                for trace_src in (_trace_obj, _pc):
-                    if trace_src is None:
-                        continue
-                    try:
-                        hit = trace_src.get_hit_result_under_cursor(channel)
-                        if hit is not None:
-                            break
-                    except Exception:
-                        continue
-                if hit is not None:
-                    break
-
-            hit_actor = hit.actor if hit is not None else None
-            matched_actor = None
-            matched_text = None
-            if hit_actor is not None:
-                for w_actor, w_text in watched.items():
-                    try:
-                        if w_actor == hit_actor:
-                            matched_actor = w_actor
-                            matched_text = w_text
-                            break
-                    except Exception:
-                        pass
-
-            if matched_actor is None:
-                # Click off any watched text actor — unfocus + hide cursor.
-                if hit_actor is not None:
-                    _log(f'global_click: off-click — hit '
-                         f'"{hit_actor.get_name()}" (not watched), unfocusing')
-                else:
-                    _log('global_click: off-click — nothing under cursor, unfocusing')
-                _unfocus()
-                return
-
-            _log_click_on_actor_from_hit(matched_actor, hit, text_content=matched_text)
-            _position_cursor(matched_actor, hit)
-
-        elif not currently_down:
-            _state['fired'] = False
-
-    _log(f'text3d_click: log -> {_LOG_PATH}')
-
-    # Hand tick_fn off to a singleton PyActor so it runs per-frame without
-    # Main.tick forwarding anything. Per-text3d actors stay tick-free at the
-    # global level (the per-instance PyActorText3D animation ticks are a
-    # separate concern).
-    try:
-        from ue_spawn import spawn_pyactor
-        global_actor = spawn_pyactor(
-            'pyactor_global_click', 'PyActorGlobalClick',
-            location=FVector(0, 0, 0),
-            name='PyActorGlobalClick')
-        global_actor.get_py_proxy().set_tick_fn(tick_fn)
-        _log('global_click: PyActorGlobalClick spawned + tick attached')
-    except Exception as e:
-        _log(f'global_click: PyActorGlobalClick spawn failed: {e}')
-
-    return single_actor, table_renderer
+    return actor

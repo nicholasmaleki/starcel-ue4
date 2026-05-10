@@ -6,10 +6,15 @@ import os
 import re
 
 try:
-    from unreal_engine.classes import StaticMeshActor, Blueprint, Material
+    from unreal_engine.classes import StaticMeshActor, Blueprint, MaterialInterface
     from unreal_engine.enums import EComponentMobility
 except Exception:
-    StaticMeshActor = Blueprint = Material = EComponentMobility = None
+    StaticMeshActor = Blueprint = MaterialInterface = EComponentMobility = None
+
+try:
+    from unreal_engine_tools import apply_text3d_material
+except Exception:
+    apply_text3d_material = None
 
 try:
     import worldhello
@@ -30,6 +35,7 @@ QUOTES = [
 ]
 
 FONT_PATH = '/Game/Fonts/CatFont_Font'
+QUOTE_MATERIAL_PATH = '/Game/Materials/M_ShinyGold.M_ShinyGold'
 QUOTE_INTERVAL = 90.0   # 1.5 minutes between quote changes
 QUOTE_OFFSET = FVector(-55, -10, -35)  # to the right and up from the cat
 TEXT_LINE_LENGTH = 25
@@ -106,12 +112,47 @@ class PyActorQur:
 
             t3d = actor.get_actor_component('Text3DComponent')
             if t3d:
+                # IMPORTANT: assign materials BEFORE Text/Font. UText3DComponent::
+                # BuildTextMesh re-applies the FrontMaterial/Bevel/Extrude/Back
+                # UPROPERTYs to every per-glyph mesh at the end of every rebuild
+                # (Text3DComponent.cpp:755-760). Setting Text or Font triggers a
+                # rebuild — so any material we set after would only stick until
+                # the next rebuild. Setting the UPROPERTYs first means the very
+                # first build (the one driven by t3d.Text/t3d.Font below) bakes
+                # M_ShinyGold into the glyphs and any later rebuild keeps it.
+                try:
+                    gold = ue.load_object(MaterialInterface, QUOTE_MATERIAL_PATH)
+                except Exception as e:
+                    gold = None
+                    ue.log_warning(f'PyActorQur: could not load {QUOTE_MATERIAL_PATH}: {e}')
+                if gold is not None:
+                    for prop in ('FrontMaterial', 'BevelMaterial',
+                                 'ExtrudeMaterial', 'BackMaterial'):
+                        try:
+                            setattr(t3d, prop, gold)
+                        except Exception as e:
+                            ue.log_warning(f'PyActorQur: setattr({prop}) failed: {e}')
+
                 t3d.Text = re.sub(rf"(.{{1,{TEXT_LINE_LENGTH}}})(?:\s+|$)", r"\1\n", quote)
                 if self._font:
                     t3d.Font = self._font
                 # Small scale for readable text
                 transform = FTransform(spawn_loc, FRotator(0, 0, 0), FVector(.2, .2, .2))
                 actor.set_actor_transform(transform)
+
+                # Belt-and-braces: also push the material onto each glyph mesh
+                # directly, in case writing the UPROPERTY didn't trigger the
+                # BlueprintSetter and the auto-apply at the tail of BuildTextMesh
+                # didn't run.
+                if apply_text3d_material is not None and gold is not None:
+                    try:
+                        apply_text3d_material(
+                            actor=actor,
+                            component=t3d,
+                            material_path=QUOTE_MATERIAL_PATH,
+                        )
+                    except Exception as e:
+                        ue.log_warning(f'PyActorQur: text3d material apply failed: {e}')
 
             # # Attach so it follows the cat
             # owner = self.uobject.get_owner()

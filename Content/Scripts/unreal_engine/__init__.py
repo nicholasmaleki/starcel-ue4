@@ -1088,17 +1088,17 @@ class ESlateEnums(object):
         Create and return a new object.  See help(type) for accurate signature.
         """
 
-    EUserInterfaceActionType.Button = "<unreal_engine.ESlateEnums object at 0x0000022DA4D36B90>" # DATA
+    EUserInterfaceActionType.Button = "<unreal_engine.ESlateEnums object at 0x0000028EC8CC6750>" # DATA
 
-    EUserInterfaceActionType.Check = "<unreal_engine.ESlateEnums object at 0x0000022DA4D36BF0>" # DATA
+    EUserInterfaceActionType.Check = "<unreal_engine.ESlateEnums object at 0x0000028EC8CC67B0>" # DATA
 
-    EUserInterfaceActionType.CollapsedButton = "<unreal_engine.ESlateEnums object at 0x0000022DA4D36C10>" # DATA
+    EUserInterfaceActionType.CollapsedButton = "<unreal_engine.ESlateEnums object at 0x0000028EC8CC67D0>" # DATA
 
-    EUserInterfaceActionType.None = "<unreal_engine.ESlateEnums object at 0x0000022DA4D36B70>" # DATA
+    EUserInterfaceActionType.None = "<unreal_engine.ESlateEnums object at 0x0000028EC8CC6730>" # DATA
 
-    EUserInterfaceActionType.RadioButton = "<unreal_engine.ESlateEnums object at 0x0000022DA4D36BD0>" # DATA
+    EUserInterfaceActionType.RadioButton = "<unreal_engine.ESlateEnums object at 0x0000028EC8CC6790>" # DATA
 
-    EUserInterfaceActionType.ToggleButton = "<unreal_engine.ESlateEnums object at 0x0000022DA4D36BB0>" # DATA
+    EUserInterfaceActionType.ToggleButton = "<unreal_engine.ESlateEnums object at 0x0000028EC8CC6770>" # DATA
 
     val = "<attribute 'val' of 'unreal_engine.ESlateEnums' objects>" # DATA
 
@@ -1360,31 +1360,31 @@ class FColor(object):
         Create and return a new object.  See help(type) for accurate signature.
         """
 
-    Black = "<unreal_engine.FColor object at 0x0000022DC4AF0B10>" # DATA
+    Black = "<unreal_engine.FColor object at 0x0000028ECF8166D0>" # DATA
 
-    Blue = "<unreal_engine.FColor object at 0x0000022DC4AF0A50>" # DATA
+    Blue = "<unreal_engine.FColor object at 0x0000028ECF816610>" # DATA
 
-    Cyan = "<unreal_engine.FColor object at 0x0000022DC4AF0BD0>" # DATA
+    Cyan = "<unreal_engine.FColor object at 0x0000028ECF816790>" # DATA
 
-    Emerald = "<unreal_engine.FColor object at 0x0000022DC4AF0BF0>" # DATA
+    Emerald = "<unreal_engine.FColor object at 0x0000028ECF8167B0>" # DATA
 
-    Green = "<unreal_engine.FColor object at 0x0000022DC4AF0C10>" # DATA
+    Green = "<unreal_engine.FColor object at 0x0000028ECF8167D0>" # DATA
 
-    Magenta = "<unreal_engine.FColor object at 0x0000022DC4AF0C30>" # DATA
+    Magenta = "<unreal_engine.FColor object at 0x0000028ECF8167F0>" # DATA
 
-    Orange = "<unreal_engine.FColor object at 0x0000022DC4AF0C50>" # DATA
+    Orange = "<unreal_engine.FColor object at 0x0000028ECF816810>" # DATA
 
-    Purple = "<unreal_engine.FColor object at 0x0000022DC4AF0C70>" # DATA
+    Purple = "<unreal_engine.FColor object at 0x0000028ECF816830>" # DATA
 
-    Red = "<unreal_engine.FColor object at 0x0000022DC4AF0C90>" # DATA
+    Red = "<unreal_engine.FColor object at 0x0000028ECF816850>" # DATA
 
-    Silver = "<unreal_engine.FColor object at 0x0000022DC4AF0CB0>" # DATA
+    Silver = "<unreal_engine.FColor object at 0x0000028ECF816870>" # DATA
 
-    Turquoise = "<unreal_engine.FColor object at 0x0000022DC4AF0CD0>" # DATA
+    Turquoise = "<unreal_engine.FColor object at 0x0000028ECF816890>" # DATA
 
-    White = "<unreal_engine.FColor object at 0x0000022DC4AF0CF0>" # DATA
+    White = "<unreal_engine.FColor object at 0x0000028ECF8168B0>" # DATA
 
-    Yellow = "<unreal_engine.FColor object at 0x0000022DC4AF0D10>" # DATA
+    Yellow = "<unreal_engine.FColor object at 0x0000028ECF8168D0>" # DATA
 
     a = "<attribute 'a' of 'unreal_engine.FColor' objects>" # DATA
 
@@ -1678,19 +1678,19 @@ class FLinearColor(object):
         Create and return a new object.  See help(type) for accurate signature.
         """
 
-    Black = "<unreal_engine.FLinearColor object at 0x0000022DC4AF0D50>" # DATA
+    Black = "<unreal_engine.FLinearColor object at 0x0000028ECF816910>" # DATA
 
-    Blue = "<unreal_engine.FLinearColor object at 0x0000022DC4AF0D70>" # DATA
+    Blue = "<unreal_engine.FLinearColor object at 0x0000028ECF816930>" # DATA
 
-    Gray = "<unreal_engine.FLinearColor object at 0x0000022DC4AF0D90>" # DATA
+    Gray = "<unreal_engine.FLinearColor object at 0x0000028ECF816950>" # DATA
 
-    Green = "<unreal_engine.FLinearColor object at 0x0000022DC4AF0DB0>" # DATA
+    Green = "<unreal_engine.FLinearColor object at 0x0000028ECF816970>" # DATA
 
-    Red = "<unreal_engine.FLinearColor object at 0x0000022DC4AF0DD0>" # DATA
+    Red = "<unreal_engine.FLinearColor object at 0x0000028ECF816990>" # DATA
 
-    White = "<unreal_engine.FLinearColor object at 0x0000022DC4AF0DF0>" # DATA
+    White = "<unreal_engine.FLinearColor object at 0x0000028ECF8169B0>" # DATA
 
-    Yellow = "<unreal_engine.FLinearColor object at 0x0000022DC4AF0E10>" # DATA
+    Yellow = "<unreal_engine.FLinearColor object at 0x0000028ECF8169D0>" # DATA
 
     a = "<attribute 'a' of 'unreal_engine.FLinearColor' objects>" # DATA
 
@@ -3003,11 +3003,11 @@ class FVector(object):
 
     __hash__ = "None" # DATA
 
-    forward = "<unreal_engine.FVector object at 0x0000022DC4AF09D0>" # DATA
+    forward = "<unreal_engine.FVector object at 0x0000028ECF816590>" # DATA
 
-    right = "<unreal_engine.FVector object at 0x0000022DC4AF0870>" # DATA
+    right = "<unreal_engine.FVector object at 0x0000028ECF816430>" # DATA
 
-    up = "<unreal_engine.FVector object at 0x0000022DC4AF09B0>" # DATA
+    up = "<unreal_engine.FVector object at 0x0000028ECF816570>" # DATA
 
     x = "<attribute 'x' of 'unreal_engine.FVector' objects>" # DATA
 

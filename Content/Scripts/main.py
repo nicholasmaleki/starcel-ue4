@@ -23,8 +23,6 @@ from icon_to_image import extract_icon
 from test_spawn import test_spawn_all
 
 
-_main_begin_play_ran = False
-
 # Warning:
 # BUG: imported classes are not reloaded, you need to restart the editor
 # Code placed outside the Main class will not run when connecting to a server and may run twice
@@ -33,7 +31,7 @@ _main_begin_play_ran = False
 ue.log('Hello i am a Python module.')
 
 # Use this if you want to rebuild the unreal_engine intellisense(.pyi, etc.) and cli
-# rebuild_generated_modules()
+rebuild_generated_modules()
 
 # ret = ue.message_dialog_open(ue.APP_MSG_TYPE_YES_NO, "Do you want to test dialogs?")
 # if ret == ue.APP_RETURN_TYPE_YES:
@@ -43,8 +41,6 @@ ue.log('Hello i am a Python module.')
 
 class Main:
     def end_play(self, reason):
-        global _main_begin_play_ran
-        _main_begin_play_ran = False
         ue.log("Ending play")
         import unreal_engine_tools
         unreal_engine_tools.invalidate_world_cache()
@@ -184,11 +180,6 @@ class Main:
 
     # this is called on game start
     def begin_play(self):
-        global _main_begin_play_ran
-        if _main_begin_play_ran:
-            ue.log('Main.begin_play: already ran — skipping (duplicate BP_PyActor)')
-            return
-        _main_begin_play_ran = True
         ue.log('Begin Play on Main class')
         #change_background("video", os.path.join(os.path.abspath(ue.get_content_dir()),"Movies", "psychedelic.mp4"))
         change_background("white_less_emissive") # "stars"
@@ -328,6 +319,7 @@ class Main:
             local_ip = socket.gethostbyname(hostname)
             ue.log(f"Server LAN IP: {local_ip}")
             try:
+                # TODO: Don't go to https endpoint on every open
                 public_ip = urllib.request.urlopen('https://api.ipify.org').read().decode('utf-8')
                 ue.log(f"Public IP: {public_ip}")
             except Exception as e:
@@ -358,11 +350,10 @@ class Main:
                 }
             )
 
-
         print("Begin Drone Possession")
         bp_drone = ue.load_object(Blueprint, '/Game/Blueprints/Assets/DroneCharacter/BP_PyDroneCharacter.BP_PyDroneCharacter')
         player = world.actor_spawn(bp_drone.GeneratedClass)
-        transform = FTransform(FVector(0, 0, 0), FRotator(0, 0, 0), FVector(1, 1, 1))
+        transform = FTransform(FVector(100, 100, 100), FRotator(0, 0, 0), FVector(1, 1, 1))
         player.set_actor_transform(transform)
         self.uobject.get_player_controller().Possess(player)
         py_player = player.get_py_proxy()
@@ -373,8 +364,12 @@ class Main:
         # self.test_cylinder()
         # self.test_text()
 
-        results = test_spawn_all(uobject=self.uobject, input_manager=self.input) #, tests=['test_system_monitor', 'test_sound', 'test_cameras', 'test_desktop_icons', 'test_file_explorer', 'test_gizmo', 'test_text3d_click'])
+        results = test_spawn_all(uobject=self.uobject, input_manager=self.input, tests=['test_text3d_click', 'test_text3d_executor'])
         print(results)
+
+        post_startup(self.uobject)
+
+
 
 
     # this is called at every 'tick'
